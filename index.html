@@ -148,7 +148,17 @@
       const ks = ich.kontostand || 0;
       html += `<div class="section-title">Ich</div><div class="spieler-card"><div class="spieler-avatar">👤</div><div class="spieler-info"><div class="spieler-name">${ich.name}</div></div><div class="spieler-kontostand ${ksClass(ks)}">€${ks.toFixed(2)}</div></div>`;
     }
-    const rest = spieler.filter(s => s.email !== currentUser?.email);
+
+    if (bank) {
+      html += `<div class="section-title">Bank</div>
+        <div class="spieler-card" style="background: #0f3460;">
+          <div class="spieler-avatar">🏦</div>
+          <div class="spieler-info"><div class="spieler-name">Bank</div></div>
+          <div class="spieler-kontostand pos">€0.00</div>
+        </div>`;
+    }
+    const bank = spieler.find(s => s.ist_bank);
+    const rest = spieler.filter(s => s.email !== currentUser?.email && !s.ist_bank);
     html += `<div class="section-title">Alle Spieler</div>`;
     rest.forEach(s => {
       const ks = s.kontostand || 0;
