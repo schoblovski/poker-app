@@ -3,31 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="version" content="0.4">
   <title>Poker App 🃏</title>
-  <meta name="version" content="0.3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* LOGIN */
     #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 2rem; }
     .login-logo { font-size: 5rem; }
     .login-title { font-size: 2rem; font-weight: 700; color: #fff; }
     .login-subtitle { color: #aaa; font-size: 1rem; text-align: center; }
     .btn-google { display: flex; align-items: center; gap: 0.75rem; background: #fff; color: #333; border: none; border-radius: 12px; padding: 0.875rem 2rem; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; max-width: 320px; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-    /* APP */
     #app-screen { display: none; flex-direction: column; flex: 1; max-width: 480px; margin: 0 auto; width: 100%; }
+
     .header { background: #16213e; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; position: sticky; top: 0; z-index: 10; }
+    .header-left { display: flex; align-items: center; gap: 0.5rem; }
     .header-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .header-version { font-size: 0.65rem; color: #888; font-weight: 400; }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    /* SYNC STATUS */
+    .sync-status { font-size: 0.75rem; display: flex; align-items: center; gap: 0.3rem; transition: all 0.3s; }
+    .sync-status.synced { color: #4ade80; }
+    .sync-status.pending { color: #facc15; }
+    .sync-status.error { color: #f87171; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .sync-dot.spinning { animation: spin 1s linear infinite; border-radius: 0; width: 10px; height: 10px; border: 2px solid transparent; border-top-color: currentColor; background: none; }
+
     .header-avatar { width: 36px; height: 36px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; overflow: hidden; }
     .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .content { flex: 1; overflow-y: auto; padding: 1rem; padding-bottom: 5rem; }
 
+    .content { flex: 1; overflow-y: auto; padding: 1rem; padding-bottom: 5rem; }
     .section-title { font-size: 0.75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.5rem; }
 
-    /* SPIELER CARDS */
     .spieler-card { background: #16213e; border-radius: 12px; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.875rem; margin-bottom: 0.5rem; }
     .spieler-avatar { width: 48px; height: 48px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
     .spieler-info { flex: 1; }
@@ -35,12 +45,10 @@
     .spieler-kontostand { font-weight: 700; font-size: 1rem; }
     .pos { color: #4ade80; } .neg { color: #f87171; } .nul { color: #888; }
 
-    /* BUTTONS */
     .btn-primary { background: #4ade80; color: #1a1a2e; border: none; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 0.5rem; }
     .btn-danger { background: #f87171; color: #fff; border: none; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 0.5rem; }
     .btn-secondary { background: #16213e; color: #eee; border: 1px solid #0f3460; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 0.5rem; }
 
-    /* BUYIN CONTROLS */
     .buyin-card { background: #16213e; border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem; }
     .buyin-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
     .buyin-name { font-weight: 600; font-size: 1rem; color: #fff; flex: 1; }
@@ -51,19 +59,16 @@
     .buyin-count { font-size: 1.5rem; font-weight: 700; color: #fff; min-width: 2rem; text-align: center; }
     .buyin-info { font-size: 0.8rem; color: #888; }
 
-    /* PAYOUT */
     .payout-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
     .payout-label { font-size: 0.85rem; color: #888; width: 80px; }
     .payout-input { flex: 1; background: #0f3460; border: 1px solid #1a3a6e; border-radius: 8px; padding: 0.5rem 0.75rem; color: #fff; font-size: 1rem; }
     .payout-input:focus { outline: none; border-color: #4ade80; }
 
-    /* SPIELER AUSWAHL */
     .spieler-auswahl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
     .spieler-auswahl-btn { background: #16213e; border: 2px solid #0f3460; border-radius: 12px; padding: 0.875rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.15s; }
     .spieler-auswahl-btn.selected { border-color: #4ade80; background: #1a2e1a; }
     .spieler-auswahl-btn span { font-size: 0.9rem; font-weight: 600; color: #fff; }
 
-    /* NAV */
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #16213e; border-top: 1px solid #0f3460; display: flex; z-index: 10; }
     .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.6rem 0.25rem; cursor: pointer; gap: 0.2rem; border: none; background: none; color: #666; }
     .nav-item.active { color: #4ade80; }
@@ -84,7 +89,6 @@
     .info-box { background: #0f3460; border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #aaa; }
     .info-box strong { color: #fff; }
 
-    /* MODAL */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.open { display: flex; }
     .modal { background: #16213e; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; border: 1px solid #0f3460; }
@@ -107,40 +111,39 @@
 
 <div id="app-screen">
   <div class="header">
-    <div class="header-title" id="page-title">🃏 Poker App <span style="font-size:0.65rem;color:#888;font-weight:400;">v0.3</span></div>
-    <div class="header-avatar" id="user-avatar">👤</div>
+    <div class="header-left">
+      <div class="header-title" id="page-title">🃏 Poker App</div>
+      <div class="header-version">v0.4</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-status synced" id="sync-status" title="Sync-Status">
+        <div class="sync-dot"></div>
+        <span id="sync-label">OK</span>
+      </div>
+      <div class="header-avatar" id="user-avatar">👤</div>
+    </div>
   </div>
+
   <div class="user-menu" id="user-menu">
     <button id="btn-logout">🚪 Abmelden</button>
   </div>
 
   <div class="content">
-
-    <!-- HOME -->
     <div class="page active" id="page-home">
       <div id="home-content"><div class="loading"><div class="spinner"></div>Lade...</div></div>
     </div>
-
-    <!-- AKTUELLES SPIEL -->
     <div class="page" id="page-spiel">
       <div id="spiel-content"><div class="loading"><div class="spinner"></div>Lade...</div></div>
     </div>
-
-    <!-- VERLAUF -->
     <div class="page" id="page-verlauf">
       <div class="placeholder"><div class="emoji">📋</div><p>Spiel Verlauf kommt bald!</p></div>
     </div>
-
-    <!-- STATISTIK -->
     <div class="page" id="page-statistik">
       <div class="placeholder"><div class="emoji">🏆</div><p>Hand Statistik kommt bald!</p></div>
     </div>
-
-    <!-- TRANSAKTIONEN -->
     <div class="page" id="page-transaktionen">
       <div class="placeholder"><div class="emoji">💶</div><p>Transaktionen kommt bald!</p></div>
     </div>
-
   </div>
 
   <nav class="bottom-nav">
@@ -152,7 +155,6 @@
   </nav>
 </div>
 
-<!-- MODAL: Spieler auswählen -->
 <div class="modal-overlay" id="modal-spieler">
   <div class="modal">
     <h3>👥 Wer spielt heute?</h3>
@@ -167,6 +169,7 @@
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
+  const VERSION = '0.4';
   const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -176,12 +179,38 @@
   let aktuellesSpiel = null;
   let spielTeilnehmer = [];
 
+  console.log(`🃏 Poker App v${VERSION} gestartet`);
+
+  // ─── SYNC STATUS ─────────────────────────────────────
+  function setSyncStatus(status) {
+    const el = document.getElementById('sync-status');
+    const dot = el.querySelector('.sync-dot');
+    const label = document.getElementById('sync-label');
+    el.className = 'sync-status ' + status;
+    dot.className = 'sync-dot' + (status === 'pending' ? ' spinning' : '');
+    label.textContent = status === 'synced' ? 'OK' : status === 'pending' ? '...' : '!';
+    console.log(`🔄 Sync-Status: ${status}`);
+  }
+
+  async function autoSave(operation, description) {
+    setSyncStatus('pending');
+    console.log(`💾 Auto-Save: ${description}`);
+    try {
+      await operation();
+      setSyncStatus('synced');
+      console.log(`✅ Gespeichert: ${description}`);
+    } catch (err) {
+      setSyncStatus('error');
+      console.error(`❌ Fehler bei: ${description}`, err);
+    }
+  }
+
+  // ─── NAV ─────────────────────────────────────────────
   const titles = {
     home: '🃏 Poker App', spiel: '🎮 Aktuelles Spiel',
     verlauf: '📋 Spiel Verlauf', statistik: '🏆 Hand Statistik', transaktionen: '💶 Transaktionen'
   };
 
-  // NAV
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const page = btn.dataset.page;
@@ -194,7 +223,7 @@
     });
   });
 
-  // USER MENU
+  // ─── USER MENU ───────────────────────────────────────
   document.getElementById('user-avatar').addEventListener('click', () => {
     document.getElementById('user-menu').classList.toggle('open');
   });
@@ -207,7 +236,10 @@
   document.getElementById('btn-login').addEventListener('click', async () => {
     await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   });
-  document.getElementById('btn-logout').addEventListener('click', async () => { await db.auth.signOut(); });
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    console.log('👋 Abmelden...');
+    await db.auth.signOut();
+  });
 
   function showApp() {
     document.getElementById('login-screen').style.display = 'none';
@@ -215,6 +247,7 @@
     if (currentUser?.user_metadata?.avatar_url) {
       document.getElementById('user-avatar').innerHTML = `<img src="${currentUser.user_metadata.avatar_url}" alt="Avatar">`;
     }
+    console.log(`👤 Eingeloggt als: ${currentUser.email}`);
     loadHome();
   }
 
@@ -224,16 +257,19 @@
   }
 
   db.auth.onAuthStateChange((event, session) => {
+    console.log(`🔑 Auth Event: ${event}`);
     if (session) { currentUser = session.user; showApp(); }
     else { currentUser = null; showLogin(); }
   });
 
-  // ─── HOME ───────────────────────────────────────────
+  // ─── HOME ─────────────────────────────────────────────
   async function loadHome() {
     const el = document.getElementById('home-content');
+    console.log('🏠 Lade Home...');
     const { data: spieler, error } = await db.from('spieler').select('*').eq('aktiv', true).order('name');
     if (error || !spieler) { el.innerHTML = `<div class="placeholder"><div class="emoji">⚠️</div><p>Fehler beim Laden.</p></div>`; return; }
     alleSpieler = spieler;
+    console.log(`👥 ${spieler.length} Spieler geladen`);
     const ksClass = v => v > 0 ? 'pos' : v < 0 ? 'neg' : 'nul';
     let html = '';
     const ich = spieler.find(s => s.email === currentUser?.email);
@@ -254,34 +290,28 @@
     el.innerHTML = html;
   }
 
-  // ─── AKTUELLES SPIEL ────────────────────────────────
+  // ─── AKTUELLES SPIEL ──────────────────────────────────
   async function loadSpiel() {
     const el = document.getElementById('spiel-content');
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Lade...</div>`;
+    console.log('🎮 Lade aktuelles Spiel...');
 
-    // Offenes Spiel suchen
     const { data: spiele } = await db.from('spiele').select('*').eq('abgeschlossen', false).order('created_at', { ascending: false }).limit(1);
     aktuellesSpiel = spiele?.[0] || null;
 
     if (!aktuellesSpiel) {
-      // Kein offenes Spiel
+      console.log('ℹ️ Kein offenes Spiel gefunden');
       el.innerHTML = `
-        <div class="placeholder">
-          <div class="emoji">🃏</div>
-          <p style="margin-bottom:1.5rem;">Kein aktives Spiel.<br>Neues Spiel starten?</p>
-        </div>
+        <div class="placeholder"><div class="emoji">🃏</div><p style="margin-bottom:1.5rem;">Kein aktives Spiel.<br>Neues Spiel starten?</p></div>
         <button class="btn-primary" id="btn-neues-spiel">🎮 Neues Spiel starten</button>`;
       document.getElementById('btn-neues-spiel').addEventListener('click', zeigeSpielAuswahl);
       return;
     }
 
-    // Teilnehmer laden
-    const { data: teilnehmer } = await db
-      .from('spiel_teilnehmer')
-      .select('*, spieler(*)')
-      .eq('spiel_id', aktuellesSpiel.id);
+    console.log(`🎮 Offenes Spiel gefunden: ${aktuellesSpiel.id} (${aktuellesSpiel.datum})`);
+    const { data: teilnehmer } = await db.from('spiel_teilnehmer').select('*, spieler(*)').eq('spiel_id', aktuellesSpiel.id);
     spielTeilnehmer = teilnehmer || [];
-
+    console.log(`👥 ${spielTeilnehmer.length} Teilnehmer geladen`);
     renderSpiel();
   }
 
@@ -289,12 +319,8 @@
     const el = document.getElementById('spiel-content');
     const datum = new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const buyinPot = 5;
-    const buyinKassa = 2;
 
-    let html = `
-      <div class="info-box">
-        <strong>🗓 ${datum}</strong> · ${spielTeilnehmer.length} Spieler
-      </div>`;
+    let html = `<div class="info-box"><strong>🗓 ${datum}</strong> · ${spielTeilnehmer.length} Spieler</div>`;
 
     spielTeilnehmer.forEach(t => {
       const imPot = t.buyins * buyinPot;
@@ -305,93 +331,92 @@
             <div class="buyin-name">${t.spieler.name}</div>
           </div>
           <div class="buyin-controls">
-            <button class="buyin-btn buyin-btn-minus" onclick="buyinMinus('${t.id}')">−</button>
+            <button class="buyin-btn buyin-btn-minus" data-id="${t.id}">−</button>
             <div class="buyin-count" id="count-${t.id}">${t.buyins}</div>
-            <button class="buyin-btn buyin-btn-plus" onclick="buyinPlus('${t.id}')">+</button>
-            <div class="buyin-info">Im Pot: €${imPot.toFixed(2)}</div>
+            <button class="buyin-btn buyin-btn-plus" data-id="${t.id}">+</button>
+            <div class="buyin-info" id="pot-${t.id}">Im Pot: €${imPot.toFixed(2)}</div>
           </div>
           <div class="payout-row">
             <div class="payout-label">PayOut €</div>
-            <input type="number" class="payout-input" id="payout-${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00">
+            <input type="number" class="payout-input" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00">
           </div>
           <div class="payout-row">
             <div class="payout-label">Leihgabe €</div>
-            <input type="number" class="payout-input" id="leihgabe-${t.id}" value="${t.leihgabe}" min="0" step="0.01" placeholder="0.00">
+            <input type="number" class="payout-input" id="leihgabe-${t.id}" data-id="${t.id}" value="${t.leihgabe}" min="0" step="0.01" placeholder="0.00">
           </div>
         </div>`;
     });
 
-    html += `
-      <button class="btn-primary" id="btn-speichern" style="margin-top:1rem;">💾 Zwischenspeichern</button>
-      <button class="btn-danger" id="btn-abschliessen" style="margin-top:0.5rem;">✅ Spiel abschließen</button>`;
-
+    html += `<button class="btn-danger" id="btn-abschliessen" style="margin-top:1rem;">✅ Spiel abschließen</button>`;
     el.innerHTML = html;
 
-    document.getElementById('btn-speichern').addEventListener('click', speichernSpiel);
-document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
+    // BuyIn Buttons
+    el.querySelectorAll('.buyin-btn-plus').forEach(btn => {
+      btn.addEventListener('click', () => buyinChange(btn.dataset.id, +1));
+    });
+    el.querySelectorAll('.buyin-btn-minus').forEach(btn => {
+      btn.addEventListener('click', () => buyinChange(btn.dataset.id, -1));
+    });
 
-// Auto-save bei PayOut und Leihgabe
-spielTeilnehmer.forEach(t => {
-  document.getElementById('payout-' + t.id)?.addEventListener('change', async (e) => {
-    const payout = parseFloat(e.target.value) || 0;
-    await db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id);
-  });
-  document.getElementById('leihgabe-' + t.id)?.addEventListener('change', async (e) => {
-    const leihgabe = parseFloat(e.target.value) || 0;
-    await db.from('spiel_teilnehmer').update({ leihgabe }).eq('id', t.id);
-  });
-});
+    // Auto-save PayOut & Leihgabe
+    spielTeilnehmer.forEach(t => {
+      document.getElementById('payout-' + t.id)?.addEventListener('change', async (e) => {
+        const payout = parseFloat(e.target.value) || 0;
+        await autoSave(
+          () => db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id),
+          `PayOut ${t.spieler.name}: €${payout}`
+        );
+      });
+      document.getElementById('leihgabe-' + t.id)?.addEventListener('change', async (e) => {
+        const leihgabe = parseFloat(e.target.value) || 0;
+        await autoSave(
+          () => db.from('spiel_teilnehmer').update({ leihgabe }).eq('id', t.id),
+          `Leihgabe ${t.spieler.name}: €${leihgabe}`
+        );
+      });
+    });
+
+    document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
   }
 
-  window.buyinPlus = async (teilnehmerId) => {
+  async function buyinChange(teilnehmerId, delta) {
     const t = spielTeilnehmer.find(x => x.id === teilnehmerId);
-    if (!t) return;
-    t.buyins++;
+    if (!t || (delta < 0 && t.buyins <= 0)) return;
+    t.buyins += delta;
     document.getElementById('count-' + teilnehmerId).textContent = t.buyins;
-    await db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', teilnehmerId);
-  };
-
-  window.buyinMinus = async (teilnehmerId) => {
-    const t = spielTeilnehmer.find(x => x.id === teilnehmerId);
-    if (!t || t.buyins <= 0) return;
-    t.buyins--;
-    document.getElementById('count-' + teilnehmerId).textContent = t.buyins;
-    await db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', teilnehmerId);
-  };
-
-  async function speichernSpiel() {
-    for (const t of spielTeilnehmer) {
-      const payout = parseFloat(document.getElementById('payout-' + t.id)?.value) || 0;
-      const leihgabe = parseFloat(document.getElementById('leihgabe-' + t.id)?.value) || 0;
-      await db.from('spiel_teilnehmer').update({ payout, leihgabe }).eq('id', t.id);
-    }
-    alert('✅ Gespeichert!');
+    document.getElementById('pot-' + teilnehmerId).textContent = `Im Pot: €${(t.buyins * 5).toFixed(2)}`;
+    await autoSave(
+      () => db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', teilnehmerId),
+      `BuyIn ${t.spieler.name}: ${t.buyins}x`
+    );
   }
 
   async function schliesseSpielAb() {
-    if (!confirm('Spiel wirklich abschließen? Das kann nicht rückgängig gemacht werden.')) return;
-    await speichernSpiel();
+    if (!confirm('Spiel wirklich abschließen?')) return;
+    console.log('🏁 Schließe Spiel ab...');
     await db.from('spiele').update({ abgeschlossen: true }).eq('id', aktuellesSpiel.id);
+    console.log('✅ Spiel abgeschlossen');
     aktuellesSpiel = null;
     spielTeilnehmer = [];
     await loadSpiel();
     await loadHome();
   }
 
-  // SPIELER AUSWAHL MODAL
+  // ─── SPIELER AUSWAHL MODAL ────────────────────────────
   function zeigeSpielAuswahl() {
+    if (alleSpieler.length === 0) { alert('Bitte erst Home laden.'); return; }
     const spieler = alleSpieler.filter(s => !s.ist_bank);
     const liste = document.getElementById('spieler-auswahl-liste');
     liste.innerHTML = `<div class="spieler-auswahl">${spieler.map(s => `
-      <div class="spieler-auswahl-btn" data-id="${s.id}" onclick="toggleSpieler(this)">
-        <span class="spieler-avatar" style="width:40px;height:40px;font-size:1rem;background:#0f3460;border-radius:50%;display:flex;align-items:center;justify-content:center;">👤</span>
+      <div class="spieler-auswahl-btn" data-id="${s.id}">
+        <span style="font-size:1.5rem;">👤</span>
         <span>${s.name}</span>
-      </div>`).join('')}
-    </div>`;
+      </div>`).join('')}</div>`;
+    liste.querySelectorAll('.spieler-auswahl-btn').forEach(btn => {
+      btn.addEventListener('click', () => btn.classList.toggle('selected'));
+    });
     document.getElementById('modal-spieler').classList.add('open');
   }
-
-  window.toggleSpieler = (el) => { el.classList.toggle('selected'); };
 
   document.getElementById('modal-abbrechen').addEventListener('click', () => {
     document.getElementById('modal-spieler').classList.remove('open');
@@ -400,26 +425,21 @@ spielTeilnehmer.forEach(t => {
   document.getElementById('modal-bestaetigen').addEventListener('click', async () => {
     const selected = document.querySelectorAll('.spieler-auswahl-btn.selected');
     if (selected.length < 2) { alert('Bitte mindestens 2 Spieler auswählen!'); return; }
+    console.log(`🎮 Starte neues Spiel mit ${selected.length} Spielern...`);
 
-    // Neues Spiel erstellen
     const { data: neuesSpiel } = await db.from('spiele').insert({ datum: new Date().toISOString().split('T')[0] }).select().single();
-
-    // Teilnehmer einfügen
     const teilnehmerInserts = Array.from(selected).map(el => ({
-      spiel_id: neuesSpiel.id,
-      spieler_id: el.dataset.id,
-      buyins: 1,
-      payout: 0,
-      leihgabe: 0
+      spiel_id: neuesSpiel.id, spieler_id: el.dataset.id, buyins: 1, payout: 0, leihgabe: 0
     }));
     await db.from('spiel_teilnehmer').insert(teilnehmerInserts);
+    console.log(`✅ Neues Spiel erstellt: ${neuesSpiel.id}`);
 
     document.getElementById('modal-spieler').classList.remove('open');
     aktuellesSpiel = neuesSpiel;
     await loadSpiel();
   });
 
-  // INIT
+  // ─── INIT ─────────────────────────────────────────────
   const { data: { session } } = await db.auth.getSession();
   if (session) { currentUser = session.user; showApp(); }
 </script>
