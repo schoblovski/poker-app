@@ -1,12 +1,612 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Poker App 🃏</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .login-logo {
+      font-size: 5rem;
+    }
+
+    .login-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .login-subtitle {
+      color: #aaa;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #fff;
+      color: #333;
+      border: none;
+      border-radius: 12px;
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      max-width: 320px;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-google:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .btn-google img {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* APP SCREEN */
+    #app-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* HEADER */
+    .header {
+      background: #16213e;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #0f3460;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #0f3460;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .header-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* CONTENT */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      padding-bottom: 5rem;
+    }
+
+    /* SECTION */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 1rem 0 0.5rem;
+    }
+
+    /* SPIELER CARD */
+    .spieler-card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .spieler-card:hover {
+      background: #1a2a50;
+    }
+
+    .spieler-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #0f3460;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .spieler-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .spieler-info {
+      flex: 1;
+    }
+
+    .spieler-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #fff;
+    }
+
+    .spieler-spiele {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 0.15rem;
+    }
+
+    .spieler-kontostand {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .kontostand-positiv { color: #4ade80; }
+    .kontostand-negativ { color: #f87171; }
+    .kontostand-null { color: #888; }
+
+    /* BANK CARD */
+    .bank-card {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+
+    .bank-icon {
+      font-size: 2.5rem;
+    }
+
+    .bank-info { flex: 1; }
+    .bank-name { font-weight: 700; font-size: 1.1rem; color: #fff; }
+    .bank-sub { font-size: 0.8rem; color: #aaa; margin-top: 0.2rem; }
+
+    /* ICH CARD */
+    .ich-card {
+      background: linear-gradient(135deg, #0f3460, #16213e);
+      border: 1px solid #0f3460;
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: #16213e;
+      border-top: 1px solid #0f3460;
+      display: flex;
+      z-index: 10;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 0.25rem;
+      cursor: pointer;
+      gap: 0.2rem;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      color: #666;
+    }
+
+    .nav-item.active {
+      color: #4ade80;
+    }
+
+    .nav-item:hover {
+      background: #1a2a50;
+    }
+
+    .nav-icon { font-size: 1.3rem; }
+    .nav-label { font-size: 0.65rem; font-weight: 500; }
+
+    /* LOADING */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      color: #888;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #333;
+      border-top-color: #4ade80;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.75rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* NICHT AUTHORISIERT */
+    .nicht-auth {
+      text-align: center;
+      padding: 2rem;
+      color: #f87171;
+    }
+
+    /* PAGES */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* LOGOUT MENU */
+    .user-menu {
+      position: fixed;
+      top: 60px;
+      right: 1rem;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 0.5rem;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+
+    .user-menu.open { display: block; }
+
+    .user-menu button {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: none;
+      border: none;
+      color: #f87171;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .user-menu button:hover { background: #1a2a50; }
+
+    /* PLACEHOLDER PAGES */
+    .placeholder {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #666;
+    }
+    .placeholder .emoji { font-size: 3rem; margin-bottom: 1rem; }
+    .placeholder p { font-size: 0.9rem; }
+  </style>
 </head>
 <body>
-    <h1>🃏 Hello World!</h1>
-    <p>Meine Poker App – coming soon.</p>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-logo">🃏</div>
+  <div class="login-title">Poker App</div>
+  <div class="login-subtitle">Melde dich an um fortzufahren</div>
+  <button class="btn-google" onclick="loginWithGoogle()">
+    <img src="https://www.google.com/favicon.ico" alt="Google">
+    Mit Google anmelden
+  </button>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title" id="page-title">🃏 Poker App</div>
+    <div class="header-avatar" id="user-avatar" onclick="toggleUserMenu()">👤</div>
+  </div>
+
+  <!-- USER MENU -->
+  <div class="user-menu" id="user-menu">
+    <button onclick="logout()">🚪 Abmelden</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div id="home-content">
+        <div class="loading"><div class="spinner"></div> Lade...</div>
+      </div>
+    </div>
+
+    <!-- AKTUELLES SPIEL -->
+    <div class="page" id="page-spiel">
+      <div class="placeholder">
+        <div class="emoji">🎮</div>
+        <p>Aktuelles Spiel<br>kommt bald!</p>
+      </div>
+    </div>
+
+    <!-- SPIEL VERLAUF -->
+    <div class="page" id="page-verlauf">
+      <div class="placeholder">
+        <div class="emoji">📋</div>
+        <p>Spiel Verlauf<br>kommt bald!</p>
+      </div>
+    </div>
+
+    <!-- HAND STATISTIK -->
+    <div class="page" id="page-statistik">
+      <div class="placeholder">
+        <div class="emoji">🏆</div>
+        <p>Hand Statistik<br>kommt bald!</p>
+      </div>
+    </div>
+
+    <!-- TRANSAKTIONEN -->
+    <div class="page" id="page-transaktionen">
+      <div class="placeholder">
+        <div class="emoji">💶</div>
+        <p>Transaktionen<br>kommt bald!</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showPage('home', this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" onclick="showPage('spiel', this)">
+      <span class="nav-icon">🎮</span>
+      <span class="nav-label">Akt. Spiel</span>
+    </button>
+    <button class="nav-item" onclick="showPage('verlauf', this)">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Verlauf</span>
+    </button>
+    <button class="nav-item" onclick="showPage('statistik', this)">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">Statistik</span>
+    </button>
+    <button class="nav-item" onclick="showPage('transaktionen', this)">
+      <span class="nav-icon">💶</span>
+      <span class="nav-label">Transakt.</span>
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentUser = null;
+
+  // AUTH CHECK
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      showApp();
+    } else {
+      showLogin();
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        currentUser = session.user;
+        showApp();
+      } else {
+        currentUser = null;
+        showLogin();
+      }
+    });
+  }
+
+  async function loginWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.href
+      }
+    });
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    document.getElementById('user-menu').classList.remove('open');
+  }
+
+  function toggleUserMenu() {
+    document.getElementById('user-menu').classList.toggle('open');
+  }
+
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('user-menu');
+    const avatar = document.getElementById('user-avatar');
+    if (!menu.contains(e.target) && !avatar.contains(e.target)) {
+      menu.classList.remove('open');
+    }
+  });
+
+  function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'flex';
+
+    // Avatar setzen
+    if (currentUser?.user_metadata?.avatar_url) {
+      document.getElementById('user-avatar').innerHTML =
+        `<img src="${currentUser.user_metadata.avatar_url}" alt="Avatar">`;
+    }
+
+    loadHome();
+  }
+
+  // NAVIGATION
+  function showPage(page, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    btn.classList.add('active');
+
+    const titles = {
+      home: '🃏 Poker App',
+      spiel: '🎮 Aktuelles Spiel',
+      verlauf: '📋 Spiel Verlauf',
+      statistik: '🏆 Hand Statistik',
+      transaktionen: '💶 Transaktionen'
+    };
+    document.getElementById('page-title').textContent = titles[page];
+  }
+
+  // HOME: Spieler laden
+  async function loadHome() {
+    const el = document.getElementById('home-content');
+
+    const { data: spieler, error } = await supabase
+      .from('spieler')
+      .select('*')
+      .eq('aktiv', true)
+      .order('name');
+
+    if (error) {
+      el.innerHTML = `<div class="nicht-auth">⚠️ Fehler beim Laden der Daten.<br>Bitte Admin kontaktieren.</div>`;
+      return;
+    }
+
+    if (!spieler || spieler.length === 0) {
+      el.innerHTML = `<div class="placeholder"><div class="emoji">👥</div><p>Noch keine Spieler vorhanden.<br>Admin muss Spieler anlegen.</p></div>`;
+      return;
+    }
+
+    // Kontostand berechnen (wird später aus Transaktionen kommen)
+    let html = '';
+
+    // ICH-Karte (aktuell eingeloggter Spieler)
+    const ichSpieler = spieler.find(s => s.email === currentUser?.email);
+    if (ichSpieler) {
+      const ks = ichSpieler.kontostand || 0;
+      const ksClass = ks > 0 ? 'kontostand-positiv' : ks < 0 ? 'kontostand-negativ' : 'kontostand-null';
+      html += `
+        <div class="section-title">Ich</div>
+        <div class="ich-card">
+          <div class="spieler-avatar">${ichSpieler.profilbild ? `<img src="${ichSpieler.profilbild}">` : '👤'}</div>
+          <div class="spieler-info">
+            <div class="spieler-name">${ichSpieler.name}</div>
+            <div class="spieler-spiele">Eingeloggt</div>
+          </div>
+          <div class="spieler-kontostand ${ksClass}">€${ks.toFixed(2)}</div>
+        </div>`;
+    }
+
+    // Restliche Spieler
+    const restliche = spieler.filter(s => s.email !== currentUser?.email && !s.ist_bank);
+    const bank = spieler.find(s => s.ist_bank);
+
+    if (bank) {
+      html += `
+        <div class="section-title">Bank</div>
+        <div class="bank-card">
+          <div class="bank-icon">🏦</div>
+          <div class="bank-info">
+            <div class="bank-name">Bank</div>
+            <div class="bank-sub">Pokerkasse & Sparbuch</div>
+          </div>
+        </div>`;
+    }
+
+    html += `<div class="section-title">Spieler (${restliche.length})</div>`;
+    restliche.forEach(s => {
+      const ks = s.kontostand || 0;
+      const ksClass = ks > 0 ? 'kontostand-positiv' : ks < 0 ? 'kontostand-negativ' : 'kontostand-null';
+      html += `
+        <div class="spieler-card">
+          <div class="spieler-avatar">${s.profilbild ? `<img src="${s.profilbild}">` : '👤'}</div>
+          <div class="spieler-info">
+            <div class="spieler-name">${s.name}</div>
+          </div>
+          <div class="spieler-kontostand ${ksClass}">€${ks.toFixed(2)}</div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
+  }
+
+  init();
+</script>
 </body>
 </html>
