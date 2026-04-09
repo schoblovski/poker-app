@@ -395,7 +395,7 @@
     const teilnehmerInserts = Array.from(selected).map(el => ({
       spiel_id: neuesSpiel.id,
       spieler_id: el.dataset.id,
-      buyins: 0,
+      buyins: 1,
       payout: 0,
       leihgabe: 0
     }));
