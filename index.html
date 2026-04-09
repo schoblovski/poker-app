@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="version" content="0.4">
+  <meta name="version" content="0.5">
   <title>Poker App 🃏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
   <style>
@@ -23,32 +23,37 @@
     .header-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
     .header-version { font-size: 0.65rem; color: #888; font-weight: 400; }
     .header-right { display: flex; align-items: center; gap: 0.75rem; }
-
-    /* SYNC STATUS */
     .sync-status { font-size: 0.75rem; display: flex; align-items: center; gap: 0.3rem; transition: all 0.3s; }
     .sync-status.synced { color: #4ade80; }
     .sync-status.pending { color: #facc15; }
     .sync-status.error { color: #f87171; }
     .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
     .sync-dot.spinning { animation: spin 1s linear infinite; border-radius: 0; width: 10px; height: 10px; border: 2px solid transparent; border-top-color: currentColor; background: none; }
-
     .header-avatar { width: 36px; height: 36px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; overflow: hidden; }
     .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .content { flex: 1; overflow-y: auto; padding: 1rem; padding-bottom: 5rem; }
     .section-title { font-size: 0.75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.5rem; }
 
+    /* SPIELER CARDS */
     .spieler-card { background: #16213e; border-radius: 12px; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.875rem; margin-bottom: 0.5rem; }
-    .spieler-avatar { width: 48px; height: 48px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+    .spieler-card.inaktiv { opacity: 0.5; }
+    .avatar { width: 48px; height: 48px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar.sm { width: 40px; height: 40px; font-size: 1rem; }
     .spieler-info { flex: 1; }
     .spieler-name { font-weight: 600; font-size: 1rem; color: #fff; }
+    .spieler-email { font-size: 0.75rem; color: #888; margin-top: 0.15rem; }
     .spieler-kontostand { font-weight: 700; font-size: 1rem; }
     .pos { color: #4ade80; } .neg { color: #f87171; } .nul { color: #888; }
 
+    /* BUTTONS */
     .btn-primary { background: #4ade80; color: #1a1a2e; border: none; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 0.5rem; }
     .btn-danger { background: #f87171; color: #fff; border: none; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 0.5rem; }
     .btn-secondary { background: #16213e; color: #eee; border: 1px solid #0f3460; border-radius: 12px; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0.25rem; }
 
+    /* BUYIN */
     .buyin-card { background: #16213e; border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem; }
     .buyin-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
     .buyin-name { font-weight: 600; font-size: 1rem; color: #fff; flex: 1; }
@@ -58,17 +63,24 @@
     .buyin-btn-plus { background: #4ade80; color: #1a1a2e; }
     .buyin-count { font-size: 1.5rem; font-weight: 700; color: #fff; min-width: 2rem; text-align: center; }
     .buyin-info { font-size: 0.8rem; color: #888; }
-
     .payout-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
     .payout-label { font-size: 0.85rem; color: #888; width: 80px; }
     .payout-input { flex: 1; background: #0f3460; border: 1px solid #1a3a6e; border-radius: 8px; padding: 0.5rem 0.75rem; color: #fff; font-size: 1rem; }
     .payout-input:focus { outline: none; border-color: #4ade80; }
 
+    /* SPIELER AUSWAHL */
     .spieler-auswahl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
     .spieler-auswahl-btn { background: #16213e; border: 2px solid #0f3460; border-radius: 12px; padding: 0.875rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.15s; }
     .spieler-auswahl-btn.selected { border-color: #4ade80; background: #1a2e1a; }
     .spieler-auswahl-btn span { font-size: 0.9rem; font-weight: 600; color: #fff; }
 
+    /* FORM */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { font-size: 0.85rem; color: #888; margin-bottom: 0.4rem; display: block; }
+    .form-input { width: 100%; background: #0f3460; border: 1px solid #1a3a6e; border-radius: 8px; padding: 0.75rem; color: #fff; font-size: 1rem; }
+    .form-input:focus { outline: none; border-color: #4ade80; }
+
+    /* NAV */
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #16213e; border-top: 1px solid #0f3460; display: flex; z-index: 10; }
     .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.6rem 0.25rem; cursor: pointer; gap: 0.2rem; border: none; background: none; color: #666; }
     .nav-item.active { color: #4ade80; }
@@ -77,24 +89,30 @@
     .loading { display: flex; align-items: center; justify-content: center; padding: 3rem; color: #888; }
     .spinner { width: 32px; height: 32px; border: 3px solid #333; border-top-color: #4ade80; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 0.75rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .page { display: none; } .page.active { display: block; }
     .placeholder { text-align: center; padding: 3rem 1rem; color: #666; }
     .placeholder .emoji { font-size: 3rem; margin-bottom: 1rem; }
 
-    .user-menu { position: fixed; top: 60px; right: 1rem; background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 0.5rem; z-index: 100; display: none; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+    .user-menu { position: fixed; top: 60px; right: 1rem; background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 0.5rem; z-index: 100; display: none; box-shadow: 0 8px 30px rgba(0,0,0,0.5); min-width: 180px; }
     .user-menu.open { display: block; }
-    .user-menu button { display: block; width: 100%; padding: 0.75rem 1rem; background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.9rem; border-radius: 8px; text-align: left; }
+    .user-menu button { display: block; width: 100%; padding: 0.75rem 1rem; background: none; border: none; color: #eee; cursor: pointer; font-size: 0.9rem; border-radius: 8px; text-align: left; }
+    .user-menu button:hover { background: #1a2a50; }
+    .user-menu button.danger { color: #f87171; }
+    .user-menu hr { border: none; border-top: 1px solid #0f3460; margin: 0.25rem 0; }
 
     .info-box { background: #0f3460; border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #aaa; }
     .info-box strong { color: #fff; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #16213e; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; border: 1px solid #0f3460; }
+    .modal { background: #16213e; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 400px; border: 1px solid #0f3460; max-height: 90vh; overflow-y: auto; }
     .modal h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: #fff; }
     .modal-buttons { display: flex; gap: 0.5rem; margin-top: 1rem; }
     .modal-buttons button { flex: 1; }
+
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+    .badge-active { background: #1a2e1a; color: #4ade80; }
+    .badge-inactive { background: #2e1a1a; color: #f87171; }
   </style>
 </head>
 <body>
@@ -113,10 +131,10 @@
   <div class="header">
     <div class="header-left">
       <div class="header-title" id="page-title">🃏 Poker App</div>
-      <div class="header-version">v0.4</div>
+      <div class="header-version">v0.5</div>
     </div>
     <div class="header-right">
-      <div class="sync-status synced" id="sync-status" title="Sync-Status">
+      <div class="sync-status synced" id="sync-status">
         <div class="sync-dot"></div>
         <span id="sync-label">OK</span>
       </div>
@@ -125,7 +143,9 @@
   </div>
 
   <div class="user-menu" id="user-menu">
-    <button id="btn-logout">🚪 Abmelden</button>
+    <button id="btn-spielerverwaltung">👥 Spielerverwaltung</button>
+    <hr>
+    <button class="danger" id="btn-logout">🚪 Abmelden</button>
   </div>
 
   <div class="content">
@@ -144,6 +164,9 @@
     <div class="page" id="page-transaktionen">
       <div class="placeholder"><div class="emoji">💶</div><p>Transaktionen kommt bald!</p></div>
     </div>
+    <div class="page" id="page-verwaltung">
+      <div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Lade...</div></div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
@@ -155,6 +178,7 @@
   </nav>
 </div>
 
+<!-- MODAL: Spieler auswählen -->
 <div class="modal-overlay" id="modal-spieler">
   <div class="modal">
     <h3>👥 Wer spielt heute?</h3>
@@ -166,10 +190,29 @@
   </div>
 </div>
 
+<!-- MODAL: Neuer Spieler -->
+<div class="modal-overlay" id="modal-neuer-spieler">
+  <div class="modal">
+    <h3>👤 Neuer Spieler</h3>
+    <div class="form-group">
+      <label class="form-label">Name *</label>
+      <input type="text" class="form-input" id="neuer-name" placeholder="z.B. Thomas">
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-Mail (für Login)</label>
+      <input type="email" class="form-input" id="neuer-email" placeholder="z.B. thomas@gmail.com">
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-secondary" id="modal-neuer-abbrechen">Abbrechen</button>
+      <button class="btn-primary" id="modal-neuer-speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-  const VERSION = '0.4';
+  const VERSION = '0.5';
   const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -181,7 +224,7 @@
 
   console.log(`🃏 Poker App v${VERSION} gestartet`);
 
-  // ─── SYNC STATUS ─────────────────────────────────────
+  // ─── SYNC STATUS ──────────────────────────────────────
   function setSyncStatus(status) {
     const el = document.getElementById('sync-status');
     const dot = el.querySelector('.sync-dot');
@@ -189,41 +232,51 @@
     el.className = 'sync-status ' + status;
     dot.className = 'sync-dot' + (status === 'pending' ? ' spinning' : '');
     label.textContent = status === 'synced' ? 'OK' : status === 'pending' ? '...' : '!';
-    console.log(`🔄 Sync-Status: ${status}`);
+    console.log(`🔄 Sync: ${status}`);
   }
 
   async function autoSave(operation, description) {
     setSyncStatus('pending');
-    console.log(`💾 Auto-Save: ${description}`);
+    console.log(`💾 Speichere: ${description}`);
     try {
       await operation();
       setSyncStatus('synced');
-      console.log(`✅ Gespeichert: ${description}`);
+      console.log(`✅ OK: ${description}`);
     } catch (err) {
       setSyncStatus('error');
-      console.error(`❌ Fehler bei: ${description}`, err);
+      console.error(`❌ Fehler: ${description}`, err);
     }
   }
 
-  // ─── NAV ─────────────────────────────────────────────
+  // ─── AVATAR HTML ──────────────────────────────────────
+  function avatarHtml(spieler, size = '') {
+    const cls = `avatar${size ? ' ' + size : ''}`;
+    if (spieler?.profilbild) return `<div class="${cls}"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`;
+    return `<div class="${cls}">👤</div>`;
+  }
+
+  // ─── NAV ──────────────────────────────────────────────
   const titles = {
     home: '🃏 Poker App', spiel: '🎮 Aktuelles Spiel',
-    verlauf: '📋 Spiel Verlauf', statistik: '🏆 Hand Statistik', transaktionen: '💶 Transaktionen'
+    verlauf: '📋 Spiel Verlauf', statistik: '🏆 Hand Statistik',
+    transaktionen: '💶 Transaktionen', verwaltung: '👥 Spielerverwaltung'
   };
 
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+    document.getElementById('page-title').textContent = titles[page];
+    if (page === 'spiel') loadSpiel();
+    if (page === 'verwaltung') loadVerwaltung();
+  }
+
   document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const page = btn.dataset.page;
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      document.getElementById('page-' + page).classList.add('active');
-      btn.classList.add('active');
-      document.getElementById('page-title').textContent = titles[page];
-      if (page === 'spiel') loadSpiel();
-    });
+    btn.addEventListener('click', () => showPage(btn.dataset.page));
   });
 
-  // ─── USER MENU ───────────────────────────────────────
+  // ─── USER MENU ────────────────────────────────────────
   document.getElementById('user-avatar').addEventListener('click', () => {
     document.getElementById('user-menu').classList.toggle('open');
   });
@@ -232,7 +285,10 @@
       document.getElementById('user-menu').classList.remove('open');
     }
   });
-
+  document.getElementById('btn-spielerverwaltung').addEventListener('click', () => {
+    document.getElementById('user-menu').classList.remove('open');
+    showPage('verwaltung');
+  });
   document.getElementById('btn-login').addEventListener('click', async () => {
     await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   });
@@ -241,32 +297,32 @@
     await db.auth.signOut();
   });
 
+  // ─── AUTH ─────────────────────────────────────────────
   async function showApp() {
     document.getElementById('login-screen').style.display = 'none';
-    
-    // Prüfen ob User als Spieler registriert ist
     console.log(`🔍 Prüfe Zugang für: ${currentUser.email}`);
     const { data: spieler } = await db.from('spieler').select('*').eq('email', currentUser.email).eq('aktiv', true).single();
-    
     if (!spieler) {
-      console.warn(`🚫 Zugang verweigert für: ${currentUser.email}`);
+      console.warn(`🚫 Kein Zugang: ${currentUser.email}`);
       document.getElementById('login-screen').style.display = 'flex';
       document.getElementById('login-screen').innerHTML = `
         <div class="login-logo">🚫</div>
         <div class="login-title">Kein Zugang</div>
         <div class="login-subtitle">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div>
         <button class="btn-google" id="btn-logout-unauth">Abmelden</button>`;
-      document.getElementById('btn-logout-unauth').addEventListener('click', async () => {
-        await db.auth.signOut();
-        location.reload();
-      });
+      document.getElementById('btn-logout-unauth').addEventListener('click', async () => { await db.auth.signOut(); location.reload(); });
       return;
     }
-
-    console.log(`✅ Zugang gewährt für: ${spieler.name}`);
+    // Profilbild aus Google-Login speichern falls noch nicht vorhanden
+    const googleAvatar = currentUser?.user_metadata?.avatar_url;
+    if (googleAvatar && !spieler.profilbild) {
+      console.log('📸 Speichere Google-Profilbild...');
+      await db.from('spieler').update({ profilbild: googleAvatar }).eq('id', spieler.id);
+    }
+    console.log(`✅ Willkommen: ${spieler.name}`);
     document.getElementById('app-screen').style.display = 'flex';
-    if (currentUser?.user_metadata?.avatar_url) {
-      document.getElementById('user-avatar').innerHTML = `<img src="${currentUser.user_metadata.avatar_url}" alt="Avatar">`;
+    if (googleAvatar) {
+      document.getElementById('user-avatar').innerHTML = `<img src="${googleAvatar}" alt="Avatar">`;
     }
     loadHome();
   }
@@ -277,7 +333,7 @@
   }
 
   db.auth.onAuthStateChange((event, session) => {
-    console.log(`🔑 Auth Event: ${event}`);
+    console.log(`🔑 Auth: ${event}`);
     if (session) { currentUser = session.user; showApp(); }
     else { currentUser = null; showLogin(); }
   });
@@ -297,57 +353,138 @@
     const rest = spieler.filter(s => s.email !== currentUser?.email && !s.ist_bank);
     if (ich) {
       const ks = ich.kontostand || 0;
-      html += `<div class="section-title">Ich</div><div class="spieler-card"><div class="spieler-avatar">👤</div><div class="spieler-info"><div class="spieler-name">${ich.name}</div></div><div class="spieler-kontostand ${ksClass(ks)}">€${ks.toFixed(2)}</div></div>`;
+      html += `<div class="section-title">Ich</div>
+        <div class="spieler-card">${avatarHtml(ich)}<div class="spieler-info"><div class="spieler-name">${ich.name}</div></div><div class="spieler-kontostand ${ksClass(ks)}">€${ks.toFixed(2)}</div></div>`;
     }
     if (bankSpieler) {
-      html += `<div class="section-title">Bank</div><div class="spieler-card" style="background:#0f3460;"><div class="spieler-avatar">🏦</div><div class="spieler-info"><div class="spieler-name">Bank</div></div><div class="spieler-kontostand pos">€0.00</div></div>`;
+      html += `<div class="section-title">Bank</div>
+        <div class="spieler-card" style="background:#0f3460;"><div class="avatar">🏦</div><div class="spieler-info"><div class="spieler-name">Bank</div></div><div class="spieler-kontostand pos">€0.00</div></div>`;
     }
     html += `<div class="section-title">Alle Spieler</div>`;
     rest.forEach(s => {
       const ks = s.kontostand || 0;
-      html += `<div class="spieler-card"><div class="spieler-avatar">👤</div><div class="spieler-info"><div class="spieler-name">${s.name}</div></div><div class="spieler-kontostand ${ksClass(ks)}">€${ks.toFixed(2)}</div></div>`;
+      html += `<div class="spieler-card">${avatarHtml(s)}<div class="spieler-info"><div class="spieler-name">${s.name}</div></div><div class="spieler-kontostand ${ksClass(ks)}">€${ks.toFixed(2)}</div></div>`;
     });
     el.innerHTML = html;
   }
+
+  // ─── SPIELERVERWALTUNG ────────────────────────────────
+  async function loadVerwaltung() {
+    const el = document.getElementById('verwaltung-content');
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Lade...</div>`;
+    console.log('👥 Lade Spielerverwaltung...');
+    const { data: spieler } = await db.from('spieler').select('*').order('name');
+    if (!spieler) { el.innerHTML = `<div class="placeholder"><div class="emoji">⚠️</div><p>Fehler.</p></div>`; return; }
+    console.log(`👥 ${spieler.length} Spieler geladen`);
+
+    const aktive = spieler.filter(s => s.aktiv && !s.ist_bank);
+    const inaktive = spieler.filter(s => !s.aktiv);
+
+    let html = `<button class="btn-primary" id="btn-neuer-spieler" style="margin-bottom:1rem;">+ Neuer Spieler</button>`;
+
+    html += `<div class="section-title">Aktive Spieler (${aktive.length})</div>`;
+    aktive.forEach(s => {
+      html += `
+        <div class="spieler-card">
+          ${avatarHtml(s)}
+          <div class="spieler-info">
+            <div class="spieler-name">${s.name}</div>
+            <div class="spieler-email">${s.email || 'Keine E-Mail'}</div>
+          </div>
+          <button class="btn-icon" data-id="${s.id}" data-aktiv="true" title="Deaktivieren">🚫</button>
+        </div>`;
+    });
+
+    if (inaktive.length > 0) {
+      html += `<div class="section-title">Inaktive Spieler (${inaktive.length})</div>`;
+      inaktive.forEach(s => {
+        html += `
+          <div class="spieler-card inaktiv">
+            ${avatarHtml(s)}
+            <div class="spieler-info">
+              <div class="spieler-name">${s.name}</div>
+              <div class="spieler-email">${s.email || 'Keine E-Mail'}</div>
+            </div>
+            <button class="btn-icon" data-id="${s.id}" data-aktiv="false" title="Aktivieren">✅</button>
+          </div>`;
+      });
+    }
+
+    el.innerHTML = html;
+
+    document.getElementById('btn-neuer-spieler').addEventListener('click', () => {
+      document.getElementById('neuer-name').value = '';
+      document.getElementById('neuer-email').value = '';
+      document.getElementById('modal-neuer-spieler').classList.add('open');
+    });
+
+    el.querySelectorAll('.btn-icon[data-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const istAktiv = btn.dataset.aktiv === 'true';
+        const neuerStatus = !istAktiv;
+        const name = btn.closest('.spieler-card').querySelector('.spieler-name').textContent;
+        console.log(`🔄 ${name}: aktiv → ${neuerStatus}`);
+        await autoSave(
+          () => db.from('spieler').update({ aktiv: neuerStatus }).eq('id', id),
+          `${name} ${neuerStatus ? 'aktiviert' : 'deaktiviert'}`
+        );
+        await loadVerwaltung();
+        await loadHome();
+      });
+    });
+  }
+
+  // Neuer Spieler Modal
+  document.getElementById('modal-neuer-abbrechen').addEventListener('click', () => {
+    document.getElementById('modal-neuer-spieler').classList.remove('open');
+  });
+
+  document.getElementById('modal-neuer-speichern').addEventListener('click', async () => {
+    const name = document.getElementById('neuer-name').value.trim();
+    const email = document.getElementById('neuer-email').value.trim() || null;
+    if (!name) { alert('Bitte einen Namen eingeben!'); return; }
+    console.log(`👤 Neuer Spieler: ${name} (${email})`);
+    await autoSave(
+      () => db.from('spieler').insert({ name, email, aktiv: true }),
+      `Neuer Spieler: ${name}`
+    );
+    document.getElementById('modal-neuer-spieler').classList.remove('open');
+    await loadVerwaltung();
+    await loadHome();
+  });
 
   // ─── AKTUELLES SPIEL ──────────────────────────────────
   async function loadSpiel() {
     const el = document.getElementById('spiel-content');
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Lade...</div>`;
-    console.log('🎮 Lade aktuelles Spiel...');
-
+    console.log('🎮 Lade Spiel...');
     const { data: spiele } = await db.from('spiele').select('*').eq('abgeschlossen', false).order('created_at', { ascending: false }).limit(1);
     aktuellesSpiel = spiele?.[0] || null;
-
     if (!aktuellesSpiel) {
-      console.log('ℹ️ Kein offenes Spiel gefunden');
+      console.log('ℹ️ Kein offenes Spiel');
       el.innerHTML = `
-        <div class="placeholder"><div class="emoji">🃏</div><p style="margin-bottom:1.5rem;">Kein aktives Spiel.<br>Neues Spiel starten?</p></div>
+        <div class="placeholder"><div class="emoji">🃏</div><p style="margin-bottom:1.5rem;">Kein aktives Spiel.</p></div>
         <button class="btn-primary" id="btn-neues-spiel">🎮 Neues Spiel starten</button>`;
       document.getElementById('btn-neues-spiel').addEventListener('click', zeigeSpielAuswahl);
       return;
     }
-
-    console.log(`🎮 Offenes Spiel gefunden: ${aktuellesSpiel.id} (${aktuellesSpiel.datum})`);
+    console.log(`🎮 Spiel: ${aktuellesSpiel.id}`);
     const { data: teilnehmer } = await db.from('spiel_teilnehmer').select('*, spieler(*)').eq('spiel_id', aktuellesSpiel.id);
     spielTeilnehmer = teilnehmer || [];
-    console.log(`👥 ${spielTeilnehmer.length} Teilnehmer geladen`);
     renderSpiel();
   }
 
   function renderSpiel() {
     const el = document.getElementById('spiel-content');
     const datum = new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const buyinPot = 5;
-
     let html = `<div class="info-box"><strong>🗓 ${datum}</strong> · ${spielTeilnehmer.length} Spieler</div>`;
-
     spielTeilnehmer.forEach(t => {
-      const imPot = t.buyins * buyinPot;
+      const imPot = t.buyins * 5;
       html += `
-        <div class="buyin-card" id="card-${t.id}">
+        <div class="buyin-card">
           <div class="buyin-header">
-            <div class="spieler-avatar" style="width:40px;height:40px;font-size:1rem;">👤</div>
+            ${avatarHtml(t.spieler, 'sm')}
             <div class="buyin-name">${t.spieler.name}</div>
           </div>
           <div class="buyin-controls">
@@ -358,44 +495,29 @@
           </div>
           <div class="payout-row">
             <div class="payout-label">PayOut €</div>
-            <input type="number" class="payout-input" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00">
+            <input type="number" class="payout-input" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01">
           </div>
           <div class="payout-row">
             <div class="payout-label">Leihgabe €</div>
-            <input type="number" class="payout-input" id="leihgabe-${t.id}" data-id="${t.id}" value="${t.leihgabe}" min="0" step="0.01" placeholder="0.00">
+            <input type="number" class="payout-input" id="leihgabe-${t.id}" data-id="${t.id}" value="${t.leihgabe}" min="0" step="0.01">
           </div>
         </div>`;
     });
-
     html += `<button class="btn-danger" id="btn-abschliessen" style="margin-top:1rem;">✅ Spiel abschließen</button>`;
     el.innerHTML = html;
 
-    // BuyIn Buttons
-    el.querySelectorAll('.buyin-btn-plus').forEach(btn => {
-      btn.addEventListener('click', () => buyinChange(btn.dataset.id, +1));
-    });
-    el.querySelectorAll('.buyin-btn-minus').forEach(btn => {
-      btn.addEventListener('click', () => buyinChange(btn.dataset.id, -1));
-    });
-
-    // Auto-save PayOut & Leihgabe
+    el.querySelectorAll('.buyin-btn-plus').forEach(btn => btn.addEventListener('click', () => buyinChange(btn.dataset.id, +1)));
+    el.querySelectorAll('.buyin-btn-minus').forEach(btn => btn.addEventListener('click', () => buyinChange(btn.dataset.id, -1)));
     spielTeilnehmer.forEach(t => {
-      document.getElementById('payout-' + t.id)?.addEventListener('change', async (e) => {
+      document.getElementById('payout-' + t.id)?.addEventListener('change', async e => {
         const payout = parseFloat(e.target.value) || 0;
-        await autoSave(
-          () => db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id),
-          `PayOut ${t.spieler.name}: €${payout}`
-        );
+        await autoSave(() => db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id), `PayOut ${t.spieler.name}: €${payout}`);
       });
-      document.getElementById('leihgabe-' + t.id)?.addEventListener('change', async (e) => {
+      document.getElementById('leihgabe-' + t.id)?.addEventListener('change', async e => {
         const leihgabe = parseFloat(e.target.value) || 0;
-        await autoSave(
-          () => db.from('spiel_teilnehmer').update({ leihgabe }).eq('id', t.id),
-          `Leihgabe ${t.spieler.name}: €${leihgabe}`
-        );
+        await autoSave(() => db.from('spiel_teilnehmer').update({ leihgabe }).eq('id', t.id), `Leihgabe ${t.spieler.name}: €${leihgabe}`);
       });
     });
-
     document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
   }
 
@@ -405,55 +527,37 @@
     t.buyins += delta;
     document.getElementById('count-' + teilnehmerId).textContent = t.buyins;
     document.getElementById('pot-' + teilnehmerId).textContent = `Im Pot: €${(t.buyins * 5).toFixed(2)}`;
-    await autoSave(
-      () => db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', teilnehmerId),
-      `BuyIn ${t.spieler.name}: ${t.buyins}x`
-    );
+    await autoSave(() => db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', teilnehmerId), `BuyIn ${t.spieler.name}: ${t.buyins}x`);
   }
 
   async function schliesseSpielAb() {
     if (!confirm('Spiel wirklich abschließen?')) return;
     console.log('🏁 Schließe Spiel ab...');
     await db.from('spiele').update({ abgeschlossen: true }).eq('id', aktuellesSpiel.id);
-    console.log('✅ Spiel abgeschlossen');
-    aktuellesSpiel = null;
-    spielTeilnehmer = [];
-    await loadSpiel();
-    await loadHome();
+    aktuellesSpiel = null; spielTeilnehmer = [];
+    await loadSpiel(); await loadHome();
   }
 
   // ─── SPIELER AUSWAHL MODAL ────────────────────────────
   function zeigeSpielAuswahl() {
-    if (alleSpieler.length === 0) { alert('Bitte erst Home laden.'); return; }
     const spieler = alleSpieler.filter(s => !s.ist_bank);
     const liste = document.getElementById('spieler-auswahl-liste');
     liste.innerHTML = `<div class="spieler-auswahl">${spieler.map(s => `
       <div class="spieler-auswahl-btn" data-id="${s.id}">
-        <span style="font-size:1.5rem;">👤</span>
+        ${avatarHtml(s)}
         <span>${s.name}</span>
       </div>`).join('')}</div>`;
-    liste.querySelectorAll('.spieler-auswahl-btn').forEach(btn => {
-      btn.addEventListener('click', () => btn.classList.toggle('selected'));
-    });
+    liste.querySelectorAll('.spieler-auswahl-btn').forEach(btn => btn.addEventListener('click', () => btn.classList.toggle('selected')));
     document.getElementById('modal-spieler').classList.add('open');
   }
 
-  document.getElementById('modal-abbrechen').addEventListener('click', () => {
-    document.getElementById('modal-spieler').classList.remove('open');
-  });
-
+  document.getElementById('modal-abbrechen').addEventListener('click', () => document.getElementById('modal-spieler').classList.remove('open'));
   document.getElementById('modal-bestaetigen').addEventListener('click', async () => {
     const selected = document.querySelectorAll('.spieler-auswahl-btn.selected');
-    if (selected.length < 2) { alert('Bitte mindestens 2 Spieler auswählen!'); return; }
-    console.log(`🎮 Starte neues Spiel mit ${selected.length} Spielern...`);
-
+    if (selected.length < 2) { alert('Mindestens 2 Spieler auswählen!'); return; }
+    console.log(`🎮 Neues Spiel mit ${selected.length} Spielern`);
     const { data: neuesSpiel } = await db.from('spiele').insert({ datum: new Date().toISOString().split('T')[0] }).select().single();
-    const teilnehmerInserts = Array.from(selected).map(el => ({
-      spiel_id: neuesSpiel.id, spieler_id: el.dataset.id, buyins: 1, payout: 0, leihgabe: 0
-    }));
-    await db.from('spiel_teilnehmer').insert(teilnehmerInserts);
-    console.log(`✅ Neues Spiel erstellt: ${neuesSpiel.id}`);
-
+    await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el => ({ spiel_id: neuesSpiel.id, spieler_id: el.dataset.id, buyins: 1, payout: 0, leihgabe: 0 })));
     document.getElementById('modal-spieler').classList.remove('open');
     aktuellesSpiel = neuesSpiel;
     await loadSpiel();
