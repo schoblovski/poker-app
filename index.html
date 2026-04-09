@@ -444,16 +444,16 @@
 </div>
 
 <script>
-  const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
+  const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.db.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const db = window.db.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let currentUser = null;
 
   // AUTH CHECK
   async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (session) {
       currentUser = session.user;
       showApp();
@@ -461,7 +461,7 @@
       showLogin();
     }
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    db.auth.onAuthStateChange((event, session) => {
       if (session) {
         currentUser = session.user;
         showApp();
@@ -473,7 +473,7 @@
   }
 
   async function loginWithGoogle() {
-    await supabase.auth.signInWithOAuth({
+    await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.href
@@ -482,7 +482,7 @@
   }
 
   async function logout() {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     document.getElementById('user-menu').classList.remove('open');
   }
 
