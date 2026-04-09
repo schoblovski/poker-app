@@ -327,7 +327,19 @@
     el.innerHTML = html;
 
     document.getElementById('btn-speichern').addEventListener('click', speichernSpiel);
-    document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
+document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
+
+// Auto-save bei PayOut und Leihgabe
+spielTeilnehmer.forEach(t => {
+  document.getElementById('payout-' + t.id)?.addEventListener('change', async (e) => {
+    const payout = parseFloat(e.target.value) || 0;
+    await db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id);
+  });
+  document.getElementById('leihgabe-' + t.id)?.addEventListener('change', async (e) => {
+    const leihgabe = parseFloat(e.target.value) || 0;
+    await db.from('spiel_teilnehmer').update({ leihgabe }).eq('id', t.id);
+  });
+});
   }
 
   window.buyinPlus = async (teilnehmerId) => {
