@@ -241,13 +241,33 @@
     await db.auth.signOut();
   });
 
-  function showApp() {
+  async function showApp() {
     document.getElementById('login-screen').style.display = 'none';
+    
+    // Prüfen ob User als Spieler registriert ist
+    console.log(`🔍 Prüfe Zugang für: ${currentUser.email}`);
+    const { data: spieler } = await db.from('spieler').select('*').eq('email', currentUser.email).eq('aktiv', true).single();
+    
+    if (!spieler) {
+      console.warn(`🚫 Zugang verweigert für: ${currentUser.email}`);
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-screen').innerHTML = `
+        <div class="login-logo">🚫</div>
+        <div class="login-title">Kein Zugang</div>
+        <div class="login-subtitle">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div>
+        <button class="btn-google" id="btn-logout-unauth">Abmelden</button>`;
+      document.getElementById('btn-logout-unauth').addEventListener('click', async () => {
+        await db.auth.signOut();
+        location.reload();
+      });
+      return;
+    }
+
+    console.log(`✅ Zugang gewährt für: ${spieler.name}`);
     document.getElementById('app-screen').style.display = 'flex';
     if (currentUser?.user_metadata?.avatar_url) {
       document.getElementById('user-avatar').innerHTML = `<img src="${currentUser.user_metadata.avatar_url}" alt="Avatar">`;
     }
-    console.log(`👤 Eingeloggt als: ${currentUser.email}`);
     loadHome();
   }
 
