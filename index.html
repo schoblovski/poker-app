@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.0">
+  <meta name="version" content="1.1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>DTKS Poker</title>
@@ -11,476 +11,223 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* ── DESIGN TOKENS ─────────────────────────────────── */
     :root {
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-xl: 28px;
-
-      --space-xs: 4px;
-      --space-sm: 8px;
-      --space-md: 16px;
-      --space-lg: 24px;
-      --space-xl: 32px;
-
-      --font-sans: 'DM Sans', -apple-system, sans-serif;
-      --font-mono: 'DM Mono', monospace;
-
-      --transition: 180ms ease;
-
-      /* Safe areas für gerundete Bildschirme */
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
+      --radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;
+      --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;
+      --font-sans:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;
+      --transition:180ms ease;
+      --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+      --safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);
     }
-
-    /* ── LIGHT THEME ───────────────────────────────────── */
-    [data-theme="light"] {
-      --bg: #f2f2f7;
-      --bg-elevated: #ffffff;
-      --bg-secondary: #e8e8ed;
-      --bg-tertiary: #d8d8de;
-      --surface: #ffffff;
-      --surface-2: #f2f2f7;
-      --border: rgba(0,0,0,0.08);
-      --border-strong: rgba(0,0,0,0.15);
-      --text-primary: #1c1c1e;
-      --text-secondary: #6c6c70;
-      --text-tertiary: #aeaeb2;
-      --accent: #16a34a;
-      --accent-soft: #dcfce7;
-      --accent-text: #15803d;
-      --danger: #dc2626;
-      --danger-soft: #fee2e2;
-      --warning: #d97706;
-      --warning-soft: #fef3c7;
-      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
-      --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
-      --nav-bg: rgba(242,242,247,0.85);
-      --header-bg: rgba(242,242,247,0.85);
+    [data-theme="light"]{
+      --bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--bg-tertiary:#d8d8de;
+      --surface:#fff;--surface-2:#f2f2f7;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);
+      --text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;
+      --accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;
+      --danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;
+      --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);
+      --nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);
     }
-
-    /* ── DARK THEME ────────────────────────────────────── */
-    [data-theme="dark"] {
-      --bg: #0d0d0f;
-      --bg-elevated: #1c1c1e;
-      --bg-secondary: #2c2c2e;
-      --bg-tertiary: #3a3a3c;
-      --surface: #1c1c1e;
-      --surface-2: #2c2c2e;
-      --border: rgba(255,255,255,0.08);
-      --border-strong: rgba(255,255,255,0.15);
-      --text-primary: #f5f5f7;
-      --text-secondary: #98989f;
-      --text-tertiary: #636366;
-      --accent: #22c55e;
-      --accent-soft: #052e16;
-      --accent-text: #4ade80;
-      --danger: #f87171;
-      --danger-soft: #2d0a0a;
-      --warning: #fbbf24;
-      --warning-soft: #2d1f00;
-      --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
-      --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
-      --nav-bg: rgba(13,13,15,0.85);
-      --header-bg: rgba(13,13,15,0.85);
+    [data-theme="dark"]{
+      --bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--bg-tertiary:#3a3a3c;
+      --surface:#1c1c1e;--surface-2:#2c2c2e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);
+      --text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;
+      --accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;
+      --danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;
+      --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);
+      --nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);
     }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html{height:100%;}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;}
 
-    /* ── RESET & BASE ──────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html { height: 100%; }
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text-primary);
-      min-height: 100%;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      transition: background var(--transition), color var(--transition);
-      -webkit-font-smoothing: antialiased;
-    }
+    /* LOGIN */
+    #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top) + var(--space-xl)) var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));gap:var(--space-md);}
+    .login-logo{width:80px;height:80px;background:var(--accent);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-sm);box-shadow:0 8px 32px rgba(34,197,94,.3);}
+    .login-logo svg{width:44px;height:44px;color:#fff;}
+    .login-title{font-size:26px;font-weight:700;letter-spacing:-.5px;}
+    .login-subtitle{font-size:13px;color:var(--text-secondary);letter-spacing:.3px;text-transform:uppercase;font-weight:500;}
+    .login-divider{width:40px;height:2px;background:var(--border-strong);border-radius:2px;margin:var(--space-sm) 0;}
+    .btn-oauth{display:flex;align-items:center;gap:var(--space-sm);background:var(--surface);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:var(--radius-md);padding:14px var(--space-lg);font-size:15px;font-weight:500;cursor:pointer;width:100%;max-width:300px;justify-content:center;box-shadow:var(--shadow);transition:all var(--transition);font-family:var(--font-sans);}
+    .btn-oauth:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
+    .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
-    /* ── LOGIN ─────────────────────────────────────────── */
-    #login-screen {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: calc(var(--safe-top) + var(--space-xl)) var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));
-      gap: var(--space-md);
-    }
+    /* APP */
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;position:relative;}
 
-    .login-logo {
-      width: 80px; height: 80px;
-      background: var(--accent);
-      border-radius: var(--radius-xl);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: var(--space-sm);
-      box-shadow: 0 8px 32px rgba(34,197,94,0.3);
-    }
-    .login-logo svg { width: 44px; height: 44px; color: white; }
-    .login-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-    .login-subtitle { font-size: 13px; color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase; font-weight: 500; }
-    .login-divider { width: 40px; height: 2px; background: var(--border-strong); border-radius: 2px; margin: var(--space-sm) 0; }
+    /* HEADER */
+    .header{padding:calc(var(--safe-top) + 12px) calc(var(--safe-right) + var(--space-md)) 12px calc(var(--safe-left) + var(--space-md));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    .header-left{display:flex;flex-direction:column;}
+    .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
+    .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.2;}
+    .header-right{display:flex;align-items:center;gap:10px;}
+    .sync-badge{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;transition:all var(--transition);}
+    .sync-badge.synced{background:var(--accent-soft);color:var(--accent-text);}
+    .sync-badge.pending{background:var(--warning-soft);color:var(--warning);}
+    .sync-badge.error{background:var(--danger-soft);color:var(--danger);}
+    .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+    .sync-dot.spin{animation:spin .8s linear infinite;}
+    .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .avatar-btn img{width:100%;height:100%;object-fit:cover;}
+    .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
 
-    .btn-oauth {
-      display: flex; align-items: center; gap: var(--space-sm);
-      background: var(--surface); color: var(--text-primary);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-md);
-      padding: 14px var(--space-lg);
-      font-size: 15px; font-weight: 500;
-      cursor: pointer; width: 100%; max-width: 300px;
-      justify-content: center;
-      box-shadow: var(--shadow);
-      transition: all var(--transition);
-      font-family: var(--font-sans);
-    }
-    .btn-oauth:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
-    .btn-oauth:active { transform: translateY(0); }
-    .btn-oauth svg { width: 20px; height: 20px; flex-shrink: 0; }
+    /* CONTENT */
+    .content{flex:1;overflow-y:auto;padding:var(--space-md);padding-left:calc(var(--safe-left) + var(--space-md));padding-right:calc(var(--safe-right) + var(--space-md));padding-bottom:calc(var(--safe-bottom) + 80px);}
 
-    /* ── APP SHELL ─────────────────────────────────────── */
-    #app-screen {
-      display: none; flex-direction: column; flex: 1;
-      max-width: 430px; margin: 0 auto; width: 100%;
-      position: relative;
-    }
+    /* NAV */
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
+    .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
+    .nav-btn.active{color:var(--accent);}
+    .nav-btn svg{width:22px;height:22px;stroke-width:1.8;}
+    .nav-btn.active svg{stroke-width:2.2;}
+    .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
-    /* ── HEADER ────────────────────────────────────────── */
-    .header {
-      padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + var(--space-md)) 12px calc(var(--safe-left) + var(--space-md));
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 50;
-      background: var(--header-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-    .header-left { display: flex; flex-direction: column; }
-    .header-app-name { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; }
-    .header-page-title { font-size: 17px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; line-height: 1.2; }
-    .header-right { display: flex; align-items: center; gap: 10px; }
+    /* SECTION TITLE */
+    .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
+    .section-title:first-child{margin-top:0;}
 
-    .sync-badge {
-      display: flex; align-items: center; gap: 5px;
-      padding: 4px 8px; border-radius: 20px;
-      font-size: 11px; font-weight: 600;
-      transition: all var(--transition);
-    }
-    .sync-badge.synced { background: var(--accent-soft); color: var(--accent-text); }
-    .sync-badge.pending { background: var(--warning-soft); color: var(--warning); }
-    .sync-badge.error { background: var(--danger-soft); color: var(--danger); }
-    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .sync-dot.spin { animation: spin 0.8s linear infinite; }
+    /* CARD & LIST */
+    .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
+    .card+.card{margin-top:var(--space-sm);}
+    .list-item{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);transition:background var(--transition);}
+    .list-item:last-child{border-bottom:none;}
+    .list-item.clickable{cursor:pointer;}
+    .list-item.clickable:active{background:var(--bg-secondary);}
+    .item-avatar{width:44px;height:44px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+    .item-avatar img{width:100%;height:100%;object-fit:cover;}
+    .item-avatar svg{width:22px;height:22px;color:var(--text-tertiary);}
+    .item-avatar.accent{background:var(--accent-soft);}
+    .item-avatar.accent svg{color:var(--accent);}
+    .item-body{flex:1;min-width:0;}
+    .item-title{font-size:15px;font-weight:500;color:var(--text-primary);}
+    .item-subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+    .item-trailing{display:flex;align-items:center;gap:var(--space-sm);flex-shrink:0;}
+    .item-amount{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+    .amount-pos{color:var(--accent-text);}
+    .amount-neg{color:var(--danger);}
+    .amount-zero{color:var(--text-tertiary);}
+    .chevron svg{width:16px;height:16px;color:var(--text-tertiary);}
 
-    .avatar-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: var(--bg-secondary); border: none; cursor: pointer;
-      overflow: hidden; display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
-    .avatar-btn svg { width: 18px; height: 18px; color: var(--text-secondary); }
+    /* BUTTONS */
+    .btn{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);border:none;border-radius:var(--radius-md);padding:14px var(--space-lg);font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:all var(--transition);font-family:var(--font-sans);}
+    .btn svg{width:18px;height:18px;}
+    .btn:active{transform:scale(.98);}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-secondary{background:var(--bg-secondary);color:var(--text-primary);}
+    .btn-danger{background:var(--danger-soft);color:var(--danger);}
+    .btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-strong);}
+    .btn+.btn{margin-top:var(--space-sm);}
+    .icon-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:var(--bg-secondary);border-radius:var(--radius-sm);cursor:pointer;color:var(--text-secondary);transition:all var(--transition);flex-shrink:0;}
+    .icon-btn:active{transform:scale(.9);}
+    .icon-btn svg{width:16px;height:16px;}
 
-    /* ── CONTENT ───────────────────────────────────────── */
-    .content {
-      flex: 1; overflow-y: auto;
-      padding: var(--space-md);
-      padding-left: calc(var(--safe-left) + var(--space-md));
-      padding-right: calc(var(--safe-right) + var(--space-md));
-      padding-bottom: calc(var(--safe-bottom) + 80px);
-    }
+    /* COUNTER */
+    .counter-row{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);}
+    .counter-row:last-child{border-bottom:none;}
+    .counter-info{flex:1;}
+    .counter-name{font-size:15px;font-weight:500;}
+    .counter-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+    .counter-controls{display:flex;align-items:center;gap:var(--space-sm);}
+    .counter-btn{width:34px;height:34px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);}
+    .counter-btn svg{width:16px;height:16px;}
+    .counter-btn.minus{background:var(--danger-soft);color:var(--danger);}
+    .counter-btn.plus{background:var(--accent-soft);color:var(--accent-text);}
+    .counter-btn:active{transform:scale(.88);}
+    .counter-value{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-variant-numeric:tabular-nums;}
 
-    /* ── BOTTOM NAV ────────────────────────────────────── */
-    .bottom-nav {
-      position: fixed; bottom: 0;
-      left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 430px;
-      background: var(--nav-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border);
-      display: flex;
-      padding-bottom: var(--safe-bottom);
-      z-index: 50;
-    }
-    .nav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 4px;
-      padding: 10px 4px 8px;
-      border: none; background: none; cursor: pointer;
-      color: var(--text-tertiary);
-      transition: color var(--transition);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .nav-btn.active { color: var(--accent); }
-    .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
-    .nav-btn.active svg { stroke-width: 2.2; }
-    .nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.2px; }
+    /* FORM */
+    .form-group{margin-bottom:var(--space-md);}
+    .form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px;}
+    .form-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:15px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
+    .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+    .form-input::placeholder{color:var(--text-tertiary);}
+    .payout-input-row{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);border-bottom:1px solid var(--border);}
+    .payout-input-row:last-child{border-bottom:none;}
+    .payout-label{font-size:13px;color:var(--text-secondary);flex-shrink:0;}
+    .payout-field{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:15px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
+    .payout-field:focus{outline:none;}
+    .payout-unit{font-size:13px;color:var(--text-tertiary);}
 
-    /* ── SECTION TITLE ─────────────────────────────────── */
-    .section-title {
-      font-size: 11px; font-weight: 600;
-      color: var(--text-tertiary); text-transform: uppercase;
-      letter-spacing: 0.7px; margin: var(--space-lg) 0 var(--space-sm);
-    }
-    .section-title:first-child { margin-top: 0; }
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
+    .stat-card{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
+    .stat-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
+    .stat-value{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:-.5px;font-variant-numeric:tabular-nums;}
+    .stat-value.sm{font-size:17px;}
+    .stat-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+    .stat-card.wide{grid-column:1/-1;}
+    .stat-card.accent{background:var(--accent-soft);}
+    .stat-card.accent .stat-label{color:var(--accent-text);opacity:.8;}
+    .stat-card.accent .stat-value{color:var(--accent-text);}
 
-    /* ── CARDS ─────────────────────────────────────────── */
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .card + .card { margin-top: var(--space-sm); }
+    /* PROFILE HEADER */
+    .profile-header{text-align:center;padding:var(--space-lg) 0 var(--space-md);}
+    .profile-avatar-lg{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
+    .profile-avatar-lg img{width:100%;height:100%;object-fit:cover;}
+    .profile-avatar-lg svg{width:40px;height:40px;color:var(--text-tertiary);}
+    .profile-name{font-size:22px;font-weight:700;letter-spacing:-.3px;}
+    .profile-since{font-size:13px;color:var(--text-secondary);margin-top:4px;}
 
-    .list-item {
-      display: flex; align-items: center; gap: var(--space-md);
-      padding: 14px var(--space-md);
-      border-bottom: 1px solid var(--border);
-      transition: background var(--transition);
-      cursor: pointer;
-    }
-    .list-item:last-child { border-bottom: none; }
-    .list-item:active { background: var(--bg-secondary); }
+    /* TIMELINE */
+    .timeline-item{display:flex;gap:var(--space-md);padding:12px var(--space-md);border-bottom:1px solid var(--border);}
+    .timeline-item:last-child{border-bottom:none;}
+    .timeline-date{font-size:12px;color:var(--text-secondary);width:60px;flex-shrink:0;padding-top:2px;}
+    .timeline-body{flex:1;}
+    .timeline-title{font-size:14px;font-weight:500;}
+    .timeline-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+    .timeline-amount{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:2px;}
 
-    .item-avatar {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--bg-secondary);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; overflow: hidden;
-      font-size: 18px;
-    }
-    .item-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .item-avatar svg { width: 22px; height: 22px; color: var(--text-tertiary); }
-    .item-avatar.sm { width: 36px; height: 36px; }
-    .item-avatar.sm svg { width: 18px; height: 18px; }
-    .item-avatar.accent { background: var(--accent-soft); }
-    .item-avatar.accent svg { color: var(--accent); }
+    /* SELECT GRID */
+    .select-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-sm);}
+    .select-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);cursor:pointer;transition:all var(--transition);text-align:center;}
+    .select-card.selected{border-color:var(--accent);background:var(--accent-soft);}
+    .select-card-name{font-size:14px;font-weight:500;}
 
-    .item-body { flex: 1; min-width: 0; }
-    .item-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
-    .item-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    /* DROPDOWN */
+    .dropdown{position:fixed;top:calc(var(--safe-top) + 58px);right:calc(var(--safe-right) + var(--space-md));background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-xs);z-index:200;display:none;box-shadow:var(--shadow-lg);min-width:200px;}
+    .dropdown.open{display:block;animation:fadeIn 120ms ease;}
+    .dropdown-item{display:flex;align-items:center;gap:var(--space-sm);padding:11px var(--space-md);border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;color:var(--text-primary);transition:background var(--transition);border:none;background:none;width:100%;text-align:left;font-family:var(--font-sans);}
+    .dropdown-item:hover{background:var(--bg-secondary);}
+    .dropdown-item svg{width:16px;height:16px;color:var(--text-secondary);}
+    .dropdown-item.danger{color:var(--danger);}
+    .dropdown-item.danger svg{color:var(--danger);}
+    .dropdown-divider{height:1px;background:var(--border);margin:var(--space-xs) 0;}
+    .theme-picker{display:flex;gap:var(--space-xs);padding:var(--space-xs) var(--space-md) var(--space-sm);}
+    .theme-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
+    .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
 
-    .item-trailing { display: flex; align-items: center; gap: var(--space-sm); flex-shrink: 0; }
-    .item-amount { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .amount-pos { color: var(--accent-text); }
-    .amount-neg { color: var(--danger); }
-    .amount-zero { color: var(--text-tertiary); }
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+    .modal-overlay.open{display:flex;animation:fadeIn 150ms ease;}
+    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-lg) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;}
+    .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
+    .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
+    .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
+    .modal-actions .btn{flex:1;}
 
-    .chevron { color: var(--text-tertiary); }
-    .chevron svg { width: 16px; height: 16px; }
+    /* BADGE */
+    .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+    .badge-green{background:var(--accent-soft);color:var(--accent-text);}
+    .badge-red{background:var(--danger-soft);color:var(--danger);}
 
-    /* ── BUTTONS ───────────────────────────────────────── */
-    .btn {
-      display: flex; align-items: center; justify-content: center; gap: var(--space-sm);
-      border: none; border-radius: var(--radius-md);
-      padding: 14px var(--space-lg);
-      font-size: 15px; font-weight: 600;
-      cursor: pointer; width: 100%;
-      transition: all var(--transition);
-      font-family: var(--font-sans);
-    }
-    .btn svg { width: 18px; height: 18px; }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { filter: brightness(1.05); }
-    .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); }
-    .btn-danger { background: var(--danger-soft); color: var(--danger); }
-    .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-strong); }
+    /* PAGES */
+    .page{display:none;}
+    .page.active{display:block;}
 
-    .btn + .btn { margin-top: var(--space-sm); }
+    /* BACK BTN */
+    .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
+    .back-btn svg{width:20px;height:20px;}
 
-    /* ── ICON BUTTON ───────────────────────────────────── */
-    .icon-btn {
-      width: 34px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      border: none; background: var(--bg-secondary);
-      border-radius: var(--radius-sm); cursor: pointer;
-      color: var(--text-secondary);
-      transition: all var(--transition);
-      flex-shrink: 0;
-    }
-    .icon-btn:active { transform: scale(0.92); }
-    .icon-btn svg { width: 16px; height: 16px; }
-    .icon-btn.danger:active { background: var(--danger-soft); color: var(--danger); }
-
-    /* ── COUNTER ───────────────────────────────────────── */
-    .counter-row {
-      display: flex; align-items: center; gap: var(--space-md);
-      padding: 14px var(--space-md);
-      border-bottom: 1px solid var(--border);
-    }
-    .counter-row:last-child { border-bottom: none; }
-    .counter-avatar { flex-shrink: 0; }
-    .counter-info { flex: 1; }
-    .counter-name { font-size: 15px; font-weight: 500; }
-    .counter-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-    .counter-controls { display: flex; align-items: center; gap: var(--space-sm); }
-    .counter-btn {
-      width: 34px; height: 34px; border-radius: 50%; border: none;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all var(--transition);
-    }
-    .counter-btn svg { width: 16px; height: 16px; }
-    .counter-btn.minus { background: var(--danger-soft); color: var(--danger); }
-    .counter-btn.plus { background: var(--accent-soft); color: var(--accent-text); }
-    .counter-btn:active { transform: scale(0.88); }
-    .counter-value {
-      font-size: 18px; font-weight: 700; min-width: 28px;
-      text-align: center; font-variant-numeric: tabular-nums;
-    }
-
-    /* ── INPUT ─────────────────────────────────────────── */
-    .form-group { margin-bottom: var(--space-md); }
-    .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.4px; }
-    .form-input {
-      width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 12px var(--space-md);
-      color: var(--text-primary); font-size: 15px;
-      font-family: var(--font-sans);
-      transition: border-color var(--transition), box-shadow var(--transition);
-    }
-    .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
-    .form-input::placeholder { color: var(--text-tertiary); }
-
-    .payout-input-row {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: 10px var(--space-md);
-      border-bottom: 1px solid var(--border);
-    }
-    .payout-input-row:last-child { border-bottom: none; }
-    .payout-label { font-size: 13px; color: var(--text-secondary); width: 72px; flex-shrink: 0; }
-    .payout-field {
-      flex: 1; background: transparent; border: none;
-      color: var(--text-primary); font-size: 15px; font-weight: 500;
-      font-family: var(--font-mono); text-align: right; padding: 4px 0;
-    }
-    .payout-field:focus { outline: none; }
-    .payout-unit { font-size: 13px; color: var(--text-tertiary); }
-
-    /* ── GRID ──────────────────────────────────────────── */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
-
-    .select-card {
-      background: var(--surface); border: 2px solid var(--border);
-      border-radius: var(--radius-md); padding: var(--space-md);
-      display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
-      cursor: pointer; transition: all var(--transition); text-align: center;
-    }
-    .select-card.selected { border-color: var(--accent); background: var(--accent-soft); }
-    .select-card-name { font-size: 14px; font-weight: 500; }
-
-    /* ── USER MENU ─────────────────────────────────────── */
-    .dropdown {
-      position: fixed; top: calc(var(--safe-top) + 58px);
-      right: calc(var(--safe-right) + var(--space-md));
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: var(--space-xs);
-      z-index: 200; display: none;
-      box-shadow: var(--shadow-lg);
-      min-width: 200px;
-    }
-    .dropdown.open { display: block; animation: fadeIn 120ms ease; }
-    .dropdown-item {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: 11px var(--space-md); border-radius: var(--radius-sm);
-      font-size: 14px; font-weight: 500; cursor: pointer;
-      color: var(--text-primary); transition: background var(--transition);
-      border: none; background: none; width: 100%; text-align: left;
-      font-family: var(--font-sans);
-    }
-    .dropdown-item:hover { background: var(--bg-secondary); }
-    .dropdown-item svg { width: 16px; height: 16px; color: var(--text-secondary); }
-    .dropdown-item.danger { color: var(--danger); }
-    .dropdown-item.danger svg { color: var(--danger); }
-    .dropdown-divider { height: 1px; background: var(--border); margin: var(--space-xs) 0; }
-
-    /* ── THEME TOGGLE ──────────────────────────────────── */
-    .theme-picker { display: flex; gap: var(--space-xs); padding: var(--space-xs) var(--space-md) var(--space-sm); }
-    .theme-btn {
-      flex: 1; padding: 7px; border-radius: var(--radius-sm);
-      font-size: 11px; font-weight: 600; border: 1px solid var(--border);
-      cursor: pointer; background: var(--bg-secondary); color: var(--text-secondary);
-      font-family: var(--font-sans); transition: all var(--transition);
-    }
-    .theme-btn.active { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
-
-    /* ── PAGES ─────────────────────────────────────────── */
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* ── BACK NAVIGATION ───────────────────────────────── */
-    .back-page { display: none; }
-    .back-page.active { display: block; }
-
-    /* ── LOADING / EMPTY ───────────────────────────────── */
-    .loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--text-tertiary); gap: var(--space-sm); font-size: 14px; }
-    .spinner { width: 20px; height: 20px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-
-    .empty { text-align: center; padding: 48px var(--space-md); }
-    .empty-icon { width: 56px; height: 56px; border-radius: var(--radius-xl); background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
-    .empty-icon svg { width: 28px; height: 28px; color: var(--text-tertiary); }
-    .empty-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
-    .empty-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: var(--space-lg); }
-
-    /* ── MODAL ─────────────────────────────────────────── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 300; display: none; align-items: flex-end; justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    .modal-overlay.open { display: flex; animation: fadeIn 150ms ease; }
-    .modal {
-      background: var(--surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      padding: var(--space-lg) var(--space-lg) calc(var(--safe-bottom) + var(--space-lg));
-      width: 100%; max-width: 430px; max-height: 92vh; overflow-y: auto;
-    }
-    .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto var(--space-lg); }
-    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: var(--space-lg); letter-spacing: -0.3px; }
-    .modal-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-lg); }
-    .modal-actions .btn { flex: 1; }
-
-    /* ── BADGE ─────────────────────────────────────────── */
-    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .badge-green { background: var(--accent-soft); color: var(--accent-text); }
-    .badge-red { background: var(--danger-soft); color: var(--danger); }
-
-    /* ── INFO BOX ──────────────────────────────────────── */
-    .info-card { background: var(--surface); border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow); margin-bottom: var(--space-sm); }
-    .info-card-header { display: flex; align-items: center; justify-content: space-between; }
-    .info-card-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-    .info-card-value { font-size: 22px; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; }
-
-    /* ── DETAIL PAGE ───────────────────────────────────── */
-    #page-detail-header {
-      display: flex; align-items: center; gap: var(--space-sm);
-      margin-bottom: var(--space-lg);
-    }
-    .back-btn {
-      display: flex; align-items: center; gap: 4px;
-      background: none; border: none; cursor: pointer;
-      color: var(--accent-text); font-size: 15px; font-weight: 500;
-      padding: 0; font-family: var(--font-sans);
-    }
-    .back-btn svg { width: 20px; height: 20px; }
-
-    .detail-avatar-large {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: var(--bg-secondary); overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto var(--space-md);
-    }
-    .detail-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
-    .detail-avatar-large svg { width: 40px; height: 40px; color: var(--text-tertiary); }
+    /* UTILS */
+    .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
+    .spinner{width:20px;height:20px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+    .empty{text-align:center;padding:48px var(--space-md);}
+    .empty-icon{width:56px;height:56px;border-radius:var(--radius-xl);background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
+    .empty-icon svg{width:28px;height:28px;color:var(--text-tertiary);}
+    .empty-title{font-size:17px;font-weight:600;margin-bottom:6px;}
+    .empty-subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg);}
   </style>
 </head>
 <body>
@@ -520,7 +267,6 @@
     </div>
   </div>
 
-  <!-- DROPDOWN MENU -->
   <div class="dropdown" id="dropdown">
     <div class="theme-picker">
       <button class="theme-btn" data-theme="light">Hell</button>
@@ -540,81 +286,50 @@
   </div>
 
   <div class="content">
-
     <!-- HOME -->
     <div class="page active" id="page-home">
       <div id="home-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
     </div>
-
-    <!-- AKTUELLES SPIEL -->
+    <!-- SPIEL -->
     <div class="page" id="page-spiel">
       <div id="spiel-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
     </div>
-
     <!-- VERLAUF -->
     <div class="page" id="page-verlauf">
-      <div class="empty">
-        <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-        <div class="empty-title">Spiel Verlauf</div>
-        <div class="empty-subtitle">Kommt bald</div>
-      </div>
+      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Spiel Verlauf</div><div class="empty-subtitle">Kommt bald</div></div>
     </div>
-
     <!-- STATISTIK -->
     <div class="page" id="page-statistik">
-      <div class="empty">
-        <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div class="empty-title">Statistik</div>
-        <div class="empty-subtitle">Kommt bald</div>
-      </div>
+      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Statistik</div><div class="empty-subtitle">Kommt bald</div></div>
     </div>
-
     <!-- TRANSAKTIONEN -->
     <div class="page" id="page-transaktionen">
-      <div class="empty">
-        <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-        <div class="empty-title">Transaktionen</div>
-        <div class="empty-subtitle">Kommt bald</div>
-      </div>
+      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Transaktionen</div><div class="empty-subtitle">Kommt bald</div></div>
     </div>
-
-    <!-- SPIELERVERWALTUNG -->
+    <!-- VERWALTUNG -->
     <div class="page" id="page-verwaltung">
       <div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
     </div>
-
-    <!-- SPIELER DETAIL -->
+    <!-- SPIELER DETAIL (Verwaltung) -->
     <div class="page" id="page-spieler-detail">
       <div id="spieler-detail-content"></div>
     </div>
-
+    <!-- SPIELER STATS (Home) -->
+    <div class="page" id="page-spieler-stats">
+      <div id="spieler-stats-content"></div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-page="home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span class="nav-label">Home</span>
-    </button>
-    <button class="nav-btn" data-page="spiel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
-      <span class="nav-label">Spiel</span>
-    </button>
-    <button class="nav-btn" data-page="verlauf">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span class="nav-label">Verlauf</span>
-    </button>
-    <button class="nav-btn" data-page="statistik">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <span class="nav-label">Statistik</span>
-    </button>
-    <button class="nav-btn" data-page="transaktionen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-      <span class="nav-label">Konto</span>
-    </button>
+    <button class="nav-btn active" data-page="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
+    <button class="nav-btn" data-page="spiel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg><span class="nav-label">Spiel</span></button>
+    <button class="nav-btn" data-page="verlauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-label">Verlauf</span></button>
+    <button class="nav-btn" data-page="statistik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Statistik</span></button>
+    <button class="nav-btn" data-page="transaktionen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span class="nav-label">Konto</span></button>
   </nav>
 </div>
 
-<!-- MODAL: Spieler auswählen -->
+<!-- MODAL: Spieler auswählen (neues Spiel) -->
 <div class="modal-overlay" id="modal-spieler">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -627,19 +342,26 @@
   </div>
 </div>
 
-<!-- MODAL: Neuer / Edit Spieler -->
+<!-- MODAL: Teilnehmer editieren (laufendes Spiel) -->
+<div class="modal-overlay" id="modal-teilnehmer-edit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Teilnehmer bearbeiten</div>
+    <div id="teilnehmer-edit-liste"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="teilnehmer-edit-abbrechen">Abbrechen</button>
+      <button class="btn btn-primary" id="teilnehmer-edit-speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Spieler Form -->
 <div class="modal-overlay" id="modal-spieler-form">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="form-modal-title">Neuer Spieler</div>
-    <div class="form-group">
-      <label class="form-label">Name</label>
-      <input type="text" class="form-input" id="form-name" placeholder="Vorname">
-    </div>
-    <div class="form-group">
-      <label class="form-label">E-Mail (für Login)</label>
-      <input type="email" class="form-input" id="form-email" placeholder="name@gmail.com">
-    </div>
+    <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="form-name" placeholder="Vorname"></div>
+    <div class="form-group"><label class="form-label">E-Mail (für Login)</label><input type="email" class="form-input" id="form-email" placeholder="name@gmail.com"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="form-abbrechen">Abbrechen</button>
       <button class="btn btn-primary" id="form-speichern">Speichern</button>
@@ -649,508 +371,427 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let currentUser = null;
-  let alleSpieler = [];
-  let aktuellesSpiel = null;
-  let spielTeilnehmer = [];
-  let editSpielerID = null;
-  let previousPage = null;
+  let currentUser = null, alleSpieler = [], aktuellesSpiel = null, spielTeilnehmer = [], editSpielerID = null, prevPage = null;
+  console.log(`🃏 DTKS Poker v${VERSION}`);
 
-  console.log(`🃏 DTKS Poker App v${VERSION}`);
+  // ── THEME ──────────────────────────────────────────────
+  function applyTheme(p){const d=p==='dark'||(p==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===p));}
+  function setTheme(p){localStorage.setItem('dtks-theme',p);applyTheme(p);}
+  const st=localStorage.getItem('dtks-theme')||'auto';applyTheme(st);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if((localStorage.getItem('dtks-theme')||'auto')==='auto')applyTheme('auto');});
+  document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===st);b.addEventListener('click',()=>setTheme(b.dataset.theme));});
 
-  // ─── THEME ───────────────────────────────────────────
-  function applyTheme(pref) {
-    const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === pref));
-  }
-  function setTheme(pref) {
-    localStorage.setItem('dtks-theme', pref);
-    applyTheme(pref);
-    console.log(`🎨 Theme: ${pref}`);
-  }
-  const savedTheme = localStorage.getItem('dtks-theme') || 'auto';
-  applyTheme(savedTheme);
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if ((localStorage.getItem('dtks-theme') || 'auto') === 'auto') applyTheme('auto');
-  });
-  document.querySelectorAll('.theme-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.theme === savedTheme);
-    b.addEventListener('click', () => setTheme(b.dataset.theme));
-  });
+  // ── SYNC ───────────────────────────────────────────────
+  function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];console.log(`🔄 ${s}`);}
+  async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
 
-  // ─── SYNC ────────────────────────────────────────────
-  function setSync(status) {
-    const el = document.getElementById('sync-status');
-    const dot = document.getElementById('sync-dot');
-    const label = document.getElementById('sync-label');
-    el.className = 'sync-badge ' + status;
-    dot.className = 'sync-dot' + (status === 'pending' ? ' spin' : '');
-    label.textContent = { synced: 'Sync', pending: '…', error: 'Fehler' }[status];
-    console.log(`🔄 ${status}`);
-  }
-  async function save(fn, desc) {
-    setSync('pending');
-    console.log(`💾 ${desc}`);
-    try { await fn(); setSync('synced'); console.log(`✅ ${desc}`); }
-    catch(e) { setSync('error'); console.error(`❌ ${desc}`, e); }
-  }
+  // ── HELPERS ────────────────────────────────────────────
+  const ksClass=v=>v>0?'amount-pos':v<0?'amount-neg':'amount-zero';
+  const fmt=v=>`€\u00a0${Math.abs(v).toFixed(2)}`;
+  const fmtSigned=v=>(v>=0?'+':'-')+` €${Math.abs(v).toFixed(2)}`;
+  const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+  const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+  const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
 
-  // ─── AVATAR ──────────────────────────────────────────
-  function avatarEl(spieler, size = 44) {
-    const d = document.createElement('div');
-    d.className = 'item-avatar';
-    d.style.cssText = `width:${size}px;height:${size}px;`;
-    if (spieler?.profilbild) {
-      const img = document.createElement('img');
-      img.src = spieler.profilbild;
-      img.alt = spieler.name;
-      d.appendChild(img);
-    } else {
-      d.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
-    }
-    return d;
-  }
+  function avatarHtml(s,size=44){return s?.profilbild?`<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${s.profilbild}" alt="${s.name}"></div>`:`<div class="item-avatar" style="width:${size}px;height:${size}px">${userIcon}</div>`;}
 
-  function avatarHtml(spieler, size = 44) {
-    if (spieler?.profilbild) return `<div class="item-avatar" style="width:${size}px;height:${size}px;"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`;
-    return `<div class="item-avatar" style="width:${size}px;height:${size}px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>`;
-  }
+  function confirmDelete(msg){return confirm(`⚠️ Löschen bestätigen\n\n${msg}\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);}
+  function confirmAction(msg){return confirm(msg);}
 
-  // ─── NAVIGATION ──────────────────────────────────────
-  const pageTitles = {
-    home: 'Übersicht', spiel: 'Aktuelles Spiel',
-    verlauf: 'Spiel Verlauf', statistik: 'Statistik',
-    transaktionen: 'Transaktionen', verwaltung: 'Spielerverwaltung',
-    'spieler-detail': 'Spieler'
-  };
-
-  function showPage(page, fromPage = null) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + page).classList.add('active');
+  // ── NAVIGATION ─────────────────────────────────────────
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung','spieler-detail':'Spieler','spieler-stats':'Spieler'};
+  function showPage(page,from=null){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
     document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
-    document.getElementById('page-title').textContent = pageTitles[page] || page;
-    previousPage = fromPage;
-    if (page === 'spiel') loadSpiel();
-    if (page === 'verwaltung') loadVerwaltung();
+    document.getElementById('page-title').textContent=pageTitles[page]||page;
+    prevPage=from;
+    if(page==='spiel')loadSpiel();
+    if(page==='verwaltung')loadVerwaltung();
   }
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => showPage(btn.dataset.page));
-  });
+  // ── DROPDOWN ───────────────────────────────────────────
+  document.getElementById('user-avatar-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');});
+  document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
+  document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
 
-  // ─── DROPDOWN ────────────────────────────────────────
-  document.getElementById('user-avatar-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.getElementById('dropdown').classList.toggle('open');
-  });
-  document.addEventListener('click', () => document.getElementById('dropdown').classList.remove('open'));
-  document.getElementById('btn-verwaltung').addEventListener('click', () => {
-    document.getElementById('dropdown').classList.remove('open');
-    showPage('verwaltung');
-  });
+  // ── AUTH ───────────────────────────────────────────────
+  document.getElementById('btn-login').addEventListener('click',async()=>{await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});});
+  document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
-  // ─── AUTH ─────────────────────────────────────────────
-  document.getElementById('btn-login').addEventListener('click', async () => {
-    await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-  });
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    document.getElementById('dropdown').classList.remove('open');
-    await db.auth.signOut();
-  });
-
-  async function showApp() {
-    document.getElementById('login-screen').style.display = 'none';
-    console.log(`🔍 Prüfe: ${currentUser.email}`);
-    const { data: spieler } = await db.from('spieler').select('*').eq('email', currentUser.email).eq('aktiv', true).single();
-    if (!spieler) {
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('login-screen').innerHTML = `
-        <div class="login-logo" style="background:var(--danger)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        </div>
-        <div style="text-align:center">
-          <div class="login-title">Kein Zugang</div>
-          <div style="height:8px"></div>
-          <div class="login-subtitle" style="color:var(--text-secondary);font-size:14px;max-width:260px;text-transform:none;letter-spacing:0">Du bist nicht als Spieler registriert. Bitte den Admin kontaktieren.</div>
-        </div>
-        <button class="btn-oauth" id="btn-logout-err">Abmelden</button>`;
-      document.getElementById('btn-logout-err').addEventListener('click', async () => { await db.auth.signOut(); location.reload(); });
+  async function showApp(){
+    document.getElementById('login-screen').style.display='none';
+    const{data:sp}=await db.from('spieler').select('*').eq('email',currentUser.email).eq('aktiv',true).single();
+    if(!sp){
+      document.getElementById('login-screen').style.display='flex';
+      document.getElementById('login-screen').innerHTML=`<div class="login-logo" style="background:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div style="text-align:center"><div class="login-title">Kein Zugang</div><div style="height:8px"></div><div style="font-size:14px;color:var(--text-secondary);max-width:260px;line-height:1.5">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div></div><button class="btn-oauth" id="btn-logout-err">Abmelden</button>`;
+      document.getElementById('btn-logout-err').addEventListener('click',async()=>{await db.auth.signOut();location.reload();});
       return;
     }
-    const avatar = currentUser?.user_metadata?.avatar_url;
-    if (avatar && !spieler.profilbild) {
-      await db.from('spieler').update({ profilbild: avatar }).eq('id', spieler.id);
-    }
-    if (avatar) {
-      document.getElementById('user-avatar-btn').innerHTML = `<img src="${avatar}" alt="Avatar">`;
-    }
-    console.log(`✅ ${spieler.name}`);
-    document.getElementById('app-screen').style.display = 'flex';
+    const av=currentUser?.user_metadata?.avatar_url;
+    if(av&&!sp.profilbild)await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
+    if(av)document.getElementById('user-avatar-btn').innerHTML=`<img src="${av}" alt="Avatar">`;
+    console.log(`✅ ${sp.name}`);
+    document.getElementById('app-screen').style.display='flex';
     loadHome();
   }
+  db.auth.onAuthStateChange((ev,session)=>{console.log(`🔑 ${ev}`);if(session){currentUser=session.user;showApp();}else{currentUser=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}});
 
-  db.auth.onAuthStateChange((event, session) => {
-    console.log(`🔑 ${event}`);
-    if (session) { currentUser = session.user; showApp(); }
-    else {
-      currentUser = null;
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('app-screen').style.display = 'none';
+  // ── HOME ───────────────────────────────────────────────
+  async function loadHome(){
+    const el=document.getElementById('home-content');
+    const{data:spieler}=await db.from('spieler').select('*').eq('aktiv',true).order('name');
+    if(!spieler)return;
+    alleSpieler=spieler;
+    const ich=spieler.find(s=>s.email===currentUser?.email);
+    const bank=spieler.find(s=>s.ist_bank);
+    const rest=spieler.filter(s=>s.email!==currentUser?.email&&!s.ist_bank);
+    let html='';
+    if(ich){const ks=ich.kontostand||0;html+=`<div class="section-title">Mein Konto</div><div class="card"><div class="list-item">${avatarHtml(ich)}<div class="item-body"><div class="item-title">${ich.name}</div><div class="item-subtitle">Mein Konto</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span></div></div></div>`;}
+    if(bank){html+=`<div class="section-title">Kasse</div><div class="card"><div class="list-item"><div class="item-avatar accent" style="width:44px;height:44px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg></div><div class="item-body"><div class="item-title">Bank &amp; Pokerkasse</div></div></div></div>`;}
+    if(rest.length>0){
+      html+=`<div class="section-title">Alle Spieler</div><div class="card">`;
+      rest.forEach(s=>{const ks=s.kontostand||0;html+=`<div class="list-item clickable" data-id="${s.id}">${avatarHtml(s)}<div class="item-body"><div class="item-title">${s.name}</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span>${chevron}</div></div>`;});
+      html+=`</div>`;
     }
-  });
-
-  // ─── HOME ─────────────────────────────────────────────
-  async function loadHome() {
-    const el = document.getElementById('home-content');
-    const { data: spieler } = await db.from('spieler').select('*').eq('aktiv', true).order('name');
-    if (!spieler) return;
-    alleSpieler = spieler;
-
-    const ksClass = v => v > 0 ? 'amount-pos' : v < 0 ? 'amount-neg' : 'amount-zero';
-    const fmtKs = v => `€\u00a0${Math.abs(v).toFixed(2)}`;
-
-    const ich = spieler.find(s => s.email === currentUser?.email);
-    const bank = spieler.find(s => s.ist_bank);
-    const rest = spieler.filter(s => s.email !== currentUser?.email && !s.ist_bank);
-
-    let html = '';
-
-    if (ich) {
-      const ks = ich.kontostand || 0;
-      html += `<div class="section-title">Mein Konto</div>
-        <div class="card">
-          <div class="list-item" style="cursor:default">
-            ${avatarHtml(ich, 44)}
-            <div class="item-body"><div class="item-title">${ich.name}</div><div class="item-subtitle">Mein Konto</div></div>
-            <div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmtKs(ks)}</span></div>
-          </div>
-        </div>`;
-    }
-
-    if (bank) {
-      html += `<div class="section-title">Kasse</div>
-        <div class="card">
-          <div class="list-item" style="cursor:default">
-            <div class="item-avatar accent" style="width:44px;height:44px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
-            </div>
-            <div class="item-body"><div class="item-title">Bank &amp; Pokerkasse</div></div>
-          </div>
-        </div>`;
-    }
-
-    if (rest.length > 0) {
-      html += `<div class="section-title">Alle Spieler</div><div class="card">`;
-      rest.forEach(s => {
-        const ks = s.kontostand || 0;
-        html += `<div class="list-item" style="cursor:default">
-          ${avatarHtml(s, 44)}
-          <div class="item-body"><div class="item-title">${s.name}</div></div>
-          <div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmtKs(ks)}</span></div>
-        </div>`;
-      });
-      html += `</div>`;
-    }
-
-    el.innerHTML = html;
-  }
-
-  // ─── SPIELERVERWALTUNG ────────────────────────────────
-  async function loadVerwaltung() {
-    const el = document.getElementById('verwaltung-content');
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const { data: spieler } = await db.from('spieler').select('*').order('name');
-    if (!spieler) return;
-    const aktive = spieler.filter(s => s.aktiv && !s.ist_bank);
-    const inaktive = spieler.filter(s => !s.aktiv);
-    let html = '';
-
-    html += `<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Neuer Spieler
-    </button>`;
-
-    html += `<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
-    aktive.forEach(s => {
-      html += `<div class="list-item" data-id="${s.id}" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv})}'>
-        ${avatarHtml(s, 40)}
-        <div class="item-body">
-          <div class="item-title">${s.name}</div>
-          <div class="item-subtitle">${s.email || 'Keine E-Mail'}</div>
-        </div>
-        <div class="item-trailing">
-          <span class="badge badge-green">Aktiv</span>
-          <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-        </div>
-      </div>`;
-    });
-    html += `</div>`;
-
-    if (inaktive.length > 0) {
-      html += `<div class="section-title">Inaktiv · ${inaktive.length}</div><div class="card">`;
-      inaktive.forEach(s => {
-        html += `<div class="list-item" data-id="${s.id}" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv})}'>
-          ${avatarHtml(s, 40)}
-          <div class="item-body">
-            <div class="item-title" style="color:var(--text-secondary)">${s.name}</div>
-            <div class="item-subtitle">${s.email || 'Keine E-Mail'}</div>
-          </div>
-          <div class="item-trailing">
-            <span class="badge badge-red">Inaktiv</span>
-            <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-          </div>
-        </div>`;
-      });
-      html += `</div>`;
-    }
-
-    el.innerHTML = html;
-
-    document.getElementById('btn-neuer-spieler').addEventListener('click', () => openSpielerForm(null));
-
-    el.querySelectorAll('.list-item[data-spieler]').forEach(row => {
-      row.addEventListener('click', () => {
-        const s = JSON.parse(row.dataset.spieler);
-        showSpielerDetail(s);
-      });
+    el.innerHTML=html;
+    el.querySelectorAll('.list-item.clickable[data-id]').forEach(row=>{
+      row.addEventListener('click',()=>{const s=spieler.find(x=>x.id===row.dataset.id);if(s)showSpielerStats(s);});
     });
   }
 
-  // ─── SPIELER DETAIL ───────────────────────────────────
-  function showSpielerDetail(s) {
-    const el = document.getElementById('spieler-detail-content');
-    el.innerHTML = `
-      <button class="back-btn" id="detail-back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Zurück
-      </button>
-      <div style="margin-top:var(--space-lg);text-align:center">
-        ${avatarHtml(s, 80)}
-        <div style="font-size:22px;font-weight:700;margin-top:var(--space-md);letter-spacing:-0.3px">${s.name}</div>
-        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${s.email || 'Keine E-Mail'}</div>
-        <div style="margin-top:var(--space-sm)"><span class="badge ${s.aktiv ? 'badge-green' : 'badge-red'}">${s.aktiv ? 'Aktiv' : 'Inaktiv'}</span></div>
+  // ── SPIELER STATS ──────────────────────────────────────
+  async function showSpielerStats(spieler){
+    const el=document.getElementById('spieler-stats-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade Statistiken…</div>`;
+    showPage('spieler-stats','home');
+
+    // Daten laden
+    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn}]=await Promise.all([
+      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen)').eq('spieler_id',spieler.id).eq('in_statistik',true).order('spiele(datum)',{ascending:false}),
+      db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id),
+      db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
+      db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
+    ]);
+
+    const abgeschlossen=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen);
+    const anzSpiele=abgeschlossen.length;
+    const gesamtBuyins=abgeschlossen.reduce((s,t)=>s+t.buyins,0);
+    const gesamtPayout=abgeschlossen.reduce((s,t)=>s+t.payout,0);
+    // Reingewinn: PayOut - (BuyIns * 7) - Leihgabe
+    const reingewinne=abgeschlossen.map(t=>t.payout-(t.buyins*7)-(t.leihgabe||0));
+    const gesamtRein=reingewinne.reduce((s,v)=>s+v,0);
+    const avgRein=anzSpiele>0?gesamtRein/anzSpiele:0;
+    const maxRein=reingewinne.length>0?Math.max(...reingewinne):0;
+    const minRein=reingewinne.length>0?Math.min(...reingewinne):0;
+    const avgBuyins=anzSpiele>0?gesamtBuyins/anzSpiele:0;
+    const maxBuyins=abgeschlossen.length>0?Math.max(...abgeschlossen.map(t=>t.buyins)):0;
+    const ks=spieler.kontostand||0;
+    const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).getFullYear():'–';
+
+    let html=`
+      <button class="back-btn" id="stats-back">${backIcon} Zurück</button>
+      <div class="profile-header">
+        ${spieler.profilbild?`<div class="profile-avatar-lg"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
+        <div class="profile-name">${spieler.name}</div>
+        <div class="profile-since">Dabei seit ${seit} · ${anzSpiele} Spiele</div>
       </div>
-      <div style="margin-top:var(--space-xl)">
-        <button class="btn btn-secondary" id="detail-edit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Bearbeiten
-        </button>
-        <button class="btn btn-secondary" id="detail-toggle">
-          ${s.aktiv
-            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Deaktivieren`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Aktivieren`}
-        </button>
-        <button class="btn btn-danger" id="detail-delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          Spieler löschen
-        </button>
+
+      <div class="stats-grid">
+        <div class="stat-card accent wide">
+          <div class="stat-label">Kontostand</div>
+          <div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div>
+        </div>
+        <div class="stat-card accent wide">
+          <div class="stat-label">Reingewinn gesamt</div>
+          <div class="stat-value ${ksClass(gesamtRein)}">${fmtSigned(gesamtRein)}</div>
+          <div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Abend</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Bestes Ergebnis</div>
+          <div class="stat-value sm amount-pos">+€${maxRein.toFixed(2)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Schlechtestes</div>
+          <div class="stat-value sm amount-neg">−€${Math.abs(minRein).toFixed(2)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Buy-Ins gesamt</div>
+          <div class="stat-value sm">${gesamtBuyins}</div>
+          <div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ausgespielt</div>
+          <div class="stat-value sm">€${gesamtPayout.toFixed(0)}</div>
+          <div class="stat-sub">Gesamt PayOut</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Besondere Hände</div>
+          <div class="stat-value sm">${(haende||[]).length}</div>
+          <div class="stat-sub">gewonnene Hände</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">7-2 Gewinne</div>
+          <div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div>
+        </div>
       </div>`;
 
-    showPage('spieler-detail', 'verwaltung');
+    // Letzte 10 Spiele
+    const letzteSpiele=abgeschlossen.slice(0,10);
+    if(letzteSpiele.length>0){
+      html+=`<div class="section-title">Letzte Spiele</div><div class="card">`;
+      letzteSpiele.forEach((t,i)=>{
+        const rein=reingewinne[i];
+        const d=new Date(t.spiele.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
+        html+=`<div class="timeline-item">
+          <div class="timeline-date">${d}</div>
+          <div class="timeline-body">
+            <div class="timeline-title">${t.buyins}× Buy-In · €${t.payout.toFixed(2)} PayOut</div>
+          </div>
+          <div class="timeline-amount ${ksClass(rein)}">${fmtSigned(rein)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
 
-    document.getElementById('detail-back').addEventListener('click', () => {
-      showPage('verwaltung');
-      loadVerwaltung();
-    });
-    document.getElementById('detail-edit').addEventListener('click', () => openSpielerForm(s));
-    document.getElementById('detail-toggle').addEventListener('click', async () => {
-      await save(() => db.from('spieler').update({ aktiv: !s.aktiv }).eq('id', s.id), `${s.name}: aktiv → ${!s.aktiv}`);
-      showPage('verwaltung');
-      loadVerwaltung();
-      loadHome();
-    });
-    document.getElementById('detail-delete').addEventListener('click', async () => {
-      if (!confirm(`${s.name} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
-      await save(() => db.from('spieler').delete().eq('id', s.id), `${s.name} gelöscht`);
-      showPage('verwaltung');
-      loadVerwaltung();
-      loadHome();
+    // Letzte Transaktionen
+    const alleTrans=[...(transIn||[]).map(t=>({...t,dir:'in'})),...(transOut||[]).map(t=>({...t,dir:'out'}))].sort((a,b)=>new Date(b.datum)-new Date(a.datum)).slice(0,8);
+    if(alleTrans.length>0){
+      html+=`<div class="section-title">Letzte Kontobewegungen</div><div class="card">`;
+      alleTrans.forEach(t=>{
+        const d=new Date(t.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
+        const sign=t.dir==='in'?'+':'-';
+        const cls=t.dir==='in'?'amount-pos':'amount-neg';
+        html+=`<div class="timeline-item">
+          <div class="timeline-date">${d}</div>
+          <div class="timeline-body"><div class="timeline-title">${t.kommentar||'Transaktion'}</div></div>
+          <div class="timeline-amount ${cls}">${sign}€${t.betrag.toFixed(2)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    el.innerHTML=html;
+    document.getElementById('stats-back').addEventListener('click',()=>showPage('home'));
+  }
+
+  // ── SPIELERVERWALTUNG ──────────────────────────────────
+  async function loadVerwaltung(){
+    const el=document.getElementById('verwaltung-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    const{data:spieler}=await db.from('spieler').select('*').order('name');
+    if(!spieler)return;
+    const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
+    let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
+    html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
+    aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,eintrittsdatum:s.eintrittsdatum||''})}'>
+      ${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div></div>
+      <div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
+    html+=`</div>`;
+    if(inaktive.length>0){
+      html+=`<div class="section-title">Inaktiv · ${inaktive.length}</div><div class="card">`;
+      inaktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,eintrittsdatum:s.eintrittsdatum||''})}'>
+        ${avatarHtml(s,40)}<div class="item-body"><div class="item-title" style="color:var(--text-secondary)">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div></div>
+        <div class="item-trailing"><span class="badge badge-red">Inaktiv</span>${chevron}</div></div>`;});
+      html+=`</div>`;
+    }
+    el.innerHTML=html;
+    document.getElementById('btn-neuer-spieler').addEventListener('click',()=>openSpielerForm(null));
+    el.querySelectorAll('.list-item.clickable[data-spieler]').forEach(row=>{
+      row.addEventListener('click',()=>showSpielerDetail(JSON.parse(row.dataset.spieler)));
     });
   }
 
-  // ─── SPIELER FORM MODAL ───────────────────────────────
-  function openSpielerForm(s) {
-    editSpielerID = s?.id || null;
-    document.getElementById('form-modal-title').textContent = s ? 'Spieler bearbeiten' : 'Neuer Spieler';
-    document.getElementById('form-name').value = s?.name || '';
-    document.getElementById('form-email').value = s?.email || '';
+  function showSpielerDetail(s){
+    const el=document.getElementById('spieler-detail-content');
+    el.innerHTML=`
+      <button class="back-btn" id="detail-back">${backIcon} Zurück</button>
+      <div class="profile-header">
+        ${s.profilbild?`<div class="profile-avatar-lg"><img src="${s.profilbild}" alt="${s.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
+        <div class="profile-name">${s.name}</div>
+        <div class="profile-since">${s.email||'Keine E-Mail'}</div>
+        <div style="margin-top:var(--space-sm)"><span class="badge ${s.aktiv?'badge-green':'badge-red'}">${s.aktiv?'Aktiv':'Inaktiv'}</span></div>
+      </div>
+      <button class="btn btn-secondary" id="detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
+      <button class="btn btn-secondary" id="detail-toggle">${s.aktiv?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Deaktivieren`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Aktivieren`}</button>
+      <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Spieler löschen</button>`;
+    showPage('spieler-detail','verwaltung');
+    document.getElementById('detail-back').addEventListener('click',()=>{showPage('verwaltung');loadVerwaltung();});
+    document.getElementById('detail-edit').addEventListener('click',()=>openSpielerForm(s));
+    document.getElementById('detail-toggle').addEventListener('click',async()=>{
+      if(!confirmAction(`${s.name} wirklich ${s.aktiv?'deaktivieren':'aktivieren'}?`))return;
+      await save(()=>db.from('spieler').update({aktiv:!s.aktiv}).eq('id',s.id),`${s.name} ${!s.aktiv?'aktiviert':'deaktiviert'}`);
+      showPage('verwaltung');loadVerwaltung();loadHome();
+    });
+    document.getElementById('detail-delete').addEventListener('click',async()=>{
+      if(!confirmDelete(`Spieler "${s.name}" und alle zugehörigen Daten werden unwiderruflich gelöscht.`))return;
+      await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
+      showPage('verwaltung');loadVerwaltung();loadHome();
+    });
+  }
+
+  function openSpielerForm(s){
+    editSpielerID=s?.id||null;
+    document.getElementById('form-modal-title').textContent=s?'Spieler bearbeiten':'Neuer Spieler';
+    document.getElementById('form-name').value=s?.name||'';
+    document.getElementById('form-email').value=s?.email||'';
     document.getElementById('modal-spieler-form').classList.add('open');
   }
-
-  document.getElementById('form-abbrechen').addEventListener('click', () => {
+  document.getElementById('form-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-form').classList.remove('open'));
+  document.getElementById('form-speichern').addEventListener('click',async()=>{
+    const name=document.getElementById('form-name').value.trim(),email=document.getElementById('form-email').value.trim()||null;
+    if(!name){alert('Name ist erforderlich.');return;}
+    if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
+    else{await save(()=>db.from('spieler').insert({name,email,aktiv:true}),`Neuer Spieler: ${name}`);}
     document.getElementById('modal-spieler-form').classList.remove('open');
+    await loadVerwaltung();await loadHome();
+    if(editSpielerID)showPage('verwaltung');
   });
 
-  document.getElementById('form-speichern').addEventListener('click', async () => {
-    const name = document.getElementById('form-name').value.trim();
-    const email = document.getElementById('form-email').value.trim() || null;
-    if (!name) { alert('Name ist erforderlich.'); return; }
-    if (editSpielerID) {
-      await save(() => db.from('spieler').update({ name, email }).eq('id', editSpielerID), `${name} aktualisiert`);
-    } else {
-      await save(() => db.from('spieler').insert({ name, email, aktiv: true }), `Neuer Spieler: ${name}`);
-    }
-    document.getElementById('modal-spieler-form').classList.remove('open');
-    await loadVerwaltung();
-    await loadHome();
-    if (editSpielerID) showPage('verwaltung');
-  });
-
-  // ─── AKTUELLES SPIEL ──────────────────────────────────
-  async function loadSpiel() {
-    const el = document.getElementById('spiel-content');
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const { data: spiele } = await db.from('spiele').select('*').eq('abgeschlossen', false).order('created_at', { ascending: false }).limit(1);
-    aktuellesSpiel = spiele?.[0] || null;
-    if (!aktuellesSpiel) {
-      el.innerHTML = `
-        <div class="empty">
-          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div>
-          <div class="empty-title">Kein aktives Spiel</div>
-          <div class="empty-subtitle">Starte einen neuen Spielabend.</div>
-          <button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button>
-        </div>`;
-      document.getElementById('btn-neues-spiel').addEventListener('click', zeigeSpielAuswahl);
+  // ── AKTUELLES SPIEL ────────────────────────────────────
+  async function loadSpiel(){
+    const el=document.getElementById('spiel-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    const{data:spiele}=await db.from('spiele').select('*').eq('abgeschlossen',false).order('created_at',{ascending:false}).limit(1);
+    aktuellesSpiel=spiele?.[0]||null;
+    if(!aktuellesSpiel){
+      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Starte einen neuen Spielabend.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
+      document.getElementById('btn-neues-spiel').addEventListener('click',zeigeSpielAuswahl);
       return;
     }
-    const { data: teilnehmer } = await db.from('spiel_teilnehmer').select('*, spieler(*)').eq('spiel_id', aktuellesSpiel.id);
-    spielTeilnehmer = teilnehmer || [];
+    const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('*,spieler(*)').eq('spiel_id',aktuellesSpiel.id);
+    spielTeilnehmer=teilnehmer||[];
     renderSpiel();
   }
 
-  function renderSpiel() {
-    const el = document.getElementById('spiel-content');
-    const datum = new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const gesamtPot = spielTeilnehmer.reduce((s, t) => s + t.buyins * 5, 0);
-
-    let html = `
+  function renderSpiel(){
+    const el=document.getElementById('spiel-content');
+    const datum=new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+t.buyins*5,0);
+    let html=`
       <div class="card" style="margin-bottom:var(--space-md)">
         <div style="display:flex;gap:var(--space-sm);padding:var(--space-md)">
-          <div style="flex:1;text-align:center">
-            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px">Datum</div>
-            <div style="font-size:17px;font-weight:700;margin-top:4px">${datum}</div>
-          </div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Datum</div><div style="font-size:17px;font-weight:700;margin-top:4px">${datum}</div></div>
           <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center">
-            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px">Spieler</div>
-            <div style="font-size:17px;font-weight:700;margin-top:4px">${spielTeilnehmer.length}</div>
-          </div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:17px;font-weight:700;margin-top:4px">${spielTeilnehmer.length}</div></div>
           <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center">
-            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px">Pot</div>
-            <div style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot}</div>
-          </div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot}</div></div>
         </div>
       </div>
-      <div class="section-title">Buy-Ins</div>
-      <div class="card" style="margin-bottom:var(--space-md)">`;
-
-    spielTeilnehmer.forEach(t => {
-      html += `
-        <div class="counter-row">
-          <div class="counter-avatar">${avatarHtml(t.spieler, 36)}</div>
-          <div class="counter-info">
-            <div class="counter-name">${t.spieler.name}</div>
-            <div class="counter-sub" id="pot-${t.id}">€${(t.buyins * 5).toFixed(0)} im Pot</div>
-          </div>
-          <div class="counter-controls">
-            <button class="counter-btn minus" data-id="${t.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-            <div class="counter-value" id="count-${t.id}">${t.buyins}</div>
-            <button class="counter-btn plus" data-id="${t.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-          </div>
-        </div>`;
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="section-title" style="margin:0">Buy-Ins</div>
+        <button class="btn btn-ghost" id="btn-edit-teilnehmer" style="width:auto;padding:8px 14px;font-size:13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Teilnehmer
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:var(--space-md);margin-top:var(--space-sm)">`;
+    spielTeilnehmer.forEach(t=>{
+      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${(t.buyins*5).toFixed(0)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
     });
-    html += `</div>`;
-
-    html += `<div class="section-title">Ergebnis</div><div class="card" style="margin-bottom:var(--space-md)">`;
-    spielTeilnehmer.forEach(t => {
-      html += `
-        <div class="payout-input-row">
-          <div style="display:flex;align-items:center;gap:8px;width:140px">
-            ${avatarHtml(t.spieler, 28)}
-            <span style="font-size:14px;font-weight:500">${t.spieler.name}</span>
-          </div>
-          <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;align-items:center">
-            <input type="number" class="payout-field" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00">
-            <span class="payout-unit">€</span>
-          </div>
-        </div>`;
+    html+=`</div><div class="section-title">Ergebnis (PayOut)</div><div class="card" style="margin-top:var(--space-sm);margin-bottom:var(--space-md)">`;
+    spielTeilnehmer.forEach(t=>{
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" class="payout-field" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
     });
-    html += `</div>`;
+    html+=`</div><button class="btn btn-danger" id="btn-abschliessen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>`;
+    el.innerHTML=html;
 
-    html += `<button class="btn btn-danger" id="btn-abschliessen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-      Spiel abschließen
-    </button>`;
-
-    el.innerHTML = html;
-
-    el.querySelectorAll('.counter-btn.plus').forEach(btn => btn.addEventListener('click', () => buyinChange(btn.dataset.id, +1)));
-    el.querySelectorAll('.counter-btn.minus').forEach(btn => btn.addEventListener('click', () => buyinChange(btn.dataset.id, -1)));
-    spielTeilnehmer.forEach(t => {
-      document.getElementById('payout-' + t.id)?.addEventListener('change', async e => {
-        const payout = parseFloat(e.target.value) || 0;
-        await save(() => db.from('spiel_teilnehmer').update({ payout }).eq('id', t.id), `PayOut ${t.spieler.name}: €${payout}`);
+    el.querySelectorAll('.counter-btn.plus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,+1)));
+    el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,-1)));
+    spielTeilnehmer.forEach(t=>{
+      document.getElementById('payout-'+t.id)?.addEventListener('change',async e=>{
+        const payout=parseFloat(e.target.value)||0;
+        await save(()=>db.from('spiel_teilnehmer').update({payout}).eq('id',t.id),`PayOut ${t.spieler.name}: €${payout}`);
       });
     });
-    document.getElementById('btn-abschliessen').addEventListener('click', schliesseSpielAb);
+    document.getElementById('btn-edit-teilnehmer').addEventListener('click',zeigeTeilnehmerEdit);
+    document.getElementById('btn-abschliessen').addEventListener('click',schliesseSpielAb);
   }
 
-  async function buyinChange(id, delta) {
-    const t = spielTeilnehmer.find(x => x.id === id);
-    if (!t || (delta < 0 && t.buyins <= 0)) return;
-    t.buyins += delta;
-    document.getElementById('count-' + id).textContent = t.buyins;
-    document.getElementById('pot-' + id).textContent = `€${(t.buyins * 5).toFixed(0)} im Pot`;
-    await save(() => db.from('spiel_teilnehmer').update({ buyins: t.buyins }).eq('id', id), `BuyIn ${t.spieler.name}: ${t.buyins}x`);
+  async function buyinChange(id,delta){
+    const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&t.buyins<=0))return;
+    t.buyins+=delta;
+    document.getElementById('count-'+id).textContent=t.buyins;
+    document.getElementById('pot-'+id).textContent=`€${(t.buyins*5).toFixed(0)} im Pot`;
+    await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
   }
 
-  async function schliesseSpielAb() {
-    if (!confirm('Spiel wirklich abschließen?')) return;
-    await db.from('spiele').update({ abgeschlossen: true }).eq('id', aktuellesSpiel.id);
-    aktuellesSpiel = null; spielTeilnehmer = [];
-    await loadSpiel(); await loadHome();
+  async function schliesseSpielAb(){
+    if(!confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
+    await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
+    aktuellesSpiel=null;spielTeilnehmer=[];
+    await loadSpiel();await loadHome();
   }
 
-  // ─── SPIELER AUSWAHL ──────────────────────────────────
-  function zeigeSpielAuswahl() {
-    const spieler = alleSpieler.filter(s => !s.ist_bank);
-    const liste = document.getElementById('spieler-auswahl-liste');
-    liste.innerHTML = `<div class="grid-2">${spieler.map(s => `
-      <div class="select-card" data-id="${s.id}">
-        ${avatarHtml(s, 44)}
+  // ── TEILNEHMER EDITIEREN ───────────────────────────────
+  function zeigeTeilnehmerEdit(){
+    const spieler=alleSpieler.filter(s=>!s.ist_bank);
+    const aktivIds=new Set(spielTeilnehmer.map(t=>t.spieler_id));
+    const liste=document.getElementById('teilnehmer-edit-liste');
+    liste.innerHTML=`<div class="select-grid">${spieler.map(s=>`
+      <div class="select-card ${aktivIds.has(s.id)?'selected':''}" data-id="${s.id}">
+        ${avatarHtml(s,44)}
         <span class="select-card-name">${s.name}</span>
       </div>`).join('')}</div>`;
-    liste.querySelectorAll('.select-card').forEach(c => c.addEventListener('click', () => c.classList.toggle('selected')));
-    document.getElementById('modal-spieler').classList.add('open');
+    liste.querySelectorAll('.select-card').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
+    document.getElementById('modal-teilnehmer-edit').classList.add('open');
   }
 
-  document.getElementById('modal-abbrechen').addEventListener('click', () => document.getElementById('modal-spieler').classList.remove('open'));
-  document.getElementById('modal-bestaetigen').addEventListener('click', async () => {
-    const selected = document.querySelectorAll('.select-card.selected');
-    if (selected.length < 2) { alert('Mindestens 2 Spieler auswählen.'); return; }
-    const { data: neuesSpiel } = await db.from('spiele').insert({ datum: new Date().toISOString().split('T')[0] }).select().single();
-    await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el => ({ spiel_id: neuesSpiel.id, spieler_id: el.dataset.id, buyins: 1, payout: 0, leihgabe: 0 })));
+  document.getElementById('teilnehmer-edit-abbrechen').addEventListener('click',()=>document.getElementById('modal-teilnehmer-edit').classList.remove('open'));
+  document.getElementById('teilnehmer-edit-speichern').addEventListener('click',async()=>{
+    const selected=new Set(Array.from(document.querySelectorAll('#teilnehmer-edit-liste .select-card.selected')).map(c=>c.dataset.id));
+    const aktuelleIds=new Set(spielTeilnehmer.map(t=>t.spieler_id));
+
+    // Hinzufügen
+    const hinzufuegen=[...selected].filter(id=>!aktuelleIds.has(id));
+    // Entfernen
+    const entfernen=spielTeilnehmer.filter(t=>!selected.has(t.spieler_id));
+
+    // Warnung bei Entfernen mit BuyIns
+    const mitBuyins=entfernen.filter(t=>t.buyins>0);
+    if(mitBuyins.length>0){
+      const namen=mitBuyins.map(t=>t.spieler.name).join(', ');
+      if(!confirmAction(`${namen} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins. Wirklich entfernen?\n\nDie Buy-In Einträge werden gelöscht.`))return;
+    }
+
+    setSync('pending');
+    for(const t of entfernen){await db.from('spiel_teilnehmer').delete().eq('id',t.id);}
+    if(hinzufuegen.length>0){await db.from('spiel_teilnehmer').insert(hinzufuegen.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));}
+    setSync('synced');
+    document.getElementById('modal-teilnehmer-edit').classList.remove('open');
+    await loadSpiel();
+    console.log(`✅ Teilnehmer aktualisiert: +${hinzufuegen.length} -${entfernen.length}`);
+  });
+
+  // ── SPIELER AUSWAHL (neues Spiel) ─────────────────────
+  function zeigeSpielAuswahl(){
+    const spieler=alleSpieler.filter(s=>!s.ist_bank);
+    const liste=document.getElementById('spieler-auswahl-liste');
+    liste.innerHTML=`<div class="select-grid">${spieler.map(s=>`<div class="select-card" data-id="${s.id}">${avatarHtml(s,44)}<span class="select-card-name">${s.name}</span></div>`).join('')}</div>`;
+    liste.querySelectorAll('.select-card').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
+    document.getElementById('modal-spieler').classList.add('open');
+  }
+  document.getElementById('modal-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler').classList.remove('open'));
+  document.getElementById('modal-bestaetigen').addEventListener('click',async()=>{
+    const selected=document.querySelectorAll('#spieler-auswahl-liste .select-card.selected');
+    if(selected.length<2){alert('Bitte mindestens 2 Spieler auswählen.');return;}
+    const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0]}).select().single();
+    await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el=>({spiel_id:neuesSpiel.id,spieler_id:el.dataset.id,buyins:1,payout:0,leihgabe:0})));
     document.getElementById('modal-spieler').classList.remove('open');
-    aktuellesSpiel = neuesSpiel;
+    aktuellesSpiel=neuesSpiel;
     await loadSpiel();
   });
 
-  // ─── INIT ──────────────────────────────────────────────
-  const { data: { session } } = await db.auth.getSession();
-  if (session) { currentUser = session.user; showApp(); }
+  // ── INIT ───────────────────────────────────────────────
+  const{data:{session}}=await db.auth.getSession();
+  if(session){currentUser=session.user;showApp();}
 </script>
 </body>
 </html>
