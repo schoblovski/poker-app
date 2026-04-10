@@ -187,11 +187,14 @@
     .setting-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
     .setting-input{width:80px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text-primary);font-size:15px;font-weight:600;font-family:var(--font-mono);text-align:right;}
     .setting-input:focus{outline:none;border-color:var(--accent);}
-    .kasse-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:var(--space-sm);}
-    .kasse-row{display:flex;align-items:center;justify-content:space-between;padding:14px var(--space-md);border-bottom:1px solid var(--border);}
-    .kasse-row:last-child{border-bottom:none;}
-    .kasse-label{font-size:13px;color:var(--text-secondary);font-weight:500;}
-    .kasse-value{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;}
+    .kasse-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
+    .kasse-tile{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
+    .kasse-tile-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
+    .kasse-tile-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:6px;letter-spacing:-.3px;}
+    .kasse-tile-sub{font-size:11px;color:var(--text-tertiary);margin-top:3px;}
+    .kasse-tile.bank{background:linear-gradient(135deg,var(--accent-soft),var(--surface));}
+    .kasse-tile.bank .kasse-tile-label{color:var(--accent-text);}
+    .kasse-tile.bank .kasse-tile-value{color:var(--accent-text);}
   </style>
 </head>
 <body>
@@ -313,7 +316,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.5.2';
+  const VERSION='1.6';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -349,7 +352,20 @@
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
-  function avatarHtml(s,size=44){return s?.profilbild?`<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${s.profilbild}" alt="${s?.name||''}"></div>`:`<div class="item-avatar" style="width:${size}px;height:${size}px">${userIcon}</div>`;}
+  function getAvatar(s){
+    if(!s?.profilbild) return null;
+    // Wenn volle URL (http/https) → direkt verwenden (Google/Apple Login)
+    if(s.profilbild.startsWith('http')) return s.profilbild;
+    // Alte relative Pfade (Spieler_Images/...) → kein Bild verfügbar bis Login
+    return null;
+  }
+  function avatarHtml(s,size=44){
+    const src=getAvatar(s);
+    if(src) return `<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${src}" alt="${s?.name||''}" onerror="this.parentElement.innerHTML='${userIcon.replace(/"/g,"'")}'">`+`</div>`;
+    // Fallback: Initiale
+    const initial=s?.name?s.name[0].toUpperCase():'?';
+    return `<div class="item-avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;font-weight:700;color:var(--text-secondary)">${initial}</div>`;
+  }
   function confirmDelete(msg){return confirm(`⚠️ Löschen bestätigen\n\n${msg}\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);}
   function confirmAction(msg){return confirm(msg);}
 
@@ -502,7 +518,7 @@
     (spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
     const kontostaende=berechneKontostaende(spieler,trans,verlauf,spieleMap);
     const bankkonto=berechneBankkonto(trans||[]);
-    const pokerkasse=berechnePokerkasse(trans||[],verlauf||[]);
+    const pokerkasse=berechnePokerkasse(bankkonto, kontostaende);
 
     const ich=spieler.find(s=>s.id===currentSpieler?.id);
     const bank=spieler.find(s=>s.ist_bank);
@@ -518,9 +534,17 @@
 
     // Bank & Pokerkasse
     html+=`<div class="section-title">Kasse</div>
-    <div class="kasse-card">
-      <div class="kasse-row"><span class="kasse-label">Bankkonto</span><span class="kasse-value ${ksClass(bankkonto)}">${fmt(bankkonto)}</span></div>
-      <div class="kasse-row"><span class="kasse-label">Pokerkasse</span><span class="kasse-value ${ksClass(pokerkasse)}">${fmt(pokerkasse)}</span></div>
+    <div class="kasse-grid">
+      <div class="kasse-tile bank">
+        <div class="kasse-tile-label">Bankkonto</div>
+        <div class="kasse-tile-value">${fmt(bankkonto)}</div>
+        <div class="kasse-tile-sub">Physisches Sparbuch</div>
+      </div>
+      <div class="kasse-tile">
+        <div class="kasse-tile-label">Pokerkasse</div>
+        <div class="kasse-tile-value ${ksClass(pokerkasse)}">${fmt(pokerkasse)}</div>
+        <div class="kasse-tile-sub">Überschuss</div>
+      </div>
     </div>`;
 
     if(rest.length>0){
@@ -580,7 +604,7 @@
       </div>
       <div class="stats-grid">
         <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div></div>
-        <div class="stat-card wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value sm ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Abend</div></div>
+        <div class="stat-card wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value sm ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Spiel</div></div>
         <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">${fmtSigned(maxRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">${fmtSigned(minRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gBuyins}</div><div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div></div>
