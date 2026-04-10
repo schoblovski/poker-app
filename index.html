@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.7">
+  <meta name="version" content="1.8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -262,6 +262,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Einstellungen
         </button>
+        <button class="dropdown-item" id="btn-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Info &amp; Changelog
+        </button>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item danger" id="btn-logout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -282,6 +286,7 @@
     </div>
     <div class="page" id="page-verwaltung"><div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
     <div class="page" id="page-einstellungen"><div id="einstellungen-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
+    <div class="page" id="page-info"><div id="info-content"></div></div>
     <div class="page" id="page-spiel-detail"><div id="spiel-detail-content"></div></div>
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
@@ -367,7 +372,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.7';
+  const VERSION='1.8';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -488,7 +493,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog'};
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -510,6 +515,7 @@
   document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
+  document.getElementById('btn-info').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('info');loadInfo();});
   document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
   // ── AUTH ───────────────────────────────────────────────
@@ -1306,6 +1312,129 @@
         if(s)showSpielerStats({...s,_ks:s.ks});
       });
     });
+  }
+
+  // ── INFO & CHANGELOG ───────────────────────────────────
+  const CHANGELOG=[
+    {version:'1.8',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Info & Changelog Seite (diese Seite)'},
+    ]},
+    {version:'1.7',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Neuer Tab „Hände": Besondere Hände erfassen (Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL)'},
+      {typ:'neu',text:'7-2 Automatismus: Beim Erfassen einer 7-2 Hand werden automatisch Transaktionen erstellt (1€ von jedem Mitspieler zum Gewinner)'},
+      {typ:'neu',text:'Spiel Verlauf: Jeder Abend ist anklickbar – Detailansicht mit Ergebnissen und besonderen Hängen'},
+      {typ:'neu',text:'Jahres-Spende: Admin kann alle Spieler auf einen Zielwert angleichen (Überschuss → Pokerkasse, Defizit → Einzahlung)'},
+      {typ:'fix',text:'Beweisfoto-Spalte korrekt als „beweisfoto" angesprochen (war „foto_url")'},
+      {typ:'fix',text:'Datum-Feld bei hand_statistik wird jetzt korrekt gesetzt'},
+    ]},
+    {version:'1.6',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Pokerkasse-Berechnung war falsch – jetzt korrekt: Bankkonto minus Summe aller Spieler-Kontostände'},
+      {typ:'fix',text:'Kontostand-Formel für alte Spiele (buyin_pot=2.5): nur buyin_pot wird abgezogen, kein buyin_kassa'},
+      {typ:'neu',text:'Profilbild wird automatisch vom Google-Login übernommen und gespeichert'},
+    ]},
+    {version:'1.5',datum:'2026',eintraege:[
+      {typ:'neu',text:'Spieler-Statistik Seite: Letzte Spiele, Kontobewegungen, besondere Hände'},
+      {typ:'neu',text:'Statistik-Tab: Rangliste nach Reingewinn und nach Kontostand, 7-2 Übersicht'},
+      {typ:'neu',text:'Spiel Verlauf: Liste aller abgeschlossenen Spielabende mit Ergebnissen'},
+    ]},
+    {version:'1.4',datum:'2026',eintraege:[
+      {typ:'neu',text:'Transaktionen: Liste, neue Transaktion erfassen, Kommentar-Vorlagen'},
+      {typ:'neu',text:'Transaktions-Typen mit Icons (Einzahlung, Auszahlung, Transfer, Spende…)'},
+      {typ:'neu',text:'Einstellungen: BuyIn-Faktoren konfigurierbar (€/BuyIn für Chips und Pokerkasse)'},
+    ]},
+    {version:'1.3',datum:'2026',eintraege:[
+      {typ:'neu',text:'Spielerverwaltung: Spieler anlegen, bearbeiten, deaktivieren, löschen (Admin)'},
+      {typ:'neu',text:'Aktuelles Spiel: Teilnehmer hinzufügen/entfernen während des Spiels'},
+    ]},
+    {version:'1.2',datum:'2026',eintraege:[
+      {typ:'neu',text:'Aktuelles Spiel: Buy-Ins zählen mit +/– Buttons, PayOut eingeben'},
+      {typ:'neu',text:'Spiel abschließen und Pot-Zusammenfassung'},
+      {typ:'neu',text:'Neues Spiel starten mit Spieler-Auswahl'},
+    ]},
+    {version:'1.1',datum:'2026',eintraege:[
+      {typ:'neu',text:'Home-Übersicht: Mein Konto, Bankkonto, Pokerkasse, alle Spieler'},
+      {typ:'neu',text:'Dark/Light/Auto Theme mit System-Erkennung'},
+      {typ:'neu',text:'Safe-Area Support für iOS und Android Notch'},
+    ]},
+    {version:'1.0',datum:'Februar 2026',eintraege:[
+      {typ:'neu',text:'Erste Version – Google Login, Supabase-Anbindung, Grundstruktur'},
+      {typ:'neu',text:'PWA-Grundgerüst: Bottom Nav, Header mit Sync-Status, Dropdown-Menü'},
+    ]},
+  ];
+
+  const HAUSREGELN=[
+    {titel:'7-2 Regel',text:'Wer mit 7-2 (dem schlechtesten Blatt im Texas Hold\'em) gewinnt, kassiert von jedem Mitspieler €1.'},
+    {titel:'Buy-In',text:'€5 gehen als Chips in den Pot, €2 gehen in die Pokerkasse. Gesamtkosten: €7 pro Buy-In.'},
+    {titel:'Pokerkasse',text:'Die Pokerkasse (Überschuss = Bankkonto minus Spieler-Kontostände) wird für Snacks, Getränke, Karten und Pokernächte verwendet.'},
+    {titel:'Jahresspende',text:'Am Jahresende gleichen alle Spieler ihre Kontostände auf ~€100 an: Überschuss geht in die Pokerkasse, Defizit wird ausgeglichen.'},
+  ];
+
+  function loadInfo(){
+    const el=document.getElementById('info-content');
+    const typBadge={
+      neu:`<span style="display:inline-block;background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-right:6px;flex-shrink:0">NEU</span>`,
+      fix:`<span style="display:inline-block;background:var(--danger-soft);color:var(--danger);font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-right:6px;flex-shrink:0">FIX</span>`,
+      verbessert:`<span style="display:inline-block;background:var(--info-soft);color:var(--info);font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-right:6px;flex-shrink:0">UPDATE</span>`,
+    };
+
+    // App-Info Header
+    let html=`
+      <div class="card" style="margin-bottom:var(--space-md)">
+        <div style="padding:var(--space-lg);text-align:center">
+          <div style="font-size:40px;margin-bottom:var(--space-sm)">🃏</div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">DTKS Poker</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Private Pokerrunde · Version ${VERSION}</div>
+        </div>
+        <div style="border-top:1px solid var(--border);display:flex">
+          <div style="flex:1;padding:var(--space-md);text-align:center;border-right:1px solid var(--border)">
+            <div class="stat-label">Version</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;font-family:var(--font-mono)">${VERSION}</div>
+          </div>
+          <div style="flex:1;padding:var(--space-md);text-align:center;border-right:1px solid var(--border)">
+            <div class="stat-label">Plattform</div>
+            <div style="font-size:14px;font-weight:600;margin-top:4px">PWA</div>
+          </div>
+          <div style="flex:1;padding:var(--space-md);text-align:center">
+            <div class="stat-label">Backend</div>
+            <div style="font-size:14px;font-weight:600;margin-top:4px">Supabase</div>
+          </div>
+        </div>
+      </div>`;
+
+    // Hausregeln
+    html+=`<div class="section-title">Hausregeln</div><div class="card">`;
+    HAUSREGELN.forEach((r,i)=>{
+      html+=`<div class="list-item" style="${i<HAUSREGELN.length-1?'':''}">
+        <div class="item-body">
+          <div class="item-title">${r.titel}</div>
+          <div class="item-subtitle" style="margin-top:4px;line-height:1.4">${r.text}</div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+
+    // Changelog
+    html+=`<div class="section-title">Changelog</div>`;
+    CHANGELOG.forEach(v=>{
+      const isCurrent=v.version===VERSION;
+      html+=`<div class="card" style="margin-bottom:var(--space-sm)">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);padding:12px var(--space-md);border-bottom:1px solid var(--border)">
+          <span style="font-size:15px;font-weight:700;font-family:var(--font-mono)">v${v.version}</span>
+          ${isCurrent?`<span style="background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">AKTUELL</span>`:''}
+          <span style="margin-left:auto;font-size:12px;color:var(--text-tertiary)">${v.datum}</span>
+        </div>`;
+      v.eintraege.forEach(e=>{
+        html+=`<div style="display:flex;align-items:flex-start;padding:10px var(--space-md);border-bottom:1px solid var(--border)">
+          ${typBadge[e.typ]||''}
+          <span style="font-size:13px;color:var(--text-primary);line-height:1.4">${e.text}</span>
+        </div>`;
+      });
+      // Letzten Border entfernen via letztem Eintrag-Hack
+      html=html.replace(/border-bottom:1px solid var\(--border\)">\s*$/, '">\n');
+      html+=`</div>`;
+    });
+
+    el.innerHTML=html;
   }
 
   // ── HÄNDE ──────────────────────────────────────────────
