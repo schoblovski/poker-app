@@ -347,7 +347,7 @@
       <select class="form-input" id="hand-gewinner"></select>
     </div>
     <div id="hand-7-2-info" style="display:none;background:var(--warning-soft);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);font-size:13px;color:var(--warning);margin-bottom:var(--space-md)">
-      <strong>7-2 Hausregel:</strong> Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.
+      <strong id="hand-7-2-info-text">7-2 Hausregel:</strong> <span id="hand-7-2-info-detail">Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.</span>
     </div>
     <div class="form-group">
       <label class="form-label">Kommentar (optional)</label>
@@ -1190,7 +1190,7 @@
             <div class="item-title">${h.hand}${is72?' 🤑':''}</div>
             <div class="item-subtitle">${h.gewinner?.name||'?'}${h.kommentar?` · ${h.kommentar}`:''}</div>
           </div>
-          ${h.foto_url?`<div class="item-trailing"><a href="${h.foto_url}" target="_blank" style="color:var(--accent-text);font-size:12px;font-weight:600">Foto</a></div>`:''}
+          ${h.beweisfoto?`<div class="item-trailing"><a href="${h.beweisfoto}" target="_blank" style="color:var(--accent-text);font-size:12px;font-weight:600">Foto</a></div>`:''}
         </div>`;
       });
       html+=`</div>`;
@@ -1323,7 +1323,7 @@
     // Gruppieren nach Datum
     const gruppen={};
     haende.forEach(h=>{
-      const d=h.spiel?.datum||h.created_at?.split('T')[0]||'Unbekannt';
+      const d=h.datum||h.spiel?.datum||h.created_at?.split('T')[0]||'Unbekannt';
       if(!gruppen[d])gruppen[d]=[];
       gruppen[d].push(h);
     });
@@ -1345,7 +1345,7 @@
             <div class="item-subtitle">${gewName}${h.kommentar?` · ${h.kommentar}`:''}</div>
           </div>
           <div class="item-trailing">
-            ${h.foto_url?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;color:var(--text-tertiary)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
+            ${h.beweisfoto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;color:var(--text-tertiary)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
             ${chevron}
           </div>
         </div>`;
@@ -1366,11 +1366,11 @@
     selectedHandType=h?.hand||null;
     document.getElementById('hand-modal-title').textContent=h?'Hand bearbeiten':'Hand erfassen';
     document.getElementById('hand-kommentar').value=h?.kommentar||'';
-    document.getElementById('hand-foto-url').value=h?.foto_url||'';
+    document.getElementById('hand-foto-url').value=h?.beweisfoto||'';
     // Foto-Preview
     const prev=document.getElementById('hand-foto-preview');
-    prev.src=h?.foto_url||'';
-    prev.classList.toggle('show',!!(h?.foto_url));
+    prev.src=h?.beweisfoto||'';
+    prev.classList.toggle('show',!!(h?.beweisfoto));
 
     // Gewinner Dropdown
     const spieler=alleSpieler.filter(s=>!s.ist_bank);
@@ -1402,7 +1402,17 @@
   }
 
   function update72Info(){
-    document.getElementById('hand-7-2-info').style.display=selectedHandType==='7-2'?'block':'none';
+    const el=document.getElementById('hand-7-2-info');
+    el.style.display=selectedHandType==='7-2'?'block':'none';
+    if(selectedHandType==='7-2'){
+      if(aktuellesSpiel){
+        document.getElementById('hand-7-2-info-detail').textContent='Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.';
+        el.style.background='var(--warning-soft)';el.style.color='var(--warning)';
+      } else {
+        document.getElementById('hand-7-2-info-detail').textContent='Kein aktives Spiel – Transaktionen müssen manuell erstellt werden.';
+        el.style.background='var(--info-soft)';el.style.color='var(--info)';
+      }
+    }
   }
 
   document.querySelectorAll('.hand-type-btn').forEach(btn=>{
@@ -1437,9 +1447,9 @@
 
     await save(async()=>{
       if(editHandID){
-        await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,foto_url:fotoUrl}).eq('id',editHandID);
+        await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).eq('id',editHandID);
       } else {
-        await db.from('hand_statistik').insert({spiel_id:spielID,hand:selectedHandType,gewinner_id:gewinnerID,kommentar,foto_url:fotoUrl});
+        await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl});
 
         // 7-2 Automatismus: 1€ von jedem Mitspieler zum Gewinner
         if(selectedHandType==='7-2'&&spielID){
