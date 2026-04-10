@@ -1,112 +1,281 @@
-# DTKS Poker App – Claude Kontext
+# DTKS Poker App – Projektdokumentation für Claude Code
+
+## Überblick
+
+Progressive Web App (PWA) für eine private Pokerrunde (ca. 9-13 Spieler).
+Entwickelt von Chris (Admin) mit Claude als Entwicklungspartner.
 
 ## Tech Stack
-- **Frontend**: Vanilla HTML/CSS/JavaScript (single file: `index.html`)
-- **Hosting**: Vercel (auto-deploy via GitHub push auf `main`)
-- **Datenbank**: Supabase (PostgreSQL)
-- **Live URL**: https://poker-app-dusky.vercel.app
-- **GitHub Repo**: schoblovski/poker-app
+
+- **Frontend:** Vanilla HTML + CSS + JavaScript – alles in einer einzigen Datei: `index.html`
+- **Hosting:** Vercel → auto-deploy bei GitHub Push
+- **Datenbank:** Supabase (PostgreSQL) in Zürich
+- **Live URL:** https://poker-app-dusky.vercel.app
 
 ## Supabase
-- **URL**: `https://bcvyhlzjpfezokvcjksn.supabase.co`
-- **Anon Key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk`
 
-## Datenbank-Tabellen
-| Tabelle | Beschreibung |
-|---|---|
-| `spieler` | id, name, email, aktiv, ist_admin, ist_bank, profilbild, eintrittsdatum |
-| `spiele` | id, datum, abgeschlossen, buyin_pot, buyin_kassa, created_at |
-| `spiel_teilnehmer` | id, spiel_id, spieler_id, buyins, payout, leihgabe, created_at |
-| `transaktionen` | id, datum, von_spieler_id, nach_spieler_id, betrag, kommentar, created_at |
-| `hand_statistik` | id, spiel_id, gewinner_id, hand (z.B. '7-2'), kommentar, foto_url, created_at |
-| `einstellungen` | key, wert, beschreibung |
+```
+URL:      https://bcvyhlzjpfezokvcjksn.supabase.co
+Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk
+```
 
-## Kontostand-Formel (wichtig!)
-- **Alte Spiele** (`buyin_pot < 5`): `payout - buyins * buyin_pot`
-- **Neue Spiele** (`buyin_pot >= 5`): `payout - buyins * (buyin_pot + buyin_kassa)`
-- **Leihgabe** wird NICHT vom Kontostand abgezogen (läuft über Transaktionen)
-- **Transaktionen**: eingehend (`nach_spieler_id`) addiert, ausgehend (`von_spieler_id`) subtrahiert
-- **Pokerkasse** = Bankkonto − Summe(alle Spieler-Kontostände)
-- **Bankkonto**: LEER→SPIELER = +betrag; SPIELER→LEER = −betrag; LEER→BANK = +betrag; BANK→LEER = −betrag
+## Datenbank-Schema
 
-## Einstellungen (DB)
-- `buyin_pot`: Euro pro BuyIn für Chips (Standard: 5)
-- `buyin_kassa`: Euro pro BuyIn in die Pokerkasse (Standard: 2)
+### `spieler`
 
-## Auth / Login
-- Google OAuth ✅
-- Facebook OAuth (Button vorhanden, Supabase-Konfig nötig)
-- Apple OAuth (Button vorhanden, Supabase-Konfig nötig)
-- Microsoft/Azure OAuth (Button vorhanden, Supabase-Konfig nötig)
-- Nach Login: Spieler wird anhand `email` in `spieler`-Tabelle gesucht
-- Profilbild wird von OAuth-Provider übernommen (`user_metadata.avatar_url`)
+| Spalte         | Typ     | Beschreibung                              |
+|----------------|---------|-------------------------------------------|
+| id             | uuid    | Primary Key                               |
+| name           | text    | Anzeigename                               |
+| email          | text    | Für Login (unique)                        |
+| profilbild     | text    | URL (Google-Profilbild oder Google Drive) |
+| eintrittsdatum | date    |                                           |
+| aktiv          | boolean | Inaktive Spieler werden nicht angezeigt   |
+| ist_bank       | boolean | Genau 1 Spieler ist die "Bank"            |
+| ist_admin      | boolean | Darf Spieler verwalten + löschen          |
+| auth_user_id   | uuid    | Verknüpfung mit Supabase Auth             |
 
-## App-Seiten (Bottom Nav)
-| Page ID | Titel | Beschreibung |
-|---|---|---|
-| `home` | Übersicht | Mein Konto, Kasse (Bank/Pokerkasse), alle Spieler |
-| `spiel` | Aktuelles Spiel | Buy-Ins zählen, PayOut eingeben, Spiel abschließen |
-| `verlauf` | Spiel Verlauf | Liste aller abgeschlossenen Spiele (→ Todo: Detail-Ansicht) |
-| `statistik` | Statistik | Rangliste, Kontostand-Ranking, Besondere Hände |
-| `transaktionen` | Konto | Transaktionsliste, Neue Transaktion |
-| `verwaltung` | Spielerverwaltung | Admin-only: Spieler anlegen/bearbeiten/deaktivieren |
-| `einstellungen` | Einstellungen | Admin-only: Buy-In Faktoren |
-| `spieler-stats` | Statistik | Spieler-Detail-Statistik (aus Home/Statistik anklickbar) |
-| `spieler-detail` | Spieler | Admin-Detail eines Spielers (aus Verwaltung anklickbar) |
+### `spiele`
 
-## Design-Regeln
-- **KEINE Gradienten** (kein `linear-gradient`, kein `radial-gradient`)
-- **Font**: DM Sans (`--font-sans`), DM Mono (`--font-mono`)
-- **CSS Design Tokens**: `--accent`, `--bg`, `--surface`, `--border`, `--text-primary`, etc.
-- **Safe Area**: `env(safe-area-inset-*)` für iOS/Android notch support
-- **Dark/Light/Auto Theme** gespeichert in `localStorage` als `dtks-theme`
-- **Admin-only**: Alle Lösch-Aktionen und Admin-Seiten nur für `ist_admin=true` Spieler
-- **Bestätigungsdialog** vor JEDER Löschaktion (`confirmDelete()`)
+| Spalte        | Typ     | Beschreibung                     |
+|---------------|---------|----------------------------------|
+| id            | uuid    | Primary Key                      |
+| datum         | date    |                                  |
+| abgeschlossen | boolean | false = läuft noch               |
+| buyin_pot     | numeric | €5 default (historisch auch 2.5) |
+| buyin_kassa   | numeric | €2 default                       |
+
+### `spiel_teilnehmer`
+
+| Spalte       | Typ     | Beschreibung                               |
+|--------------|---------|--------------------------------------------|
+| id           | uuid    | Primary Key                                |
+| spiel_id     | uuid    | FK → spiele                                |
+| spieler_id   | uuid    | FK → spieler                               |
+| buyins       | integer | Anzahl Buy-Ins                             |
+| payout       | numeric | Was der Spieler am Ende erhält             |
+| leihgabe     | numeric | Geliehenes Geld (läuft über Transaktionen) |
+| in_statistik | boolean | Für Statistik-Auswertung                   |
+
+### `transaktionen`
+
+| Spalte          | Typ     | Beschreibung                         |
+|-----------------|---------|--------------------------------------|
+| id              | uuid    | Primary Key                          |
+| datum           | date    |                                      |
+| von_spieler_id  | uuid    | NULL = "leer" (Einzahlung von außen) |
+| nach_spieler_id | uuid    | NULL = "leer" (Auszahlung)           |
+| betrag          | numeric |                                      |
+| kommentar       | text    |                                      |
+
+**Transaktionstypen:**
+
+- `leer → Spieler` = Einzahlung (erhöht Bankkonto + Spieler-KS)
+- `Spieler → leer` = Auszahlung
+- `Spieler → Spieler` = Transfer (z.B. 7-2 Gewinn)
+- `Bank → Spieler` = Erstattung aus Pokerkasse (z.B. Snacks)
+- `Spieler → Bank` = Spende in Pokerkasse
+- `leer → Bank` = Zinsen, Eingang
+
+### `hand_statistik`
+
+| Spalte      | Typ  | Beschreibung                          |
+|-------------|------|---------------------------------------|
+| id          | uuid | Primary Key                           |
+| datum       | date |                                       |
+| gewinner_id | uuid | FK → spieler                          |
+| hand        | text | z.B. "Poker", "Straight Flush", "7-2" |
+| kommentar   | text |                                       |
+| beweisfoto  | text | URL (Google Drive Pfad)               |
+| spiel_id    | uuid | FK → spiele (optional)                |
+
+### `einstellungen`
+
+| key         | wert | Beschreibung           |
+|-------------|------|------------------------|
+| buyin_pot   | 5.00 | €/BuyIn für Chips      |
+| buyin_kassa | 2.00 | €/BuyIn für Pokerkasse |
+
+## Finanz-Logik (KRITISCH – exakt so umsetzen!)
+
+### Spieler-Kontostand
+
+```
+Kontostand = Σ(payout - buyins × kostenProBuyin) + Transaktionen_ein - Transaktionen_aus
+
+kostenProBuyin:
+  - Alte Spiele (buyin_pot = 2.5): nur buyin_pot = 2.5
+  - Neue Spiele (buyin_pot = 5):   buyin_pot + buyin_kassa = 7.0
+  - Leihgabe wird NICHT abgezogen (wird über Transaktionen abgewickelt)
+```
+
+### Bankkonto
+
+```
+Bankkonto = Einzahlungen (leer→Spieler)
+          - Auszahlungen (Spieler→leer)
+          + Eingänge (leer→Bank)
+          - Ausgaben (Bank→leer)
+```
+
+### Pokerkasse
+
+```
+Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
+```
+
+### Validierte Werte (aus Excel-Import, April 2026)
+
+- Chris: €140.40, Andreas: -€13.00, Bolla: €95.57, Cello: €100.00
+- Gutsch: €103.20, Macs: €118.70
+- Bankkonto: €1.532,19, Pokerkasse: €657,66
+
+## Rollen & Berechtigungen
+
+- **Admin** (ist_admin=true): Darf alles – Spieler verwalten, löschen, Einstellungen ändern
+- **Spieler**: Darf lesen, Transaktionen hinzufügen/editieren, Spiele verwalten, Hände erfassen
+- **Niemand außer Admins** darf löschen (Spieler, Transaktionen, Hände)
+- **Nicht registrierte User** (Email nicht in spieler-Tabelle): Zugang wird nach Login verweigert
+
+## App-Struktur
+
+### Navigation (Bottom Nav)
+
+1. **Home** – Übersicht: Mein Konto, Kasse (Bankkonto + Pokerkasse), Alle Spieler
+2. **Spiel** – Aktuelles Spiel: Neues Spiel, Buy-Ins zählen, PayOut, Teilnehmer verwalten
+3. **Verlauf** – Abgeschlossene Spiele chronologisch mit Ergebnissen
+4. **Statistik** – Rangliste, Statistiken, Besondere Hände
+5. **Konto** – Transaktionen: Liste + neue Transaktion
+6. **Hände** – Besondere Hände erfassen (neu in v1.7)
+
+### Dropdown (Avatar-Button oben rechts)
+
+- Theme-Wechsel (Hell/Dunkel/Auto)
+- Spielerverwaltung (nur Admin)
+- Einstellungen (nur Admin)
+- Abmelden
+
+### Sub-Seiten (ohne eigenen Nav-Tab)
+
+- `spieler-stats` – Spieler-Statistik (von Home oder Statistik erreichbar)
+- `spieler-detail` – Spieler bearbeiten (von Verwaltung)
+- `spiel-detail` – Spieldetail (von Verlauf, neu in v1.7)
+- `einstellungen` – BuyIn-Faktoren + Jahresspende (nur Admin)
+
+## Design-Regeln (STRIKT einhalten)
+
+### Was VERBOTEN ist:
+
+- ❌ Kein `linear-gradient`, kein `radial-gradient` (nirgends!)
+- ❌ Kein Emoji als UI-Icon (nur als dekoratives Element z.B. Login-Suits)
+- ❌ Keine generischen Fonts (kein Arial, kein Inter)
+
+### Was verwendet wird:
+
+- ✅ **Font:** DM Sans + DM Mono (Google Fonts)
+- ✅ **Icons:** SVG Inline (Lucide-Style, stroke-based)
+- ✅ **Farben:** CSS Custom Properties (Design Tokens)
+- ✅ **Kein Gradient** – nur `var(--surface)`, `var(--bg-secondary)` etc.
+
+### CSS Design Tokens (Light/Dark)
+
+```css
+/* Light */
+--bg: #f2f2f7
+--surface: #ffffff
+--bg-secondary: #e8e8ed
+--text-primary: #1c1c1e
+--text-secondary: #6c6c70
+--text-tertiary: #aeaeb2
+--accent: #16a34a
+--accent-soft: #dcfce7
+--accent-text: #15803d
+--danger: #dc2626
+--danger-soft: #fee2e2
+--border: rgba(0,0,0,.08)
+
+/* Dark */
+--bg: #0d0d0f
+--surface: #1c1c1e
+--accent: #22c55e
+--accent-text: #4ade80
+```
+
+### Mobile-First (iOS + Android)
+
+- Safe Area: `env(safe-area-inset-top/bottom/left/right, 0px)`
+- Header: `position: sticky; backdrop-filter: blur(20px)`
+- Bottom Nav: `padding-bottom: var(--safe-bottom)`
+- theme-color meta tag wird bei Theme-Wechsel aktualisiert
+
+## UX-Regeln
+
+- Bestätigungsdialog vor JEDER Löschaktion: `confirm("⚠️ Löschen bestätigen\n\n{was}\n\nDiese Aktion kann nicht rückgängig gemacht werden.")`
+- Sync-Status Icon im Header (grün=OK, gelb=läuft, rot=Fehler)
+- Console-Logging für alle wichtigen Aktionen
+- Auto-Save bei Feldänderungen (kein manueller Speichern-Button wo vermeidbar)
 
 ## Versionierung
-- Aktuelle Version: **1.6**
-- Version in `<meta name="version" content="X.X">` und `const VERSION='X.X'` hochzählen
-- Bei jeder Änderung um 0.1 erhöhen
+
+- Meta-Tag: `<meta name="version" content="X.X">`
+- JS Konstante: `const VERSION = 'X.X'`
+- Bei jeder Änderung beide hochzählen (1.7 → 1.8 etc.)
+- **Aktuelle Version: 1.7**
+
+## Login-Provider
+
+- ✅ Google (funktioniert)
+- ⏳ Facebook (konfiguriert, nicht getestet)
+- ⏳ Apple (konfiguriert, nicht getestet)
+- ⏳ Microsoft/Azure (konfiguriert, nicht getestet)
+- Callback URL: `https://bcvyhlzjpfezokvcjksn.supabase.co/auth/v1/callback`
+
+## Offene TODOs
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Hand Statistik Seite (Erfassen mit Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL) | ✅ v1.7 |
+| 2 | 7-2 Automatismus: auto Transaktionen beim Erfassen | ✅ v1.7 |
+| 3 | Spiel Verlauf: Detail-Ansicht pro Abend (anklickbar) | ✅ v1.7 |
+| 4 | Admin: Jahres-Spende Automatismus | ✅ v1.7 |
+| 5 | Facebook / Apple / Microsoft Login in Supabase konfigurieren | ⏳ offen |
+| 6 | Altdaten: Profilbilder (Google Drive Pfade) | ⏳ offen |
+
+## Bekannte Bugs / Limitierungen
+
+- Pokerkasse war falsch berechnet → wurde in v1.6 gefixt
+- Kontostand-Formel für alte Spiele (buyin_pot=2.5) → gefixt in v1.6
+- Facebook/Apple/Microsoft Login: Supabase-Konfiguration noch ausstehend
+- Google Drive Profilbilder werden nicht angezeigt → Spieler können Bild selbst updaten via Google-Login
+
+## Migrations-Script
+
+`migrate_poker.py` – importiert Altdaten aus `poker tracker v3.xlsx` in Supabase.
+Löscht erst alle bestehenden Spieldaten, dann reimportiert alles.
+Benötigt Service Role Key (nicht Anon Key).
+
+## Spieler (aktuell aktiv)
+
+Andreas, Bolla, Cello, Chris (Admin), Gutsch, Macs, Markus, Peter
+Inaktiv: Dani, Marco, Michael, Walter
+Sonder-Eintrag: Bank (ist_bank=true)
+
+## Sonderregeln der Pokerrunde
+
+- **7-2 Regel:** Wer mit 7-2 (schlechtestes Blatt) gewinnt, bekommt von jedem Mitspieler €1
+- **Buy-In:** €5 für Chips + €2 in Pokerkasse = €7 Gesamtkosten pro Buy-In
+- **Pokerkasse** wird für Snacks, Getränke, Pokernächte, Karten etc. verwendet
+- **Jahresspende:** Am Jahresende spenden Spieler ihren Überschuss damit alle bei ~€100 starten
+
+## Git-Workflow
+
+- **Dev-Branch:** `claude/poker-app-pending-tasks-MQfdn`
+- **Push:** `git push -u origin claude/poker-app-pending-tasks-MQfdn`
+- Kein direkter Push auf `main` ohne explizite Erlaubnis
+- Vercel deployed automatisch von `main`
 
 ## Kommentar-Vorlagen (Transaktionen)
+
 ```js
 ['Verpflegung (Bier | Snacks)', 'Pfand', 'Pokernacht', 'Einzahlung', 'Habenzinsen', 'Kapitalertragssteuer', 'Spende']
 ```
-
-## 7-2 Regel (Hausregel)
-Wer mit 7-2 gewinnt, bekommt von jedem anderen Mitspieler am Tisch 1€.
-→ Beim Erfassen in `hand_statistik` werden automatisch Transaktionen erstellt:
-  - Von jedem anderen `spiel_teilnehmer` des laufenden Spiels → 1€ → Gewinner
-  - Kommentar: `"7-2 Gewinn"`
-
----
-
-## TODO-Liste
-
-### Offen
-
-| # | Feature | Priorität | Status |
-|---|---|---|---|
-| 1 | **Hand Statistik Seite** – Erfassen mit Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL | Hoch | ⬜ Offen |
-| 2 | **7-2 Automatismus** – Beim Erfassen einer 7-2 Hand → auto Transaktionen (1€ von jedem Mitspieler zum Gewinner) | Hoch | ⬜ Offen |
-| 3 | **Facebook / Apple / Microsoft Login** in Supabase konfigurieren | Mittel | ⬜ Offen (Supabase-Dashboard nötig) |
-| 4 | **Spiel Verlauf Detail-Ansicht** – Pro Abend anklickbar, detail view | Mittel | ⬜ Offen |
-| 5 | **Admin: Jahres-Spende Automatismus** – Alle Spieler auf 100€ zurücksetzen (Differenz als Spende/Einzahlung buchen) | Mittel | ⬜ Offen |
-
-### Ideen / Backlog
-
-| Idee | Beschreibung |
-|---|---|
-| Push Notifications | Benachrichtigung wenn Spiel startet |
-| PWA Service Worker | Offline-Support verbessern |
-| Export | CSV/PDF Export der Transaktionen |
-| Leihgabe UI | Leihgaben im Spiel besser sichtbar machen |
-| Spieler-Kommentare | Freitext-Notizen zu Spielabenden |
-
----
-
-## Git-Workflow
-- **Dev-Branch**: `claude/poker-app-pending-tasks-MQfdn`
-- **Push**: `git push -u origin claude/poker-app-pending-tasks-MQfdn`
-- Kein direkter Push auf `main` ohne explizite Erlaubnis
-- Vercel deployed automatisch von `main`
