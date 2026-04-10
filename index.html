@@ -416,18 +416,10 @@
     return bank;
   }
 
-  function berechnePokerkasse(trans, spielVerlauf){
-    // Akkumuliert aus Buy-Ins
-    let kasse=(spielVerlauf||[]).reduce((s,t)=>s+(t.buyins||0)*einstellungen.buyin_kassa,0);
-    // +SPIELER→BANK (Spenden), -BANK→SPIELER (Erstattungen)
-    (trans||[]).forEach(t=>{
-      const vonId=t.von_spieler_id, nachId=t.nach_spieler_id;
-      const vonBank=vonId&&alleSpieler.find(s=>s.id===vonId)?.ist_bank;
-      const nachBank=nachId&&alleSpieler.find(s=>s.id===nachId)?.ist_bank;
-      if(!vonBank&&vonId&&nachBank) kasse+=t.betrag; // SPIELER→BANK
-      if(vonBank&&nachId&&!nachBank) kasse-=t.betrag; // BANK→SPIELER
-    });
-    return kasse;
+  // Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände)
+  function berechnePokerkasse(bankkonto, kontostaende){
+    const spielerSumme=Object.values(kontostaende).reduce((s,v)=>s+v,0);
+    return bankkonto - spielerSumme;
   }
 
   // Transaktions-Icon
