@@ -990,7 +990,7 @@
 
   // ── GESAMT STATISTIK ───────────────────────────────────
   async function loadStatistik(){
-  async function loadStatistik(){
+    const el=document.getElementById('statistik-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
