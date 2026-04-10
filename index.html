@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.1">
+  <meta name="version" content="1.2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>DTKS Poker</title>
@@ -304,7 +304,11 @@
     </div>
     <!-- TRANSAKTIONEN -->
     <div class="page" id="page-transaktionen">
-      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Transaktionen</div><div class="empty-subtitle">Kommt bald</div></div>
+      <button class="btn btn-primary" id="btn-neue-transaktion" style="margin-bottom:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Neue Transaktion
+      </button>
+      <div id="transaktionen-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
     </div>
     <!-- VERWALTUNG -->
     <div class="page" id="page-verwaltung">
@@ -355,6 +359,43 @@
   </div>
 </div>
 
+<!-- MODAL: Neue Transaktion -->
+<div class="modal-overlay" id="modal-transaktion">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="trans-modal-title">Neue Transaktion</div>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input type="date" class="form-input" id="trans-datum">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Von</label>
+      <select class="form-input" id="trans-von">
+        <option value="">– leer (Eingang) –</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nach</label>
+      <select class="form-input" id="trans-nach">
+        <option value="">– wählen –</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kommentar</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm)" id="kommentar-chips"></div>
+      <input type="text" class="form-input" id="trans-kommentar-text" placeholder="Oder Freitext eingeben…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Betrag (€)</label>
+      <input type="number" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button>
+      <button class="btn btn-primary" id="trans-speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Spieler Form -->
 <div class="modal-overlay" id="modal-spieler-form">
   <div class="modal">
@@ -371,7 +412,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION = '1.1';
+  const VERSION = '1.2';
   const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -414,6 +455,7 @@
     prevPage=from;
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
+    if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=openTransaktionModal;}
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
@@ -787,6 +829,127 @@
     document.getElementById('modal-spieler').classList.remove('open');
     aktuellesSpiel=neuesSpiel;
     await loadSpiel();
+  });
+
+  // ── TRANSAKTIONEN ──────────────────────────────────────
+  const KOMMENTAR_VORLAGEN = ['Verpflegung (Bier | Snacks)','Pfand','7-2 Gewinn','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
+
+  async function loadTransaktionen() {
+    const el = document.getElementById('transaktionen-content');
+    const { data: trans } = await db.from('transaktionen')
+      .select('*, von:von_spieler_id(name), nach:nach_spieler_id(name)')
+      .order('datum', { ascending: false })
+      .limit(100);
+    if (!trans || trans.length === 0) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div><div class="empty-subtitle">Noch keine Einträge vorhanden.</div></div>`;
+      return;
+    }
+    // Gruppieren nach Datum
+    const gruppen = {};
+    trans.forEach(t => {
+      const d = t.datum;
+      if (!gruppen[d]) gruppen[d] = { datum: d, items: [], summe: 0 };
+      gruppen[d].items.push(t);
+      gruppen[d].summe += t.betrag;
+    });
+    let html = '';
+    Object.values(gruppen).forEach(g => {
+      const datumStr = new Date(g.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
+      html += `<div class="section-title">${datumStr} <span style="font-weight:400;color:var(--text-tertiary)">· €${g.summe.toFixed(2)}</span></div><div class="card">`;
+      g.items.forEach(t => {
+        const von = t.von?.name || '–';
+        const nach = t.nach?.name || '–';
+        html += `<div class="list-item">
+          <div class="item-avatar accent" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">${von} → ${nach}</div>
+            <div class="item-subtitle">${t.kommentar || '–'}</div>
+          </div>
+          <div class="item-trailing">
+            <span class="item-amount amount-pos">€${t.betrag.toFixed(2)}</span>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function openTransaktionModal() {
+    // Datum auf heute setzen
+    document.getElementById('trans-datum').value = new Date().toISOString().split('T')[0];
+    document.getElementById('trans-betrag').value = '';
+    document.getElementById('trans-kommentar-text').value = '';
+
+    // Spieler Dropdowns befüllen
+    const spielerOptionen = alleSpieler.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('trans-von').innerHTML = `<option value="">– leer (Eingang) –</option>${spielerOptionen}`;
+    document.getElementById('trans-nach').innerHTML = `<option value="">– wählen –</option>${spielerOptionen}`;
+
+    // Kommentar Chips
+    let selectedKommentar = '';
+    const chipsEl = document.getElementById('kommentar-chips');
+    chipsEl.innerHTML = KOMMENTAR_VORLAGEN.map(k => `
+      <button class="kommentar-chip" data-val="${k}" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:left;transition:all var(--transition)">${k}</button>
+    `).join('');
+
+    chipsEl.querySelectorAll('.kommentar-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chipsEl.querySelectorAll('.kommentar-chip').forEach(c => {
+          c.style.background = 'var(--bg-secondary)';
+          c.style.borderColor = 'var(--border)';
+          c.style.color = 'var(--text-primary)';
+        });
+        if (selectedKommentar === chip.dataset.val) {
+          selectedKommentar = '';
+        } else {
+          selectedKommentar = chip.dataset.val;
+          chip.style.background = 'var(--accent-soft)';
+          chip.style.borderColor = 'var(--accent)';
+          chip.style.color = 'var(--accent-text)';
+          document.getElementById('trans-kommentar-text').value = '';
+        }
+      });
+    });
+
+    // Freitext deselektiert Chips
+    document.getElementById('trans-kommentar-text').addEventListener('input', () => {
+      selectedKommentar = '';
+      chipsEl.querySelectorAll('.kommentar-chip').forEach(c => {
+        c.style.background = 'var(--bg-secondary)';
+        c.style.borderColor = 'var(--border)';
+        c.style.color = 'var(--text-primary)';
+      });
+    });
+
+    document.getElementById('modal-transaktion')._getKommentar = () =>
+      selectedKommentar || document.getElementById('trans-kommentar-text').value.trim();
+
+    document.getElementById('modal-transaktion').classList.add('open');
+  }
+
+  document.getElementById('trans-abbrechen').addEventListener('click', () =>
+    document.getElementById('modal-transaktion').classList.remove('open'));
+
+  document.getElementById('trans-speichern').addEventListener('click', async () => {
+    const datum = document.getElementById('trans-datum').value;
+    const von = document.getElementById('trans-von').value || null;
+    const nach = document.getElementById('trans-nach').value || null;
+    const betrag = parseFloat(document.getElementById('trans-betrag').value) || 0;
+    const kommentar = document.getElementById('modal-transaktion')._getKommentar();
+
+    if (!nach) { alert('Bitte ein Ziel (Nach) auswählen.'); return; }
+    if (betrag <= 0) { alert('Bitte einen Betrag eingeben.'); return; }
+    if (!kommentar) { alert('Bitte einen Kommentar wählen oder eingeben.'); return; }
+
+    await save(() => db.from('transaktionen').insert({
+      datum, von_spieler_id: von, nach_spieler_id: nach, betrag, kommentar
+    }), `Transaktion: ${kommentar} €${betrag}`);
+
+    document.getElementById('modal-transaktion').classList.remove('open');
+    await loadTransaktionen();
   });
 
   // ── INIT ───────────────────────────────────────────────
