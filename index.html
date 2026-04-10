@@ -313,7 +313,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.5.1';
+  const VERSION='1.5.2';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -365,14 +365,16 @@
       if(v&&ks[v]!==undefined) ks[v]-=t.betrag;
     });
 
-    // Spielergebnisse: payout - buyins * buyin_pot (NUR Pot-Anteil, kein Kassa, kein Leihgabe)
-    // buyin_pot kommt vom jeweiligen Spiel (historisch korrekt)
+    // Spielergebnisse (kein Leihgabe-Abzug):
+    // Alte Spiele (buyin_pot=2.5): payout - buyins * buyin_pot
+    // Neue Spiele (buyin_pot=5):   payout - buyins * (buyin_pot + buyin_kassa)
     (spielVerlauf||[]).forEach(t=>{
-      if(ks[t.spieler_id]!==undefined){
-        const spielBuyinPot = spieleMap?.[t.spiel_id]?.buyin_pot ?? einstellungen.buyin_pot;
-        ks[t.spieler_id]+=(t.payout||0);
-        ks[t.spieler_id]-=(t.buyins||0)*spielBuyinPot;
-      }
+      if(ks[t.spieler_id]===undefined) return;
+      const spiel=spieleMap?.[t.spiel_id];
+      const bPot=spiel?.buyin_pot ?? einstellungen.buyin_pot;
+      const bKassa=(bPot < 5) ? 0 : (spiel?.buyin_kassa ?? einstellungen.buyin_kassa);
+      ks[t.spieler_id]+=(t.payout||0);
+      ks[t.spieler_id]-=(t.buyins||0)*(bPot+bKassa);
     });
     return ks;
   }
@@ -492,7 +494,7 @@
       db.from('spieler').select('*').eq('aktiv',true).order('name'),
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
-      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true)
+      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
     if(!spieler)return;
     alleSpieler=spieler;
@@ -549,7 +551,7 @@
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
-      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
@@ -557,10 +559,11 @@
     const n=abg.length;
     const gBuyins=abg.reduce((s,t)=>s+(t.buyins||0),0);
     const gPayout=abg.reduce((s,t)=>s+(t.payout||0),0);
-    // Reingewinn = payout - buyins * buyin_pot (pro Spiel, historisch korrekt)
+    // Reingewinn: alte Spiele (pot=2.5) → nur pot; neue Spiele → pot+kassa
     const reingewinne=abg.map(t=>{
       const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-      return (t.payout||0)-(t.buyins||0)*bPot;
+      const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+      return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
     });
     const gRein=reingewinne.reduce((s,v)=>s+v,0);
     const avgRein=n>0?gRein/n:0;
@@ -957,8 +960,9 @@
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
       const sorted=[...teilnehmer].sort((a,b)=>{
-        const ra=(a.payout||0)-(a.buyins||0)*bPot;
-        const rb=(b.payout||0)-(b.buyins||0)*bPot;
+        const bKassaSort=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+        const ra=(a.payout||0)-(a.buyins||0)*(bPot+bKassaSort);
+        const rb=(b.payout||0)-(b.buyins||0)*(bPot+bKassaSort);
         return rb-ra;
       });
       html+=`<div class="section-title">${datum}</div><div class="card">`;
@@ -972,7 +976,8 @@
       </div>`;
       // Spieler-Ergebnisse
       sorted.forEach((t,i)=>{
-        const rein=(t.payout||0)-(t.buyins||0)*bPot;
+        const bKassaV=(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
+        const rein=(t.payout||0)-(t.buyins||0)*(bPot+bKassaV);
         const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
         html+=`<div class="list-item">
           ${avatarHtml(t.spieler,36)}
@@ -997,7 +1002,7 @@
       db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('*'),
       db.from('hand_statistik').select('*'),
-      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
@@ -1011,7 +1016,8 @@
       const gPayout=abg.reduce((x,t)=>x+(t.payout||0),0);
       const gRein=abg.reduce((x,t)=>{
         const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-        return x+(t.payout||0)-(t.buyins||0)*bPot;
+        const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+        return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
       },0);
       const ks=kontostaende[s.id]||0;
       return{...s,abg:abg.length,gBuyins,gPayout,gRein,ks};
