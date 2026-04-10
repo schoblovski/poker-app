@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.2">
+  <meta name="version" content="1.3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
   <title>DTKS Poker</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,41 +22,52 @@
     }
     [data-theme="light"]{
       --bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--bg-tertiary:#d8d8de;
-      --surface:#fff;--surface-2:#f2f2f7;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);
+      --surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);
       --text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;
       --accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;
       --danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;
       --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);
       --nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);
+      --theme-color:#f2f2f7;
     }
     [data-theme="dark"]{
       --bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--bg-tertiary:#3a3a3c;
-      --surface:#1c1c1e;--surface-2:#2c2c2e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);
+      --surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);
       --text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;
       --accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;
       --danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;
       --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);
       --nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);
+      --theme-color:#0d0d0f;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
     body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;}
 
-    /* LOGIN */
-    #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top) + var(--space-xl)) var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));gap:var(--space-md);}
-    .login-logo{width:80px;height:80px;background:var(--accent);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-sm);box-shadow:0 8px 32px rgba(34,197,94,.3);}
-    .login-logo svg{width:44px;height:44px;color:#fff;}
-    .login-title{font-size:26px;font-weight:700;letter-spacing:-.5px;}
-    .login-subtitle{font-size:13px;color:var(--text-secondary);letter-spacing:.3px;text-transform:uppercase;font-weight:500;}
-    .login-divider{width:40px;height:2px;background:var(--border-strong);border-radius:2px;margin:var(--space-sm) 0;}
-    .btn-oauth{display:flex;align-items:center;gap:var(--space-sm);background:var(--surface);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:var(--radius-md);padding:14px var(--space-lg);font-size:15px;font-weight:500;cursor:pointer;width:100%;max-width:300px;justify-content:center;box-shadow:var(--shadow);transition:all var(--transition);font-family:var(--font-sans);}
+    /* ── LOGIN ─────────────────────────────────────────── */
+    #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top) + 40px) var(--space-xl) calc(var(--safe-bottom) + 40px);position:relative;overflow:hidden;}
+    .login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%, rgba(34,197,94,.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(34,197,94,.08) 0%, transparent 50%);pointer-events:none;}
+    .login-card{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:var(--space-md);width:100%;max-width:320px;}
+    .login-suit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:var(--space-sm);}
+    .login-suit{width:56px;height:56px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;}
+    .suit-spade{background:#1c1c1e;color:#f5f5f7;}
+    .suit-heart{background:#fee2e2;color:#dc2626;}
+    .suit-diamond{background:#fee2e2;color:#dc2626;}
+    .suit-club{background:#1c1c1e;color:#f5f5f7;}
+    [data-theme="light"] .suit-spade{background:#1c1c1e;color:#f5f5f7;}
+    [data-theme="light"] .suit-club{background:#1c1c1e;color:#f5f5f7;}
+    .login-title{font-size:28px;font-weight:700;letter-spacing:-.5px;text-align:center;}
+    .login-subtitle{font-size:13px;color:var(--text-secondary);letter-spacing:.3px;text-transform:uppercase;font-weight:500;text-align:center;}
+    .login-divider{display:flex;align-items:center;gap:var(--space-sm);width:100%;margin:var(--space-xs) 0;}
+    .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border-strong);}
+    .login-divider span{font-size:11px;color:var(--text-tertiary);font-weight:500;}
+    .btn-oauth{display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--text-primary);border:1px solid var(--border-strong);border-radius:var(--radius-md);padding:13px var(--space-md);font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;box-shadow:var(--shadow);transition:all var(--transition);font-family:var(--font-sans);}
     .btn-oauth:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
+    .btn-oauth:active{transform:scale(.98);}
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
-    /* APP */
+    /* ── APP ───────────────────────────────────────────── */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;position:relative;}
-
-    /* HEADER */
     .header{padding:calc(var(--safe-top) + 12px) calc(var(--safe-right) + var(--space-md)) 12px calc(var(--safe-left) + var(--space-md));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
     .header-left{display:flex;flex-direction:column;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
@@ -70,11 +82,7 @@
     .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .avatar-btn img{width:100%;height:100%;object-fit:cover;}
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
-
-    /* CONTENT */
     .content{flex:1;overflow-y:auto;padding:var(--space-md);padding-left:calc(var(--safe-left) + var(--space-md));padding-right:calc(var(--safe-right) + var(--space-md));padding-bottom:calc(var(--safe-bottom) + 80px);}
-
-    /* NAV */
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
     .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
     .nav-btn.active{color:var(--accent);}
@@ -82,11 +90,9 @@
     .nav-btn.active svg{stroke-width:2.2;}
     .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
-    /* SECTION TITLE */
+    /* ── COMPONENTS ────────────────────────────────────── */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
     .section-title:first-child{margin-top:0;}
-
-    /* CARD & LIST */
     .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
     .card+.card{margin-top:var(--space-sm);}
     .list-item{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);transition:background var(--transition);}
@@ -98,6 +104,10 @@
     .item-avatar svg{width:22px;height:22px;color:var(--text-tertiary);}
     .item-avatar.accent{background:var(--accent-soft);}
     .item-avatar.accent svg{color:var(--accent);}
+    .item-avatar.warn{background:var(--warning-soft);}
+    .item-avatar.warn svg{color:var(--warning);}
+    .item-avatar.danger{background:var(--danger-soft);}
+    .item-avatar.danger svg{color:var(--danger);}
     .item-body{flex:1;min-width:0;}
     .item-title{font-size:15px;font-weight:500;color:var(--text-primary);}
     .item-subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px;}
@@ -107,8 +117,6 @@
     .amount-neg{color:var(--danger);}
     .amount-zero{color:var(--text-tertiary);}
     .chevron svg{width:16px;height:16px;color:var(--text-tertiary);}
-
-    /* BUTTONS */
     .btn{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);border:none;border-radius:var(--radius-md);padding:14px var(--space-lg);font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:all var(--transition);font-family:var(--font-sans);}
     .btn svg{width:18px;height:18px;}
     .btn:active{transform:scale(.98);}
@@ -117,11 +125,6 @@
     .btn-danger{background:var(--danger-soft);color:var(--danger);}
     .btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-strong);}
     .btn+.btn{margin-top:var(--space-sm);}
-    .icon-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:var(--bg-secondary);border-radius:var(--radius-sm);cursor:pointer;color:var(--text-secondary);transition:all var(--transition);flex-shrink:0;}
-    .icon-btn:active{transform:scale(.9);}
-    .icon-btn svg{width:16px;height:16px;}
-
-    /* COUNTER */
     .counter-row{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);}
     .counter-row:last-child{border-bottom:none;}
     .counter-info{flex:1;}
@@ -134,8 +137,6 @@
     .counter-btn.plus{background:var(--accent-soft);color:var(--accent-text);}
     .counter-btn:active{transform:scale(.88);}
     .counter-value{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-variant-numeric:tabular-nums;}
-
-    /* FORM */
     .form-group{margin-bottom:var(--space-md);}
     .form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px;}
     .form-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:15px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
@@ -143,12 +144,9 @@
     .form-input::placeholder{color:var(--text-tertiary);}
     .payout-input-row{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);border-bottom:1px solid var(--border);}
     .payout-input-row:last-child{border-bottom:none;}
-    .payout-label{font-size:13px;color:var(--text-secondary);flex-shrink:0;}
     .payout-field{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:15px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
     .payout-field:focus{outline:none;}
     .payout-unit{font-size:13px;color:var(--text-tertiary);}
-
-    /* STATS */
     .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
     .stat-card{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
     .stat-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
@@ -159,16 +157,12 @@
     .stat-card.accent{background:var(--accent-soft);}
     .stat-card.accent .stat-label{color:var(--accent-text);opacity:.8;}
     .stat-card.accent .stat-value{color:var(--accent-text);}
-
-    /* PROFILE HEADER */
     .profile-header{text-align:center;padding:var(--space-lg) 0 var(--space-md);}
     .profile-avatar-lg{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
     .profile-avatar-lg img{width:100%;height:100%;object-fit:cover;}
     .profile-avatar-lg svg{width:40px;height:40px;color:var(--text-tertiary);}
     .profile-name{font-size:22px;font-weight:700;letter-spacing:-.3px;}
     .profile-since{font-size:13px;color:var(--text-secondary);margin-top:4px;}
-
-    /* TIMELINE */
     .timeline-item{display:flex;gap:var(--space-md);padding:12px var(--space-md);border-bottom:1px solid var(--border);}
     .timeline-item:last-child{border-bottom:none;}
     .timeline-date{font-size:12px;color:var(--text-secondary);width:60px;flex-shrink:0;padding-top:2px;}
@@ -176,14 +170,10 @@
     .timeline-title{font-size:14px;font-weight:500;}
     .timeline-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
     .timeline-amount{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:2px;}
-
-    /* SELECT GRID */
     .select-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-sm);}
     .select-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);cursor:pointer;transition:all var(--transition);text-align:center;}
     .select-card.selected{border-color:var(--accent);background:var(--accent-soft);}
     .select-card-name{font-size:14px;font-weight:500;}
-
-    /* DROPDOWN */
     .dropdown{position:fixed;top:calc(var(--safe-top) + 58px);right:calc(var(--safe-right) + var(--space-md));background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-xs);z-index:200;display:none;box-shadow:var(--shadow-lg);min-width:200px;}
     .dropdown.open{display:block;animation:fadeIn 120ms ease;}
     .dropdown-item{display:flex;align-items:center;gap:var(--space-sm);padding:11px var(--space-md);border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;color:var(--text-primary);transition:background var(--transition);border:none;background:none;width:100%;text-align:left;font-family:var(--font-sans);}
@@ -195,8 +185,6 @@
     .theme-picker{display:flex;gap:var(--space-xs);padding:var(--space-xs) var(--space-md) var(--space-sm);}
     .theme-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
     .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
-
-    /* MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
     .modal-overlay.open{display:flex;animation:fadeIn 150ms ease;}
     .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-lg) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;}
@@ -204,21 +192,14 @@
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
     .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
     .modal-actions .btn{flex:1;}
-
-    /* BADGE */
     .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
     .badge-green{background:var(--accent-soft);color:var(--accent-text);}
     .badge-red{background:var(--danger-soft);color:var(--danger);}
-
-    /* PAGES */
-    .page{display:none;}
-    .page.active{display:block;}
-
-    /* BACK BTN */
+    .kommentar-chip{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:left;transition:all var(--transition);width:100%;}
+    .kommentar-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+    .page{display:none;}.page.active{display:block;}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
-
-    /* UTILS */
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
     .spinner{width:20px;height:20px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -228,25 +209,44 @@
     .empty-icon svg{width:28px;height:28px;color:var(--text-tertiary);}
     .empty-title{font-size:17px;font-weight:600;margin-bottom:6px;}
     .empty-subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg);}
+    .pot-summary{background:var(--accent-soft);border-radius:var(--radius-md);padding:10px var(--space-md);display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:var(--space-sm);}
+    .pot-summary-label{color:var(--accent-text);font-weight:500;}
+    .pot-summary-value{color:var(--accent-text);font-weight:700;font-variant-numeric:tabular-nums;}
+    .pot-summary-value.warn{color:var(--warning);}
   </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h20v13a1 1 0 01-1 1H3a1 1 0 01-1-1V8z"/><path d="M22 8l-10 7L2 8"/><path d="M22 8V6a1 1 0 00-1-1H3a1 1 0 00-1 1v2"/></svg>
-  </div>
-  <div style="text-align:center">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="login-suit-grid">
+      <div class="login-suit suit-spade">♠</div>
+      <div class="login-suit suit-heart">♥</div>
+      <div class="login-suit suit-diamond">♦</div>
+      <div class="login-suit suit-club">♣</div>
+    </div>
     <div class="login-title">DTKS Poker</div>
-    <div style="height:6px"></div>
-    <div class="login-subtitle">Mitgliederbereich</div>
+    <div class="login-subtitle">Private Pokerrunde</div>
+    <div class="login-divider"><span>Anmelden mit</span></div>
+    <button class="btn-oauth" id="btn-login-google">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Mit Google anmelden
+    </button>
+    <button class="btn-oauth" id="btn-login-facebook">
+      <svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Mit Facebook anmelden
+    </button>
+    <button class="btn-oauth" id="btn-login-apple">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/></svg>
+      Mit Apple anmelden
+    </button>
+    <button class="btn-oauth" id="btn-login-microsoft">
+      <svg viewBox="0 0 24 24"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#00a4ef" d="M13 1h10v10H13z"/><path fill="#7fba00" d="M1 13h10v10H1z"/><path fill="#ffb900" d="M13 13h10v10H13z"/></svg>
+      Mit Microsoft anmelden
+    </button>
   </div>
-  <div class="login-divider"></div>
-  <button class="btn-oauth" id="btn-login">
-    <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-    Mit Google anmelden
-  </button>
 </div>
 
 <!-- APP -->
@@ -257,13 +257,8 @@
       <div class="header-page-title" id="page-title">Übersicht</div>
     </div>
     <div class="header-right">
-      <div class="sync-badge synced" id="sync-status">
-        <div class="sync-dot" id="sync-dot"></div>
-        <span id="sync-label">Sync</span>
-      </div>
-      <button class="avatar-btn" id="user-avatar-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      </button>
+      <div class="sync-badge synced" id="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sync</span></div>
+      <button class="avatar-btn" id="user-avatar-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
     </div>
   </div>
 
@@ -286,23 +281,10 @@
   </div>
 
   <div class="content">
-    <!-- HOME -->
-    <div class="page active" id="page-home">
-      <div id="home-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
-    </div>
-    <!-- SPIEL -->
-    <div class="page" id="page-spiel">
-      <div id="spiel-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
-    </div>
-    <!-- VERLAUF -->
-    <div class="page" id="page-verlauf">
-      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Spiel Verlauf</div><div class="empty-subtitle">Kommt bald</div></div>
-    </div>
-    <!-- STATISTIK -->
-    <div class="page" id="page-statistik">
-      <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Statistik</div><div class="empty-subtitle">Kommt bald</div></div>
-    </div>
-    <!-- TRANSAKTIONEN -->
+    <div class="page active" id="page-home"><div id="home-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
+    <div class="page" id="page-spiel"><div id="spiel-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
+    <div class="page" id="page-verlauf"><div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Spiel Verlauf</div><div class="empty-subtitle">Kommt bald</div></div></div>
+    <div class="page" id="page-statistik"><div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Statistik</div><div class="empty-subtitle">Kommt bald</div></div></div>
     <div class="page" id="page-transaktionen">
       <button class="btn btn-primary" id="btn-neue-transaktion" style="margin-bottom:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -310,18 +292,9 @@
       </button>
       <div id="transaktionen-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
     </div>
-    <!-- VERWALTUNG -->
-    <div class="page" id="page-verwaltung">
-      <div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
-    </div>
-    <!-- SPIELER DETAIL (Verwaltung) -->
-    <div class="page" id="page-spieler-detail">
-      <div id="spieler-detail-content"></div>
-    </div>
-    <!-- SPIELER STATS (Home) -->
-    <div class="page" id="page-spieler-stats">
-      <div id="spieler-stats-content"></div>
-    </div>
+    <div class="page" id="page-verwaltung"><div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
+    <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
+    <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
   </div>
 
   <nav class="bottom-nav">
@@ -333,129 +306,100 @@
   </nav>
 </div>
 
-<!-- MODAL: Spieler auswählen (neues Spiel) -->
-<div class="modal-overlay" id="modal-spieler">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Wer spielt heute?</div>
-    <div id="spieler-auswahl-liste"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="modal-abbrechen">Abbrechen</button>
-      <button class="btn btn-primary" id="modal-bestaetigen">Starten</button>
-    </div>
-  </div>
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-spieler-auswahl">
+  <div class="modal"><div class="modal-handle"></div><div class="modal-title">Wer spielt heute?</div><div id="spieler-auswahl-liste"></div><div class="modal-actions"><button class="btn btn-secondary" id="modal-auswahl-abbrechen">Abbrechen</button><button class="btn btn-primary" id="modal-auswahl-bestaetigen">Starten</button></div></div>
 </div>
-
-<!-- MODAL: Teilnehmer editieren (laufendes Spiel) -->
 <div class="modal-overlay" id="modal-teilnehmer-edit">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Teilnehmer bearbeiten</div>
-    <div id="teilnehmer-edit-liste"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="teilnehmer-edit-abbrechen">Abbrechen</button>
-      <button class="btn btn-primary" id="teilnehmer-edit-speichern">Speichern</button>
-    </div>
-  </div>
+  <div class="modal"><div class="modal-handle"></div><div class="modal-title">Teilnehmer bearbeiten</div><div id="teilnehmer-edit-liste"></div><div class="modal-actions"><button class="btn btn-secondary" id="teilnehmer-edit-abbrechen">Abbrechen</button><button class="btn btn-primary" id="teilnehmer-edit-speichern">Speichern</button></div></div>
 </div>
-
-<!-- MODAL: Neue Transaktion -->
-<div class="modal-overlay" id="modal-transaktion">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="trans-modal-title">Neue Transaktion</div>
-    <div class="form-group">
-      <label class="form-label">Datum</label>
-      <input type="date" class="form-input" id="trans-datum">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Von</label>
-      <select class="form-input" id="trans-von">
-        <option value="">– leer (Eingang) –</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Nach</label>
-      <select class="form-input" id="trans-nach">
-        <option value="">– wählen –</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Kommentar</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm)" id="kommentar-chips"></div>
-      <input type="text" class="form-input" id="trans-kommentar-text" placeholder="Oder Freitext eingeben…">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Betrag (€)</label>
-      <input type="number" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button>
-      <button class="btn btn-primary" id="trans-speichern">Speichern</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Spieler Form -->
 <div class="modal-overlay" id="modal-spieler-form">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="form-modal-title">Neuer Spieler</div>
+  <div class="modal"><div class="modal-handle"></div><div class="modal-title" id="form-modal-title">Neuer Spieler</div>
     <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="form-name" placeholder="Vorname"></div>
     <div class="form-group"><label class="form-label">E-Mail (für Login)</label><input type="email" class="form-input" id="form-email" placeholder="name@gmail.com"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="form-abbrechen">Abbrechen</button>
-      <button class="btn btn-primary" id="form-speichern">Speichern</button>
-    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="form-abbrechen">Abbrechen</button><button class="btn btn-primary" id="form-speichern">Speichern</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-transaktion">
+  <div class="modal"><div class="modal-handle"></div><div class="modal-title" id="trans-modal-title">Neue Transaktion</div>
+    <div class="form-group"><label class="form-label">Datum</label><input type="date" class="form-input" id="trans-datum"></div>
+    <div class="form-group"><label class="form-label">Von</label><select class="form-input" id="trans-von"></select></div>
+    <div class="form-group"><label class="form-label">Nach</label><select class="form-input" id="trans-nach"></select></div>
+    <div class="form-group"><label class="form-label">Kommentar</label><div id="kommentar-chips" style="display:flex;flex-direction:column;gap:var(--space-xs);margin-bottom:var(--space-sm)"></div><input type="text" class="form-input" id="trans-kommentar-text" placeholder="Oder Freitext…"></div>
+    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="number" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
   </div>
 </div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION = '1.2';
-  const SUPABASE_URL = 'https://bcvyhlzjpfezokvcjksn.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
-  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const VERSION='1.3';
+  const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
+  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
+  const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+  const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
 
-  let currentUser = null, alleSpieler = [], aktuellesSpiel = null, spielTeilnehmer = [], editSpielerID = null, prevPage = null;
+  let currentUser=null,currentSpieler=null,alleSpieler=[],aktuellesSpiel=null,spielTeilnehmer=[],editSpielerID=null,editTransaktionID=null;
   console.log(`🃏 DTKS Poker v${VERSION}`);
 
   // ── THEME ──────────────────────────────────────────────
-  function applyTheme(p){const d=p==='dark'||(p==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===p));}
+  function applyTheme(p){
+    const d=p==='dark'||(p==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===p));
+    // iOS status bar color update
+    const color=d?'#0d0d0f':'#f2f2f7';
+    document.getElementById('theme-color-meta').setAttribute('content',color);
+    // Force iOS to re-read theme-color
+    const meta=document.getElementById('theme-color-meta');
+    meta.setAttribute('content','');
+    requestAnimationFrame(()=>meta.setAttribute('content',color));
+  }
   function setTheme(p){localStorage.setItem('dtks-theme',p);applyTheme(p);}
   const st=localStorage.getItem('dtks-theme')||'auto';applyTheme(st);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if((localStorage.getItem('dtks-theme')||'auto')==='auto')applyTheme('auto');});
   document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===st);b.addEventListener('click',()=>setTheme(b.dataset.theme));});
 
   // ── SYNC ───────────────────────────────────────────────
-  function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];console.log(`🔄 ${s}`);}
+  function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
   async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
 
   // ── HELPERS ────────────────────────────────────────────
   const ksClass=v=>v>0?'amount-pos':v<0?'amount-neg':'amount-zero';
   const fmt=v=>`€\u00a0${Math.abs(v).toFixed(2)}`;
-  const fmtSigned=v=>(v>=0?'+':'-')+` €${Math.abs(v).toFixed(2)}`;
+  const fmtSigned=v=>(v>=0?'+':'-')+`\u00a0€${Math.abs(v).toFixed(2)}`;
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
-
-  function avatarHtml(s,size=44){return s?.profilbild?`<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${s.profilbild}" alt="${s.name}"></div>`:`<div class="item-avatar" style="width:${size}px;height:${size}px">${userIcon}</div>`;}
-
+  function avatarHtml(s,size=44){return s?.profilbild?`<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${s.profilbild}" alt="${s?.name||''}"></div>`:`<div class="item-avatar" style="width:${size}px;height:${size}px">${userIcon}</div>`;}
   function confirmDelete(msg){return confirm(`⚠️ Löschen bestätigen\n\n${msg}\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);}
   function confirmAction(msg){return confirm(msg);}
 
+  // Transaktions-Icon basierend auf Von/Nach
+  function transIcon(t){
+    const vonId=t.von_spieler_id, nachId=t.nach_spieler_id;
+    const vonBank=alleSpieler.find(s=>s.id===vonId)?.ist_bank;
+    const nachBank=alleSpieler.find(s=>s.id===nachId)?.ist_bank;
+    if(!vonId&&nachId&&!nachBank) return {cls:'accent',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>`,label:'Einzahlung'};
+    if(vonId&&!nachId&&!vonBank) return {cls:'danger',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22V2M17 7l-5-5-5 5"/><path d="M3 20h18"/></svg>`,label:'Auszahlung'};
+    if(vonId&&nachId&&!vonBank&&!nachBank) return {cls:'warn',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>`,label:'Transfer'};
+    if(vonBank&&nachId&&!nachBank) return {cls:'accent',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/><path d="M12 12v4"/></svg>`,label:'Kasse → Spieler'};
+    if(!vonId&&nachBank) return {cls:'accent',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>`,label:'Eingang Kasse'};
+    if(vonId&&!vonBank&&nachBank) return {cls:'warn',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>`,label:'Spende'};
+    return {cls:'',svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,label:'Transaktion'};
+  }
+
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung','spieler-detail':'Spieler','spieler-stats':'Spieler'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung','spieler-detail':'Spieler','spieler-stats':'Statistik'};
   function showPage(page,from=null){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
     document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
     document.getElementById('page-title').textContent=pageTitles[page]||page;
-    prevPage=from;
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
-    if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=openTransaktionModal;}
+    if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=()=>openTransaktionModal(null);}
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
@@ -465,7 +409,11 @@
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
 
   // ── AUTH ───────────────────────────────────────────────
-  document.getElementById('btn-login').addEventListener('click',async()=>{await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});});
+  async function loginWith(provider){await db.auth.signInWithOAuth({provider,options:{redirectTo:window.location.origin}});}
+  document.getElementById('btn-login-google').addEventListener('click',()=>loginWith('google'));
+  document.getElementById('btn-login-facebook').addEventListener('click',()=>loginWith('facebook'));
+  document.getElementById('btn-login-apple').addEventListener('click',()=>loginWith('apple'));
+  document.getElementById('btn-login-microsoft').addEventListener('click',()=>loginWith('azure'));
   document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
   async function showApp(){
@@ -473,153 +421,133 @@
     const{data:sp}=await db.from('spieler').select('*').eq('email',currentUser.email).eq('aktiv',true).single();
     if(!sp){
       document.getElementById('login-screen').style.display='flex';
-      document.getElementById('login-screen').innerHTML=`<div class="login-logo" style="background:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div style="text-align:center"><div class="login-title">Kein Zugang</div><div style="height:8px"></div><div style="font-size:14px;color:var(--text-secondary);max-width:260px;line-height:1.5">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div></div><button class="btn-oauth" id="btn-logout-err">Abmelden</button>`;
+      document.getElementById('login-screen').innerHTML=`<div class="login-bg"></div><div class="login-card"><div style="font-size:48px">🚫</div><div class="login-title" style="font-size:22px">Kein Zugang</div><div style="font-size:14px;color:var(--text-secondary);text-align:center;line-height:1.5">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div><button class="btn-oauth" id="btn-logout-err">Abmelden</button></div>`;
       document.getElementById('btn-logout-err').addEventListener('click',async()=>{await db.auth.signOut();location.reload();});
       return;
     }
+    currentSpieler=sp;
     const av=currentUser?.user_metadata?.avatar_url;
     if(av&&!sp.profilbild)await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
     if(av)document.getElementById('user-avatar-btn').innerHTML=`<img src="${av}" alt="Avatar">`;
-    console.log(`✅ ${sp.name}`);
+    // Spielerverwaltung nur für Admins
+    document.getElementById('btn-verwaltung').style.display=sp.ist_admin?'flex':'none';
+    console.log(`✅ ${sp.name} (admin:${sp.ist_admin})`);
     document.getElementById('app-screen').style.display='flex';
     loadHome();
   }
-  db.auth.onAuthStateChange((ev,session)=>{console.log(`🔑 ${ev}`);if(session){currentUser=session.user;showApp();}else{currentUser=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}});
+  db.auth.onAuthStateChange((ev,session)=>{
+    if(session){currentUser=session.user;showApp();}
+    else{currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+  });
 
   // ── HOME ───────────────────────────────────────────────
   async function loadHome(){
     const el=document.getElementById('home-content');
+    // Kontostand dynamisch aus Transaktionen berechnen
     const{data:spieler}=await db.from('spieler').select('*').eq('aktiv',true).order('name');
     if(!spieler)return;
     alleSpieler=spieler;
-    const ich=spieler.find(s=>s.email===currentUser?.email);
+
+    // Transaktionen laden für Kontostand-Berechnung
+    const{data:trans}=await db.from('transaktionen').select('*');
+    const kontostaende={};
+    spieler.forEach(s=>{kontostaende[s.id]=0;});
+    (trans||[]).forEach(t=>{
+      if(t.nach_spieler_id&&kontostaende[t.nach_spieler_id]!==undefined)kontostaende[t.nach_spieler_id]+=t.betrag;
+      if(t.von_spieler_id&&kontostaende[t.von_spieler_id]!==undefined)kontostaende[t.von_spieler_id]-=t.betrag;
+    });
+
+    const ich=spieler.find(s=>s.id===currentSpieler?.id);
     const bank=spieler.find(s=>s.ist_bank);
-    const rest=spieler.filter(s=>s.email!==currentUser?.email&&!s.ist_bank);
+    const rest=spieler.filter(s=>s.id!==currentSpieler?.id&&!s.ist_bank);
     let html='';
-    if(ich){const ks=ich.kontostand||0;html+=`<div class="section-title">Mein Konto</div><div class="card"><div class="list-item">${avatarHtml(ich)}<div class="item-body"><div class="item-title">${ich.name}</div><div class="item-subtitle">Mein Konto</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span></div></div></div>`;}
-    if(bank){html+=`<div class="section-title">Kasse</div><div class="card"><div class="list-item"><div class="item-avatar accent" style="width:44px;height:44px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg></div><div class="item-body"><div class="item-title">Bank &amp; Pokerkasse</div></div></div></div>`;}
+
+    if(ich){
+      const ks=kontostaende[ich.id]||0;
+      html+=`<div class="section-title">Mein Konto</div><div class="card">
+        <div class="list-item clickable" id="mein-profil-btn">${avatarHtml(ich)}<div class="item-body"><div class="item-title">${ich.name}</div><div class="item-subtitle">Mein Profil & Statistik</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span>${chevron}</div></div>
+      </div>`;
+    }
+
+    if(bank){
+      const bankKs=kontostaende[bank.id]||0;
+      // Pokerkasse = Summe aller Kassa-Anteile aus Buy-Ins (2€ pro BuyIn)
+      html+=`<div class="section-title">Kasse</div><div class="card">
+        <div class="list-item clickable" id="bank-detail-btn">
+          <div class="item-avatar accent" style="width:44px;height:44px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg></div>
+          <div class="item-body"><div class="item-title">Bank &amp; Pokerkasse</div><div class="item-subtitle">Kontostand inkl. Pokerkasse</div></div>
+          <div class="item-trailing"><span class="item-amount amount-pos">${fmt(bankKs)}</span>${chevron}</div>
+        </div>
+      </div>`;
+    }
+
     if(rest.length>0){
       html+=`<div class="section-title">Alle Spieler</div><div class="card">`;
-      rest.forEach(s=>{const ks=s.kontostand||0;html+=`<div class="list-item clickable" data-id="${s.id}">${avatarHtml(s)}<div class="item-body"><div class="item-title">${s.name}</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span>${chevron}</div></div>`;});
+      rest.forEach(s=>{
+        const ks=kontostaende[s.id]||0;
+        html+=`<div class="list-item clickable" data-id="${s.id}">${avatarHtml(s)}<div class="item-body"><div class="item-title">${s.name}</div></div><div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span>${chevron}</div></div>`;
+      });
       html+=`</div>`;
     }
     el.innerHTML=html;
+
+    document.getElementById('mein-profil-btn')?.addEventListener('click',()=>showSpielerStats(ich));
+    document.getElementById('bank-detail-btn')?.addEventListener('click',()=>{
+      if(bank){
+        const ks=kontostaende[bank.id]||0;
+        alert(`🏦 Bank & Pokerkasse\n\nKontostand: €${ks.toFixed(2)}`);
+      }
+    });
     el.querySelectorAll('.list-item.clickable[data-id]').forEach(row=>{
-      row.addEventListener('click',()=>{const s=spieler.find(x=>x.id===row.dataset.id);if(s)showSpielerStats(s);});
+      row.addEventListener('click',()=>{const s=spieler.find(x=>x.id===row.dataset.id);if(s)showSpielerStats({...s,kontostand:kontostaende[s.id]||0});});
     });
   }
 
   // ── SPIELER STATS ──────────────────────────────────────
   async function showSpielerStats(spieler){
     const el=document.getElementById('spieler-stats-content');
-    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade Statistiken…</div>`;
-    showPage('spieler-stats','home');
-
-    // Daten laden
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
+    showPage('spieler-stats');
     const[{data:verlauf},{data:haende},{data:transOut},{data:transIn}]=await Promise.all([
-      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen)').eq('spieler_id',spieler.id).eq('in_statistik',true).order('spiele(datum)',{ascending:false}),
+      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen)').eq('spieler_id',spieler.id).eq('in_statistik',true).order('created_at',{ascending:false}),
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
     ]);
-
-    const abgeschlossen=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen);
-    const anzSpiele=abgeschlossen.length;
-    const gesamtBuyins=abgeschlossen.reduce((s,t)=>s+t.buyins,0);
-    const gesamtPayout=abgeschlossen.reduce((s,t)=>s+t.payout,0);
-    // Reingewinn: PayOut - (BuyIns * 7) - Leihgabe
-    const reingewinne=abgeschlossen.map(t=>t.payout-(t.buyins*7)-(t.leihgabe||0));
-    const gesamtRein=reingewinne.reduce((s,v)=>s+v,0);
-    const avgRein=anzSpiele>0?gesamtRein/anzSpiele:0;
-    const maxRein=reingewinne.length>0?Math.max(...reingewinne):0;
-    const minRein=reingewinne.length>0?Math.min(...reingewinne):0;
-    const avgBuyins=anzSpiele>0?gesamtBuyins/anzSpiele:0;
-    const maxBuyins=abgeschlossen.length>0?Math.max(...abgeschlossen.map(t=>t.buyins)):0;
+    const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen);
+    const n=abg.length,gBuyins=abg.reduce((s,t)=>s+t.buyins,0),gPayout=abg.reduce((s,t)=>s+t.payout,0);
+    const reingewinne=abg.map(t=>t.payout-(t.buyins*7)-(t.leihgabe||0));
+    const gRein=reingewinne.reduce((s,v)=>s+v,0),avgRein=n>0?gRein/n:0;
+    const maxRein=reingewinne.length>0?Math.max(...reingewinne):0,minRein=reingewinne.length>0?Math.min(...reingewinne):0;
+    const avgBuyins=n>0?gBuyins/n:0,maxBuyins=abg.length>0?Math.max(...abg.map(t=>t.buyins)):0;
     const ks=spieler.kontostand||0;
     const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).getFullYear():'–';
-
-    let html=`
-      <button class="back-btn" id="stats-back">${backIcon} Zurück</button>
-      <div class="profile-header">
-        ${spieler.profilbild?`<div class="profile-avatar-lg"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
-        <div class="profile-name">${spieler.name}</div>
-        <div class="profile-since">Dabei seit ${seit} · ${anzSpiele} Spiele</div>
+    let html=`<button class="back-btn" id="stats-back">${backIcon} Zurück</button>
+      <div class="profile-header">${spieler.profilbild?`<div class="profile-avatar-lg"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
+        <div class="profile-name">${spieler.name}</div><div class="profile-since">Dabei seit ${seit} · ${n} Spiele</div>
       </div>
-
       <div class="stats-grid">
-        <div class="stat-card accent wide">
-          <div class="stat-label">Kontostand</div>
-          <div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div>
-        </div>
-        <div class="stat-card accent wide">
-          <div class="stat-label">Reingewinn gesamt</div>
-          <div class="stat-value ${ksClass(gesamtRein)}">${fmtSigned(gesamtRein)}</div>
-          <div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Abend</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Bestes Ergebnis</div>
-          <div class="stat-value sm amount-pos">+€${maxRein.toFixed(2)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Schlechtestes</div>
-          <div class="stat-value sm amount-neg">−€${Math.abs(minRein).toFixed(2)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Buy-Ins gesamt</div>
-          <div class="stat-value sm">${gesamtBuyins}</div>
-          <div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Ausgespielt</div>
-          <div class="stat-value sm">€${gesamtPayout.toFixed(0)}</div>
-          <div class="stat-sub">Gesamt PayOut</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Besondere Hände</div>
-          <div class="stat-value sm">${(haende||[]).length}</div>
-          <div class="stat-sub">gewonnene Hände</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">7-2 Gewinne</div>
-          <div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div>
-        </div>
+        <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div></div>
+        <div class="stat-card accent wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Abend</div></div>
+        <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">+€${maxRein.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">−€${Math.abs(minRein).toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gBuyins}</div><div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div></div>
+        <div class="stat-card"><div class="stat-label">Ausgespielt</div><div class="stat-value sm">€${gPayout.toFixed(0)}</div></div>
+        <div class="stat-card"><div class="stat-label">Besondere Hände</div><div class="stat-value sm">${(haende||[]).length}</div></div>
+        <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div></div>
       </div>`;
-
-    // Letzte 10 Spiele
-    const letzteSpiele=abgeschlossen.slice(0,10);
+    const letzteSpiele=abg.slice(0,10);
     if(letzteSpiele.length>0){
       html+=`<div class="section-title">Letzte Spiele</div><div class="card">`;
-      letzteSpiele.forEach((t,i)=>{
-        const rein=reingewinne[i];
-        const d=new Date(t.spiele.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
-        html+=`<div class="timeline-item">
-          <div class="timeline-date">${d}</div>
-          <div class="timeline-body">
-            <div class="timeline-title">${t.buyins}× Buy-In · €${t.payout.toFixed(2)} PayOut</div>
-          </div>
-          <div class="timeline-amount ${ksClass(rein)}">${fmtSigned(rein)}</div>
-        </div>`;
-      });
+      letzteSpiele.forEach((t,i)=>{const rein=reingewinne[i];const d=new Date(t.spiele.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});html+=`<div class="timeline-item"><div class="timeline-date">${d}</div><div class="timeline-body"><div class="timeline-title">${t.buyins}× Buy-In · €${t.payout.toFixed(2)} PayOut</div></div><div class="timeline-amount ${ksClass(rein)}">${fmtSigned(rein)}</div></div>`;});
       html+=`</div>`;
     }
-
-    // Letzte Transaktionen
     const alleTrans=[...(transIn||[]).map(t=>({...t,dir:'in'})),...(transOut||[]).map(t=>({...t,dir:'out'}))].sort((a,b)=>new Date(b.datum)-new Date(a.datum)).slice(0,8);
     if(alleTrans.length>0){
       html+=`<div class="section-title">Letzte Kontobewegungen</div><div class="card">`;
-      alleTrans.forEach(t=>{
-        const d=new Date(t.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
-        const sign=t.dir==='in'?'+':'-';
-        const cls=t.dir==='in'?'amount-pos':'amount-neg';
-        html+=`<div class="timeline-item">
-          <div class="timeline-date">${d}</div>
-          <div class="timeline-body"><div class="timeline-title">${t.kommentar||'Transaktion'}</div></div>
-          <div class="timeline-amount ${cls}">${sign}€${t.betrag.toFixed(2)}</div>
-        </div>`;
-      });
+      alleTrans.forEach(t=>{const d=new Date(t.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});const sign=t.dir==='in'?'+':'-';const cls=t.dir==='in'?'amount-pos':'amount-neg';html+=`<div class="timeline-item"><div class="timeline-date">${d}</div><div class="timeline-body"><div class="timeline-title">${t.kommentar||'Transaktion'}</div></div><div class="timeline-amount ${cls}">${sign}€${t.betrag.toFixed(2)}</div></div>`;});
       html+=`</div>`;
     }
-
     el.innerHTML=html;
     document.getElementById('stats-back').addEventListener('click',()=>showPage('home'));
   }
@@ -628,43 +556,40 @@
   async function loadVerwaltung(){
     const el=document.getElementById('verwaltung-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    if(!currentSpieler?.ist_admin){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="empty-title">Kein Zugriff</div><div class="empty-subtitle">Nur Admins können Spieler verwalten.</div></div>`;return;}
     const{data:spieler}=await db.from('spieler').select('*').order('name');
     if(!spieler)return;
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
     html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
-    aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,eintrittsdatum:s.eintrittsdatum||''})}'>
-      ${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div></div>
+    aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>
+      ${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div></div>
       <div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
     html+=`</div>`;
     if(inaktive.length>0){
       html+=`<div class="section-title">Inaktiv · ${inaktive.length}</div><div class="card">`;
-      inaktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,eintrittsdatum:s.eintrittsdatum||''})}'>
+      inaktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>
         ${avatarHtml(s,40)}<div class="item-body"><div class="item-title" style="color:var(--text-secondary)">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div></div>
         <div class="item-trailing"><span class="badge badge-red">Inaktiv</span>${chevron}</div></div>`;});
       html+=`</div>`;
     }
     el.innerHTML=html;
     document.getElementById('btn-neuer-spieler').addEventListener('click',()=>openSpielerForm(null));
-    el.querySelectorAll('.list-item.clickable[data-spieler]').forEach(row=>{
-      row.addEventListener('click',()=>showSpielerDetail(JSON.parse(row.dataset.spieler)));
-    });
+    el.querySelectorAll('.list-item.clickable[data-spieler]').forEach(row=>{row.addEventListener('click',()=>showSpielerDetail(JSON.parse(row.dataset.spieler)));});
   }
 
   function showSpielerDetail(s){
+    if(!currentSpieler?.ist_admin)return;
     const el=document.getElementById('spieler-detail-content');
-    el.innerHTML=`
-      <button class="back-btn" id="detail-back">${backIcon} Zurück</button>
-      <div class="profile-header">
-        ${s.profilbild?`<div class="profile-avatar-lg"><img src="${s.profilbild}" alt="${s.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
-        <div class="profile-name">${s.name}</div>
-        <div class="profile-since">${s.email||'Keine E-Mail'}</div>
+    el.innerHTML=`<button class="back-btn" id="detail-back">${backIcon} Zurück</button>
+      <div class="profile-header">${s.profilbild?`<div class="profile-avatar-lg"><img src="${s.profilbild}" alt="${s.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
+        <div class="profile-name">${s.name}</div><div class="profile-since">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>
         <div style="margin-top:var(--space-sm)"><span class="badge ${s.aktiv?'badge-green':'badge-red'}">${s.aktiv?'Aktiv':'Inaktiv'}</span></div>
       </div>
       <button class="btn btn-secondary" id="detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
       <button class="btn btn-secondary" id="detail-toggle">${s.aktiv?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Deaktivieren`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Aktivieren`}</button>
-      <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Spieler löschen</button>`;
-    showPage('spieler-detail','verwaltung');
+      <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spieler löschen</button>`;
+    showPage('spieler-detail');
     document.getElementById('detail-back').addEventListener('click',()=>{showPage('verwaltung');loadVerwaltung();});
     document.getElementById('detail-edit').addEventListener('click',()=>openSpielerForm(s));
     document.getElementById('detail-toggle').addEventListener('click',async()=>{
@@ -673,13 +598,14 @@
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-delete').addEventListener('click',async()=>{
-      if(!confirmDelete(`Spieler "${s.name}" und alle zugehörigen Daten werden unwiderruflich gelöscht.`))return;
+      if(!confirmDelete(`Spieler "${s.name}" wird unwiderruflich gelöscht.`))return;
       await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
   }
 
   function openSpielerForm(s){
+    if(!currentSpieler?.ist_admin)return;
     editSpielerID=s?.id||null;
     document.getElementById('form-modal-title').textContent=s?'Spieler bearbeiten':'Neuer Spieler';
     document.getElementById('form-name').value=s?.name||'';
@@ -688,6 +614,7 @@
   }
   document.getElementById('form-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-form').classList.remove('open'));
   document.getElementById('form-speichern').addEventListener('click',async()=>{
+    if(!currentSpieler?.ist_admin)return;
     const name=document.getElementById('form-name').value.trim(),email=document.getElementById('form-email').value.trim()||null;
     if(!name){alert('Name ist erforderlich.');return;}
     if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
@@ -695,6 +622,101 @@
     document.getElementById('modal-spieler-form').classList.remove('open');
     await loadVerwaltung();await loadHome();
     if(editSpielerID)showPage('verwaltung');
+  });
+
+  // ── TRANSAKTIONEN ──────────────────────────────────────
+  async function loadTransaktionen(){
+    const el=document.getElementById('transaktionen-content');
+    const{data:trans}=await db.from('transaktionen').select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)').order('datum',{ascending:false}).order('created_at',{ascending:false}).limit(100);
+    if(!trans||trans.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
+    const gruppen={};
+    trans.forEach(t=>{if(!gruppen[t.datum])gruppen[t.datum]={datum:t.datum,items:[],summe:0};gruppen[t.datum].items.push(t);gruppen[t.datum].summe+=t.betrag;});
+    let html='';
+    Object.values(gruppen).forEach(g=>{
+      const datumStr=new Date(g.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'long',year:'numeric'});
+      html+=`<div class="section-title">${datumStr} <span style="font-weight:400;color:var(--text-tertiary)">· €${g.summe.toFixed(2)}</span></div><div class="card">`;
+      g.items.forEach(t=>{
+        const icon=transIcon(t);
+        const von=t.von?.name||'–',nach=t.nach?.name||'–';
+        html+=`<div class="list-item clickable" data-trans-id="${t.id}">
+          <div class="item-avatar ${icon.cls}" style="width:40px;height:40px">${icon.svg}</div>
+          <div class="item-body"><div class="item-title">${von} → ${nach}</div><div class="item-subtitle">${t.kommentar||'–'}</div></div>
+          <div class="item-trailing"><span class="item-amount amount-pos">€${t.betrag.toFixed(2)}</span>${chevron}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    el.innerHTML=html;
+    el.querySelectorAll('.list-item.clickable[data-trans-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const id=row.dataset.transId;
+        const{data:t}=await db.from('transaktionen').select('*').eq('id',id).single();
+        if(t)openTransaktionModal(t);
+      });
+    });
+  }
+
+  function openTransaktionModal(t){
+    editTransaktionID=t?.id||null;
+    document.getElementById('trans-modal-title').textContent=t?'Transaktion bearbeiten':'Neue Transaktion';
+    document.getElementById('trans-datum').value=t?.datum||new Date().toISOString().split('T')[0];
+    document.getElementById('trans-betrag').value=t?.betrag||'';
+
+    const spielerOpts=alleSpieler.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('trans-von').innerHTML=`<option value="">– leer –</option>${spielerOpts}`;
+    document.getElementById('trans-nach').innerHTML=`<option value="">– leer –</option>${spielerOpts}`;
+    if(t?.von_spieler_id)document.getElementById('trans-von').value=t.von_spieler_id;
+    if(t?.nach_spieler_id)document.getElementById('trans-nach').value=t.nach_spieler_id;
+
+    let selectedKommentar=t?.kommentar&&KOMMENTAR_VORLAGEN.includes(t.kommentar)?t.kommentar:'';
+    const chipsEl=document.getElementById('kommentar-chips');
+    chipsEl.innerHTML=KOMMENTAR_VORLAGEN.map(k=>`<button class="kommentar-chip${k===selectedKommentar?' active':''}" data-val="${k}">${k}</button>`).join('');
+    document.getElementById('trans-kommentar-text').value=selectedKommentar?'':(t?.kommentar||'');
+    chipsEl.querySelectorAll('.kommentar-chip').forEach(chip=>{
+      chip.addEventListener('click',()=>{
+        chipsEl.querySelectorAll('.kommentar-chip').forEach(c=>c.classList.remove('active'));
+        if(selectedKommentar===chip.dataset.val){selectedKommentar='';}
+        else{selectedKommentar=chip.dataset.val;chip.classList.add('active');document.getElementById('trans-kommentar-text').value='';}
+      });
+    });
+    document.getElementById('trans-kommentar-text').addEventListener('input',()=>{selectedKommentar='';chipsEl.querySelectorAll('.kommentar-chip').forEach(c=>c.classList.remove('active'));});
+    document.getElementById('modal-transaktion')._getKommentar=()=>selectedKommentar||document.getElementById('trans-kommentar-text').value.trim();
+
+    // Löschen-Button nur beim Bearbeiten
+    const existingDel=document.getElementById('trans-loeschen');
+    if(existingDel)existingDel.remove();
+    if(t){
+      const delBtn=document.createElement('button');
+      delBtn.id='trans-loeschen';
+      delBtn.className='btn btn-danger';
+      delBtn.style.marginTop='var(--space-sm)';
+      delBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
+      delBtn.addEventListener('click',async()=>{
+        if(!confirmDelete(`Transaktion "${t.kommentar}" über €${t.betrag.toFixed(2)} löschen?`))return;
+        await save(()=>db.from('transaktionen').delete().eq('id',t.id),`Transaktion gelöscht`);
+        document.getElementById('modal-transaktion').classList.remove('open');
+        await loadTransaktionen();await loadHome();
+      });
+      document.getElementById('modal-transaktion').querySelector('.modal-actions').before(delBtn);
+    }
+    document.getElementById('modal-transaktion').classList.add('open');
+  }
+
+  document.getElementById('trans-abbrechen').addEventListener('click',()=>document.getElementById('modal-transaktion').classList.remove('open'));
+  document.getElementById('trans-speichern').addEventListener('click',async()=>{
+    const datum=document.getElementById('trans-datum').value;
+    const von=document.getElementById('trans-von').value||null;
+    const nach=document.getElementById('trans-nach').value||null;
+    const betrag=parseFloat(document.getElementById('trans-betrag').value)||0;
+    const kommentar=document.getElementById('modal-transaktion')._getKommentar();
+    if(!nach&&!von){alert('Bitte Von oder Nach auswählen.');return;}
+    if(betrag<=0){alert('Bitte einen Betrag eingeben.');return;}
+    if(!kommentar){alert('Bitte einen Kommentar wählen oder eingeben.');return;}
+    const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
+    if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),`Transaktion aktualisiert`);}
+    else{await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);}
+    document.getElementById('modal-transaktion').classList.remove('open');
+    await loadTransaktionen();await loadHome();
   });
 
   // ── AKTUELLES SPIEL ────────────────────────────────────
@@ -713,48 +735,82 @@
     renderSpiel();
   }
 
+  function calcPotRest(){
+    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+t.buyins*5,0);
+    let zugeordnet=0;
+    spielTeilnehmer.forEach(t=>{const v=parseFloat(document.getElementById('payout-'+t.id)?.value)||0;zugeordnet+=v;});
+    return{gesamtPot,zugeordnet,rest:gesamtPot-zugeordnet};
+  }
+
+  function updatePotSummary(){
+    const{gesamtPot,zugeordnet,rest}=calcPotRest();
+    const el=document.getElementById('pot-rest-summary');
+    if(!el)return;
+    el.querySelector('.pot-summary-label').textContent=`Pot: €${gesamtPot.toFixed(0)} · Zugeordnet: €${zugeordnet.toFixed(0)}`;
+    const valEl=el.querySelector('.pot-summary-value');
+    valEl.textContent=`Rest: €${rest.toFixed(2)}`;
+    valEl.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');
+  }
+
+  function updateGesamtPot(){
+    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+t.buyins*5,0);
+    const el=document.getElementById('gesamt-pot-display');
+    if(el)el.textContent=`€${gesamtPot}`;
+  }
+
   function renderSpiel(){
     const el=document.getElementById('spiel-content');
     const datum=new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
     const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+t.buyins*5,0);
-    let html=`
-      <div class="card" style="margin-bottom:var(--space-md)">
-        <div style="display:flex;gap:var(--space-sm);padding:var(--space-md)">
-          <div style="flex:1;text-align:center"><div class="stat-label">Datum</div><div style="font-size:17px;font-weight:700;margin-top:4px">${datum}</div></div>
-          <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:17px;font-weight:700;margin-top:4px">${spielTeilnehmer.length}</div></div>
-          <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot}</div></div>
-        </div>
+    let html=`<div class="card" style="margin-bottom:var(--space-md)">
+      <div style="display:flex;gap:var(--space-sm);padding:var(--space-md)">
+        <div style="flex:1;text-align:center"><div class="stat-label">Datum</div><div style="font-size:17px;font-weight:700;margin-top:4px">${datum}</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:17px;font-weight:700;margin-top:4px">${spielTeilnehmer.length}</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div id="gesamt-pot-display" style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot}</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="section-title" style="margin:0">Buy-Ins</div>
-        <button class="btn btn-ghost" id="btn-edit-teilnehmer" style="width:auto;padding:8px 14px;font-size:13px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          Teilnehmer
-        </button>
-      </div>
-      <div class="card" style="margin-bottom:var(--space-md);margin-top:var(--space-sm)">`;
-    spielTeilnehmer.forEach(t=>{
-      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${(t.buyins*5).toFixed(0)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
-    });
-    html+=`</div><div class="section-title">Ergebnis (PayOut)</div><div class="card" style="margin-top:var(--space-sm);margin-bottom:var(--space-md)">`;
-    spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" class="payout-field" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
-    });
-    html+=`</div><button class="btn btn-danger" id="btn-abschliessen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>`;
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="section-title" style="margin:0">Buy-Ins</div>
+      <button class="btn btn-ghost" id="btn-edit-teilnehmer" style="width:auto;padding:8px 14px;font-size:13px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/><line x1="16" y1="14" x2="22" y2="14"/></svg>
+        Teilnehmer
+      </button>
+    </div>
+    <div class="card" style="margin-bottom:var(--space-md);margin-top:var(--space-sm)">`;
+    spielTeilnehmer.forEach(t=>{html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${(t.buyins*5).toFixed(0)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;});
+    html+=`</div><div class="section-title">Ergebnis (PayOut)</div>
+    <div class="card" style="margin-top:var(--space-sm);margin-bottom:var(--space-sm)">`;
+    spielTeilnehmer.forEach(t=>{html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" class="payout-field" id="payout-${t.id}" data-id="${t.id}" value="${t.payout}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;});
+    html+=`</div>
+    <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot: €${gesamtPot} · Zugeordnet: €0</span><span class="pot-summary-value">Rest: €${gesamtPot.toFixed(2)}</span></div>
+    <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
+    <button class="btn btn-ghost" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
     el.innerHTML=html;
 
+    updatePotSummary();
     el.querySelectorAll('.counter-btn.plus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,+1)));
     el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,-1)));
     spielTeilnehmer.forEach(t=>{
       document.getElementById('payout-'+t.id)?.addEventListener('change',async e=>{
         const payout=parseFloat(e.target.value)||0;
         await save(()=>db.from('spiel_teilnehmer').update({payout}).eq('id',t.id),`PayOut ${t.spieler.name}: €${payout}`);
+        updatePotSummary();
       });
+      document.getElementById('payout-'+t.id)?.addEventListener('input',updatePotSummary);
     });
     document.getElementById('btn-edit-teilnehmer').addEventListener('click',zeigeTeilnehmerEdit);
     document.getElementById('btn-abschliessen').addEventListener('click',schliesseSpielAb);
+    document.getElementById('btn-spiel-loeschen').addEventListener('click',async()=>{
+      if(!confirmDelete(`Das aktuelle Spiel vom ${datum} wird ohne Speichern gelöscht.\nAlle Buy-Ins und Ergebnisse gehen verloren.`))return;
+      await save(async()=>{
+        await db.from('spiel_teilnehmer').delete().eq('spiel_id',aktuellesSpiel.id);
+        await db.from('spiele').delete().eq('id',aktuellesSpiel.id);
+      },'Spiel verworfen');
+      aktuellesSpiel=null;spielTeilnehmer=[];
+      await loadSpiel();
+    });
   }
 
   async function buyinChange(id,delta){
@@ -762,6 +818,8 @@
     t.buyins+=delta;
     document.getElementById('count-'+id).textContent=t.buyins;
     document.getElementById('pot-'+id).textContent=`€${(t.buyins*5).toFixed(0)} im Pot`;
+    updateGesamtPot();
+    updatePotSummary();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
   }
 
@@ -772,184 +830,46 @@
     await loadSpiel();await loadHome();
   }
 
-  // ── TEILNEHMER EDITIEREN ───────────────────────────────
   function zeigeTeilnehmerEdit(){
     const spieler=alleSpieler.filter(s=>!s.ist_bank);
     const aktivIds=new Set(spielTeilnehmer.map(t=>t.spieler_id));
     const liste=document.getElementById('teilnehmer-edit-liste');
-    liste.innerHTML=`<div class="select-grid">${spieler.map(s=>`
-      <div class="select-card ${aktivIds.has(s.id)?'selected':''}" data-id="${s.id}">
-        ${avatarHtml(s,44)}
-        <span class="select-card-name">${s.name}</span>
-      </div>`).join('')}</div>`;
+    liste.innerHTML=`<div class="select-grid">${spieler.map(s=>`<div class="select-card ${aktivIds.has(s.id)?'selected':''}" data-id="${s.id}">${avatarHtml(s,44)}<span class="select-card-name">${s.name}</span></div>`).join('')}</div>`;
     liste.querySelectorAll('.select-card').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
     document.getElementById('modal-teilnehmer-edit').classList.add('open');
   }
-
   document.getElementById('teilnehmer-edit-abbrechen').addEventListener('click',()=>document.getElementById('modal-teilnehmer-edit').classList.remove('open'));
   document.getElementById('teilnehmer-edit-speichern').addEventListener('click',async()=>{
     const selected=new Set(Array.from(document.querySelectorAll('#teilnehmer-edit-liste .select-card.selected')).map(c=>c.dataset.id));
     const aktuelleIds=new Set(spielTeilnehmer.map(t=>t.spieler_id));
-
-    // Hinzufügen
     const hinzufuegen=[...selected].filter(id=>!aktuelleIds.has(id));
-    // Entfernen
     const entfernen=spielTeilnehmer.filter(t=>!selected.has(t.spieler_id));
-
-    // Warnung bei Entfernen mit BuyIns
     const mitBuyins=entfernen.filter(t=>t.buyins>0);
-    if(mitBuyins.length>0){
-      const namen=mitBuyins.map(t=>t.spieler.name).join(', ');
-      if(!confirmAction(`${namen} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins. Wirklich entfernen?\n\nDie Buy-In Einträge werden gelöscht.`))return;
-    }
-
+    if(mitBuyins.length>0){if(!confirmAction(`${mitBuyins.map(t=>t.spieler.name).join(', ')} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins und wird entfernt. Wirklich fortfahren?`))return;}
     setSync('pending');
-    for(const t of entfernen){await db.from('spiel_teilnehmer').delete().eq('id',t.id);}
-    if(hinzufuegen.length>0){await db.from('spiel_teilnehmer').insert(hinzufuegen.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));}
+    for(const t of entfernen)await db.from('spiel_teilnehmer').delete().eq('id',t.id);
+    if(hinzufuegen.length>0)await db.from('spiel_teilnehmer').insert(hinzufuegen.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
     setSync('synced');
     document.getElementById('modal-teilnehmer-edit').classList.remove('open');
     await loadSpiel();
-    console.log(`✅ Teilnehmer aktualisiert: +${hinzufuegen.length} -${entfernen.length}`);
   });
 
-  // ── SPIELER AUSWAHL (neues Spiel) ─────────────────────
   function zeigeSpielAuswahl(){
     const spieler=alleSpieler.filter(s=>!s.ist_bank);
     const liste=document.getElementById('spieler-auswahl-liste');
     liste.innerHTML=`<div class="select-grid">${spieler.map(s=>`<div class="select-card" data-id="${s.id}">${avatarHtml(s,44)}<span class="select-card-name">${s.name}</span></div>`).join('')}</div>`;
     liste.querySelectorAll('.select-card').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
-    document.getElementById('modal-spieler').classList.add('open');
+    document.getElementById('modal-spieler-auswahl').classList.add('open');
   }
-  document.getElementById('modal-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler').classList.remove('open'));
-  document.getElementById('modal-bestaetigen').addEventListener('click',async()=>{
+  document.getElementById('modal-auswahl-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-auswahl').classList.remove('open'));
+  document.getElementById('modal-auswahl-bestaetigen').addEventListener('click',async()=>{
     const selected=document.querySelectorAll('#spieler-auswahl-liste .select-card.selected');
     if(selected.length<2){alert('Bitte mindestens 2 Spieler auswählen.');return;}
     const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0]}).select().single();
     await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el=>({spiel_id:neuesSpiel.id,spieler_id:el.dataset.id,buyins:1,payout:0,leihgabe:0})));
-    document.getElementById('modal-spieler').classList.remove('open');
+    document.getElementById('modal-spieler-auswahl').classList.remove('open');
     aktuellesSpiel=neuesSpiel;
     await loadSpiel();
-  });
-
-  // ── TRANSAKTIONEN ──────────────────────────────────────
-  const KOMMENTAR_VORLAGEN = ['Verpflegung (Bier | Snacks)','Pfand','7-2 Gewinn','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
-
-  async function loadTransaktionen() {
-    const el = document.getElementById('transaktionen-content');
-    const { data: trans } = await db.from('transaktionen')
-      .select('*, von:von_spieler_id(name), nach:nach_spieler_id(name)')
-      .order('datum', { ascending: false })
-      .limit(100);
-    if (!trans || trans.length === 0) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div><div class="empty-subtitle">Noch keine Einträge vorhanden.</div></div>`;
-      return;
-    }
-    // Gruppieren nach Datum
-    const gruppen = {};
-    trans.forEach(t => {
-      const d = t.datum;
-      if (!gruppen[d]) gruppen[d] = { datum: d, items: [], summe: 0 };
-      gruppen[d].items.push(t);
-      gruppen[d].summe += t.betrag;
-    });
-    let html = '';
-    Object.values(gruppen).forEach(g => {
-      const datumStr = new Date(g.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
-      html += `<div class="section-title">${datumStr} <span style="font-weight:400;color:var(--text-tertiary)">· €${g.summe.toFixed(2)}</span></div><div class="card">`;
-      g.items.forEach(t => {
-        const von = t.von?.name || '–';
-        const nach = t.nach?.name || '–';
-        html += `<div class="list-item">
-          <div class="item-avatar accent" style="width:40px;height:40px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-          </div>
-          <div class="item-body">
-            <div class="item-title">${von} → ${nach}</div>
-            <div class="item-subtitle">${t.kommentar || '–'}</div>
-          </div>
-          <div class="item-trailing">
-            <span class="item-amount amount-pos">€${t.betrag.toFixed(2)}</span>
-          </div>
-        </div>`;
-      });
-      html += `</div>`;
-    });
-    el.innerHTML = html;
-  }
-
-  function openTransaktionModal() {
-    // Datum auf heute setzen
-    document.getElementById('trans-datum').value = new Date().toISOString().split('T')[0];
-    document.getElementById('trans-betrag').value = '';
-    document.getElementById('trans-kommentar-text').value = '';
-
-    // Spieler Dropdowns befüllen
-    const spielerOptionen = alleSpieler.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-    document.getElementById('trans-von').innerHTML = `<option value="">– leer (Eingang) –</option>${spielerOptionen}`;
-    document.getElementById('trans-nach').innerHTML = `<option value="">– wählen –</option>${spielerOptionen}`;
-
-    // Kommentar Chips
-    let selectedKommentar = '';
-    const chipsEl = document.getElementById('kommentar-chips');
-    chipsEl.innerHTML = KOMMENTAR_VORLAGEN.map(k => `
-      <button class="kommentar-chip" data-val="${k}" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:left;transition:all var(--transition)">${k}</button>
-    `).join('');
-
-    chipsEl.querySelectorAll('.kommentar-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        chipsEl.querySelectorAll('.kommentar-chip').forEach(c => {
-          c.style.background = 'var(--bg-secondary)';
-          c.style.borderColor = 'var(--border)';
-          c.style.color = 'var(--text-primary)';
-        });
-        if (selectedKommentar === chip.dataset.val) {
-          selectedKommentar = '';
-        } else {
-          selectedKommentar = chip.dataset.val;
-          chip.style.background = 'var(--accent-soft)';
-          chip.style.borderColor = 'var(--accent)';
-          chip.style.color = 'var(--accent-text)';
-          document.getElementById('trans-kommentar-text').value = '';
-        }
-      });
-    });
-
-    // Freitext deselektiert Chips
-    document.getElementById('trans-kommentar-text').addEventListener('input', () => {
-      selectedKommentar = '';
-      chipsEl.querySelectorAll('.kommentar-chip').forEach(c => {
-        c.style.background = 'var(--bg-secondary)';
-        c.style.borderColor = 'var(--border)';
-        c.style.color = 'var(--text-primary)';
-      });
-    });
-
-    document.getElementById('modal-transaktion')._getKommentar = () =>
-      selectedKommentar || document.getElementById('trans-kommentar-text').value.trim();
-
-    document.getElementById('modal-transaktion').classList.add('open');
-  }
-
-  document.getElementById('trans-abbrechen').addEventListener('click', () =>
-    document.getElementById('modal-transaktion').classList.remove('open'));
-
-  document.getElementById('trans-speichern').addEventListener('click', async () => {
-    const datum = document.getElementById('trans-datum').value;
-    const von = document.getElementById('trans-von').value || null;
-    const nach = document.getElementById('trans-nach').value || null;
-    const betrag = parseFloat(document.getElementById('trans-betrag').value) || 0;
-    const kommentar = document.getElementById('modal-transaktion')._getKommentar();
-
-    if (!nach) { alert('Bitte ein Ziel (Nach) auswählen.'); return; }
-    if (betrag <= 0) { alert('Bitte einen Betrag eingeben.'); return; }
-    if (!kommentar) { alert('Bitte einen Kommentar wählen oder eingeben.'); return; }
-
-    await save(() => db.from('transaktionen').insert({
-      datum, von_spieler_id: von, nach_spieler_id: nach, betrag, kommentar
-    }), `Transaktion: ${kommentar} €${betrag}`);
-
-    document.getElementById('modal-transaktion').classList.remove('open');
-    await loadTransaktionen();
   });
 
   // ── INIT ───────────────────────────────────────────────
