@@ -313,7 +313,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.5';
+  const VERSION='1.5.1';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -354,7 +354,7 @@
   function confirmAction(msg){return confirm(msg);}
 
   // ── FINANZLOGIK ────────────────────────────────────────
-  function berechneKontostaende(spieler, trans, spielVerlauf){
+  function berechneKontostaende(spieler, trans, spielVerlauf, spieleMap){
     const ks={};
     spieler.forEach(s=>{ks[s.id]=0;});
 
@@ -365,13 +365,13 @@
       if(v&&ks[v]!==undefined) ks[v]-=t.betrag;
     });
 
-    // Spielergebnisse: payout - buyins*(pot+kassa) - leihgabe
-    const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
+    // Spielergebnisse: payout - buyins * buyin_pot (NUR Pot-Anteil, kein Kassa, kein Leihgabe)
+    // buyin_pot kommt vom jeweiligen Spiel (historisch korrekt)
     (spielVerlauf||[]).forEach(t=>{
       if(ks[t.spieler_id]!==undefined){
-        ks[t.spieler_id]+=t.payout||0;
-        ks[t.spieler_id]-=(t.buyins||0)*buyinGesamt;
-        ks[t.spieler_id]-=t.leihgabe||0;
+        const spielBuyinPot = spieleMap?.[t.spiel_id]?.buyin_pot ?? einstellungen.buyin_pot;
+        ks[t.spieler_id]+=(t.payout||0);
+        ks[t.spieler_id]-=(t.buyins||0)*spielBuyinPot;
       }
     });
     return ks;
@@ -488,15 +488,17 @@
   // ── HOME ───────────────────────────────────────────────
   async function loadHome(){
     const el=document.getElementById('home-content');
-    const[{data:spieler},{data:trans},{data:verlauf}]=await Promise.all([
+    const[{data:spieler},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).order('name'),
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen)').eq('spiele.abgeschlossen',true)
+      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true)
     ]);
     if(!spieler)return;
     alleSpieler=spieler;
-
-    const kontostaende=berechneKontostaende(spieler,trans,verlauf);
+    const spieleMap={};
+    (spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
+    const kontostaende=berechneKontostaende(spieler,trans,verlauf,spieleMap);
     const bankkonto=berechneBankkonto(trans||[]);
     const pokerkasse=berechnePokerkasse(trans||[],verlauf||[]);
 
@@ -542,19 +544,24 @@
     showPage('spieler-stats');
     const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
 
-    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn}]=await Promise.all([
-      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
+    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData}]=await Promise.all([
+      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen,buyin_pot)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
+      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true),
     ]);
+    const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
     const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen);
     const n=abg.length;
     const gBuyins=abg.reduce((s,t)=>s+(t.buyins||0),0);
     const gPayout=abg.reduce((s,t)=>s+(t.payout||0),0);
-    // Reingewinn pro Spiel = payout - buyins*(pot+kassa) - leihgabe
-    const reingewinne=abg.map(t=>(t.payout||0)-(t.buyins||0)*buyinGesamt-(t.leihgabe||0));
+    // Reingewinn = payout - buyins * buyin_pot (pro Spiel, historisch korrekt)
+    const reingewinne=abg.map(t=>{
+      const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+      return (t.payout||0)-(t.buyins||0)*bPot;
+    });
     const gRein=reingewinne.reduce((s,v)=>s+v,0);
     const avgRein=n>0?gRein/n:0;
     const maxRein=reingewinne.length>0?Math.max(...reingewinne):0;
@@ -940,19 +947,18 @@
   async function loadVerlauf(){
     const el=document.getElementById('verlauf-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:spiele}=await db.from('spiele').select('*,spiel_teilnehmer(*,spieler(*))').eq('abgeschlossen',true).order('datum',{ascending:false}).limit(50);
+    const{data:spiele}=await db.from('spiele').select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))').eq('abgeschlossen',true).order('datum',{ascending:false}).limit(50);
     if(!spiele||spiele.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`;return;}
-    const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
     let html='';
     spiele.forEach(spiel=>{
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       const teilnehmer=spiel.spiel_teilnehmer||[];
-      const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*einstellungen.buyin_pot,0);
+      const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
+      const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
-      // Sortiert: größter Gewinner zuerst
       const sorted=[...teilnehmer].sort((a,b)=>{
-        const ra=(a.payout||0)-(a.buyins||0)*buyinGesamt-(a.leihgabe||0);
-        const rb=(b.payout||0)-(b.buyins||0)*buyinGesamt-(b.leihgabe||0);
+        const ra=(a.payout||0)-(a.buyins||0)*bPot;
+        const rb=(b.payout||0)-(b.buyins||0)*bPot;
         return rb-ra;
       });
       html+=`<div class="section-title">${datum}</div><div class="card">`;
@@ -966,7 +972,7 @@
       </div>`;
       // Spieler-Ergebnisse
       sorted.forEach((t,i)=>{
-        const rein=(t.payout||0)-(t.buyins||0)*buyinGesamt-(t.leihgabe||0);
+        const rein=(t.payout||0)-(t.buyins||0)*bPot;
         const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
         html+=`<div class="list-item">
           ${avatarHtml(t.spieler,36)}
@@ -984,27 +990,29 @@
 
   // ── GESAMT STATISTIK ───────────────────────────────────
   async function loadStatistik(){
-    const el=document.getElementById('statistik-content');
+  async function loadStatistik(){
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
-
-    const[{data:spieler},{data:verlauf},{data:trans},{data:haende}]=await Promise.all([
+    const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('*'),
       db.from('hand_statistik').select('*'),
+      db.from('spiele').select('id,buyin_pot').eq('abgeschlossen',true),
     ]);
+    const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
     if(!spieler||spieler.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Keine Daten</div></div>`;return;}
 
-    const kontostaende=berechneKontostaende([...spieler,...alleSpieler.filter(s=>s.ist_bank)],trans,verlauf||[]);
+    const kontostaende=berechneKontostaende([...spieler,...alleSpieler.filter(s=>s.ist_bank)],trans,verlauf||[],spieleMap);
 
-    // Rangliste nach Reingewinn
     const ranking=spieler.map(s=>{
       const abg=(verlauf||[]).filter(t=>t.spieler_id===s.id&&t.spiele?.abgeschlossen);
       const gBuyins=abg.reduce((x,t)=>x+(t.buyins||0),0);
       const gPayout=abg.reduce((x,t)=>x+(t.payout||0),0);
-      const gRein=abg.reduce((x,t)=>x+(t.payout||0)-(t.buyins||0)*buyinGesamt-(t.leihgabe||0),0);
+      const gRein=abg.reduce((x,t)=>{
+        const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+        return x+(t.payout||0)-(t.buyins||0)*bPot;
+      },0);
       const ks=kontostaende[s.id]||0;
       return{...s,abg:abg.length,gBuyins,gPayout,gRein,ks};
     }).sort((a,b)=>b.gRein-a.gRein);
