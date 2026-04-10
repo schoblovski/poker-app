@@ -269,10 +269,9 @@ Sonder-Eintrag: Bank (ist_bank=true)
 
 ## Git-Workflow
 
-- **Dev-Branch:** `claude/poker-app-pending-tasks-MQfdn`
-- **Push:** `git push -u origin claude/poker-app-pending-tasks-MQfdn`
-- Kein direkter Push auf `main` ohne explizite Erlaubnis
-- Vercel deployed automatisch von `main`
+- **Direkt auf `main` entwickeln und pushen** – Vercel deployed automatisch
+- Kein Feature-Branch nötig (Chris ist alleiniger Entwickler)
+- Push: `git push origin main`
 
 ## Kommentar-Vorlagen (Transaktionen)
 
