@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.4">
+  <meta name="version" content="1.7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -192,9 +192,15 @@
     .kasse-tile-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
     .kasse-tile-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:6px;letter-spacing:-.3px;}
     .kasse-tile-sub{font-size:11px;color:var(--text-tertiary);margin-top:3px;}
-    .kasse-tile.bank{background:linear-gradient(135deg,var(--accent-soft),var(--surface));}
+    .kasse-tile.bank{background:var(--accent-soft);}
     .kasse-tile.bank .kasse-tile-label{color:var(--accent-text);}
     .kasse-tile.bank .kasse-tile-value{color:var(--accent-text);}
+    .hand-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xs);margin-top:var(--space-xs);}
+    .hand-type-btn{background:var(--bg-secondary);border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);}
+    .hand-type-btn.selected{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+    .hand-type-btn.danger-sel{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+    .foto-preview{width:100%;border-radius:var(--radius-md);margin-top:var(--space-xs);display:none;max-height:200px;object-fit:cover;}
+    .foto-preview.show{display:block;}
   </style>
 </head>
 <body>
@@ -276,8 +282,13 @@
     </div>
     <div class="page" id="page-verwaltung"><div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
     <div class="page" id="page-einstellungen"><div id="einstellungen-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
+    <div class="page" id="page-spiel-detail"><div id="spiel-detail-content"></div></div>
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
+    <div class="page" id="page-haende">
+      <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
+      <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
@@ -286,6 +297,7 @@
     <button class="nav-btn" data-page="verlauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-label">Verlauf</span></button>
     <button class="nav-btn" data-page="statistik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Statistik</span></button>
     <button class="nav-btn" data-page="transaktionen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span class="nav-label">Konto</span></button>
+    <button class="nav-btn" data-page="haende"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 11h4m2 0h4"/></svg><span class="nav-label">Hände</span></button>
   </nav>
 </div>
 
@@ -314,9 +326,48 @@
   </div>
 </div>
 
+<!-- HAND MODAL -->
+<div class="modal-overlay" id="modal-hand">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="hand-modal-title">Hand erfassen</div>
+    <div class="form-group">
+      <label class="form-label">Hand-Typ</label>
+      <div class="hand-type-grid" id="hand-type-grid">
+        <button class="hand-type-btn" data-hand="7-2">7-2 🤑</button>
+        <button class="hand-type-btn" data-hand="Royal Flush">Royal Flush</button>
+        <button class="hand-type-btn" data-hand="Straight Flush">Str. Flush</button>
+        <button class="hand-type-btn" data-hand="4 of a Kind">Vierling</button>
+        <button class="hand-type-btn" data-hand="Full House">Full House</button>
+        <button class="hand-type-btn" data-hand="Sonstiges">Sonstiges</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Gewinner</label>
+      <select class="form-input" id="hand-gewinner"></select>
+    </div>
+    <div id="hand-7-2-info" style="display:none;background:var(--warning-soft);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);font-size:13px;color:var(--warning);margin-bottom:var(--space-md)">
+      <strong>7-2 Hausregel:</strong> Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kommentar (optional)</label>
+      <input type="text" class="form-input" id="hand-kommentar" placeholder="z.B. „All-In auf dem River"">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Beweisfoto-URL (optional)</label>
+      <input type="url" class="form-input" id="hand-foto-url" placeholder="https://…">
+      <img id="hand-foto-preview" class="foto-preview" alt="Vorschau">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="hand-abbrechen">Abbrechen</button>
+      <button class="btn btn-primary" id="hand-speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.6';
+  const VERSION='1.7';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -437,7 +488,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail'};
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -450,6 +501,7 @@
     if(page==='verlauf')loadVerlauf();
     if(page==='statistik')loadStatistik();
     if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=()=>openTransaktionModal(null);}
+    if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
@@ -654,6 +706,25 @@
       <button class="btn btn-primary" id="btn-einst-speichern" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Speichern
+      </button>
+
+      <div class="section-title" style="margin-top:var(--space-xl)">Jahres-Spende</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Zielwert</div>
+            <div class="setting-sub">Kontostand auf den alle Spieler gebracht werden</div>
+          </div>
+          <input type="number" class="setting-input" id="set-jahresspende-ziel" value="100" min="0" step="1">
+        </div>
+      </div>
+      <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
+        Spieler mit Kontostand <strong>&gt; Zielwert</strong> spenden die Differenz an die Kasse.<br>
+        Spieler mit Kontostand <strong>&lt; Zielwert</strong> erhalten eine Einzahlung aus der Kasse.
+      </div>
+      <button class="btn btn-danger" id="btn-jahresspende" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+        Jahres-Spende durchführen
       </button>`;
 
     // Preview aktualisieren
@@ -675,6 +746,44 @@
         einstellungen.buyin_kassa=kassa;
       },'Einstellungen gespeichert');
       alert('✅ Einstellungen gespeichert');
+    });
+
+    // Jahres-Spende Button
+    document.getElementById('btn-jahresspende').addEventListener('click',async()=>{
+      const zielStr=document.getElementById('set-jahresspende-ziel').value;
+      const ziel=parseFloat(zielStr)||100;
+      if(!confirmAction(`Jahres-Spende durchführen?\n\nAlle Spieler mit Kontostand > €${ziel.toFixed(2)} spenden die Differenz zur Pokerkasse.\nSpieler mit Kontostand < €${ziel.toFixed(2)} erhalten eine Einzahlung auf €${ziel.toFixed(2)}.\n\nDieser Vorgang erstellt Transaktionen für alle Spieler.`))return;
+
+      // Aktuelle Kontostände berechnen
+      const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
+        db.from('spieler').select('*').eq('aktiv',true),
+        db.from('transaktionen').select('*'),
+        db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
+        db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+      ]);
+      const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
+      const ks=berechneKontostaende(spieler||[],trans||[],verlauf||[],spieleMap);
+      const bank=spieler?.find(s=>s.ist_bank);
+      const aktiveSpieler=(spieler||[]).filter(s=>s.aktiv&&!s.ist_bank);
+      const heute=new Date().toISOString().split('T')[0];
+      let n=0;
+      await save(async()=>{
+        for(const s of aktiveSpieler){
+          const stand=ks[s.id]||0;
+          const diff=stand-ziel;
+          if(Math.abs(diff)<0.01)continue; // Bereits auf Ziel
+          n++;
+          if(diff>0){
+            // Spieler hat mehr als Ziel → spendet Differenz an Kasse
+            await db.from('transaktionen').insert({datum:heute,von_spieler_id:s.id,nach_spieler_id:bank?.id||null,betrag:parseFloat(diff.toFixed(2)),kommentar:'Jahresspende'});
+          } else {
+            // Spieler hat weniger als Ziel → bekommt Differenz aus Kasse
+            await db.from('transaktionen').insert({datum:heute,von_spieler_id:bank?.id||null,nach_spieler_id:s.id,betrag:parseFloat((-diff).toFixed(2)),kommentar:'Jahresausgleich'});
+          }
+        }
+      },`Jahres-Spende: ${n} Transaktionen erstellt`);
+      alert(`✅ Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
+      loadHome();
     });
   }
 
@@ -981,14 +1090,17 @@
         const rb=(b.payout||0)-(b.buyins||0)*(bPot+bKassaSort);
         return rb-ra;
       });
-      html+=`<div class="section-title">${datum}</div><div class="card">`;
-      // Spiel-Header
-      html+=`<div style="display:flex;gap:var(--space-sm);padding:var(--space-md);border-bottom:1px solid var(--border)">
-        <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
-        <div style="width:1px;background:var(--border)"></div>
-        <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(0)}</div></div>
-        <div style="width:1px;background:var(--border)"></div>
-        <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
+      html+=`<div class="section-title">${datum}</div><div class="card" data-spiel-id="${spiel.id}" style="cursor:pointer">`;
+      // Spiel-Header (anklickbar)
+      html+=`<div class="list-item clickable" data-spiel-id="${spiel.id}" style="padding:var(--space-md)">
+        <div style="flex:1;display:flex;gap:var(--space-md)">
+          <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
+          <div style="width:1px;background:var(--border)"></div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(0)}</div></div>
+          <div style="width:1px;background:var(--border)"></div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
+        </div>
+        <div style="margin-left:var(--space-sm)">${chevron}</div>
       </div>`;
       // Spieler-Ergebnisse
       sorted.forEach((t,i)=>{
@@ -1007,6 +1119,104 @@
       html+=`</div>`;
     });
     el.innerHTML=html;
+
+    // Klick auf Spiel → Detail
+    el.querySelectorAll('.list-item.clickable[data-spiel-id]').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const spiel=spiele.find(s=>s.id===row.dataset.spielId);
+        if(spiel)showSpielDetail(spiel);
+      });
+    });
+  }
+
+  // ── SPIEL DETAIL ────────────────────────────────────────
+  async function showSpielDetail(spiel){
+    const el=document.getElementById('spiel-detail-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
+    showPage('spiel-detail');
+
+    const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
+    const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+    const teilnehmer=spiel.spiel_teilnehmer||[];
+    const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
+    const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
+    const gesamtBuyins=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
+
+    const sorted=[...teilnehmer].sort((a,b)=>{
+      const ra=(a.payout||0)-(a.buyins||0)*(bPot+bKassa);
+      const rb=(b.payout||0)-(b.buyins||0)*(bPot+bKassa);
+      return rb-ra;
+    });
+
+    // Hände für dieses Spiel laden
+    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name)').eq('spiel_id',spiel.id);
+
+    let html=`<button class="back-btn" id="spiel-detail-back">${backIcon} Verlauf</button>
+      <div class="section-title" style="margin-top:0">${datum}</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Spieler</div><div class="stat-value sm">${teilnehmer.length}</div></div>
+        <div class="stat-card accent"><div class="stat-label">Pot</div><div class="stat-value sm">€${gesamtPot.toFixed(0)}</div></div>
+        <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gesamtBuyins}</div></div>
+        <div class="stat-card"><div class="stat-label">Ausgespielt</div><div class="stat-value sm">€${gesamtPayout.toFixed(2)}</div></div>
+      </div>
+
+      <div class="section-title">Ergebnisse</div>
+      <div class="card">`;
+
+    sorted.forEach((t,i)=>{
+      const rein=(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      html+=`<div class="list-item">
+        ${avatarHtml(t.spieler,36)}
+        <div class="item-body">
+          <div class="item-title">${medal?medal+' ':''}${t.spieler?.name||'?'}</div>
+          <div class="item-subtitle">${t.buyins||0}× BuyIn · PayOut €${(t.payout||0).toFixed(2)}</div>
+        </div>
+        <div class="item-trailing"><span class="item-amount ${ksClass(rein)}">${fmtSigned(rein)}</span></div>
+      </div>`;
+    });
+    html+=`</div>`;
+
+    if(haende&&haende.length>0){
+      html+=`<div class="section-title">Besondere Hände (${haende.length})</div><div class="card">`;
+      haende.forEach(h=>{
+        const is72=h.hand==='7-2';
+        html+=`<div class="list-item">
+          <div class="item-avatar ${is72?'warn':'accent'}" style="width:36px;height:36px">
+            ${is72?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`}
+          </div>
+          <div class="item-body">
+            <div class="item-title">${h.hand}${is72?' 🤑':''}</div>
+            <div class="item-subtitle">${h.gewinner?.name||'?'}${h.kommentar?` · ${h.kommentar}`:''}</div>
+          </div>
+          ${h.foto_url?`<div class="item-trailing"><a href="${h.foto_url}" target="_blank" style="color:var(--accent-text);font-size:12px;font-weight:600">Foto</a></div>`:''}
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    // Admin: Spiel löschen
+    if(currentSpieler?.ist_admin){
+      html+=`<button class="btn btn-ghost" id="btn-spiel-detail-loeschen" style="margin-top:var(--space-lg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel löschen</button>`;
+    }
+
+    el.innerHTML=html;
+    document.getElementById('spiel-detail-back').addEventListener('click',()=>showPage('verlauf'));
+    if(currentSpieler?.ist_admin){
+      document.getElementById('btn-spiel-detail-loeschen')?.addEventListener('click',async()=>{
+        const d=new Date(spiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
+        if(!confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
+        await save(async()=>{
+          await db.from('spiel_teilnehmer').delete().eq('spiel_id',spiel.id);
+          await db.from('hand_statistik').delete().eq('spiel_id',spiel.id);
+          await db.from('spiele').delete().eq('id',spiel.id);
+        },'Spiel gelöscht');
+        showPage('verlauf');
+        loadVerlauf();
+        loadHome();
+      });
+    }
   }
 
   // ── GESAMT STATISTIK ───────────────────────────────────
@@ -1097,6 +1307,164 @@
       });
     });
   }
+
+  // ── HÄNDE ──────────────────────────────────────────────
+  const HAND_TYPEN=['7-2','Royal Flush','Straight Flush','4 of a Kind','Full House','Sonstiges'];
+  let editHandID=null, selectedHandType=null;
+
+  async function loadHaende(){
+    const el=document.getElementById('haende-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('created_at',{ascending:false}).limit(100);
+    if(!haende||haende.length===0){
+      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div class="empty-title">Keine Hände erfasst</div><div class="empty-subtitle">Erfasse besondere Hände und 7-2 Gewinne.</div></div>`;
+      return;
+    }
+    // Gruppieren nach Datum
+    const gruppen={};
+    haende.forEach(h=>{
+      const d=h.spiel?.datum||h.created_at?.split('T')[0]||'Unbekannt';
+      if(!gruppen[d])gruppen[d]=[];
+      gruppen[d].push(h);
+    });
+    let html='';
+    Object.entries(gruppen).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([datum,items])=>{
+      const ds=new Date(datum).toLocaleDateString('de-AT',{day:'2-digit',month:'long',year:'numeric'});
+      html+=`<div class="section-title">${ds}</div><div class="card">`;
+      items.forEach(h=>{
+        const is72=h.hand==='7-2';
+        const iconCls=is72?'warn':'accent';
+        const iconSvg=is72
+          ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
+          :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+        const gewName=h.gewinner?.name||'?';
+        html+=`<div class="list-item clickable" data-hand-id="${h.id}">
+          <div class="item-avatar ${iconCls}" style="width:40px;height:40px">${iconSvg}</div>
+          <div class="item-body">
+            <div class="item-title">${h.hand}${is72?' 🤑':''}</div>
+            <div class="item-subtitle">${gewName}${h.kommentar?` · ${h.kommentar}`:''}</div>
+          </div>
+          <div class="item-trailing">
+            ${h.foto_url?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;color:var(--text-tertiary)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
+            ${chevron}
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    el.innerHTML=html;
+    el.querySelectorAll('.list-item.clickable[data-hand-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const{data:h}=await db.from('hand_statistik').select('*').eq('id',row.dataset.handId).single();
+        if(h)openHandModal(h);
+      });
+    });
+  }
+
+  function openHandModal(h){
+    editHandID=h?.id||null;
+    selectedHandType=h?.hand||null;
+    document.getElementById('hand-modal-title').textContent=h?'Hand bearbeiten':'Hand erfassen';
+    document.getElementById('hand-kommentar').value=h?.kommentar||'';
+    document.getElementById('hand-foto-url').value=h?.foto_url||'';
+    // Foto-Preview
+    const prev=document.getElementById('hand-foto-preview');
+    prev.src=h?.foto_url||'';
+    prev.classList.toggle('show',!!(h?.foto_url));
+
+    // Gewinner Dropdown
+    const spieler=alleSpieler.filter(s=>!s.ist_bank);
+    document.getElementById('hand-gewinner').innerHTML=spieler.map(s=>`<option value="${s.id}"${h?.gewinner_id===s.id?' selected':''}>${s.name}</option>`).join('');
+
+    // Hand-Typ Buttons
+    document.querySelectorAll('.hand-type-btn').forEach(btn=>{
+      btn.classList.remove('selected','danger-sel');
+      if(btn.dataset.hand===selectedHandType){
+        btn.classList.add(selectedHandType==='7-2'?'danger-sel':'selected');
+      }
+    });
+    update72Info();
+
+    // Löschen-Button
+    const existDel=document.getElementById('hand-loeschen');if(existDel)existDel.remove();
+    if(h&&currentSpieler?.ist_admin){
+      const btn=document.createElement('button');btn.id='hand-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
+      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Hand löschen`;
+      btn.addEventListener('click',async()=>{
+        if(!confirmDelete(`Hand "${h.hand}" löschen?`))return;
+        await save(()=>db.from('hand_statistik').delete().eq('id',h.id),'Hand gelöscht');
+        document.getElementById('modal-hand').classList.remove('open');
+        loadHaende();
+      });
+      document.getElementById('modal-hand').querySelector('.modal-actions').before(btn);
+    }
+    document.getElementById('modal-hand').classList.add('open');
+  }
+
+  function update72Info(){
+    document.getElementById('hand-7-2-info').style.display=selectedHandType==='7-2'?'block':'none';
+  }
+
+  document.querySelectorAll('.hand-type-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.hand-type-btn').forEach(b=>b.classList.remove('selected','danger-sel'));
+      selectedHandType=btn.dataset.hand;
+      btn.classList.add(selectedHandType==='7-2'?'danger-sel':'selected');
+      update72Info();
+    });
+  });
+
+  document.getElementById('hand-foto-url').addEventListener('input',e=>{
+    const url=e.target.value.trim();
+    const prev=document.getElementById('hand-foto-preview');
+    prev.src=url;
+    prev.classList.toggle('show',!!url);
+  });
+
+  document.getElementById('hand-abbrechen').addEventListener('click',()=>{
+    document.getElementById('modal-hand').classList.remove('open');
+  });
+
+  document.getElementById('hand-speichern').addEventListener('click',async()=>{
+    if(!selectedHandType){alert('Bitte einen Hand-Typ auswählen.');return;}
+    const gewinnerID=document.getElementById('hand-gewinner').value;
+    if(!gewinnerID){alert('Bitte einen Gewinner auswählen.');return;}
+    const kommentar=document.getElementById('hand-kommentar').value.trim()||null;
+    const fotoUrl=document.getElementById('hand-foto-url').value.trim()||null;
+
+    // Aktuelles Spiel-ID (falls vorhanden)
+    const spielID=aktuellesSpiel?.id||null;
+
+    await save(async()=>{
+      if(editHandID){
+        await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,foto_url:fotoUrl}).eq('id',editHandID);
+      } else {
+        await db.from('hand_statistik').insert({spiel_id:spielID,hand:selectedHandType,gewinner_id:gewinnerID,kommentar,foto_url:fotoUrl});
+
+        // 7-2 Automatismus: 1€ von jedem Mitspieler zum Gewinner
+        if(selectedHandType==='7-2'&&spielID){
+          const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('spieler_id').eq('spiel_id',spielID);
+          const mitspieler=(teilnehmer||[]).filter(t=>t.spieler_id!==gewinnerID);
+          if(mitspieler.length>0){
+            const heute=new Date().toISOString().split('T')[0];
+            const transaktionen=mitspieler.map(t=>({
+              datum:heute,
+              von_spieler_id:t.spieler_id,
+              nach_spieler_id:gewinnerID,
+              betrag:1,
+              kommentar:'7-2 Gewinn'
+            }));
+            await db.from('transaktionen').insert(transaktionen);
+          }
+        }
+      }
+    },editHandID?'Hand aktualisiert':'Hand erfasst');
+
+    document.getElementById('modal-hand').classList.remove('open');
+    loadHaende();
+    loadHome();
+    loadStatistik();
+  });
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
