@@ -153,6 +153,9 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - Theme-Wechsel (Hell/Dunkel/Auto)
 - Spielerverwaltung (nur Admin)
 - Einstellungen (nur Admin)
+- Info & Changelog
+- Debug: Console (nur Admin) – Browser-Logs in der App
+- Debug: Rohdaten (nur Admin) – Lesezugriff auf alle DB-Tabellen
 - Abmelden
 
 ### Sub-Seiten (ohne eigenen Nav-Tab)
@@ -161,6 +164,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - `spieler-detail` – Spieler bearbeiten (von Verwaltung)
 - `spiel-detail` – Spieldetail (von Verlauf, neu in v1.7)
 - `einstellungen` – BuyIn-Faktoren + Jahresspende (nur Admin)
+- `console` – Debug: Browser-Console (nur Admin)
+- `rohdaten` – Debug: Datenbank-Rohdaten (nur Admin)
 
 ## Design-Regeln (STRIKT einhalten)
 
@@ -220,7 +225,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - Meta-Tag: `<meta name="version" content="X.X">`
 - JS Konstante: `const VERSION = 'X.X'`
 - Bei jeder Änderung beide hochzählen (1.7 → 1.8 etc.)
-- **Aktuelle Version: 1.7**
+- **Aktuelle Version: 2.1**
 
 ## Login-Provider
 
@@ -230,7 +235,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - ⏳ Microsoft/Azure (konfiguriert, nicht getestet)
 - Callback URL: `https://bcvyhlzjpfezokvcjksn.supabase.co/auth/v1/callback`
 
-## Offene TODOs
+## Feature-Roadmap / Offene TODOs
 
 | # | Feature | Status |
 |---|---------|--------|
@@ -238,8 +243,27 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 | 2 | 7-2 Automatismus: auto Transaktionen beim Erfassen | ✅ v1.7 |
 | 3 | Spiel Verlauf: Detail-Ansicht pro Abend (anklickbar) | ✅ v1.7 |
 | 4 | Admin: Jahres-Spende Automatismus | ✅ v1.7 |
-| 5 | Facebook / Apple / Microsoft Login in Supabase konfigurieren | ⏳ offen |
-| 6 | Altdaten: Profilbilder (Google Drive Pfade) | ⏳ offen |
+| 5 | Info & Changelog Seite | ✅ v1.8 |
+| 6 | Pokerkasse-Berechnung korrigiert (Bank-KS ausgeschlossen) | ✅ v1.9 |
+| 7 | iOS Input-Zoom behoben (font-size 16px) | ✅ v1.9 |
+| 8 | Spieldetail: Admin-Bearbeitung nachträglich | ✅ v1.9 |
+| 9 | Admin-guard für Transaktion löschen | ✅ v2.0 |
+| 10 | Spieler-Stats Backnavigation fix | ✅ v2.0 |
+| 11 | Admin: Debug-Console (Browser-Logs in der App) | ✅ v2.1 |
+| 12 | Admin: Rohdaten-Viewer (DB-Tabellen lesend) | ✅ v2.1 |
+| 13 | Admin: Admin-Rolle anderen Spielern zuweisen | ✅ v2.1 |
+| 14 | Numpad auf Mobil für Betragsfelder | ✅ v2.1 |
+| 15 | Horizontale Scrollbalken behoben | ✅ v2.1 |
+| 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts) | ⏳ offen |
+| 17 | Google Account-Wechsel (Profil wechseln beim Login) | ⏳ offen |
+| 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren | ⏳ offen |
+| 19 | Altdaten: Profilbilder (Google Drive Pfade) | ⏳ offen |
+
+## Nächste geplante Features (Priorität)
+
+1. **Charts in Statistik** – Liniendiagramm Kontostand-Entwicklung pro Spieler, Balkendiagramm Gewinne/Verluste, Heatmap Spielhäufigkeit
+2. **Google Account-Wechsel** – `signInWithOAuth` mit `queryParams: { prompt: 'select_account' }` damit der Account-Picker erscheint
+3. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
 ## Bekannte Bugs / Limitierungen
 

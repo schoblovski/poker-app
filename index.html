@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.0">
+  <meta name="version" content="2.1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -17,11 +17,14 @@
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
-    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
     #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top)+40px) var(--space-xl) calc(var(--safe-bottom)+40px);position:relative;overflow:hidden;}
-    .login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(34,197,94,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(34,197,94,.08) 0%,transparent 50%);pointer-events:none;}
+    .login-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+    .login-bg::before,.login-bg::after{content:'';position:absolute;border-radius:50%;opacity:.04;background:var(--text-primary);}
+    .login-bg::before{width:360px;height:360px;top:-120px;right:-80px;}
+    .login-bg::after{width:280px;height:280px;bottom:-80px;left:-80px;}
     .login-card{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:var(--space-md);width:100%;max-width:320px;}
     .login-suit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:var(--space-sm);}
     .login-suit{width:56px;height:56px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;}
@@ -108,7 +111,8 @@
     .counter-value{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-variant-numeric:tabular-nums;}
     .form-group{margin-bottom:var(--space-md);}
     .form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px;}
-    .form-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:16px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
+    .form-input{width:100%;max-width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:16px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
+    input[type="date"].form-input{-webkit-appearance:none;appearance:none;}
     .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
     .form-input::placeholder{color:var(--text-tertiary);}
     select.form-input{font-size:16px;}
@@ -155,11 +159,12 @@
     .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
     .modal-overlay.open{display:flex;animation:fadeIn 150ms ease;}
-    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;}
+    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
     .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
-    .modal-actions .btn{flex:1;}
+    .modal-actions .btn{flex:1;min-width:0;}
+    .modal-actions .btn+.btn{margin-top:0;}
     .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
     .badge-green{background:var(--accent-soft);color:var(--accent-text);}
     .badge-red{background:var(--danger-soft);color:var(--danger);}
@@ -202,6 +207,9 @@
     .hand-type-btn.danger-sel{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
     .foto-preview{width:100%;border-radius:var(--radius-md);margin-top:var(--space-xs);display:none;max-height:200px;object-fit:cover;}
     .foto-preview.show{display:block;}
+    .roh-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-md);}
+    .roh-tab{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:600;font-family:var(--font-mono);cursor:pointer;color:var(--text-secondary);transition:all var(--transition);}
+    .roh-tab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
   </style>
 </head>
 <body>
@@ -267,6 +275,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           Info &amp; Changelog
         </button>
+        <button class="dropdown-item" id="btn-console" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Debug: Console
+        </button>
+        <button class="dropdown-item" id="btn-rohdaten" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Debug: Rohdaten
+        </button>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item danger" id="btn-logout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -288,6 +304,8 @@
     <div class="page" id="page-verwaltung"><div id="verwaltung-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
     <div class="page" id="page-einstellungen"><div id="einstellungen-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
     <div class="page" id="page-info"><div id="info-content"></div></div>
+    <div class="page" id="page-console"><div id="console-content"></div></div>
+    <div class="page" id="page-rohdaten"><div id="rohdaten-content"></div></div>
     <div class="page" id="page-spiel-detail"><div id="spiel-detail-content"></div></div>
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
@@ -327,7 +345,7 @@
     <div class="form-group"><label class="form-label">Von</label><select class="form-input" id="trans-von"></select></div>
     <div class="form-group"><label class="form-label">Nach</label><select class="form-input" id="trans-nach"></select></div>
     <div class="form-group"><label class="form-label">Kommentar</label><div id="kommentar-chips" style="display:flex;flex-direction:column;gap:var(--space-xs);margin-bottom:var(--space-sm)"></div><input type="text" class="form-input" id="trans-kommentar-text" placeholder="Oder Freitext…"></div>
-    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="number" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="number" inputmode="decimal" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
   </div>
 </div>
@@ -373,11 +391,25 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.0';
+  const VERSION='2.1';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
+
+  // ── CONSOLE INTERCEPTOR ────────────────────────────────
+  const _consoleLogs=[];
+  const _MAX_LOGS=300;
+  ['log','info','warn','error','debug'].forEach(level=>{
+    const orig=console[level].bind(console);
+    console[level]=(...args)=>{
+      orig(...args);
+      const ts=new Date().toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const text=args.map(a=>{try{return typeof a==='object'?JSON.stringify(a,null,0):String(a);}catch{return String(a);}}).join(' ');
+      _consoleLogs.push({ts,level,text});
+      if(_consoleLogs.length>_MAX_LOGS)_consoleLogs.shift();
+    };
+  });
 
   let currentUser=null, currentSpieler=null, alleSpieler=[], aktuellesSpiel=null, spielTeilnehmer=[], editSpielerID=null, editTransaktionID=null;
   let einstellungen={buyin_pot:5, buyin_kassa:2};
@@ -406,6 +438,7 @@
   const ksClass=v=>v>0?'amount-pos':v<0?'amount-neg':'amount-zero';
   const fmt=v=>{const abs=Math.abs(v).toFixed(2);return v<0?`−\u00a0€${abs}`:`€\u00a0${abs}`;};
   const fmtSigned=v=>(v>=0?'+':'')+`\u00a0€${v.toFixed(2)}`;
+  const escHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
@@ -495,7 +528,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten'};
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -518,6 +551,8 @@
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
   document.getElementById('btn-info').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('info');loadInfo();});
+  document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
+  document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
   document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
   // ── AUTH ───────────────────────────────────────────────
@@ -547,6 +582,8 @@
     if(av)document.getElementById('user-avatar-btn').innerHTML=`<img src="${av}" alt="Avatar">`;
     document.getElementById('btn-verwaltung').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-einstellungen').style.display=sp.ist_admin?'flex':'none';
+    document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
+    document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('app-screen').style.display='flex';
     loadHome();
   }
@@ -701,11 +738,11 @@
       <div class="card">
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Chips</div><div class="setting-sub">Euro pro BuyIn für Spielguthaben (Chips)</div></div>
-          <input type="number" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="0" step="0.5">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="0" step="0.5">
         </div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Pokerkasse</div><div class="setting-sub">Euro pro BuyIn in die Pokerkasse</div></div>
-          <input type="number" class="setting-input" id="set-kassa" value="${vals['buyin_kassa']||2}" min="0" step="0.5">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-kassa" value="${vals['buyin_kassa']||2}" min="0" step="0.5">
         </div>
       </div>
       <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
@@ -723,7 +760,7 @@
             <div class="setting-label">Zielwert</div>
             <div class="setting-sub">Kontostand auf den alle Spieler gebracht werden</div>
           </div>
-          <input type="number" class="setting-input" id="set-jahresspende-ziel" value="100" min="0" step="1">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-jahresspende-ziel" value="100" min="0" step="1">
         </div>
       </div>
       <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
@@ -824,6 +861,7 @@
       </div>
       <button class="btn btn-secondary" id="detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
       <button class="btn btn-secondary" id="detail-toggle">${s.aktiv?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Deaktivieren`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Aktivieren`}</button>
+      ${s.id!==currentSpieler?.id?`<button class="btn ${s.ist_admin?'btn-ghost':'btn-secondary'}" id="detail-admin-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>${s.ist_admin?'Admin-Rolle entziehen':'Admin-Rolle vergeben'}</button>`:''}
       <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spieler löschen</button>`;
     showPage('spieler-detail');
     document.getElementById('detail-back').addEventListener('click',()=>{showPage('verwaltung');loadVerwaltung();});
@@ -831,6 +869,12 @@
     document.getElementById('detail-toggle').addEventListener('click',async()=>{
       if(!confirmAction(`${s.name} wirklich ${s.aktiv?'deaktivieren':'aktivieren'}?`))return;
       await save(()=>db.from('spieler').update({aktiv:!s.aktiv}).eq('id',s.id),`${s.name} ${!s.aktiv?'aktiviert':'deaktiviert'}`);
+      showPage('verwaltung');loadVerwaltung();loadHome();
+    });
+    document.getElementById('detail-admin-toggle')?.addEventListener('click',async()=>{
+      const neu=!s.ist_admin;
+      if(!confirmAction(`${s.name} ${neu?'Admin-Rolle vergeben':'Admin-Rolle entziehen'}?`))return;
+      await save(()=>db.from('spieler').update({ist_admin:neu}).eq('id',s.id),`${s.name} ${neu?'ist jetzt Admin':'ist kein Admin mehr'}`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-delete').addEventListener('click',async()=>{
@@ -993,7 +1037,7 @@
     <div class="section-title">Ergebnis (PayOut)</div>
     <div class="card" style="margin-top:var(--space-sm)">`;
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" class="payout-field" id="payout-${t.id}" value="${t.payout||0}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout||0}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
     <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(0)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
@@ -1410,6 +1454,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.1',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Admin: Debug-Konsole – Browser-Logs in der App einsehbar (Dropdown-Menü)'},
+      {typ:'neu',text:'Admin: Rohdaten – Lesezugriff auf alle Datenbanktabellen (Dropdown-Menü)'},
+      {typ:'fix',text:'Numpad auf Mobil für Betragsfelder (PayOut, Transaktion, Einstellungen)'},
+      {typ:'fix',text:'Splash-Screen: Gradient entfernt, Design passt jetzt zu Rest der App'},
+      {typ:'fix',text:'Horizontale Scrollbalken global verhindert'},
+      {typ:'fix',text:'Button-Symmetrie in Modals: Abbrechen/Speichern gleich breit'},
+    ]},
     {version:'2.0',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Transaktion löschen: Button nur noch für Admins sichtbar'},
       {typ:'fix',text:'Spieler-Statistik: Zurück-Button navigiert korrekt zur aufrufenden Seite (Statistik oder Home)'},
@@ -1707,6 +1759,59 @@
     loadHome();
     loadStatistik();
   });
+
+  // ── DEBUG: CONSOLE ─────────────────────────────────────
+  function loadConsole(){
+    if(!currentSpieler?.ist_admin)return;
+    const el=document.getElementById('console-content');
+    const lvlColor={log:'var(--text-primary)',info:'var(--info)',warn:'var(--warning)',error:'var(--danger)',debug:'var(--text-secondary)'};
+    const render=()=>{
+      if(_consoleLogs.length===0){el.innerHTML=`<div class="empty"><div class="empty-title">Keine Logs</div></div>`;return;}
+      let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm)"><span style="font-size:12px;color:var(--text-tertiary)">${_consoleLogs.length} Einträge</span><button id="btn-console-clear" class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:13px">Leeren</button></div><div style="background:var(--surface);border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border)">`;
+      [..._consoleLogs].reverse().forEach(entry=>{
+        const col=lvlColor[entry.level]||'var(--text-primary)';
+        const lvlUpper=entry.level.toUpperCase().padEnd(5);
+        html+=`<div style="display:flex;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:12px;line-height:1.4;word-break:break-all"><span style="color:var(--text-tertiary);white-space:nowrap;flex-shrink:0">${entry.ts}</span><span style="color:${col};font-weight:600;flex-shrink:0;white-space:nowrap">${lvlUpper}</span><span style="color:${col};flex:1">${escHtml(entry.text)}</span></div>`;
+      });
+      html+=`</div>`;
+      el.innerHTML=html;
+      document.getElementById('btn-console-clear').addEventListener('click',()=>{_consoleLogs.length=0;render();});
+    };
+    render();
+  }
+
+  // ── DEBUG: ROHDATEN ────────────────────────────────────
+  const ROHDATEN_TABELLEN=['spieler','spiele','spiel_teilnehmer','transaktionen','hand_statistik','einstellungen'];
+  let _rohdatenAktiv='spieler';
+
+  async function loadRohdaten(tbl){
+    if(!currentSpieler?.ist_admin)return;
+    if(tbl)_rohdatenAktiv=tbl;
+    const el=document.getElementById('rohdaten-content');
+    const tabs=ROHDATEN_TABELLEN.map(t=>`<button class="roh-tab${t===_rohdatenAktiv?' active':''}" data-tbl="${t}">${t}</button>`).join('');
+    el.innerHTML=`<div class="roh-tabs">${tabs}</div><div id="roh-table-wrap"><div class="loading"><div class="spinner"></div>Lade…</div></div>`;
+    el.querySelectorAll('.roh-tab').forEach(b=>b.addEventListener('click',()=>loadRohdaten(b.dataset.tbl)));
+    const{data,error}=await db.from(_rohdatenAktiv).select('*').limit(200);
+    const wrap=document.getElementById('roh-table-wrap');
+    if(error){wrap.innerHTML=`<div style="color:var(--danger);padding:var(--space-md);font-size:13px">Fehler: ${escHtml(error.message)}</div>`;return;}
+    if(!data||data.length===0){wrap.innerHTML=`<div class="empty"><div class="empty-title">Keine Daten</div></div>`;return;}
+    const cols=Object.keys(data[0]);
+    let html=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono)"><thead><tr>`;
+    cols.forEach(c=>{html+=`<th style="text-align:left;padding:6px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);white-space:nowrap;color:var(--text-secondary);font-weight:600">${escHtml(c)}</th>`;});
+    html+=`</tr></thead><tbody>`;
+    data.forEach((row,i)=>{
+      html+=`<tr style="background:${i%2===0?'var(--surface)':'var(--bg-secondary)'}">`;
+      cols.forEach(c=>{
+        const v=row[c];
+        const disp=v===null||v===undefined?'<span style="color:var(--text-tertiary)">null</span>':escHtml(String(v).length>80?String(v).slice(0,80)+'…':String(v));
+        html+=`<td style="padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)">${disp}</td>`;
+      });
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    if(data.length===200)html+=`<div style="padding:var(--space-sm);font-size:12px;color:var(--text-tertiary);text-align:center">Maximal 200 Zeilen angezeigt</div>`;
+    wrap.innerHTML=html;
+  }
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
