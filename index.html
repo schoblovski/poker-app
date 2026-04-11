@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.5">
+  <meta name="version" content="2.6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -452,7 +452,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.5';
+  const VERSION='2.6';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -738,6 +738,36 @@
   document.getElementById('btn-login-apple').addEventListener('click',()=>loginWith('apple'));
   document.getElementById('btn-login-microsoft').addEventListener('click',()=>loginWith('azure'));
 
+  function showWhatsNew(){
+    const seen=localStorage.getItem('dtks_version_seen');
+    if(seen===VERSION)return;
+    const entry=CHANGELOG.find(c=>c.version===VERSION);
+    if(!entry)return;
+    const typColor={neu:'var(--accent-text)',fix:'var(--info)',verbessert:'var(--warning)'};
+    const typLabel={neu:'NEU',fix:'FIX',verbessert:'VERBESSERT'};
+    const typBg={neu:'var(--accent-soft)',fix:'var(--info-soft)',verbessert:'var(--warning-soft)'};
+    document.getElementById('whats-new-content').innerHTML=`
+      <div style="text-align:center;margin-bottom:var(--space-lg)">
+        <div style="font-size:44px;line-height:1;margin-bottom:var(--space-sm)">🃏</div>
+        <div class="stat-label" style="margin-bottom:4px">Neue Version</div>
+        <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:var(--accent-text)">v${VERSION}</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${escHtml(entry.datum)}</div>
+      </div>
+      <div style="margin-bottom:var(--space-lg)">
+        ${entry.eintraege.map(e=>`
+          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+            <span style="font-size:10px;font-weight:700;color:${typColor[e.typ]||'var(--text-tertiary)'};background:${typBg[e.typ]||'var(--bg-secondary)'};border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:2px;white-space:nowrap">${typLabel[e.typ]||e.typ.toUpperCase()}</span>
+            <span style="font-size:13px;color:var(--text-primary);line-height:1.5">${escHtml(e.text)}</span>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-primary" id="whats-new-close">Los geht's!</button>`;
+    document.getElementById('modal-whats-new').classList.add('open');
+    document.getElementById('whats-new-close').addEventListener('click',()=>{
+      document.getElementById('modal-whats-new').classList.remove('open');
+      localStorage.setItem('dtks_version_seen',VERSION);
+    });
+  }
+
   async function showApp(){
     document.getElementById('login-screen').style.display='none';
     // Einstellungen laden
@@ -762,6 +792,7 @@
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('app-screen').style.display='flex';
     loadHome();
+    setTimeout(showWhatsNew, 600);
   }
   db.auth.onAuthStateChange((ev,session)=>{
     if(session){currentUser=session.user;showApp();}
@@ -1914,6 +1945,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.6',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'„Was ist neu" Dialog: Beim ersten Öffnen einer neuen Version erscheint automatisch ein Changelog-Modal'},
+    ]},
     {version:'2.5',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Statistik: Zeitraum-Filter als Preset-Chips (aktuelles Jahr, letztes Jahr, etc.) – kein fehleranfälliger Datepicker mehr'},
       {typ:'neu',text:'Statistik: Spielverlauf-Charts – Pot und Buy-Ins pro Spiel als Säulendiagramm mit Ø-Werten'},
@@ -2423,6 +2457,14 @@
   const{data:{session}}=await db.auth.getSession();
   if(session){currentUser=session.user;showApp();}
 </script>
+
+<!-- Was ist neu Modal -->
+<div class="modal-overlay" id="modal-whats-new">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="whats-new-content"></div>
+  </div>
+</div>
 
 <!-- PWA Install Bottom Sheet
      - Shown once after 2.5s if not installed and not previously dismissed
