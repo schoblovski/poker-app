@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.6">
+  <meta name="version" content="2.7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -66,6 +66,11 @@
     .nav-btn.active svg{stroke-width:2.2;}
     .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
+    /* DESKTOP SEPARATION */
+    @media(min-width:431px){
+      body{background:var(--bg-secondary);}
+      #app-screen{box-shadow:0 0 0 1px var(--border),0 20px 60px rgba(0,0,0,.15);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;}
+    }
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
     .section-title:first-child{margin-top:0;}
@@ -251,8 +256,8 @@
     @keyframes pwaFadeIn{from{opacity:0}to{opacity:1}}
     @keyframes pwaSlideUp{from{transform:translateY(100%) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
     @keyframes pwaPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.15)}}
-    #pwa-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex!important;align-items:flex-end;justify-content:center;animation:pwaFadeIn 250ms ease;}
-    #pwa-overlay[style*="display:none"]{display:none!important;}
+    #pwa-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
+    #pwa-overlay.open{display:flex;animation:pwaFadeIn 250ms ease;}
     #pwa-sheet{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;max-width:430px;padding:0 var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));animation:pwaSlideUp 350ms cubic-bezier(.32,1.1,.6,1);position:relative;outline:none;}
     .pwa-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:var(--space-md) auto var(--space-lg);}
     .pwa-close{position:absolute;top:16px;right:var(--space-md);width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);}
@@ -378,11 +383,11 @@
 
   <nav class="bottom-nav">
     <button class="nav-btn active" data-page="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
-    <button class="nav-btn" data-page="spiel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg><span class="nav-label">Spiel</span></button>
+    <button class="nav-btn" data-page="spiel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span class="nav-label">Spiel</span></button>
     <button class="nav-btn" data-page="verlauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-label">Verlauf</span></button>
     <button class="nav-btn" data-page="statistik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Statistik</span></button>
     <button class="nav-btn" data-page="transaktionen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span class="nav-label">Konto</span></button>
-    <button class="nav-btn" data-page="haende"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 11h4m2 0h4"/></svg><span class="nav-label">Hände</span></button>
+    <button class="nav-btn" data-page="haende"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/><path d="M6 9h4M6 12h4"/><path d="M14 9h4M14 12h4"/></svg><span class="nav-label">Hände</span></button>
   </nav>
 </div>
 
@@ -452,7 +457,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.6';
+  const VERSION='2.7';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -515,7 +520,7 @@
   function showPwaSheet(){
     if(_isPwa()||localStorage.getItem(PWA_KEY))return;
     const overlay=document.getElementById('pwa-overlay');
-    if(!overlay||overlay.style.display!=='none')return;
+    if(!overlay||overlay.classList.contains('open'))return;
     const isIos=_isIosSafari();
     const hasPrompt=!!_pwaInstallEvent;
     const body=document.getElementById('pwa-sheet-body');
@@ -551,7 +556,7 @@
           <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">Nicht jetzt</button>
         </div>`;
     }
-    overlay.style.display='';
+    overlay.classList.add('open');
     document.getElementById('pwa-sheet').focus();
     document.getElementById('pwa-not-now')?.addEventListener('click',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');});
     document.getElementById('pwa-install-now')?.addEventListener('click',async()=>{
@@ -569,7 +574,7 @@
   }
   function hidePwaSheet(){
     const overlay=document.getElementById('pwa-overlay');
-    if(overlay)overlay.style.display='none';
+    if(overlay)overlay.classList.remove('open');
     document.removeEventListener('keydown',_pwaEscHandler);
   }
   function _pwaEscHandler(e){if(e.key==='Escape'){hidePwaSheet();localStorage.setItem(PWA_KEY,'1');}}
@@ -625,8 +630,32 @@
     const initial=s?.name?s.name[0].toUpperCase():'?';
     return `<div class="item-avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;font-weight:700;color:var(--text-secondary)">${initial}</div>`;
   }
-  function confirmDelete(msg){return confirm(`⚠️ Löschen bestätigen\n\n${msg}\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);}
-  function confirmAction(msg){return confirm(msg);}
+  function showAlert(msg){
+    return new Promise(resolve=>{
+      document.getElementById('modal-alert-msg').textContent=msg;
+      document.getElementById('modal-alert').classList.add('open');
+      const ok=document.getElementById('modal-alert-ok');
+      const h=()=>{document.getElementById('modal-alert').classList.remove('open');ok.removeEventListener('click',h);resolve();};
+      ok.addEventListener('click',h);
+    });
+  }
+  function showConfirm(msg,dangerLabel=null){
+    return new Promise(resolve=>{
+      const overlay=dangerLabel?document.getElementById('modal-delete-confirm'):document.getElementById('modal-confirm');
+      const msgEl=document.getElementById(dangerLabel?'modal-delete-msg':'modal-confirm-msg');
+      const okEl=document.getElementById(dangerLabel?'modal-delete-ok':'modal-confirm-ok');
+      const cancelEl=document.getElementById(dangerLabel?'modal-delete-cancel':'modal-confirm-cancel');
+      msgEl.textContent=msg;
+      overlay.classList.add('open');
+      const close=r=>{overlay.classList.remove('open');okEl.removeEventListener('click',okH);cancelEl.removeEventListener('click',cancelH);resolve(r);};
+      const okH=()=>close(true);
+      const cancelH=()=>close(false);
+      okEl.addEventListener('click',okH);
+      cancelEl.addEventListener('click',cancelH);
+    });
+  }
+  function confirmDelete(msg){return showConfirm(msg,'delete');}
+  function confirmAction(msg){return showConfirm(msg);}
 
   // ── FINANZLOGIK ────────────────────────────────────────
   function berechneKontostaende(spieler, trans, spielVerlauf, spieleMap){
@@ -748,7 +777,6 @@
     const typBg={neu:'var(--accent-soft)',fix:'var(--info-soft)',verbessert:'var(--warning-soft)'};
     document.getElementById('whats-new-content').innerHTML=`
       <div style="text-align:center;margin-bottom:var(--space-lg)">
-        <div style="font-size:44px;line-height:1;margin-bottom:var(--space-sm)">🃏</div>
         <div class="stat-label" style="margin-bottom:4px">Neue Version</div>
         <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:var(--accent-text)">v${VERSION}</div>
         <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${escHtml(entry.datum)}</div>
@@ -940,18 +968,29 @@
       </div>`;
     }
 
-    // ── Separate Hände-Block ──
+    // ── Separate Hände-Block (grouped by category) ──
     if((haende||[]).length>0){
-      html+=`<div class="section-title">Besondere Hände</div><div class="card">`;
-      [...(haende||[])].sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).forEach(h=>{
-        const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
-        html+=`<div class="timeline-item clickable" data-hand-id="${h.id}">
-          <div class="timeline-date">${d}</div>
-          <div class="timeline-body"><div class="timeline-title" style="color:var(--accent-text);font-size:13px;font-weight:600">${escHtml(h.hand)}</div>${h.kommentar?`<div class="timeline-sub">${escHtml(h.kommentar)}</div>`:''}</div>
-          <div class="timeline-amount" style="color:var(--accent-text);font-size:13px">★</div>
-        </div>`;
+      const handsByType={};
+      (haende||[]).forEach(h=>{if(!handsByType[h.hand])handsByType[h.hand]=[];handsByType[h.hand].push(h);});
+      const orderedTypes=HAND_TYPEN.filter(t=>handsByType[t]);
+      const extraTypes=Object.keys(handsByType).filter(t=>!HAND_TYPEN.includes(t));
+      html+=`<div class="section-title">Besondere Hände</div>`;
+      [...orderedTypes,...extraTypes].forEach(typ=>{
+        const items=handsByType[typ].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+        html+=`<div class="card" style="margin-bottom:var(--space-xs)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);border-bottom:${items.length>1?'1px solid var(--border)':'none'}">
+            <span style="font-size:13px;font-weight:700;color:var(--accent-text)">${escHtml(typ)}</span>
+            <span style="font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);border-radius:20px;padding:2px 8px">${items.length}×</span>
+          </div>`;
+        items.forEach((h,i)=>{
+          const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+          html+=`<div class="timeline-item clickable" data-hand-id="${h.id}" style="padding:8px var(--space-md)${i<items.length-1?';border-bottom:1px solid var(--border)':''}">
+            <div class="timeline-date">${d}</div>
+            <div class="timeline-body"><div class="timeline-sub" style="color:var(--text-primary)">${escHtml(h.kommentar||'–')}</div></div>
+          </div>`;
+        });
+        html+=`</div>`;
       });
-      html+=`</div>`;
     }
 
     el.innerHTML=html;
@@ -1083,14 +1122,14 @@
         einstellungen.buyin_pot=pot;
         einstellungen.buyin_kassa=kassa;
       },'Einstellungen gespeichert');
-      alert('✅ Einstellungen gespeichert');
+      await showAlert('Einstellungen gespeichert');
     });
 
     // Jahres-Spende Button
     document.getElementById('btn-jahresspende').addEventListener('click',async()=>{
       const zielStr=document.getElementById('set-jahresspende-ziel').value;
       const ziel=parseFloat(zielStr)||100;
-      if(!confirmAction(`Jahres-Spende durchführen?\n\nAlle Spieler mit Kontostand > €${ziel.toFixed(2)} spenden die Differenz zur Pokerkasse.\nSpieler mit Kontostand < €${ziel.toFixed(2)} erhalten eine Einzahlung auf €${ziel.toFixed(2)}.\n\nDieser Vorgang erstellt Transaktionen für alle Spieler.`))return;
+      if(!await confirmAction(`Jahres-Spende durchführen?\n\nAlle Spieler mit Kontostand > €${ziel.toFixed(2)} spenden die Differenz zur Pokerkasse.\nSpieler mit Kontostand < €${ziel.toFixed(2)} erhalten eine Einzahlung auf €${ziel.toFixed(2)}.\n\nDieser Vorgang erstellt Transaktionen für alle Spieler.`))return;
 
       // Aktuelle Kontostände berechnen
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
@@ -1120,7 +1159,7 @@
           }
         }
       },`Jahres-Spende: ${n} Transaktionen erstellt`);
-      alert(`✅ Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
+      await showAlert(`Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
       loadHome();
     });
   }
@@ -1160,18 +1199,18 @@
     document.getElementById('detail-back').addEventListener('click',()=>{showPage('verwaltung');loadVerwaltung();});
     document.getElementById('detail-edit').addEventListener('click',()=>openSpielerForm(s));
     document.getElementById('detail-toggle').addEventListener('click',async()=>{
-      if(!confirmAction(`${s.name} wirklich ${s.aktiv?'deaktivieren':'aktivieren'}?`))return;
+      if(!await confirmAction(`${s.name} wirklich ${s.aktiv?'deaktivieren':'aktivieren'}?`))return;
       await save(()=>db.from('spieler').update({aktiv:!s.aktiv}).eq('id',s.id),`${s.name} ${!s.aktiv?'aktiviert':'deaktiviert'}`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-admin-toggle')?.addEventListener('click',async()=>{
       const neu=!s.ist_admin;
-      if(!confirmAction(`${s.name} ${neu?'Admin-Rolle vergeben':'Admin-Rolle entziehen'}?`))return;
+      if(!await confirmAction(`${s.name} ${neu?'Admin-Rolle vergeben':'Admin-Rolle entziehen'}?`))return;
       await save(()=>db.from('spieler').update({ist_admin:neu}).eq('id',s.id),`${s.name} ${neu?'ist jetzt Admin':'ist kein Admin mehr'}`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-delete').addEventListener('click',async()=>{
-      if(!confirmDelete(`Spieler "${s.name}" wird unwiderruflich gelöscht.`))return;
+      if(!await confirmDelete(`Spieler "${s.name}" wird unwiderruflich gelöscht.`))return;
       await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
@@ -1187,7 +1226,7 @@
   document.getElementById('form-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-form').classList.remove('open'));
   document.getElementById('form-speichern').addEventListener('click',async()=>{
     const name=document.getElementById('form-name').value.trim(),email=document.getElementById('form-email').value.trim()||null;
-    if(!name){alert('Name ist erforderlich.');return;}
+    if(!name){await showAlert('Name ist erforderlich.');return;}
     if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
     else{await save(()=>db.from('spieler').insert({name,email,aktiv:true}),`Neuer Spieler: ${name}`);}
     document.getElementById('modal-spieler-form').classList.remove('open');
@@ -1244,7 +1283,7 @@
       const btn=document.createElement('button');btn.id='trans-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
       btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
       btn.addEventListener('click',async()=>{
-        if(!confirmDelete(`Transaktion "${t.kommentar}" über €${t.betrag.toFixed(2)} löschen?`))return;
+        if(!await confirmDelete(`Transaktion "${t.kommentar}" über €${t.betrag.toFixed(2)} löschen?`))return;
         await save(()=>db.from('transaktionen').delete().eq('id',t.id),'Transaktion gelöscht');
         document.getElementById('modal-transaktion').classList.remove('open');
         await loadTransaktionen();await loadHome();
@@ -1261,9 +1300,9 @@
     const nach=document.getElementById('trans-nach').value||null;
     const betrag=parseFloat(document.getElementById('trans-betrag').value)||0;
     const kommentar=document.getElementById('modal-transaktion')._getKommentar();
-    if(!nach&&!von){alert('Bitte Von oder Nach auswählen.');return;}
-    if(betrag<=0){alert('Bitte einen Betrag eingeben.');return;}
-    if(!kommentar){alert('Bitte einen Kommentar wählen oder eingeben.');return;}
+    if(!nach&&!von){await showAlert('Bitte Von oder Nach auswählen.');return;}
+    if(betrag<=0){await showAlert('Bitte einen Betrag eingeben.');return;}
+    if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
     if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
     else{await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);}
@@ -1278,7 +1317,7 @@
     const{data:spiele}=await db.from('spiele').select('*').eq('abgeschlossen',false).order('created_at',{ascending:false}).limit(1);
     aktuellesSpiel=spiele?.[0]||null;
     if(!aktuellesSpiel){
-      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Starte einen neuen Spielabend.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
+      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Eröffne eine neue Spielrunde.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
       document.getElementById('btn-neues-spiel').addEventListener('click',zeigeSpielAuswahl);return;
     }
     const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('*,spieler(*)').eq('spiel_id',aktuellesSpiel.id);
@@ -1355,7 +1394,7 @@
     document.getElementById('btn-abschliessen').addEventListener('click',schliesseSpielAb);
     document.getElementById('btn-spiel-loeschen').addEventListener('click',async()=>{
       const datum=new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
-      if(!confirmDelete(`Das Spiel vom ${datum} wird ohne Speichern gelöscht. Alle Buy-Ins gehen verloren.`))return;
+      if(!await confirmDelete(`Das Spiel vom ${datum} wird ohne Speichern gelöscht. Alle Buy-Ins gehen verloren.`))return;
       await save(async()=>{await db.from('spiel_teilnehmer').delete().eq('spiel_id',aktuellesSpiel.id);await db.from('spiele').delete().eq('id',aktuellesSpiel.id);},'Spiel verworfen');
       aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();
     });
@@ -1371,7 +1410,7 @@
   }
 
   async function schliesseSpielAb(){
-    if(!confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
+    if(!await confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
     aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();await loadHome();
   }
@@ -1391,7 +1430,7 @@
     const hinzu=[...selected].filter(id=>!aktuelleIds.has(id));
     const entf=spielTeilnehmer.filter(t=>!selected.has(t.spieler_id));
     const mitBuyins=entf.filter(t=>(t.buyins||0)>0);
-    if(mitBuyins.length>0){if(!confirmAction(`${mitBuyins.map(t=>t.spieler.name).join(', ')} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins und wird entfernt. Fortfahren?`))return;}
+    if(mitBuyins.length>0){if(!await confirmAction(`${mitBuyins.map(t=>t.spieler.name).join(', ')} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins und wird entfernt. Fortfahren?`))return;}
     setSync('pending');
     for(const t of entf)await db.from('spiel_teilnehmer').delete().eq('id',t.id);
     if(hinzu.length>0)await db.from('spiel_teilnehmer').insert(hinzu.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
@@ -1410,7 +1449,7 @@
   document.getElementById('modal-auswahl-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-auswahl').classList.remove('open'));
   document.getElementById('modal-auswahl-bestaetigen').addEventListener('click',async()=>{
     const selected=document.querySelectorAll('#spieler-auswahl-liste .select-card.selected');
-    if(selected.length<2){alert('Bitte mindestens 2 Spieler auswählen.');return;}
+    if(selected.length<2){await showAlert('Bitte mindestens 2 Spieler auswählen.');return;}
     const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0]}).select().single();
     await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el=>({spiel_id:neuesSpiel.id,spieler_id:el.dataset.id,buyins:1,payout:0,leihgabe:0})));
     document.getElementById('modal-spieler-auswahl').classList.remove('open');
@@ -1556,7 +1595,7 @@
       document.getElementById('btn-spiel-detail-edit')?.addEventListener('click',()=>showSpielDetailEdit(spiel));
       document.getElementById('btn-spiel-detail-loeschen')?.addEventListener('click',async()=>{
         const d=new Date(spiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
-        if(!confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
+        if(!await confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
         await save(async()=>{
           await db.from('spiel_teilnehmer').delete().eq('spiel_id',spiel.id);
           await db.from('hand_statistik').delete().eq('spiel_id',spiel.id);
@@ -1758,12 +1797,16 @@
     const avgPot=(data.reduce((s,d)=>s+d.pot,0)/data.length).toFixed(0);
     const avgPlayers=(data.reduce((s,d)=>s+d.players,0)/data.length).toFixed(1);
     const avgBuyins=(data.reduce((s,d)=>s+d.buyins,0)/data.length).toFixed(1);
-    const barW=16,gap=5,H=110,pl=30,pr=8,pt=8,pb=20;
-    const totalW=pl+data.length*(barW+gap)-gap+pr;
+    const n=data.length;
+    const gap=3,H=110,pl=30,pr=8,pt=8,pb=20;
     const iH=H-pt-pb;
+    // barW adapts to fit within a fixed 320px canvas
+    const canvasW=Math.max(320,pl+n*(4+gap)-gap+pr);
+    const barW=Math.max(4,Math.floor((canvasW-pl-pr-gap*(n-1))/n));
+    const totalW=pl+n*(barW+gap)-gap+pr;
     function buildSvg(getData,getMx,fmtY,color){
       const mx=getMx();
-      let svg=`<svg viewBox="0 0 ${totalW} ${H}" style="min-width:${totalW}px;height:${H}px;display:block">`;
+      let svg=`<svg viewBox="0 0 ${totalW} ${H}" style="width:100%;height:auto;display:block">`;
       svg+=`<text x="${pl-4}" y="${pt+5}" font-size="8" fill="var(--text-tertiary)" text-anchor="end">${fmtY(mx)}</text>`;
       svg+=`<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${H-pb}" stroke="var(--border)" stroke-width="0.5"/>`;
       svg+=`<line x1="${pl}" y1="${H-pb}" x2="${totalW-pr}" y2="${H-pb}" stroke="var(--border)" stroke-width="0.5"/>`;
@@ -1789,11 +1832,11 @@
     return `<div class="section-title">Spiele im Zeitverlauf</div>
     <div class="card" style="padding:var(--space-md) var(--space-md) var(--space-sm);overflow:hidden">
       <div class="stat-filter-label" style="margin-bottom:6px">Pot (€)</div>
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:var(--space-md)">${svgPot}</div>
+      <div style="margin-bottom:var(--space-md)">${svgPot}</div>
       <div class="stat-filter-label" style="margin-bottom:6px">Buy-Ins</div>
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">${svgBuyins}</div>
+      <div>${svgBuyins}</div>
     </div>
-    <div class="stats-grid">
+    <div class="stats-grid" style="margin-top:var(--space-sm)">
       <div class="stat-card"><div class="stat-label">Ø Pot</div><div class="stat-value sm">€${avgPot}</div></div>
       <div class="stat-card"><div class="stat-label">Ø Spieler</div><div class="stat-value sm">${avgPlayers}</div></div>
       <div class="stat-card"><div class="stat-label">Ø Buy-Ins</div><div class="stat-value sm">${avgBuyins}</div><div class="stat-sub">pro Spiel</div></div>
@@ -1945,6 +1988,18 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.7',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'PWA Install-Sheet: Buttons „Installieren" und „Nicht jetzt" funktionierten nicht – kritischer Bug behoben (class-basiertes Toggle statt style.display)'},
+      {typ:'neu',text:'Custom Dialogs: Alle alert()- und confirm()-Dialoge durch native In-App-Modals ersetzt (kein Browser-Popup mehr)'},
+      {typ:'neu',text:'Desktop-Ansicht: App hebt sich visuell vom Hintergrund ab (Rahmen + Schatten)'},
+      {typ:'verbessert',text:'Statistik: Spiele-Charts ohne horizontalen Scrollbalken – Balken passen sich der Bildschirmbreite an'},
+      {typ:'verbessert',text:'Hände: Übersichtstabelle ohne horizontalen Scrollbalken (kompaktere Spalten, Abkürzungen)'},
+      {typ:'verbessert',text:'Hände: Filter-Chips jetzt als Multi-Select (mehrere Spieler gleichzeitig wählbar)'},
+      {typ:'verbessert',text:'Spieler-Statistik: Besondere Hände in kompakter Gruppenansicht nach Hand-Typ sortiert'},
+      {typ:'verbessert',text:'Navigation: Spiel-Icon aktualisiert (Gruppe statt TV), Hände-Icon aktualisiert (Karten statt Monitor)'},
+      {typ:'fix',text:'„Was ist neu" Dialog: Pokerkarten-Emoji entfernt'},
+      {typ:'fix',text:'Spiel-Seite: Text „Eröffne eine neue Spielrunde" statt „Starte einen neuen Spielabend"'},
+    ]},
     {version:'2.6',datum:'April 2026',eintraege:[
       {typ:'neu',text:'„Was ist neu" Dialog: Beim ersten Öffnen einer neuen Version erscheint automatisch ein Changelog-Modal'},
     ]},
@@ -2108,11 +2163,11 @@
 
   // ── HÄNDE ──────────────────────────────────────────────
   const HAND_TYPEN=['7-2','Royal Flush','Straight Flush','4 of a Kind','Full House','Sonstiges'];
-  const HAND_SHORT={'Royal Flush':'RF','Straight Flush':'SF','4 of a Kind':'4oK','Full House':'FH'};
+  const HAND_SHORT={'Royal Flush':'RF','Straight Flush':'SF','4 of a Kind':'4oK','Full House':'FH','Sonstiges':'Sst'};
   let editHandID=null, selectedHandType=null;
   let _haendeData=null;
   let _haendeExpanded=new Set(); // keys: `${hand}||${spielerId}`
-  let _haendeFilter=null; // null = alle Spieler
+  let _haendeFilter=new Set(); // empty = alle Spieler
 
   async function loadHaende(){
     const el=document.getElementById('haende-content');
@@ -2120,7 +2175,7 @@
     const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('datum',{ascending:false}).limit(500);
     _haendeData=haende||[];
     _haendeExpanded=new Set();
-    _haendeFilter=null;
+    _haendeFilter=new Set();
     renderHaende();
   }
 
@@ -2138,13 +2193,13 @@
     const filterSpieler=Object.values(spielerMap).sort((a,b)=>a.name.localeCompare(b.name));
 
     // Apply player filter
-    const haende=_haendeFilter?alleHaende.filter(h=>h.gewinner_id===_haendeFilter):alleHaende;
+    const haende=_haendeFilter.size>0?alleHaende.filter(h=>_haendeFilter.has(h.gewinner_id)):alleHaende;
 
     // Player filter chips
     let html=`<div class="stat-filter-box">
       <div class="stat-filter-chips">
-        <button class="stat-filter-chip${!_haendeFilter?' active':''}" data-hfilter="">Alle</button>
-        ${filterSpieler.map(s=>`<button class="stat-filter-chip${_haendeFilter===s.id?' active':''}" data-hfilter="${s.id}">${escHtml(s.name)}</button>`).join('')}
+        <button class="stat-filter-chip${_haendeFilter.size===0?' active':''}" data-hfilter="">Alle</button>
+        ${filterSpieler.map(s=>`<button class="stat-filter-chip${_haendeFilter.has(s.id)?' active':''}" data-hfilter="${s.id}">${escHtml(s.name)}</button>`).join('')}
       </div>
     </div>`;
 
@@ -2166,33 +2221,33 @@
     const alleTypen=[...HAND_TYPEN,...new Set(extraTypen)];
 
     html+=`<div class="section-title">Übersicht</div>`;
-    html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:var(--space-md)"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
-    html+=`<thead><tr><th style="text-align:left;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap">Spieler</th>`;
+    html+=`<div style="margin-bottom:var(--space-md)"><table style="width:100%;border-collapse:collapse;font-size:12px">`;
+    html+=`<thead><tr><th style="text-align:left;padding:7px 8px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary)">Spieler</th>`;
     alleTypen.forEach(t=>{
       const short=HAND_SHORT[t]||t;
-      html+=`<th style="text-align:center;padding:8px 6px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap" title="${escHtml(t)}">${escHtml(short)}</th>`;
+      html+=`<th style="text-align:center;padding:7px 4px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary)" title="${escHtml(t)}">${escHtml(short)}</th>`;
     });
-    html+=`<th style="text-align:center;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:700;color:var(--text-primary)">∑</th></tr></thead><tbody>`;
+    html+=`<th style="text-align:center;padding:7px 8px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:700;color:var(--text-primary)">∑</th></tr></thead><tbody>`;
     spielerIds.forEach((sid,i)=>{
       const s=matrixSpielerMap[sid]||{name:'?'};
       const tot=Object.values(matrix[sid]).reduce((a,v)=>a+v,0);
       html+=`<tr style="background:${i%2===0?'var(--surface)':'var(--bg-secondary)'}">`;
-      html+=`<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap">${escHtml(s.name)}</td>`;
+      html+=`<td style="padding:7px 8px;border-bottom:1px solid var(--border);font-weight:500">${escHtml(s.name)}</td>`;
       alleTypen.forEach(t=>{
         const n=matrix[sid][t]||0;
-        html+=`<td style="text-align:center;padding:8px 6px;border-bottom:1px solid var(--border);color:${n>0?'var(--accent-text)':'var(--text-tertiary)'};font-weight:${n>0?'700':'400'}">${n>0?n:'–'}</td>`;
+        html+=`<td style="text-align:center;padding:7px 4px;border-bottom:1px solid var(--border);color:${n>0?'var(--accent-text)':'var(--text-tertiary)'};font-weight:${n>0?'700':'400'}">${n>0?n:'–'}</td>`;
       });
-      html+=`<td style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text-primary)">${tot}</td></tr>`;
+      html+=`<td style="text-align:center;padding:7px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text-primary)">${tot}</td></tr>`;
     });
     // Totals row
     const grandTotal=spielerIds.reduce((s,sid)=>s+Object.values(matrix[sid]).reduce((a,v)=>a+v,0),0);
     html+=`<tr style="background:var(--bg-secondary)">`;
-    html+=`<td style="padding:8px 10px;font-weight:700;color:var(--text-primary);border-top:2px solid var(--border)">∑</td>`;
+    html+=`<td style="padding:7px 8px;font-weight:700;color:var(--text-primary);border-top:2px solid var(--border)">∑</td>`;
     alleTypen.forEach(t=>{
       const n=spielerIds.reduce((s,sid)=>s+(matrix[sid][t]||0),0);
-      html+=`<td style="text-align:center;padding:8px 6px;border-top:2px solid var(--border);font-weight:700;color:${n>0?'var(--accent-text)':'var(--text-tertiary)'}">${n>0?n:'–'}</td>`;
+      html+=`<td style="text-align:center;padding:7px 4px;border-top:2px solid var(--border);font-weight:700;color:${n>0?'var(--accent-text)':'var(--text-tertiary)'}">${n>0?n:'–'}</td>`;
     });
-    html+=`<td style="text-align:center;padding:8px 10px;border-top:2px solid var(--border);font-weight:700;color:var(--text-primary)">${grandTotal}</td></tr>`;
+    html+=`<td style="text-align:center;padding:7px 8px;border-top:2px solid var(--border);font-weight:700;color:var(--text-primary)">${grandTotal}</td></tr>`;
     html+=`</tbody></table></div>`;
 
     // ── Interaktive Drilldown: nach Hand-Typ → Spieler → Hände ──
@@ -2246,7 +2301,14 @@
     // Player filter chips
     el.querySelectorAll('[data-hfilter]').forEach(btn=>{
       btn.addEventListener('click',()=>{
-        _haendeFilter=btn.dataset.hfilter||null;
+        const id=btn.dataset.hfilter;
+        if(!id){_haendeFilter=new Set();}
+        else if(_haendeFilter.has(id)){
+          _haendeFilter.delete(id);
+        } else {
+          _haendeFilter.add(id);
+          if(_haendeFilter.size===filterSpieler.length)_haendeFilter=new Set();
+        }
         renderHaende();
       });
     });
@@ -2299,7 +2361,7 @@
       const btn=document.createElement('button');btn.id='hand-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
       btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Hand löschen`;
       btn.addEventListener('click',async()=>{
-        if(!confirmDelete(`Hand "${h.hand}" löschen?`))return;
+        if(!await confirmDelete(`Hand "${h.hand}" löschen?`))return;
         await save(()=>db.from('hand_statistik').delete().eq('id',h.id),'Hand gelöscht');
         document.getElementById('modal-hand').classList.remove('open');
         loadHaende();
@@ -2344,9 +2406,9 @@
   });
 
   document.getElementById('hand-speichern').addEventListener('click',async()=>{
-    if(!selectedHandType){alert('Bitte einen Hand-Typ auswählen.');return;}
+    if(!selectedHandType){await showAlert('Bitte einen Hand-Typ auswählen.');return;}
     const gewinnerID=document.getElementById('hand-gewinner').value;
-    if(!gewinnerID){alert('Bitte einen Gewinner auswählen.');return;}
+    if(!gewinnerID){await showAlert('Bitte einen Gewinner auswählen.');return;}
     const kommentar=document.getElementById('hand-kommentar').value.trim()||null;
     const fotoUrl=document.getElementById('hand-foto-url').value.trim()||null;
 
@@ -2466,13 +2528,51 @@
   </div>
 </div>
 
+<!-- Alert Modal -->
+<div class="modal-overlay" id="modal-alert">
+  <div class="modal" style="max-height:fit-content">
+    <div class="modal-handle"></div>
+    <div id="modal-alert-msg" style="font-size:15px;line-height:1.6;margin-bottom:var(--space-lg);white-space:pre-wrap;color:var(--text-primary)"></div>
+    <button class="btn btn-primary" id="modal-alert-ok">OK</button>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-height:fit-content">
+    <div class="modal-handle"></div>
+    <div id="modal-confirm-msg" style="font-size:15px;line-height:1.6;margin-bottom:var(--space-lg);white-space:pre-wrap;color:var(--text-primary)"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modal-confirm-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="modal-confirm-ok">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="modal-delete-confirm">
+  <div class="modal" style="max-height:fit-content">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-md)">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--danger-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--danger)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></div>
+      <div style="font-size:17px;font-weight:700">Löschen bestätigen</div>
+    </div>
+    <div id="modal-delete-msg" style="font-size:14px;color:var(--text-secondary);line-height:1.5;margin-bottom:var(--space-sm)"></div>
+    <div style="font-size:13px;color:var(--danger);background:var(--danger-soft);border-radius:var(--radius-md);padding:10px var(--space-md);margin-bottom:var(--space-lg)">Diese Aktion kann nicht rückgängig gemacht werden.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modal-delete-cancel">Abbrechen</button>
+      <button class="btn btn-danger" id="modal-delete-ok">Löschen</button>
+    </div>
+  </div>
+</div>
+
 <!-- PWA Install Bottom Sheet
      - Shown once after 2.5s if not installed and not previously dismissed
      - Dismissed permanently via localStorage key 'dtks_pwa_seen'
      - iOS: step-by-step Share→Add instructions
      - Android/Chrome: uses beforeinstallprompt if available, else skip
 -->
-<div id="pwa-overlay" role="dialog" aria-modal="true" aria-labelledby="pwa-title" aria-describedby="pwa-desc" style="display:none">
+<div id="pwa-overlay" role="dialog" aria-modal="true" aria-labelledby="pwa-title" aria-describedby="pwa-desc">
   <div id="pwa-sheet" tabindex="-1">
     <div class="pwa-handle"></div>
     <button class="pwa-close" id="pwa-close-btn" aria-label="Schließen">
