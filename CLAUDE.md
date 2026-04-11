@@ -225,7 +225,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - Meta-Tag: `<meta name="version" content="X.X">`
 - JS Konstante: `const VERSION = 'X.X'`
 - Bei jeder Änderung beide hochzählen (1.7 → 1.8 etc.)
-- **Aktuelle Version: 2.1**
+- **Aktuelle Version: 2.2**
 
 ## Login-Provider
 
@@ -254,7 +254,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 | 13 | Admin: Admin-Rolle anderen Spielern zuweisen | ✅ v2.1 |
 | 14 | Numpad auf Mobil für Betragsfelder | ✅ v2.1 |
 | 15 | Horizontale Scrollbalken behoben | ✅ v2.1 |
-| 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts) | ⏳ offen |
+| 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts) | ✅ v2.2 |
 | 17 | Google Account-Wechsel (Profil wechseln beim Login) | ⏳ offen |
 | 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren | ⏳ offen |
 | 19 | Altdaten: Profilbilder (Google Drive Pfade) | ⏳ offen |

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.1">
+  <meta name="version" content="2.2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -165,6 +165,8 @@
     .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
     .modal-actions .btn{flex:1;min-width:0;}
     .modal-actions .btn+.btn{margin-top:0;}
+    .btn-row{display:flex;gap:var(--space-sm);}
+    .btn-row .btn{flex:1;min-width:0;margin-top:0!important;}
     .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
     .badge-green{background:var(--accent-soft);color:var(--accent-text);}
     .badge-red{background:var(--danger-soft);color:var(--danger);}
@@ -210,6 +212,15 @@
     .roh-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-md);}
     .roh-tab{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:600;font-family:var(--font-mono);cursor:pointer;color:var(--text-secondary);transition:all var(--transition);}
     .roh-tab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+    .stat-chart{padding:var(--space-md) var(--space-md) var(--space-sm);}
+    .chart-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+    .chart-row-label{width:54px;font-size:12px;font-weight:500;color:var(--text-primary);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .chart-row-bar{flex:1;height:18px;position:relative;background:var(--bg-secondary);border-radius:3px;overflow:hidden;}
+    .chart-bar-pos{position:absolute;left:50%;top:0;height:100%;background:var(--accent);border-radius:0 3px 3px 0;}
+    .chart-bar-neg{position:absolute;right:50%;top:0;height:100%;background:var(--danger);border-radius:3px 0 0 3px;}
+    .chart-bar-full{position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:3px;}
+    .chart-zero{position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border-strong);}
+    .chart-row-value{width:56px;font-size:11px;font-family:var(--font-mono);font-weight:600;flex-shrink:0;text-align:right;}
   </style>
 </head>
 <body>
@@ -391,7 +402,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.1';
+  const VERSION='2.2';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -697,7 +708,7 @@
         <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">${fmtSigned(maxRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">${fmtSigned(minRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gBuyins}</div><div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div></div>
-        <div class="stat-card"><div class="stat-label">PayOut gesamt</div><div class="stat-value sm">€${gPayout.toFixed(0)}</div></div>
+        <div class="stat-card"><div class="stat-label">PayOut gesamt</div><div class="stat-value sm">€${gPayout.toFixed(2)}</div></div>
         <div class="stat-card"><div class="stat-label">Besondere Hände</div><div class="stat-value sm">${(haende||[]).length}</div></div>
         <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div></div>
       </div>`;
@@ -822,8 +833,8 @@
             // Spieler hat mehr als Ziel → spendet Differenz an Kasse
             await db.from('transaktionen').insert({datum:heute,von_spieler_id:s.id,nach_spieler_id:bank?.id||null,betrag:parseFloat(diff.toFixed(2)),kommentar:'Jahresspende'});
           } else {
-            // Spieler hat weniger als Ziel → bekommt Differenz aus Kasse
-            await db.from('transaktionen').insert({datum:heute,von_spieler_id:bank?.id||null,nach_spieler_id:s.id,betrag:parseFloat((-diff).toFixed(2)),kommentar:'Jahresausgleich'});
+            // Spieler hat weniger als Ziel → überweist Geld aufs Bankkonto (leer → Spieler)
+            await db.from('transaktionen').insert({datum:heute,von_spieler_id:null,nach_spieler_id:s.id,betrag:parseFloat((-diff).toFixed(2)),kommentar:'Jahresausgleich (Einzahlung)'});
           }
         }
       },`Jahres-Spende: ${n} Transaktionen erstellt`);
@@ -1001,9 +1012,9 @@
 
   function updatePotUI(){
     const{gesamtPot,zugeordnet,rest}=calcPotInfo();
-    const dp=document.getElementById('gesamt-pot-display');if(dp)dp.textContent=`€${gesamtPot.toFixed(0)}`;
+    const dp=document.getElementById('gesamt-pot-display');if(dp)dp.textContent=`€${gesamtPot.toFixed(2)}`;
     const ps=document.getElementById('pot-rest-summary');
-    if(ps){ps.querySelector('.pot-summary-label').textContent=`Pot €${gesamtPot.toFixed(0)} · Zugeteilt €${zugeordnet.toFixed(0)}`;const v=ps.querySelector('.pot-summary-value');v.textContent=`Rest €${rest.toFixed(2)}`;v.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');}
+    if(ps){ps.querySelector('.pot-summary-label').textContent=`Pot €${gesamtPot.toFixed(2)} · Zugeteilt €${zugeordnet.toFixed(2)}`;const v=ps.querySelector('.pot-summary-value');v.textContent=`Rest €${rest.toFixed(2)}`;v.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');}
   }
 
   function renderSpiel(){
@@ -1018,7 +1029,7 @@
         <div style="width:1px;background:var(--border)"></div>
         <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:17px;font-weight:700;margin-top:4px">${spielTeilnehmer.length}</div></div>
         <div style="width:1px;background:var(--border)"></div>
-        <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div id="gesamt-pot-display" style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(0)}</div></div>
+        <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div id="gesamt-pot-display" style="font-size:17px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1031,16 +1042,16 @@
     <div class="card" style="margin-top:var(--space-sm);margin-bottom:var(--space-md)">`;
 
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${((t.buyins||0)*einstellungen.buyin_pot).toFixed(0)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins||0}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
+      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${((t.buyins||0)*einstellungen.buyin_pot).toFixed(2)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins||0}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
     });
     html+=`</div>
     <div class="section-title">Ergebnis (PayOut)</div>
     <div class="card" style="margin-top:var(--space-sm)">`;
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout||0}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="number" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" min="0" step="0.01" placeholder="0.00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
-    <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(0)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
+    <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
     <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
     <button class="btn btn-ghost" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
 
@@ -1071,7 +1082,7 @@
     const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=0))return;
     t.buyins=(t.buyins||0)+delta;
     document.getElementById('count-'+id).textContent=t.buyins;
-    document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(0)} im Pot`;
+    document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
     updatePotUI();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
   }
@@ -1148,7 +1159,7 @@
         <div style="flex:1;display:flex;gap:var(--space-md)">
           <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
           <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(0)}</div></div>
+          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
           <div style="width:1px;background:var(--border)"></div>
           <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
         </div>
@@ -1208,7 +1219,7 @@
       <div class="section-title" style="margin-top:0">${datum}</div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">Spieler</div><div class="stat-value sm">${teilnehmer.length}</div></div>
-        <div class="stat-card accent"><div class="stat-label">Pot</div><div class="stat-value sm">€${gesamtPot.toFixed(0)}</div></div>
+        <div class="stat-card accent"><div class="stat-label">Pot</div><div class="stat-value sm">€${gesamtPot.toFixed(2)}</div></div>
         <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gesamtBuyins}</div></div>
         <div class="stat-card"><div class="stat-label">Ausgespielt</div><div class="stat-value sm">€${gesamtPayout.toFixed(2)}</div></div>
       </div>
@@ -1250,9 +1261,9 @@
 
     // Admin: Bearbeiten + Löschen
     if(currentSpieler?.ist_admin){
-      html+=`<div style="display:flex;gap:var(--space-sm);margin-top:var(--space-lg)">
-        <button class="btn btn-secondary" id="btn-spiel-detail-edit" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
-        <button class="btn btn-ghost" id="btn-spiel-detail-loeschen" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Löschen</button>
+      html+=`<div class="btn-row" style="margin-top:var(--space-lg)">
+        <button class="btn btn-secondary" id="btn-spiel-detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
+        <button class="btn btn-ghost" id="btn-spiel-detail-loeschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Löschen</button>
       </div>`;
     }
 
@@ -1294,17 +1305,17 @@
       const rest=pot-ausgespielt;
       const lbl=document.getElementById('edit-pot-lbl');
       const val=document.getElementById('edit-pot-val');
-      if(lbl)lbl.textContent=`Pot €${pot.toFixed(0)} · Ausgespielt €${ausgespielt.toFixed(2)}`;
+      if(lbl)lbl.textContent=`Pot €${pot.toFixed(2)} · Ausgespielt €${ausgespielt.toFixed(2)}`;
       if(val){val.textContent=`Rest €${rest.toFixed(2)}`;val.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');}
     }
 
     let html=`<button class="back-btn" id="spiel-edit-back">${backIcon} Abbrechen</button>
-      <div class="section-title" style="margin-top:0">Buy-Ins <span style="color:var(--text-tertiary);font-weight:400">(€${(bPot+bKassa).toFixed(0)}/BuyIn)</span></div>
+      <div class="section-title" style="margin-top:0">Buy-Ins <span style="color:var(--text-tertiary);font-weight:400">(€${(bPot+bKassa).toFixed(2)}/BuyIn)</span></div>
       <div class="card" style="margin-bottom:var(--space-md)">`;
     teilnehmer.forEach(t=>{
       const d=editData[t.id];
       html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}
-        <div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="ep-sub-${t.id}">€${(d.buyins*bPot).toFixed(0)} im Pot</div></div>
+        <div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="ep-sub-${t.id}">€${(d.buyins*bPot).toFixed(2)} im Pot</div></div>
         <div class="counter-controls">
           <button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
           <div class="counter-value" id="ec-${t.id}">${d.buyins}</div>
@@ -1321,7 +1332,7 @@
         <span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
-      <div class="pot-summary"><span class="pot-summary-label" id="edit-pot-lbl">Pot €${calcPot().toFixed(0)}</span><span class="pot-summary-value" id="edit-pot-val">Rest €${calcPot().toFixed(2)}</span></div>
+      <div class="pot-summary"><span class="pot-summary-label" id="edit-pot-lbl">Pot €${calcPot().toFixed(2)}</span><span class="pot-summary-value" id="edit-pot-val">Rest €${calcPot().toFixed(2)}</span></div>
       <button class="btn btn-primary" id="btn-edit-save" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Speichern</button>`;
@@ -1332,14 +1343,14 @@
     el.querySelectorAll('.counter-btn.plus').forEach(btn=>btn.addEventListener('click',()=>{
       editData[btn.dataset.id].buyins++;
       document.getElementById('ec-'+btn.dataset.id).textContent=editData[btn.dataset.id].buyins;
-      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(0)} im Pot`;
+      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(2)} im Pot`;
       updateSummary();
     }));
     el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>{
       if(editData[btn.dataset.id].buyins<=0)return;
       editData[btn.dataset.id].buyins--;
       document.getElementById('ec-'+btn.dataset.id).textContent=editData[btn.dataset.id].buyins;
-      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(0)} im Pot`;
+      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(2)} im Pot`;
       updateSummary();
     }));
     teilnehmer.forEach(t=>{
@@ -1361,6 +1372,30 @@
       else{showPage('verlauf');loadVerlauf();}
       loadHome();
     });
+  }
+
+  function renderBarChart(items, formatVal, allPositive=false){
+    if(!items.length) return '';
+    const maxAbs=Math.max(...items.map(x=>Math.abs(x.value)));
+    if(maxAbs===0) return '';
+    let html=`<div class="stat-chart">`;
+    items.forEach(({label,value})=>{
+      const pct=maxAbs>0?(Math.abs(value)/maxAbs)*47:0;
+      const cls=value>0?'amount-pos':value<0?'amount-neg':'amount-zero';
+      html+=`<div class="chart-row">
+        <div class="chart-row-label">${escHtml(label)}</div>
+        <div class="chart-row-bar">
+          ${allPositive
+            ?`<div class="chart-bar-full" style="width:${pct*2}%"></div>`
+            :`<div class="chart-zero"></div>${value>=0
+              ?`<div class="chart-bar-pos" style="width:${pct}%"></div>`
+              :`<div class="chart-bar-neg" style="width:${pct}%"></div>`}`
+          }
+        </div>
+        <div class="chart-row-value ${cls}">${formatVal(value)}</div>
+      </div>`;
+    });
+    return html+`</div>`;
   }
 
   // ── GESAMT STATISTIK ───────────────────────────────────
@@ -1396,11 +1431,30 @@
     const totalSpiele=new Set((verlauf||[]).filter(t=>t.spiele?.abgeschlossen).map(t=>t.spiel_id)).size;
     const total7_2=(haende||[]).filter(h=>h.hand==='7-2').length;
 
+    // Chart-Daten vorbereiten
+    const reinChartData=ranking.map(s=>({label:s.name,value:s.gRein}));
+    const ksChartData=[...ranking].sort((a,b)=>b.ks-a.ks).map(s=>({label:s.name,value:s.ks}));
+    const spieleChartData=[...ranking].sort((a,b)=>b.abg-a.abg).map(s=>({label:s.name,value:s.abg}));
+    const avgChartData=ranking.filter(s=>s.abg>=3).map(s=>({label:s.name,value:s.abg>0?s.gRein/s.abg:0}));
+
     let html=`
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">Spiele gesamt</div><div class="stat-value sm">${totalSpiele}</div></div>
         <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${total7_2}</div></div>
       </div>
+
+      <div class="section-title">Reingewinn (gesamt)</div>
+      <div class="card">${renderBarChart(reinChartData,v=>fmtSigned(v))}</div>
+
+      <div class="section-title">Kontostand</div>
+      <div class="card">${renderBarChart(ksChartData,v=>fmt(v))}</div>
+
+      <div class="section-title">Spiele gespielt</div>
+      <div class="card">${renderBarChart(spieleChartData,v=>`${v}×`,true)}</div>
+
+      ${avgChartData.length>1?`<div class="section-title">Ø Reingewinn pro Spiel</div>
+      <div class="card">${renderBarChart(avgChartData,v=>fmtSigned(v))}</div>`:''}
+
       <div class="section-title">Rangliste (Reingewinn)</div>
       <div class="card">`;
 
@@ -1454,6 +1508,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.2',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Statistik: Balkendiagramme für Reingewinn, Kontostand, Spiele gespielt, Ø/Spiel'},
+      {typ:'neu',text:'Hände-Seite: Übersichtstabelle Spieler × Hand-Typ + Chronik'},
+      {typ:'fix',text:'Payout-Felder beim neuen Spiel initial leer statt 0'},
+      {typ:'fix',text:'Alle €-Beträge konsequent mit 2 Dezimalstellen'},
+      {typ:'fix',text:'Jahresausgleich: Einzahlung kommt von leer (nicht von Bank), erhöht Bankkonto korrekt'},
+      {typ:'fix',text:'Button-Symmetrie im Spiel-Detail (Bearbeiten/Löschen gleich breit)'},
+    ]},
     {version:'2.1',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Admin: Debug-Konsole – Browser-Logs in der App einsehbar (Dropdown-Menü)'},
       {typ:'neu',text:'Admin: Rohdaten – Lesezugriff auf alle Datenbanktabellen (Dropdown-Menü)'},
@@ -1599,22 +1661,63 @@
   async function loadHaende(){
     const el=document.getElementById('haende-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('created_at',{ascending:false}).limit(100);
+    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('created_at',{ascending:false}).limit(200);
     if(!haende||haende.length===0){
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div class="empty-title">Keine Hände erfasst</div><div class="empty-subtitle">Erfasse besondere Hände und 7-2 Gewinne.</div></div>`;
       return;
     }
-    // Gruppieren nach Datum
+
+    // ── Übersichtstabelle: Spieler × Hand-Typ ───────────
+    const matrix={};// matrix[spielerId][handTyp]=count
+    const spielerMap={};
+    haende.forEach(h=>{
+      const sid=h.gewinner_id;
+      if(!sid)return;
+      if(!matrix[sid])matrix[sid]={};
+      matrix[sid][h.hand]=(matrix[sid][h.hand]||0)+1;
+      if(h.gewinner&&!spielerMap[sid])spielerMap[sid]=h.gewinner;
+    });
+    const typen=HAND_TYPEN.filter(t=>haende.some(h=>h.hand===t));
+    const spielerIds=Object.keys(matrix).sort((a,b)=>{
+      const totA=Object.values(matrix[a]).reduce((s,v)=>s+v,0);
+      const totB=Object.values(matrix[b]).reduce((s,v)=>s+v,0);
+      return totB-totA;
+    });
+
+    let html=`<div class="section-title">Übersicht</div>`;
+    html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:var(--space-md)"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
+    html+=`<thead><tr><th style="text-align:left;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap">Spieler</th>`;
+    typen.forEach(t=>{
+      const short=t==='Royal Flush'?'RF':t==='Straight Flush'?'SF':t==='4 of a Kind'?'4oK':t==='Full House'?'FH':t;
+      html+=`<th style="text-align:center;padding:8px 6px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap" title="${escHtml(t)}">${escHtml(short)}</th>`;
+    });
+    html+=`<th style="text-align:center;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:700;color:var(--text-primary)">∑</th></tr></thead><tbody>`;
+
+    spielerIds.forEach((sid,i)=>{
+      const s=spielerMap[sid]||{name:'?'};
+      const tot=Object.values(matrix[sid]).reduce((a,v)=>a+v,0);
+      html+=`<tr style="background:${i%2===0?'var(--surface)':'var(--bg-secondary)'}">`;
+      html+=`<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap">${escHtml(s.name)}</td>`;
+      typen.forEach(t=>{
+        const n=matrix[sid][t]||0;
+        html+=`<td style="text-align:center;padding:8px 6px;border-bottom:1px solid var(--border);color:${n>0?'var(--accent-text)':'var(--text-tertiary)'};font-weight:${n>0?'700':'400'}">${n>0?n:'–'}</td>`;
+      });
+      html+=`<td style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text-primary)">${tot}</td>`;
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+
+    // ── Chronologische Liste ─────────────────────────────
+    html+=`<div class="section-title">Chronik</div>`;
     const gruppen={};
     haende.forEach(h=>{
       const d=h.datum||h.spiel?.datum||h.created_at?.split('T')[0]||'Unbekannt';
       if(!gruppen[d])gruppen[d]=[];
       gruppen[d].push(h);
     });
-    let html='';
     Object.entries(gruppen).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([datum,items])=>{
       const ds=new Date(datum).toLocaleDateString('de-AT',{day:'2-digit',month:'long',year:'numeric'});
-      html+=`<div class="section-title">${ds}</div><div class="card">`;
+      html+=`<div class="section-title" style="font-size:11px;margin-top:0">${ds}</div><div class="card">`;
       items.forEach(h=>{
         const is72=h.hand==='7-2';
         const iconCls=is72?'warn':'accent';
@@ -1625,8 +1728,8 @@
         html+=`<div class="list-item clickable" data-hand-id="${h.id}">
           <div class="item-avatar ${iconCls}" style="width:40px;height:40px">${iconSvg}</div>
           <div class="item-body">
-            <div class="item-title">${h.hand}${is72?' 🤑':''}</div>
-            <div class="item-subtitle">${gewName}${h.kommentar?` · ${h.kommentar}`:''}</div>
+            <div class="item-title">${escHtml(h.hand)}${is72?' 🤑':''}</div>
+            <div class="item-subtitle">${escHtml(gewName)}${h.kommentar?` · ${escHtml(h.kommentar)}`:''}</div>
           </div>
           <div class="item-trailing">
             ${h.beweisfoto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;color:var(--text-tertiary)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
