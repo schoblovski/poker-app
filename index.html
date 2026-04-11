@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.3">
+  <meta name="version" content="2.4">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -136,6 +136,7 @@
     .profile-since{font-size:13px;color:var(--text-secondary);margin-top:4px;}
     .timeline-item{display:flex;gap:var(--space-md);padding:12px var(--space-md);border-bottom:1px solid var(--border);}
     .timeline-item:last-child{border-bottom:none;}
+    .timeline-item.clickable{cursor:pointer;}.timeline-item.clickable:active{background:var(--bg-secondary);}
     .timeline-date{font-size:12px;color:var(--text-secondary);width:60px;flex-shrink:0;padding-top:2px;}
     .timeline-body{flex:1;}
     .timeline-title{font-size:14px;font-weight:500;}
@@ -220,6 +221,29 @@
     .chart-bar-full{position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:3px;}
     .chart-zero{position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border-strong);}
     .chart-row-value{width:56px;font-size:11px;font-family:var(--font-mono);font-weight:600;flex-shrink:0;text-align:right;}
+    .stat-filter-box{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);}
+    .stat-filter-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+    .stat-filter-chips{display:flex;flex-wrap:wrap;gap:6px;}
+    .stat-filter-chip{background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
+    .stat-filter-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+    .stat-date-input{background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:16px;font-family:var(--font-sans);color:var(--text-primary);outline:none;min-width:0;}
+    .stat-date-input:focus{border-color:var(--accent);}
+    .linechart-legend{display:flex;flex-wrap:wrap;gap:4px 10px;padding:var(--space-sm) var(--space-md) var(--space-md);}
+    .linechart-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;}
+    .linechart-legend-dot{width:16px;height:2px;border-radius:1px;flex-shrink:0;}
+    .drilldown-row{border-bottom:1px solid var(--border);}
+    .drilldown-row:last-child{border-bottom:none;}
+    .drilldown-header{display:flex;align-items:center;gap:12px;padding:12px var(--space-md);cursor:pointer;}
+    .drilldown-details{border-top:1px solid var(--border);padding:4px 0 4px var(--space-md);}
+    .drilldown-item{display:flex;align-items:center;gap:8px;padding:7px var(--space-md) 7px 0;cursor:pointer;border-bottom:1px solid var(--border);}
+    .drilldown-item:last-child{border-bottom:none;}
+    .drilldown-item:active{background:var(--bg-secondary);}
+    .drilldown-date{font-size:11px;color:var(--text-tertiary);width:42px;flex-shrink:0;font-family:var(--font-mono);}
+    .drilldown-comment{flex:1;font-size:13px;color:var(--text-primary);}
+    .pwa-banner{background:var(--accent-soft);border-radius:var(--radius-lg);padding:12px var(--space-md);display:flex;align-items:center;gap:10px;margin-bottom:var(--space-sm);}
+    .pwa-banner-body{flex:1;min-width:0;}
+    .pwa-banner-title{font-size:13px;font-weight:600;color:var(--accent-text);}
+    .pwa-banner-sub{font-size:11px;color:var(--accent-text);opacity:.75;margin-top:1px;}
   </style>
 </head>
 <body>
@@ -294,6 +318,10 @@
           Debug: Rohdaten
         </button>
         <div class="dropdown-divider"></div>
+        <button class="dropdown-item" id="btn-profil-wechseln">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>
+          Profil wechseln
+        </button>
         <button class="dropdown-item danger" id="btn-logout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Abmelden
@@ -401,7 +429,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.3';
+  const VERSION='2.4';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -443,6 +471,40 @@
   // ── SYNC ───────────────────────────────────────────────
   function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
   async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
+
+  // ── STATISTIK FILTER STATE ─────────────────────────────
+  let _statSpielerFilter=new Set(); // empty = all players
+  let _statVon='';
+  let _statBis='';
+
+  // ── PWA + NAVIGATION STATE ─────────────────────────────
+  let _pwaInstallEvent=null;
+  let _pageHistory=['home'];
+  let _handlingPopstate=false;
+  const _isPwa=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_pwaInstallEvent=e;console.log('PWA install prompt ready');});
+  window.addEventListener('popstate',()=>{
+    if(_pageHistory.length>1){
+      _pageHistory.pop();
+      const prev=_pageHistory[_pageHistory.length-1];
+      _handlingPopstate=true;showPage(prev);_handlingPopstate=false;
+      history.pushState({},'',' ');
+    } else {
+      history.pushState({},'',' ');
+    }
+  });
+  // Swipe-back gesture (left-edge swipe right)
+  let _swipeX=0,_swipeY=0;
+  document.addEventListener('touchstart',e=>{_swipeX=e.touches[0].clientX;_swipeY=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-_swipeX,dy=e.changedTouches[0].clientY-_swipeY;
+    if(_swipeX<40&&dx>80&&Math.abs(dy)<80){
+      if(_pageHistory.length>1){
+        _pageHistory.pop();const prev=_pageHistory[_pageHistory.length-1];
+        _handlingPopstate=true;showPage(prev);_handlingPopstate=false;
+      }
+    }
+  },{passive:true});
 
   // ── HELPERS ────────────────────────────────────────────
   const ksClass=v=>v>0?'amount-pos':v<0?'amount-neg':'amount-zero';
@@ -545,6 +607,7 @@
     document.getElementById('page-'+page).classList.add('active');
     document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
     document.getElementById('page-title').textContent=pageTitles[page]||page;
+    if(!_handlingPopstate){_pageHistory.push(page);history.pushState({},'',' ');}
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -563,6 +626,7 @@
   document.getElementById('btn-info').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('info');loadInfo();});
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
+  document.getElementById('btn-profil-wechseln').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');db.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin,queryParams:{prompt:'select_account'}}});});
   document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
   // ── AUTH ───────────────────────────────────────────────
@@ -623,6 +687,18 @@
     const bank=spieler.find(s=>s.ist_bank);
     const rest=spieler.filter(s=>s.id!==currentSpieler?.id&&!s.ist_bank);
     let html='';
+    // PWA Install Banner
+    if(!_isPwa()&&!sessionStorage.getItem('pwa-dismissed')){
+      const isIos=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+      html+=`<div class="pwa-banner">
+        <div class="pwa-banner-body">
+          <div class="pwa-banner-title">App installieren</div>
+          <div class="pwa-banner-sub">${isIos?'Tippe auf ↑ → „Zum Home-Bildschirm"':'Schnellzugriff vom Homescreen'}</div>
+        </div>
+        ${(!isIos&&_pwaInstallEvent)?`<button class="btn btn-primary" id="pwa-install-btn" style="width:auto;padding:8px 14px;font-size:13px;flex-shrink:0">Installieren</button>`:''}
+        <button class="btn btn-ghost" id="pwa-dismiss-btn" style="width:28px;height:28px;padding:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px">✕</button>
+      </div>`;
+    }
 
     if(ich){
       const ks=kontostaende[ich.id]||0;
@@ -660,6 +736,12 @@
     el.querySelectorAll('.list-item.clickable[data-id]').forEach(row=>{
       row.addEventListener('click',()=>{const s=spieler.find(x=>x.id===row.dataset.id);if(s)showSpielerStats({...s,_ks:kontostaende[s.id]||0});});
     });
+    document.getElementById('pwa-install-btn')?.addEventListener('click',async()=>{
+      if(_pwaInstallEvent){await _pwaInstallEvent.prompt();_pwaInstallEvent=null;sessionStorage.setItem('pwa-dismissed','1');loadHome();}
+    });
+    document.getElementById('pwa-dismiss-btn')?.addEventListener('click',()=>{
+      sessionStorage.setItem('pwa-dismissed','1');el.querySelector('.pwa-banner')?.remove();
+    });
   }
 
   // ── SPIELER STATS ──────────────────────────────────────
@@ -667,22 +749,20 @@
     const el=document.getElementById('spieler-stats-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
     showPage('spieler-stats');
-    const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
 
     const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData}]=await Promise.all([
-      db.from('spiel_teilnehmer').select('*,spiele(datum,abgeschlossen,buyin_pot)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
-      db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id),
+      db.from('spiel_teilnehmer').select('*,spiele(id,datum,abgeschlossen,buyin_pot,buyin_kassa)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
+      db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
-    const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen);
+    const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen).sort((a,b)=>(b.spiele?.datum||'').localeCompare(a.spiele?.datum||''));
     const n=abg.length;
     const gBuyins=abg.reduce((s,t)=>s+(t.buyins||0),0);
     const gPayout=abg.reduce((s,t)=>s+(t.payout||0),0);
-    // Reingewinn: alte Spiele (pot=2.5) → nur pot; neue Spiele → pot+kassa
     const reingewinne=abg.map(t=>{
       const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
       const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
@@ -694,47 +774,98 @@
     const minRein=reingewinne.length>0?Math.min(...reingewinne):0;
     const avgBuyins=n>0?gBuyins/n:0;
     const maxBuyins=abg.length>0?Math.max(...abg.map(t=>t.buyins||0)):0;
+    const gewinne=reingewinne.filter(v=>v>0).length;
+    const winRate=n>0?Math.round(gewinne/n*100):0;
     const ks=spieler._ks||0;
     const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).getFullYear():'–';
 
+    // Avatar: initial letter fallback
+    const src=getAvatar(spieler);
+    const avatarLg=src
+      ?`<div class="profile-avatar-lg"><img src="${src}" alt="${escHtml(spieler.name)}" onerror="this.parentElement.innerHTML='<span style=\\"font-size:32px;font-weight:700;color:var(--text-secondary)\\">${spieler.name[0]?.toUpperCase()||'?'}</span>'"></div>`
+      :`<div class="profile-avatar-lg"><span style="font-size:32px;font-weight:700;color:var(--text-secondary)">${spieler.name?.[0]?.toUpperCase()||'?'}</span></div>`;
+
     let html=`<button class="back-btn" id="stats-back">${backIcon} Zurück</button>
-      <div class="profile-header">${spieler.profilbild?`<div class="profile-avatar-lg"><img src="${spieler.profilbild}" alt="${spieler.name}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
-        <div class="profile-name">${spieler.name}</div><div class="profile-since">Dabei seit ${seit} · ${n} Spiele</div>
+      <div class="profile-header">${avatarLg}
+        <div class="profile-name">${escHtml(spieler.name)}</div>
+        <div class="profile-since">Dabei seit ${seit} · ${n} Spiele</div>
       </div>
       <div class="stats-grid">
         <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div></div>
         <div class="stat-card wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value sm ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Spiel</div></div>
         <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">${fmtSigned(maxRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">${fmtSigned(minRein)}</div></div>
+        <div class="stat-card"><div class="stat-label">Gewinn-Quote</div><div class="stat-value sm ${winRate>=50?'amount-pos':''}">${winRate}%</div><div class="stat-sub">${gewinne} von ${n} Spielen</div></div>
         <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gBuyins}</div><div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div></div>
-        <div class="stat-card"><div class="stat-label">PayOut gesamt</div><div class="stat-value sm">€${gPayout.toFixed(2)}</div></div>
         <div class="stat-card"><div class="stat-label">Besondere Hände</div><div class="stat-value sm">${(haende||[]).length}</div></div>
         <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div></div>
       </div>`;
 
-    const letzteSpiele=abg.slice(0,10);
-    if(letzteSpiele.length>0){
-      html+=`<div class="section-title">Letzte Spiele</div><div class="card">`;
-      letzteSpiele.forEach((t,i)=>{
-        const rein=reingewinne[i];
-        const d=new Date(t.spiele.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
-        html+=`<div class="timeline-item"><div class="timeline-date">${d}</div><div class="timeline-body"><div class="timeline-title">${t.buyins}× BuyIn · €${(t.payout||0).toFixed(2)} PayOut</div></div><div class="timeline-amount ${ksClass(rein)}">${fmtSigned(rein)}</div></div>`;
+    // ── Vollständige History (Spiele + Transaktionen + Hände) ──
+    const alleTrans=[...(transIn||[]).map(t=>({...t,dir:'in'})),...(transOut||[]).map(t=>({...t,dir:'out'}))];
+    const timelineItems=[];
+    abg.forEach((t,i)=>{
+      if(!t.spiele?.datum) return;
+      timelineItems.push({type:'spiel',datum:t.spiele.datum,spiel_id:t.spiel_id,buyins:t.buyins,payout:t.payout,rein:reingewinne[i],spiel:t.spiele});
+    });
+    alleTrans.forEach(t=>{timelineItems.push({type:'trans',datum:t.datum,id:t.id,dir:t.dir,betrag:t.betrag,kommentar:t.kommentar});});
+    (haende||[]).forEach(h=>{timelineItems.push({type:'hand',datum:h.datum||'',id:h.id,hand:h.hand,kommentar:h.kommentar});});
+    timelineItems.sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+
+    if(timelineItems.length>0){
+      html+=`<div class="section-title">Vollständige History</div><div class="card">`;
+      timelineItems.forEach(item=>{
+        if(item.type==='spiel'){
+          const d=new Date(item.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+          html+=`<div class="timeline-item clickable" data-spiel-id="${item.spiel_id}">
+            <div class="timeline-date">${d}</div>
+            <div class="timeline-body"><div class="timeline-title">${item.buyins}× BuyIn · €${(item.payout||0).toFixed(2)} PayOut</div></div>
+            <div class="timeline-amount ${ksClass(item.rein)}">${fmtSigned(item.rein)}</div>
+          </div>`;
+        } else if(item.type==='trans'){
+          const d=new Date(item.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+          const cls=item.dir==='in'?'amount-pos':'amount-neg';
+          const sign=item.dir==='in'?'+':'−';
+          html+=`<div class="timeline-item clickable" data-trans-id="${item.id}">
+            <div class="timeline-date">${d}</div>
+            <div class="timeline-body"><div class="timeline-title" style="color:var(--text-secondary);font-size:12px">${escHtml(item.kommentar||'Transaktion')}</div></div>
+            <div class="timeline-amount ${cls}">${sign}€${item.betrag.toFixed(2)}</div>
+          </div>`;
+        } else if(item.type==='hand'){
+          const d=item.datum?new Date(item.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+          html+=`<div class="timeline-item clickable" data-hand-id="${item.id}">
+            <div class="timeline-date">${d}</div>
+            <div class="timeline-body"><div class="timeline-title" style="color:var(--accent-text);font-size:12px">${escHtml(item.hand)}${item.kommentar?` · ${escHtml(item.kommentar)}`:''}</div></div>
+            <div class="timeline-amount" style="color:var(--accent-text);font-size:13px">★</div>
+          </div>`;
+        }
       });
       html+=`</div>`;
     }
 
-    const alleTrans=[...(transIn||[]).map(t=>({...t,dir:'in'})),...(transOut||[]).map(t=>({...t,dir:'out'}))].sort((a,b)=>new Date(b.datum)-new Date(a.datum)).slice(0,8);
-    if(alleTrans.length>0){
-      html+=`<div class="section-title">Letzte Kontobewegungen</div><div class="card">`;
-      alleTrans.forEach(t=>{
-        const d=new Date(t.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'});
-        const sign=t.dir==='in'?'+':'-'; const cls=t.dir==='in'?'amount-pos':'amount-neg';
-        html+=`<div class="timeline-item"><div class="timeline-date">${d}</div><div class="timeline-body"><div class="timeline-title">${t.kommentar||'Transaktion'}</div></div><div class="timeline-amount ${cls}">${sign}€${t.betrag.toFixed(2)}</div></div>`;
-      });
-      html+=`</div>`;
-    }
     el.innerHTML=html;
     document.getElementById('stats-back').addEventListener('click',()=>showPage(backPage));
+    // Klick auf Spiel-Eintrag → Spiel-Detail
+    el.querySelectorAll('[data-spiel-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const{data:spiel}=await db.from('spiele').select('*,spiel_teilnehmer(*,spieler:spieler_id(id,name,profilbild))').eq('id',row.dataset.spielId).single();
+        if(spiel)showSpielDetail(spiel);
+      });
+    });
+    // Klick auf Transaktion → Modal
+    el.querySelectorAll('[data-trans-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const{data:t}=await db.from('transaktionen').select('*').eq('id',row.dataset.transId).single();
+        if(t)openTransaktionModal(t);
+      });
+    });
+    // Klick auf Hand → Modal
+    el.querySelectorAll('[data-hand-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const{data:h}=await db.from('hand_statistik').select('*').eq('id',row.dataset.handId).single();
+        if(h)openHandModal(h);
+      });
+    });
   }
 
   // ── EINSTELLUNGEN ──────────────────────────────────────
@@ -1398,116 +1529,211 @@
     return html+`</div>`;
   }
 
+  function renderLineChart(filtSpieler, filtSpiele, filtVerlauf){
+    if(!filtSpiele||filtSpiele.length<2||!filtSpieler||filtSpieler.length===0) return '';
+    const games=[...filtSpiele].sort((a,b)=>(a.datum||'').localeCompare(b.datum||''));
+    const bySpiel={};
+    filtVerlauf.forEach(t=>{if(!bySpiel[t.spiel_id])bySpiel[t.spiel_id]={};bySpiel[t.spiel_id][t.spieler_id]=t;});
+    // cumul[spieler_id] = array of cumulative reingewinn, one per x-point (starts at 0)
+    const cumul={};const cumSums={};
+    filtSpieler.forEach(s=>{cumul[s.id]=[0];cumSums[s.id]=0;});
+    games.forEach(game=>{
+      const parts=bySpiel[game.id]||{};
+      filtSpieler.forEach(s=>{
+        const t=parts[s.id];
+        if(t){const bPot=game.buyin_pot;const bKassa=bPot<5?0:(game.buyin_kassa??einstellungen.buyin_kassa);cumSums[s.id]+=(t.payout||0)-(t.buyins||0)*(bPot+bKassa);}
+        cumul[s.id].push(cumSums[s.id]);
+      });
+    });
+    const allVals=Object.values(cumul).flat();
+    const minVal=Math.min(0,...allVals);
+    const maxVal=Math.max(0,...allVals);
+    const range=(maxVal-minVal)||1;
+    const W=320,H=160;
+    const pl=42,pr=8,pt=12,pb=24;
+    const iW=W-pl-pr,iH=H-pt-pb;
+    const n=games.length+1;
+    const toX=i=>pl+(i/(n-1))*iW;
+    const toY=v=>pt+iH-((v-minVal)/range)*iH;
+    const fmtD=d=>d?d.slice(5).replace('-','.'):'';
+    const colors=['#16a34a','#2563eb','#e11d48','#d97706','#7c3aed','#0891b2','#65a30d','#9333ea','#0f766e'];
+    const zY=toY(0).toFixed(1);
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">`;
+    // Zero line
+    svg+=`<line x1="${pl}" y1="${zY}" x2="${W-pr}" y2="${zY}" stroke="var(--border)" stroke-width="1"/>`;
+    // Y labels
+    if(maxVal>0)svg+=`<text x="${pl-4}" y="${(pt+4).toFixed(1)}" font-size="8" fill="var(--text-tertiary)" text-anchor="end">€${Math.round(maxVal)}</text>`;
+    svg+=`<text x="${pl-4}" y="${(parseFloat(zY)+4).toFixed(1)}" font-size="8" fill="var(--text-tertiary)" text-anchor="end">0</text>`;
+    if(minVal<0)svg+=`<text x="${pl-4}" y="${(H-pb+4).toFixed(1)}" font-size="8" fill="var(--text-tertiary)" text-anchor="end">€${Math.round(minVal)}</text>`;
+    // X labels (first + last game)
+    svg+=`<text x="${toX(1).toFixed(1)}" y="${H-6}" font-size="8" fill="var(--text-tertiary)" text-anchor="middle">${fmtD(games[0]?.datum)}</text>`;
+    svg+=`<text x="${toX(n-1).toFixed(1)}" y="${H-6}" font-size="8" fill="var(--text-tertiary)" text-anchor="end">${fmtD(games[games.length-1]?.datum)}</text>`;
+    // Polylines
+    filtSpieler.forEach((s,idx)=>{
+      const color=colors[idx%colors.length];
+      const pts=cumul[s.id].map((v,i)=>`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+      svg+=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const lastV=cumul[s.id][cumul[s.id].length-1];
+      svg+=`<circle cx="${toX(n-1).toFixed(1)}" cy="${toY(lastV).toFixed(1)}" r="2.5" fill="${color}"/>`;
+    });
+    svg+=`</svg>`;
+    let legend=`<div class="linechart-legend">`;
+    filtSpieler.forEach((s,idx)=>{
+      const color=colors[idx%colors.length];
+      const lastV=cumSums[s.id];
+      legend+=`<div class="linechart-legend-item"><div class="linechart-legend-dot" style="background:${color}"></div><span style="color:var(--text-secondary);font-weight:500">${escHtml(s.name)}</span><span style="color:${lastV>=0?'var(--accent-text)':'var(--danger)'};font-family:var(--font-mono);font-size:11px">${fmtSigned(lastV)}</span></div>`;
+    });
+    legend+=`</div>`;
+    return `<div class="section-title">Zeitverlauf (kumulierter Reingewinn)</div>
+    <div class="card" style="padding:var(--space-md) var(--space-md) 0;overflow:hidden;">${svg}${legend}</div>`;
+  }
+
   // ── GESAMT STATISTIK ───────────────────────────────────
   async function loadStatistik(){
     const el=document.getElementById('statistik-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('*'),
       db.from('hand_statistik').select('*'),
-      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,datum').eq('abgeschlossen',true).order('datum'),
     ]);
-    const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
-
     if(!spieler||spieler.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Keine Daten</div></div>`;return;}
 
-    const kontostaende=berechneKontostaende([...spieler,...alleSpieler.filter(s=>s.ist_bank)],trans,verlauf||[],spieleMap);
+    const allSpieler=spieler;
+    const allVerlauf=verlauf||[];
+    const allSpiele=spieleData||[];
+    const allHaende=haende||[];
 
-    const ranking=spieler.map(s=>{
-      const abg=(verlauf||[]).filter(t=>t.spieler_id===s.id&&t.spiele?.abgeschlossen);
-      const gBuyins=abg.reduce((x,t)=>x+(t.buyins||0),0);
-      const gPayout=abg.reduce((x,t)=>x+(t.payout||0),0);
-      const gRein=abg.reduce((x,t)=>{
-        const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-        const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-        return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
-      },0);
-      const ks=kontostaende[s.id]||0;
-      return{...s,abg:abg.length,gBuyins,gPayout,gRein,ks};
-    }).sort((a,b)=>b.gRein-a.gRein);
+    // Reset filter on load
+    _statSpielerFilter=new Set();
+    _statVon='';
+    _statBis='';
 
-    const totalSpiele=new Set((verlauf||[]).filter(t=>t.spiele?.abgeschlossen).map(t=>t.spiel_id)).size;
-    const total7_2=(haende||[]).filter(h=>h.hand==='7-2').length;
-
-    // Chart-Daten vorbereiten
-    const reinChartData=ranking.map(s=>({label:s.name,value:s.gRein}));
-    const ksChartData=[...ranking].sort((a,b)=>b.ks-a.ks).map(s=>({label:s.name,value:s.ks}));
-    const spieleChartData=[...ranking].sort((a,b)=>b.abg-a.abg).map(s=>({label:s.name,value:s.abg}));
-    const avgChartData=ranking.filter(s=>s.abg>=3).map(s=>({label:s.name,value:s.abg>0?s.gRein/s.abg:0}));
-
-    let html=`
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Spiele gesamt</div><div class="stat-value sm">${totalSpiele}</div></div>
-        <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${total7_2}</div></div>
-      </div>
-
-      <div class="section-title">Reingewinn (gesamt)</div>
-      <div class="card">${renderBarChart(reinChartData,v=>fmtSigned(v))}</div>
-
-      <div class="section-title">Kontostand</div>
-      <div class="card">${renderBarChart(ksChartData,v=>fmt(v))}</div>
-
-      <div class="section-title">Spiele gespielt</div>
-      <div class="card">${renderBarChart(spieleChartData,v=>`${v}×`,true)}</div>
-
-      ${avgChartData.length>1?`<div class="section-title">Ø Reingewinn pro Spiel</div>
-      <div class="card">${renderBarChart(avgChartData,v=>fmtSigned(v))}</div>`:''}
-
-      <div class="section-title">Rangliste (Reingewinn)</div>
-      <div class="card">`;
-
-    ranking.forEach((s,i)=>{
-      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
-      html+=`<div class="list-item clickable" data-stats-id="${s.id}">
-        <div style="width:28px;font-size:${i<3?'18':'14'}px;font-weight:700;text-align:center;flex-shrink:0">${medal}</div>
-        ${avatarHtml(s,36)}
-        <div class="item-body">
-          <div class="item-title">${s.name}</div>
-          <div class="item-subtitle">${s.abg} Spiele · Ø ${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</div>
-        </div>
-        <div class="item-trailing"><span class="item-amount ${ksClass(s.gRein)}">${fmtSigned(s.gRein)}</span>${chevron}</div>
-      </div>`;
-    });
-    html+=`</div>
-
-    <div class="section-title">Kontostand Ranking</div>
-    <div class="card">`;
-    [...ranking].sort((a,b)=>b.ks-a.ks).forEach((s,i)=>{
-      html+=`<div class="list-item">
-        <div style="width:28px;font-size:14px;font-weight:700;text-align:center;flex-shrink:0;color:var(--text-tertiary)">${i+1}.</div>
-        ${avatarHtml(s,36)}
-        <div class="item-body"><div class="item-title">${s.name}</div></div>
-        <div class="item-trailing"><span class="item-amount ${ksClass(s.ks)}">${fmt(s.ks)}</span></div>
-      </div>`;
-    });
-    html+=`</div>
-
-    <div class="section-title">Besondere Hände</div>
-    <div class="card">`;
-    const handCounts={};
-    (haende||[]).forEach(h=>{const sp=spieler.find(s=>s.id===h.gewinner_id);if(sp){handCounts[sp.id]=handCounts[sp.id]||{sp,total:0,sieben2:0};handCounts[sp.id].total++;if(h.hand==='7-2')handCounts[sp.id].sieben2++;}});
-    const handArr=Object.values(handCounts).sort((a,b)=>b.total-a.total);
-    if(handArr.length===0){html+=`<div class="list-item" style="color:var(--text-tertiary);justify-content:center">Noch keine besonderen Hände</div>`;}
-    handArr.forEach(({sp,total,sieben2})=>{
-      html+=`<div class="list-item">${avatarHtml(sp,36)}<div class="item-body"><div class="item-title">${sp.name}</div><div class="item-subtitle">${sieben2}× 7-2 Gewinn</div></div><div class="item-trailing"><span class="item-amount amount-pos">${total}×</span></div></div>`;
-    });
-    html+=`</div>`;
-
-    el.innerHTML=html;
-
-    // Klick auf Spieler → Spieler-Statistik
-    el.querySelectorAll('.list-item.clickable[data-stats-id]').forEach(row=>{
-      row.addEventListener('click',()=>{
-        const s=ranking.find(x=>x.id===row.dataset.statsId);
-        if(s)showSpielerStats({...s,_ks:s.ks},'statistik');
+    function render(){
+      // Apply player filter
+      const filtSpieler=_statSpielerFilter.size>0?allSpieler.filter(s=>_statSpielerFilter.has(s.id)):allSpieler;
+      // Apply date filter to games
+      const filtSpiele=allSpiele.filter(s=>{
+        if(_statVon&&s.datum<_statVon)return false;
+        if(_statBis&&s.datum>_statBis)return false;
+        return true;
       });
-    });
+      const filtSpielIds=new Set(filtSpiele.map(s=>s.id));
+      const filtVerlauf=allVerlauf.filter(t=>filtSpielIds.has(t.spiel_id)&&(_statSpielerFilter.size===0||_statSpielerFilter.has(t.spieler_id)));
+      const filtHaende=allHaende.filter(h=>{
+        if(_statVon&&h.datum&&h.datum<_statVon)return false;
+        if(_statBis&&h.datum&&h.datum>_statBis)return false;
+        return _statSpielerFilter.size===0||_statSpielerFilter.has(h.gewinner_id);
+      });
+
+      // Compute ranking
+      const ranking=filtSpieler.map(s=>{
+        const abg=filtVerlauf.filter(t=>t.spieler_id===s.id);
+        const gRein=abg.reduce((x,t)=>{
+          const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+          const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
+        },0);
+        return{...s,abg:abg.length,gRein};
+      }).sort((a,b)=>b.gRein-a.gRein);
+
+      const totalSpiele=filtSpielIds.size;
+      const total7_2=filtHaende.filter(h=>h.hand==='7-2').length;
+      const hasFilter=_statSpielerFilter.size>0||_statVon||_statBis;
+
+      // Filter UI
+      const filterHtml=`<div class="stat-filter-box">
+        <div class="stat-filter-label">Spieler</div>
+        <div class="stat-filter-chips">
+          ${allSpieler.map(s=>{
+            const active=_statSpielerFilter.size===0||_statSpielerFilter.has(s.id);
+            return `<button class="stat-filter-chip${active?' active':''}" data-filter-sp="${s.id}">${escHtml(s.name)}</button>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:var(--space-sm)">
+          <div class="stat-filter-label" style="margin-bottom:6px">Zeitraum</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="stat-von" class="stat-date-input" value="${_statVon}">
+            <span style="color:var(--text-tertiary)">–</span>
+            <input type="date" id="stat-bis" class="stat-date-input" value="${_statBis}">
+            ${hasFilter?`<button class="btn btn-ghost" id="stat-reset" style="width:auto;padding:6px 12px;font-size:12px">Alle</button>`:''}
+          </div>
+        </div>
+      </div>`;
+
+      // Bar chart data
+      const reinChartData=ranking.map(s=>({label:s.name,value:s.gRein}));
+      const spieleChartData=[...ranking].sort((a,b)=>b.abg-a.abg).map(s=>({label:s.name,value:s.abg}));
+      const avgChartData=[...ranking].filter(s=>s.abg>=3).sort((a,b)=>(b.abg>0?b.gRein/b.abg:0)-(a.abg>0?a.gRein/a.abg:0)).map(s=>({label:s.name,value:s.abg>0?s.gRein/s.abg:0}));
+
+      let html=filterHtml+`
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Spiele</div><div class="stat-value sm">${totalSpiele}</div></div>
+          <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${total7_2}</div></div>
+        </div>
+        ${renderLineChart(filtSpieler,filtSpiele,filtVerlauf)}
+        <div class="section-title">Reingewinn (gesamt)</div>
+        <div class="card">${renderBarChart(reinChartData,v=>fmtSigned(v))}</div>
+        <div class="section-title">Spiele gespielt</div>
+        <div class="card">${renderBarChart(spieleChartData,v=>`${v}×`,true)}</div>
+        ${avgChartData.length>1?`<div class="section-title">Ø Reingewinn pro Spiel</div>
+        <div class="card">${renderBarChart(avgChartData,v=>fmtSigned(v))}</div>`:''}
+        <div class="section-title">Spieler</div>
+        <div class="card">`;
+      ranking.forEach((s,i)=>{
+        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+        html+=`<div class="list-item clickable" data-stats-id="${s.id}">
+          <div style="width:26px;font-size:${i<3?'17':'13'}px;font-weight:700;text-align:center;flex-shrink:0">${medal}</div>
+          ${avatarHtml(s,36)}
+          <div class="item-body"><div class="item-title">${escHtml(s.name)}</div><div class="item-subtitle">${s.abg} Spiele · Ø ${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</div></div>
+          <div class="item-trailing"><span class="item-amount ${ksClass(s.gRein)}">${fmtSigned(s.gRein)}</span>${chevron}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+      el.innerHTML=html;
+
+      // Player filter chips
+      el.querySelectorAll('[data-filter-sp]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const id=btn.dataset.filterSp;
+          if(_statSpielerFilter.size===0){_statSpielerFilter=new Set([id]);}
+          else if(_statSpielerFilter.has(id)){
+            _statSpielerFilter.delete(id);
+            if(_statSpielerFilter.size===0)_statSpielerFilter=new Set();
+          } else {
+            _statSpielerFilter.add(id);
+            if(_statSpielerFilter.size===allSpieler.length)_statSpielerFilter=new Set();
+          }
+          render();
+        });
+      });
+      document.getElementById('stat-von')?.addEventListener('change',e=>{_statVon=e.target.value;render();});
+      document.getElementById('stat-bis')?.addEventListener('change',e=>{_statBis=e.target.value;render();});
+      document.getElementById('stat-reset')?.addEventListener('click',()=>{_statSpielerFilter=new Set();_statVon='';_statBis='';render();});
+      // Click on player → Spieler-Statistik
+      el.querySelectorAll('.list-item.clickable[data-stats-id]').forEach(row=>{
+        row.addEventListener('click',()=>{
+          const s=ranking.find(x=>x.id===row.dataset.statsId);
+          if(s)showSpielerStats({...s,_ks:s.gRein},'statistik');
+        });
+      });
+    }
+    render();
   }
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.4',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Statistik: Spieler- und Zeitraum-Filter; Zeitverlauf-Chart (kumulierter Reingewinn pro Spieler)'},
+      {typ:'neu',text:'Statistik: Rangliste, Kontostand-Ranking und Besondere Hände entfernt – Fokus auf Charts'},
+      {typ:'neu',text:'Hände: Matrix zeigt alle Hand-Typen; Chronik durch interaktiven Drilldown (Typ → Spieler → Details) ersetzt'},
+      {typ:'neu',text:'Spieler-Statistik: Vollständige History (Spiele, Transaktionen, Hände) mit klickbaren Einträgen; Gewinn-Quote'},
+      {typ:'neu',text:'Profil wechseln: Google Account-Wechsel direkt im Dropdown-Menü'},
+      {typ:'neu',text:'PWA: Installations-Banner auf Home-Seite wenn App nicht installiert ist'},
+      {typ:'fix',text:'Swipe-Back: Links-Wisch navigiert innerhalb der App (nicht zurück zur Login-Seite)'},
+    ]},
     {version:'2.3',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Login: Hintergrund-Kreise entfernt, nicht konfigurierte Anmelde-Buttons ausgegraut'},
       {typ:'fix',text:'Spiel-Detail: Löschen-Button jetzt rot (Gefahr-Styling)'},
@@ -1650,93 +1876,127 @@
 
   // ── HÄNDE ──────────────────────────────────────────────
   const HAND_TYPEN=['7-2','Royal Flush','Straight Flush','4 of a Kind','Full House','Sonstiges'];
+  const HAND_SHORT={'Royal Flush':'RF','Straight Flush':'SF','4 of a Kind':'4oK','Full House':'FH'};
   let editHandID=null, selectedHandType=null;
+  let _haendeData=null;
+  let _haendeExpanded=new Set(); // keys: `${hand}||${spielerId}`
 
   async function loadHaende(){
     const el=document.getElementById('haende-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('created_at',{ascending:false}).limit(200);
-    if(!haende||haende.length===0){
+    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('datum',{ascending:false}).limit(500);
+    _haendeData=haende||[];
+    _haendeExpanded=new Set();
+    renderHaende();
+  }
+
+  function renderHaende(){
+    const el=document.getElementById('haende-content');
+    const haende=_haendeData||[];
+    if(haende.length===0){
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div class="empty-title">Keine Hände erfasst</div><div class="empty-subtitle">Erfasse besondere Hände und 7-2 Gewinne.</div></div>`;
       return;
     }
 
-    // ── Übersichtstabelle: Spieler × Hand-Typ ───────────
-    const matrix={};// matrix[spielerId][handTyp]=count
-    const spielerMap={};
+    // ── Übersichtstabelle: Spieler × Hand-Typ (alle Typen) ──
+    const matrix={};const spielerMap={};
     haende.forEach(h=>{
-      const sid=h.gewinner_id;
-      if(!sid)return;
+      const sid=h.gewinner_id;if(!sid)return;
       if(!matrix[sid])matrix[sid]={};
       matrix[sid][h.hand]=(matrix[sid][h.hand]||0)+1;
       if(h.gewinner&&!spielerMap[sid])spielerMap[sid]=h.gewinner;
     });
-    const typen=HAND_TYPEN.filter(t=>haende.some(h=>h.hand===t));
     const spielerIds=Object.keys(matrix).sort((a,b)=>{
-      const totA=Object.values(matrix[a]).reduce((s,v)=>s+v,0);
-      const totB=Object.values(matrix[b]).reduce((s,v)=>s+v,0);
-      return totB-totA;
+      const tA=Object.values(matrix[a]).reduce((s,v)=>s+v,0);
+      const tB=Object.values(matrix[b]).reduce((s,v)=>s+v,0);
+      return tB-tA;
     });
+    // Show all HAND_TYPEN + any unknown types found in data
+    const extraTypen=haende.map(h=>h.hand).filter(t=>!HAND_TYPEN.includes(t));
+    const alleTypen=[...HAND_TYPEN,...new Set(extraTypen)];
 
     let html=`<div class="section-title">Übersicht</div>`;
     html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:var(--space-md)"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
     html+=`<thead><tr><th style="text-align:left;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap">Spieler</th>`;
-    typen.forEach(t=>{
-      const short=t==='Royal Flush'?'RF':t==='Straight Flush'?'SF':t==='4 of a Kind'?'4oK':t==='Full House'?'FH':t;
+    alleTypen.forEach(t=>{
+      const short=HAND_SHORT[t]||t;
       html+=`<th style="text-align:center;padding:8px 6px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);white-space:nowrap" title="${escHtml(t)}">${escHtml(short)}</th>`;
     });
     html+=`<th style="text-align:center;padding:8px 10px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:700;color:var(--text-primary)">∑</th></tr></thead><tbody>`;
-
     spielerIds.forEach((sid,i)=>{
       const s=spielerMap[sid]||{name:'?'};
       const tot=Object.values(matrix[sid]).reduce((a,v)=>a+v,0);
       html+=`<tr style="background:${i%2===0?'var(--surface)':'var(--bg-secondary)'}">`;
       html+=`<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap">${escHtml(s.name)}</td>`;
-      typen.forEach(t=>{
+      alleTypen.forEach(t=>{
         const n=matrix[sid][t]||0;
         html+=`<td style="text-align:center;padding:8px 6px;border-bottom:1px solid var(--border);color:${n>0?'var(--accent-text)':'var(--text-tertiary)'};font-weight:${n>0?'700':'400'}">${n>0?n:'–'}</td>`;
       });
-      html+=`<td style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text-primary)">${tot}</td>`;
-      html+=`</tr>`;
+      html+=`<td style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text-primary)">${tot}</td></tr>`;
     });
     html+=`</tbody></table></div>`;
 
-    // ── Chronologische Liste ─────────────────────────────
-    html+=`<div class="section-title">Chronik</div>`;
-    const gruppen={};
-    haende.forEach(h=>{
-      const d=h.datum||h.spiel?.datum||h.created_at?.split('T')[0]||'Unbekannt';
-      if(!gruppen[d])gruppen[d]=[];
-      gruppen[d].push(h);
-    });
-    Object.entries(gruppen).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([datum,items])=>{
-      const ds=new Date(datum).toLocaleDateString('de-AT',{day:'2-digit',month:'long',year:'numeric'});
-      html+=`<div class="section-title" style="font-size:11px;margin-top:0">${ds}</div><div class="card">`;
+    // ── Interaktive Drilldown: nach Hand-Typ → Spieler → Hände ──
+    const byTyp={};
+    haende.forEach(h=>{if(!byTyp[h.hand])byTyp[h.hand]=[];byTyp[h.hand].push(h);});
+    const drillTypen=alleTypen.filter(t=>byTyp[t]&&byTyp[t].length>0);
+
+    html+=`<div class="section-title">Nach Hand-Typ</div>`;
+    drillTypen.forEach(hand=>{
+      const items=byTyp[hand];
+      const byPlayer={};
       items.forEach(h=>{
-        const is72=h.hand==='7-2';
-        const iconCls=is72?'warn':'accent';
-        const iconSvg=is72
-          ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
-          :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
-        const gewName=h.gewinner?.name||'?';
-        html+=`<div class="list-item clickable" data-hand-id="${h.id}">
-          <div class="item-avatar ${iconCls}" style="width:40px;height:40px">${iconSvg}</div>
-          <div class="item-body">
-            <div class="item-title">${escHtml(h.hand)}${is72?' 🤑':''}</div>
-            <div class="item-subtitle">${escHtml(gewName)}${h.kommentar?` · ${escHtml(h.kommentar)}`:''}</div>
-          </div>
-          <div class="item-trailing">
-            ${h.beweisfoto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;color:var(--text-tertiary)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
-            ${chevron}
-          </div>
-        </div>`;
+        const sid=h.gewinner_id||'_';
+        if(!byPlayer[sid])byPlayer[sid]={sp:h.gewinner||alleSpieler.find(s=>s.id===h.gewinner_id)||{name:'?'},hands:[]};
+        byPlayer[sid].hands.push(h);
+      });
+      const players=Object.values(byPlayer).sort((a,b)=>b.hands.length-a.hands.length);
+      const is72=hand==='7-2';
+      html+=`<div class="section-title" style="font-size:11px;margin-top:var(--space-sm)">${escHtml(hand)} · ${items.length}×</div><div class="card">`;
+      players.forEach(({sp,hands:ph})=>{
+        const key=`${hand}||${sp.id||sp.name}`;
+        const exp=_haendeExpanded.has(key);
+        html+=`<div class="drilldown-row${exp?' expanded':''}" data-drill-key="${escHtml(key)}">
+          <div class="drilldown-header">
+            ${avatarHtml(sp,36)}
+            <div class="item-body"><div class="item-title">${escHtml(sp.name||'?')}</div></div>
+            <div class="item-trailing">
+              <span class="item-amount amount-pos">${ph.length}×</span>
+              <div class="chevron" style="transform:rotate(${exp?90:0}deg);transition:transform 200ms ease">${`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`}</div>
+            </div>
+          </div>`;
+        if(exp){
+          html+=`<div class="drilldown-details">`;
+          ph.sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).forEach(h=>{
+            const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+            html+=`<div class="drilldown-item clickable" data-hand-id="${h.id}">
+              <span class="drilldown-date">${d}</span>
+              <span class="drilldown-comment">${escHtml(h.kommentar||'–')}</span>
+              ${h.beweisfoto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--accent);flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
+            </div>`;
+          });
+          html+=`</div>`;
+        }
+        html+=`</div>`;
       });
       html+=`</div>`;
     });
+
     el.innerHTML=html;
-    el.querySelectorAll('.list-item.clickable[data-hand-id]').forEach(row=>{
-      row.addEventListener('click',async()=>{
-        const{data:h}=await db.from('hand_statistik').select('*').eq('id',row.dataset.handId).single();
+
+    // Drilldown expand/collapse
+    el.querySelectorAll('[data-drill-key]').forEach(row=>{
+      row.querySelector('.drilldown-header').addEventListener('click',()=>{
+        const k=row.dataset.drillKey;
+        if(_haendeExpanded.has(k))_haendeExpanded.delete(k);else _haendeExpanded.add(k);
+        renderHaende();
+      });
+    });
+    // Open hand modal on individual item click
+    el.querySelectorAll('.drilldown-item[data-hand-id]').forEach(item=>{
+      item.addEventListener('click',async e=>{
+        e.stopPropagation();
+        const{data:h}=await db.from('hand_statistik').select('*').eq('id',item.dataset.handId).single();
         if(h)openHandModal(h);
       });
     });
