@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.9">
+  <meta name="version" content="2.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -373,7 +373,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.9';
+  const VERSION='2.0';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -616,7 +616,7 @@
   }
 
   // ── SPIELER STATS ──────────────────────────────────────
-  async function showSpielerStats(spieler){
+  async function showSpielerStats(spieler, backPage='home'){
     const el=document.getElementById('spieler-stats-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
     showPage('spieler-stats');
@@ -687,7 +687,7 @@
       html+=`</div>`;
     }
     el.innerHTML=html;
-    document.getElementById('stats-back').addEventListener('click',()=>showPage('home'));
+    document.getElementById('stats-back').addEventListener('click',()=>showPage(backPage));
   }
 
   // ── EINSTELLUNGEN ──────────────────────────────────────
@@ -903,7 +903,7 @@
     document.getElementById('trans-kommentar-text').addEventListener('input',()=>{sel='';chips.querySelectorAll('.kommentar-chip').forEach(c=>c.classList.remove('active'));});
     document.getElementById('modal-transaktion')._getKommentar=()=>sel||document.getElementById('trans-kommentar-text').value.trim();
     const existDel=document.getElementById('trans-loeschen');if(existDel)existDel.remove();
-    if(t){
+    if(t&&currentSpieler?.ist_admin){
       const btn=document.createElement('button');btn.id='trans-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
       btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
       btn.addEventListener('click',async()=>{
@@ -1403,13 +1403,17 @@
     el.querySelectorAll('.list-item.clickable[data-stats-id]').forEach(row=>{
       row.addEventListener('click',()=>{
         const s=ranking.find(x=>x.id===row.dataset.statsId);
-        if(s)showSpielerStats({...s,_ks:s.ks});
+        if(s)showSpielerStats({...s,_ks:s.ks},'statistik');
       });
     });
   }
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.0',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Transaktion löschen: Button nur noch für Admins sichtbar'},
+      {typ:'fix',text:'Spieler-Statistik: Zurück-Button navigiert korrekt zur aufrufenden Seite (Statistik oder Home)'},
+    ]},
     {version:'1.9',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Pokerkasse-Berechnung korrigiert: Bank-Kontostand wird nicht mehr in Spieler-Summe eingerechnet'},
       {typ:'fix',text:'iOS: Kein ungewollter Zoom mehr beim Antippen von Eingabefeldern (font-size 16px)'},
