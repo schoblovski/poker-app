@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="1.8">
+  <meta name="version" content="1.9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d0d0f" id="theme-color-meta">
@@ -108,12 +108,13 @@
     .counter-value{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-variant-numeric:tabular-nums;}
     .form-group{margin-bottom:var(--space-md);}
     .form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px;}
-    .form-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:15px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
+    .form-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:16px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
     .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
     .form-input::placeholder{color:var(--text-tertiary);}
+    select.form-input{font-size:16px;}
     .payout-input-row{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);border-bottom:1px solid var(--border);}
     .payout-input-row:last-child{border-bottom:none;}
-    .payout-field{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:15px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
+    .payout-field{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:16px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
     .payout-field:focus{outline:none;}
     .payout-unit{font-size:13px;color:var(--text-tertiary);}
     .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
@@ -185,7 +186,7 @@
     .setting-info{flex:1;}
     .setting-label{font-size:15px;font-weight:500;}
     .setting-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
-    .setting-input{width:80px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text-primary);font-size:15px;font-weight:600;font-family:var(--font-mono);text-align:right;}
+    .setting-input{width:80px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text-primary);font-size:16px;font-weight:600;font-family:var(--font-mono);text-align:right;}
     .setting-input:focus{outline:none;border-color:var(--accent);}
     .kasse-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
     .kasse-tile{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
@@ -372,7 +373,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='1.8';
+  const VERSION='1.9';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -472,9 +473,10 @@
     return bank;
   }
 
-  // Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände)
+  // Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände OHNE Bank)
   function berechnePokerkasse(bankkonto, kontostaende){
-    const spielerSumme=Object.values(kontostaende).reduce((s,v)=>s+v,0);
+    const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
+    const spielerSumme=Object.entries(kontostaende).filter(([id])=>id!==bankId).reduce((s,[,v])=>s+v,0);
     return bankkonto - spielerSumme;
   }
 
@@ -1202,14 +1204,18 @@
       html+=`</div>`;
     }
 
-    // Admin: Spiel löschen
+    // Admin: Bearbeiten + Löschen
     if(currentSpieler?.ist_admin){
-      html+=`<button class="btn btn-ghost" id="btn-spiel-detail-loeschen" style="margin-top:var(--space-lg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel löschen</button>`;
+      html+=`<div style="display:flex;gap:var(--space-sm);margin-top:var(--space-lg)">
+        <button class="btn btn-secondary" id="btn-spiel-detail-edit" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
+        <button class="btn btn-ghost" id="btn-spiel-detail-loeschen" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Löschen</button>
+      </div>`;
     }
 
     el.innerHTML=html;
     document.getElementById('spiel-detail-back').addEventListener('click',()=>showPage('verlauf'));
     if(currentSpieler?.ist_admin){
+      document.getElementById('btn-spiel-detail-edit')?.addEventListener('click',()=>showSpielDetailEdit(spiel));
       document.getElementById('btn-spiel-detail-loeschen')?.addEventListener('click',async()=>{
         const d=new Date(spiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
         if(!confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
@@ -1223,6 +1229,94 @@
         loadHome();
       });
     }
+  }
+
+  // ── SPIEL DETAIL EDIT ──────────────────────────────────
+  function showSpielDetailEdit(spiel){
+    const el=document.getElementById('spiel-detail-content');
+    const teilnehmer=spiel.spiel_teilnehmer||[];
+    const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
+    const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+
+    // Lokale Kopie zum Editieren
+    const editData={};
+    teilnehmer.forEach(t=>{editData[t.id]={buyins:t.buyins||0,payout:t.payout||0};});
+
+    function calcPot(){return Object.values(editData).reduce((s,d)=>s+d.buyins*bPot,0);}
+
+    function updateSummary(){
+      const pot=calcPot();
+      const ausgespielt=teilnehmer.reduce((s,t)=>s+(parseFloat(document.getElementById('ep-'+t.id)?.value)||0),0);
+      const rest=pot-ausgespielt;
+      const lbl=document.getElementById('edit-pot-lbl');
+      const val=document.getElementById('edit-pot-val');
+      if(lbl)lbl.textContent=`Pot €${pot.toFixed(0)} · Ausgespielt €${ausgespielt.toFixed(2)}`;
+      if(val){val.textContent=`Rest €${rest.toFixed(2)}`;val.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');}
+    }
+
+    let html=`<button class="back-btn" id="spiel-edit-back">${backIcon} Abbrechen</button>
+      <div class="section-title" style="margin-top:0">Buy-Ins <span style="color:var(--text-tertiary);font-weight:400">(€${(bPot+bKassa).toFixed(0)}/BuyIn)</span></div>
+      <div class="card" style="margin-bottom:var(--space-md)">`;
+    teilnehmer.forEach(t=>{
+      const d=editData[t.id];
+      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}
+        <div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="ep-sub-${t.id}">€${(d.buyins*bPot).toFixed(0)} im Pot</div></div>
+        <div class="counter-controls">
+          <button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <div class="counter-value" id="ec-${t.id}">${d.buyins}</div>
+          <button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        </div></div>`;
+    });
+    html+=`</div>
+      <div class="section-title">PayOut</div>
+      <div class="card" style="margin-top:var(--space-sm)">`;
+    teilnehmer.forEach(t=>{
+      html+=`<div class="payout-input-row">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div>
+        <input type="number" class="payout-field" id="ep-${t.id}" value="${editData[t.id].payout}" min="0" step="0.01">
+        <span class="payout-unit">€</span></div>`;
+    });
+    html+=`</div>
+      <div class="pot-summary"><span class="pot-summary-label" id="edit-pot-lbl">Pot €${calcPot().toFixed(0)}</span><span class="pot-summary-value" id="edit-pot-val">Rest €${calcPot().toFixed(2)}</span></div>
+      <button class="btn btn-primary" id="btn-edit-save" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Speichern</button>`;
+
+    el.innerHTML=html;
+    document.getElementById('spiel-edit-back').addEventListener('click',()=>showSpielDetail(spiel));
+
+    el.querySelectorAll('.counter-btn.plus').forEach(btn=>btn.addEventListener('click',()=>{
+      editData[btn.dataset.id].buyins++;
+      document.getElementById('ec-'+btn.dataset.id).textContent=editData[btn.dataset.id].buyins;
+      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(0)} im Pot`;
+      updateSummary();
+    }));
+    el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>{
+      if(editData[btn.dataset.id].buyins<=0)return;
+      editData[btn.dataset.id].buyins--;
+      document.getElementById('ec-'+btn.dataset.id).textContent=editData[btn.dataset.id].buyins;
+      document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(0)} im Pot`;
+      updateSummary();
+    }));
+    teilnehmer.forEach(t=>{
+      document.getElementById('ep-'+t.id)?.addEventListener('input',e=>{editData[t.id].payout=parseFloat(e.target.value)||0;updateSummary();});
+    });
+    updateSummary();
+
+    document.getElementById('btn-edit-save').addEventListener('click',async()=>{
+      // Payout-Werte aus Inputs lesen
+      teilnehmer.forEach(t=>{editData[t.id].payout=parseFloat(document.getElementById('ep-'+t.id)?.value)||0;});
+      await save(async()=>{
+        for(const t of teilnehmer){
+          await db.from('spiel_teilnehmer').update({buyins:editData[t.id].buyins,payout:editData[t.id].payout}).eq('id',t.id);
+        }
+      },'Spiel aktualisiert');
+      // Spiel neu laden und Detail-Ansicht refreshen
+      const{data:updated}=await db.from('spiele').select('*,spiel_teilnehmer(*,spieler(*))').eq('id',spiel.id).single();
+      if(updated)showSpielDetail(updated);
+      else{showPage('verlauf');loadVerlauf();}
+      loadHome();
+    });
   }
 
   // ── GESAMT STATISTIK ───────────────────────────────────
@@ -1316,8 +1410,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'1.9',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Pokerkasse-Berechnung korrigiert: Bank-Kontostand wird nicht mehr in Spieler-Summe eingerechnet'},
+      {typ:'fix',text:'iOS: Kein ungewollter Zoom mehr beim Antippen von Eingabefeldern (font-size 16px)'},
+      {typ:'neu',text:'Spieldetail: Admin kann Buy-Ins und PayOut eines abgeschlossenen Spiels nachträglich bearbeiten'},
+      {typ:'fix',text:'Changelog-Darstellung: Letzter Eintrag hat keinen unteren Rand mehr'},
+    ]},
     {version:'1.8',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Info & Changelog Seite (diese Seite)'},
+      {typ:'neu',text:'Info & Changelog Seite (diese Seite) – erreichbar über Avatar-Menü'},
     ]},
     {version:'1.7',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Neuer Tab „Hände": Besondere Hände erfassen (Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL)'},
@@ -1423,14 +1523,13 @@
           ${isCurrent?`<span style="background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">AKTUELL</span>`:''}
           <span style="margin-left:auto;font-size:12px;color:var(--text-tertiary)">${v.datum}</span>
         </div>`;
-      v.eintraege.forEach(e=>{
-        html+=`<div style="display:flex;align-items:flex-start;padding:10px var(--space-md);border-bottom:1px solid var(--border)">
+      v.eintraege.forEach((e,i)=>{
+        const isLast=i===v.eintraege.length-1;
+        html+=`<div style="display:flex;align-items:flex-start;padding:10px var(--space-md)${isLast?'':';border-bottom:1px solid var(--border)'}">
           ${typBadge[e.typ]||''}
           <span style="font-size:13px;color:var(--text-primary);line-height:1.4">${e.text}</span>
         </div>`;
       });
-      // Letzten Border entfernen via letztem Eintrag-Hack
-      html=html.replace(/border-bottom:1px solid var\(--border\)">\s*$/, '">\n');
       html+=`</div>`;
     });
 
