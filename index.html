@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.8">
+  <meta name="version" content="2.7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -21,7 +21,7 @@
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
-    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-top:var(--safe-top);}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
     #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top)+40px) var(--space-xl) calc(var(--safe-bottom)+40px);position:relative;overflow:hidden;}
@@ -43,8 +43,8 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;min-height:calc(100dvh - var(--safe-top));}
-    .header{padding:calc(var(--safe-top)+16px) calc(var(--safe-right)+var(--space-lg)) 14px calc(var(--safe-left)+var(--space-lg));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+    .header{padding:calc(var(--safe-top)+12px) calc(var(--safe-right)+var(--space-md)) 12px calc(var(--safe-left)+var(--space-md));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
     .header-left{display:flex;flex-direction:column;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
@@ -271,7 +271,7 @@
     .pwa-step-text{font-size:14px;line-height:1.5;color:var(--text-primary);}
     .pwa-step-text strong{color:var(--accent-text);}
     .pwa-share-icon{display:inline-flex;align-items:center;gap:3px;background:var(--accent-soft);color:var(--accent-text);border-radius:6px;padding:2px 7px;font-size:13px;font-weight:600;animation:pwaPulse 2s ease-in-out infinite;}
-    .pwa-btn-row{display:flex;gap:var(--space-sm);margin-top:var(--space-sm);} .kasse-tile.clickable{cursor:pointer;transition:transform var(--transition),box-shadow var(--transition);} .kasse-tile.clickable:active{transform:scale(.98);} .range-filter{display:grid;gap:10px;} .range-track-row{display:flex;align-items:center;gap:10px;} .range-filter input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;background:var(--bg-secondary);outline:none;} .range-filter input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:var(--shadow);} .range-values{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);}
+    .pwa-btn-row{display:flex;gap:var(--space-sm);margin-top:var(--space-sm);}
   </style>
 </head>
 <body>
@@ -375,7 +375,6 @@
     <div class="page" id="page-spiel-detail"><div id="spiel-detail-content"></div></div>
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
-    <div class="page" id="page-kasse-detail"><div id="kasse-detail-content"></div></div>
     <div class="page" id="page-haende">
       <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
       <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
@@ -428,7 +427,7 @@
         <button class="hand-type-btn" data-hand="7-2">7-2 🤑</button>
         <button class="hand-type-btn" data-hand="Royal Flush">Royal Flush</button>
         <button class="hand-type-btn" data-hand="Straight Flush">Str. Flush</button>
-        <button class="hand-type-btn" data-hand="Poker">Poker</button>
+        <button class="hand-type-btn" data-hand="4 of a Kind">Vierling</button>
         <button class="hand-type-btn" data-hand="Full House">Full House</button>
         <button class="hand-type-btn" data-hand="Sonstiges">Sonstiges</button>
       </div>
@@ -458,12 +457,11 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.8';
+  const VERSION='2.7';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
-  const CHANGELOG_EXTRA=`<div class="card" style="padding:var(--space-md);margin-top:var(--space-sm)"><div class="section-title" style="margin:0 0 var(--space-sm)">Version 2.8</div><div class="timeline-sub">Optimierungen für iPhone Safe Area, dynamische Gewinner-Auswahl bei Händen, neue Verlaufsseiten für Pokerkasse und Bankkonto, bessere Transaktionsdetails in der Spieler-History, sichtbarer Bearbeiten-Button im Spiel-Detail, Umbenennung von Vierling zu Poker sowie zusätzliche Filter-Verbesserungen.</div></div>`;
 
   // ── CONSOLE INTERCEPTOR ────────────────────────────────
   const _consoleLogs=[];
@@ -493,10 +491,9 @@
     meta.setAttribute('content','');
     requestAnimationFrame(()=>meta.setAttribute('content',color));
   }
-  let _themePref='auto';
-  function setTheme(p){_themePref=p;applyTheme(p);}
-  const st=_themePref||'auto'; applyTheme(st);
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if((_themePref||'auto')==='auto')applyTheme('auto');});
+  function setTheme(p){localStorage.setItem('dtks-theme',p);applyTheme(p);}
+  const st=localStorage.getItem('dtks-theme')||'auto'; applyTheme(st);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if((localStorage.getItem('dtks-theme')||'auto')==='auto')applyTheme('auto');});
   document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===st);b.addEventListener('click',()=>setTheme(b.dataset.theme));});
 
   // ── SYNC ───────────────────────────────────────────────
@@ -518,10 +515,10 @@
   const PWA_KEY='dtks_pwa_seen';
 
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_pwaInstallEvent=e;console.log('PWA install prompt ready');});
-  window.addEventListener('appinstalled',()=>{hidePwaSheet();console.log('PWA installed');});
+  window.addEventListener('appinstalled',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');console.log('PWA installed');});
 
   function showPwaSheet(){
-    if(_isPwa())return;
+    if(_isPwa()||localStorage.getItem(PWA_KEY))return;
     const overlay=document.getElementById('pwa-overlay');
     if(!overlay||overlay.classList.contains('open'))return;
     const isIos=_isIosSafari();
@@ -561,18 +558,18 @@
     }
     overlay.classList.add('open');
     document.getElementById('pwa-sheet').focus();
-    document.getElementById('pwa-not-now')?.addEventListener('click',()=>{hidePwaSheet();});
+    document.getElementById('pwa-not-now')?.addEventListener('click',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');});
     document.getElementById('pwa-install-now')?.addEventListener('click',async()=>{
       if(_pwaInstallEvent){
         await _pwaInstallEvent.prompt();
         const r=await _pwaInstallEvent.userChoice;
-        if(r.outcome==='accepted'){}
+        if(r.outcome==='accepted'){localStorage.setItem(PWA_KEY,'1');}
         _pwaInstallEvent=null;
         hidePwaSheet();
       }
     });
-    document.getElementById('pwa-close-btn').addEventListener('click',()=>{hidePwaSheet();});
-    overlay.addEventListener('click',e=>{if(e.target===overlay){hidePwaSheet();}});
+    document.getElementById('pwa-close-btn').addEventListener('click',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');});
+    overlay.addEventListener('click',e=>{if(e.target===overlay){hidePwaSheet();localStorage.setItem(PWA_KEY,'1');}});
     document.addEventListener('keydown',_pwaEscHandler);
   }
   function hidePwaSheet(){
@@ -580,11 +577,11 @@
     if(overlay)overlay.classList.remove('open');
     document.removeEventListener('keydown',_pwaEscHandler);
   }
-  function _pwaEscHandler(e){if(e.key==='Escape'){hidePwaSheet();}}
+  function _pwaEscHandler(e){if(e.key==='Escape'){hidePwaSheet();localStorage.setItem(PWA_KEY,'1');}}
 
   // Auto-show after 2.5s delay
   setTimeout(()=>{
-    if(!_isPwa()){
+    if(!_isPwa()&&!localStorage.getItem(PWA_KEY)){
       if(_isIosSafari()||_pwaInstallEvent){showPwaSheet();}
     }
   },2500);
@@ -862,12 +859,12 @@
     // Bank & Pokerkasse
     html+=`<div class="section-title">Kasse</div>
     <div class="kasse-grid">
-      <div class="kasse-tile bank clickable" data-kasse-target="bankkonto">
+      <div class="kasse-tile bank">
         <div class="kasse-tile-label">Bankkonto</div>
         <div class="kasse-tile-value">${fmt(bankkonto)}</div>
         <div class="kasse-tile-sub">Physisches Sparbuch</div>
       </div>
-      <div class="kasse-tile clickable" data-kasse-target="pokerkasse">
+      <div class="kasse-tile">
         <div class="kasse-tile-label">Pokerkasse</div>
         <div class="kasse-tile-value ${ksClass(pokerkasse)}">${fmt(pokerkasse)}</div>
         <div class="kasse-tile-sub">Überschuss</div>
@@ -954,7 +951,7 @@
       if(!t.spiele?.datum)return;
       spielItems.push({type:'spiel',datum:t.spiele.datum,spiel_id:t.spiel_id,buyins:t.buyins,payout:t.payout,rein:reingewinne[i]});
     });
-    const transItems=alleTrans.map(t=>({type:'trans',datum:t.datum,id:t.id,dir:t.dir,betrag:t.betrag,kommentar:t.kommentar,von:t.von_spieler_id,nach:t.nach_spieler_id}));
+    const transItems=alleTrans.map(t=>({type:'trans',datum:t.datum,id:t.id,dir:t.dir,betrag:t.betrag,kommentar:t.kommentar}));
     const allTimelineItems=[...spielItems,...transItems].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
 
     if(allTimelineItems.length>0){
@@ -1517,74 +1514,6 @@
     });
   }
 
-
-  function getSelectableHandWinners(){
-    if(aktuellesSpiel && Array.isArray(spielTeilnehmer) && spielTeilnehmer.length){
-      const ids=new Set(spielTeilnehmer.map(t=>t.spieler_id||t.id));
-      return alleSpieler.filter(s=>ids.has(s.id));
-    }
-    return [...alleSpieler].filter(s=>!s.ist_bank);
-  }
-  function getPlayerNameById(id){
-    return alleSpieler.find(s=>s.id===id)?.name||'—';
-  }
-  function formatTransDirection(von,nach){
-    const from=von?getPlayerNameById(von):'Extern';
-    const to=nach?getPlayerNameById(nach):'Extern';
-    return `${from} → ${to}`;
-  }
-  async function showKasseDetail(kind){
-    const el=document.getElementById('kasse-detail-content');
-    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
-    showPage('kasse-detail');
-    const {data:trans}=await db.from('transaktionen').select('*').order('datum',{ascending:false});
-    const bankSpieler=alleSpieler.find(s=>s.ist_bank);
-    const rows=(trans||[]).map(t=>{
-      const vonBank=t.von_spieler_id&&alleSpieler.find(s=>s.id===t.von_spieler_id)?.ist_bank;
-      const nachBank=t.nach_spieler_id&&alleSpieler.find(s=>s.id===t.nach_spieler_id)?.ist_bank;
-      const vonLeer=!t.von_spieler_id;
-      const nachLeer=!t.nach_spieler_id;
-      let betrag=0, include=false;
-      if(kind==='bankkonto'){
-        if(vonLeer&&t.nach_spieler_id&&!nachBank){betrag=t.betrag;include=true;}
-        if(t.von_spieler_id&&!vonBank&&nachLeer){betrag=-t.betrag;include=true;}
-        if(vonLeer&&nachBank){betrag=t.betrag;include=true;}
-        if(vonBank&&nachLeer){betrag=-t.betrag;include=true;}
-      } else {
-        if(vonLeer&&t.nach_spieler_id&&!nachBank){betrag=t.betrag;include=true;}
-        if(t.von_spieler_id&&!vonBank&&nachLeer){betrag=-t.betrag;include=true;}
-        if(vonLeer&&nachBank){betrag=t.betrag;include=true;}
-        if(vonBank&&nachLeer){betrag=-t.betrag;include=true;}
-        if(include){
-          const kontos=berechneKontostaende(alleSpieler, trans.filter(x=>x.datum<=t.datum), [], {});
-          const banklauf=(trans.filter(x=>x.datum<=t.datum)).reduce((sum,x)=>{
-            const vB=x.von_spieler_id&&alleSpieler.find(s=>s.id===x.von_spieler_id)?.ist_bank;
-            const nB=x.nach_spieler_id&&alleSpieler.find(s=>s.id===x.nach_spieler_id)?.ist_bank;
-            const vL=!x.von_spieler_id,nL=!x.nach_spieler_id;
-            if(vL&&x.nach_spieler_id&&!nB) sum+=x.betrag;
-            if(x.von_spieler_id&&!vB&&nL) sum-=x.betrag;
-            if(vL&&nB) sum+=x.betrag;
-            if(vB&&nL) sum-=x.betrag;
-            return sum;
-          },0);
-          const pk=berechnePokerkasse(banklauf,kontos);
-          betrag=null;
-          return {include:true, datum:t.datum, kommentar:t.kommentar||'Transaktion', detail:formatTransDirection(t.von_spieler_id,t.nach_spieler_id), saldo:pk};
-        }
-      }
-      return include?{include:true, datum:t.datum, kommentar:t.kommentar||'Transaktion', detail:formatTransDirection(t.von_spieler_id,t.nach_spieler_id), betrag}: {include:false};
-    }).filter(r=>r.include);
-    let running=0;
-    let html=`<button class="back-btn" id="kasse-detail-back">${backIcon} Zurück</button><div class="section-title" style="margin-top:0">${kind==='bankkonto'?'Bankkonto':'Pokerkasse'} Verlauf</div><div class="card">`;
-    rows.forEach(r=>{
-      if(kind==='bankkonto') running+=r.betrag;
-      const shown=kind==='bankkonto'?running:r.saldo;
-      html+=`<div class="timeline-item"><div class="timeline-date">${new Date(r.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit'})}</div><div class="timeline-body"><div class="timeline-title">${escHtml(r.kommentar)}</div><div class="timeline-sub">${escHtml(r.detail)}</div></div><div class="timeline-amount ${ksClass(kind==='bankkonto'?r.betrag:shown)}">${kind==='bankkonto'?fmtSigned(r.betrag):fmt(shown)}</div></div>`;
-    });
-    html+='</div>';
-    el.innerHTML=html;
-    document.getElementById('kasse-detail-back').addEventListener('click',()=>showPage('home'));
-  }
   // ── SPIEL DETAIL ────────────────────────────────────────
   async function showSpielDetail(spiel){
     const el=document.getElementById('spiel-detail-content');
@@ -1655,7 +1584,7 @@
     // Admin: Bearbeiten + Löschen
     if(currentSpieler?.ist_admin){
       html+=`<div class="btn-row" style="margin-top:var(--space-lg)">
-        <button class="btn btn-primary" id="btn-spiel-detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
+        <button class="btn btn-secondary" id="btn-spiel-detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
         <button class="btn btn-danger" id="btn-spiel-detail-loeschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Löschen</button>
       </div>`;
     }
@@ -2233,8 +2162,8 @@
   }
 
   // ── HÄNDE ──────────────────────────────────────────────
-  const HAND_TYPEN=['7-2','Royal Flush','Straight Flush','Poker','Full House','Sonstiges'];
-  const HAND_SHORT={'Royal Flush':'RF','Straight Flush':'SF','Poker':'4oK','Full House':'FH','Sonstiges':'Sst'};
+  const HAND_TYPEN=['7-2','Royal Flush','Straight Flush','4 of a Kind','Full House','Sonstiges'];
+  const HAND_SHORT={'Royal Flush':'RF','Straight Flush':'SF','4 of a Kind':'4oK','Full House':'FH','Sonstiges':'Sst'};
   let editHandID=null, selectedHandType=null;
   let _haendeData=null;
   let _haendeExpanded=new Set(); // keys: `${hand}||${spielerId}`
