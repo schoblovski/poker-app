@@ -21,31 +21,10 @@
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
-    /*body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}*/
-    /* Der physische Hintergrund des Browsers (nur am PC sichtbar) */
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #000000; /* Der "tote" Raum am PC ist schwarz */
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      /* Verhindert Gummiband-Effekt beim Scrollen auf iOS */
-      overflow: hidden; 
-    }
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
-    #login-screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  /* Padding oben explizit mit Safe Area */
-  padding: calc(var(--safe-top) + 40px) var(--space-xl) calc(var(--safe-bottom) + 40px);
-  position: relative;
-  overflow: hidden;
-}
+    #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top)+40px) var(--space-xl) calc(var(--safe-bottom)+40px);position:relative;overflow:hidden;}
     .login-bg{display:none;}
     .btn-oauth:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
     .login-card{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:var(--space-md);width:100%;max-width:320px;}
@@ -65,48 +44,7 @@
 
     /* APP */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
-
-    /* Der eigentliche App-Container */
-    .app-container {
-      width: 100%;
-      max-width: 480px; /* Begrenzung am PC */
-      min-height: 100vh;
-      /* WICHTIG: Hier deine App-Hintergrundfarbe eintragen */
-      background-color: var(--bg-app, #0d0d0f); 
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      
-      /* Desktop-Optik: Linien und Schatten */
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      box-shadow: 0 0 50px rgba(0,0,0,0.5);
-      overflow-y: auto;
-    }
-
-
-    /* HEADER-OPTIMIERUNG (Statusbar Fix) */
-    .header {
-      /* Nutzt die Safe-Area von iOS */
-      padding-top: env(safe-area-inset-top, 0px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--header-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    /* Die innere Struktur des Headers für das korrekte Spacing */
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px var(--space-md);
-    }
-
+    .header{padding:calc(var(--safe-top)+12px) calc(var(--safe-right)+var(--space-md)) 12px calc(var(--safe-left)+var(--space-md));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
     .header-left{display:flex;flex-direction:column;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
@@ -128,21 +66,10 @@
     .nav-btn.active svg{stroke-width:2.2;}
     .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
-    /* DESKTOP SEPARATION 
+    /* DESKTOP SEPARATION */
     @media(min-width:431px){
       body{background:var(--bg-secondary);}
       #app-screen{box-shadow:0 0 0 1px var(--border),0 20px 60px rgba(0,0,0,.15);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;}
-    }
-*/
-
-    /* SMARTPHONE & STANDALONE MODUS (Linien entfernen) */
-    @media (max-width: 480px), (display-mode: standalone) {
-      .app-container {
-        max-width: 100%;
-        border-left: none;
-        border-right: none;
-        box-shadow: none;
-      }
     }
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
@@ -383,7 +310,6 @@
 
 <!-- APP -->
 <div id="app-screen">
-  <div class="app-container">
   <div class="header">
     <div class="header-left">
       <div class="header-app-name">DTKS Poker</div>
@@ -463,7 +389,6 @@
     <button class="nav-btn" data-page="transaktionen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span class="nav-label">Konto</span></button>
     <button class="nav-btn" data-page="haende"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/><path d="M6 9h4M6 12h4"/><path d="M14 9h4M14 12h4"/></svg><span class="nav-label">Hände</span></button>
   </nav>
-  </div>
 </div>
 
 <!-- MODALS -->
