@@ -183,6 +183,20 @@
     .stat-card.wide{grid-column:1/-1;}
     .stat-card.accent{background:var(--accent-soft);}.stat-card.accent .stat-label{color:var(--accent-text);opacity:.8;}.stat-card.accent .stat-value{color:var(--accent-text);}
     .stat-card.info{background:var(--info-soft);}.stat-card.info .stat-label{color:var(--info);opacity:.8;}.stat-card.info .stat-value{color:var(--info);}
+
+    /* Neue Klasse für negative Beträge in der Statistik */
+    .stat-card.danger-card {
+        background: var(--danger-soft);
+    }
+    .stat-card.danger-card .stat-label {
+        color: var(--danger);
+        opacity: .8;
+    }
+    .stat-card.danger-card .stat-value {
+        color: var(--danger);
+    }
+
+
     .profile-header{text-align:center;padding:var(--space-lg) 0 var(--space-md);}
     .profile-avatar-lg{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
     .profile-avatar-lg img{width:100%;height:100%;object-fit:cover;}
@@ -1014,8 +1028,17 @@
         <div class="profile-name">${escHtml(spieler.name)}</div>
         <div class="profile-since">Dabei seit ${seit} · ${n} Spiele</div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value sm ${ksClass(ks)}">${fmt(ks)}</div></div>
+      <div class="stats-grid">`;
+
+      html += `
+        <div class="stat-card ${ks >= 0 ? 'accent' : 'danger-card'} wide">
+          <div class="stat-label">Kontostand</div>
+          <div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div>
+        </div>
+      `;
+      
+      html+=`
+        <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div></div>
         <div class="stat-card wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value sm ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Spiel</div></div>
         <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">${fmtSigned(maxRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">${fmtSigned(minRein)}</div></div>
