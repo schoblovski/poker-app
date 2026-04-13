@@ -1019,9 +1019,21 @@
 
     // Avatar: initial letter fallback
     const src=getAvatar(spieler);
-    const avatarLg=src
+/*    const avatarLg=src
       ?`<div class="profile-avatar-lg"><img src="${src}" alt="${escHtml(spieler.name)}" onerror="this.parentElement.innerHTML='<span style=\\"font-size:32px;font-weight:700;color:var(--text-secondary)\\">${spieler.name[0]?.toUpperCase()||'?'}</span>'"></div>`
       :`<div class="profile-avatar-lg"><span style="font-size:32px;font-weight:700;color:var(--text-secondary)">${spieler.name?.[0]?.toUpperCase()||'?'}</span></div>`;
+*/
+
+    const initial = (spieler.name?.trim()[0] || '?').toUpperCase();
+    const avatarLg = src
+      ? `<div class="profile-avatar-lg">
+          <img src="${src}" alt="${escHtml(spieler.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <span style="display:none; font-size:32px; font-weight:700; color:var(--text-secondary)">${initial}</span>
+        </div>`
+      : `<div class="profile-avatar-lg">
+          <span style="font-size:32px; font-weight:700; color:var(--text-secondary)">${initial}</span>
+        </div>`;
+
 
     let html=`<button class="back-btn" id="stats-back">${backIcon} Zurück</button>
       <div class="profile-header">${avatarLg}
