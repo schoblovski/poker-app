@@ -2306,7 +2306,7 @@
     const alleTypen=[...HAND_TYPEN,...new Set(extraTypen)];
 
     html+=`<div class="section-title">Übersicht</div>`;
-    html+=`<div class="section-title">Matrix</div><table class="matrix-table">...</table>`;
+    html+=`<div class="matrix-container">`; //Neuer abgerundeter Container
     html+=`<div style="margin-bottom:var(--space-md)"><table class="matrix-table">`;
     html+=`<thead><tr><th style="text-align:left;padding:7px 8px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary)">Spieler</th>`;
     alleTypen.forEach(t=>{
