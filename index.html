@@ -18,35 +18,7 @@
   <style>
     :root{--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--font-sans:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;--transition:180ms ease;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);}
     [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
-    [data-theme="dark"] {
-      /* Tieferer Hintergrund für die Basis */
-      --bg: #000000; 
-      /* Etwas hellere Oberfläche für Karten, damit sie sich abheben */
-      --surface: #1c1c1e; 
-      /* Noch hellere Ebene für Interaktionen (Hover/Active) */
-      --bg-secondary: #2c2c2e; 
-      --bg-elevated: #2c2c2e;
-
-      /* Kontraste für Texte und Grenzen */
-      --border: rgba(255, 255, 255, 0.12);
-      --border-strong: rgba(255, 255, 255, 0.2);
-      --text-primary: #ffffff;
-      --text-secondary: #a1a1aa; /* Etwas heller für bessere Lesbarkeit */
-      --text-tertiary: #71717a;
-
-      /* Akzentfarben (Sättigung leicht reduziert für Dark Mode) */
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.15);
-      --accent-text: #4ade80;
-
-      /* Schatten im Dark Mode müssen subtiler, aber präsent sein */
-      --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6);
-      
-      --nav-bg: rgba(28, 28, 30, 0.85);
-      --header-bg: rgba(28, 28, 30, 0.85);
-      --theme-color: #000000;
-    }
+    [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
     body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -84,24 +56,7 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    /*#app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}*/
-
-    /* 1. Standard-Stil für Desktop (Schatten hinzufügen) */
-    #app-screen {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      max-width: 430px;
-      margin: 0 auto;
-      width: 100%;
-      /* Hier den Schatten und Rahmen für Desktop ergänzen: */
-      background: var(--surface);
-      box-shadow: 0 0 40px rgba(0,0,0,0.1), 0 0 1px rgba(0,0,0,0.2);
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      position: relative;
-      min-height: 100dvh;
-    }
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
 
 
 
@@ -154,31 +109,18 @@
 
     /* OPTIMIERUNG: Rahmen entfernen auf Mobilgeräten ODER wenn als Web-App installiert */
     @media (max-width: 480px), (display-mode: standalone) {
-      #app-screen {
+      .app-container {
+        max-width: 100%;
+        border-left: none;
+        border-right: none;
         box-shadow: none;
-        border-left: none;
-        border-right: none;
-        max-width: 100%;
-      }
-      
-      /* Falls du auch die untere Navigationsleiste anpassen willst: */
-      .bottom-nav {
-        border-left: none;
-        border-right: none;
-        max-width: 100%;
       }
     }
-
+    
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
     .section-title:first-child{margin-top:0;}
-    .card{
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border); /* Ergänzt für klare Kanten */
-        transition: transform 0.2s ease, background var(--transition);
-      }
+    .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
     .card+.card{margin-top:var(--space-sm);}
     .list-item{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);transition:background var(--transition);}
     .list-item:last-child{border-bottom:none;}
@@ -222,16 +164,9 @@
     .counter-value{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-variant-numeric:tabular-nums;}
     .form-group{margin-bottom:var(--space-md);}
     .form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px;}
-    .form-input {
-  background: var(--bg-secondary); /* Hebt sich von der Card-Oberfläche ab */
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-}
+    .form-input{width:100%;max-width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px var(--space-md);color:var(--text-primary);font-size:16px;font-family:var(--font-sans);transition:border-color var(--transition),box-shadow var(--transition);}
     input[type="date"].form-input{-webkit-appearance:none;appearance:none;}
-    .form-input:focus {
-  border-color: var(--accent);
-  background: var(--surface); /* Wechselt die Farbe beim Tippen für Fokus-Feedback */
-}
+    .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
     .form-input::placeholder{color:var(--text-tertiary);}
     select.form-input{font-size:16px;}
     .payout-input-row{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);border-bottom:1px solid var(--border);}
@@ -240,13 +175,7 @@
     .payout-field:focus{outline:none;}
     .payout-unit{font-size:13px;color:var(--text-tertiary);}
     .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
-    .stat-card{
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border); /* Ergänzt für klare Kanten */
-        transition: transform 0.2s ease, background var(--transition);
-      }
+    .stat-card{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
     .stat-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
     .stat-value{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:-.5px;font-variant-numeric:tabular-nums;}
     .stat-value.sm{font-size:17px;}
@@ -322,20 +251,11 @@
     .setting-input{width:80px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text-primary);font-size:16px;font-weight:600;font-family:var(--font-mono);text-align:right;}
     .setting-input:focus{outline:none;border-color:var(--accent);}
     .kasse-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
-    .kasse-tile{
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border); /* Ergänzt für klare Kanten */
-  transition: transform 0.2s ease, background var(--transition);
-}
+    .kasse-tile{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
     .kasse-tile-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
     .kasse-tile-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:6px;letter-spacing:-.3px;}
     .kasse-tile-sub{font-size:11px;color:var(--text-tertiary);margin-top:3px;}
-    .kasse-tile.bank{
-  background: var(--accent-soft);
-  border: 1px solid var(--accent); /* Deutliche Abgrenzung für den Kontostand */
-}
+    .kasse-tile.bank{background:var(--accent-soft);}
     .kasse-tile.bank .kasse-tile-label{color:var(--accent-text);}
     .kasse-tile.bank .kasse-tile-value{color:var(--accent-text);}
     .hand-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xs);margin-top:var(--space-xs);}
