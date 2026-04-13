@@ -630,7 +630,7 @@
     if(!_isPwa()&&!localStorage.getItem(PWA_KEY)){
       if(_isIosSafari()||_pwaInstallEvent){showPwaSheet();}
     }
-  },2500);
+  },1000);
   window.addEventListener('popstate',()=>{
     if(_pageHistory.length>1){
       _pageHistory.pop();
