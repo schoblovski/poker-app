@@ -318,6 +318,35 @@
     .pwa-step-text strong{color:var(--accent-text);}
     .pwa-share-icon{display:inline-flex;align-items:center;gap:3px;background:var(--accent-soft);color:var(--accent-text);border-radius:6px;padding:2px 7px;font-size:13px;font-weight:600;animation:pwaPulse 2s ease-in-out infinite;}
     .pwa-btn-row{display:flex;gap:var(--space-sm);margin-top:var(--space-sm);}
+  
+  
+  /* Container für die Matrix, um abgerundete Ecken zu ermöglichen */
+  .matrix-container {
+    overflow-x: auto; /* Erlaubt horizontales Scrollen auf kleinen Handys */
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin-bottom: var(--space-lg);
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .matrix-table th, 
+  .matrix-table td {
+    padding: 10px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  /* Entfernt die äußeren Rahmen, damit der border-radius des Containers wirkt */
+  .matrix-table {
+    border: none;
+  }
+  
   </style>
 </head>
 <body>
@@ -2277,7 +2306,8 @@
     const alleTypen=[...HAND_TYPEN,...new Set(extraTypen)];
 
     html+=`<div class="section-title">Übersicht</div>`;
-    html+=`<div style="margin-bottom:var(--space-md)"><table style="width:100%;border-collapse:collapse;font-size:12px">`;
+    html+=`<div class="section-title">Matrix</div><table class="matrix-table">...</table>`;
+    html+=`<div style="margin-bottom:var(--space-md)"><table class="matrix-table">`;
     html+=`<thead><tr><th style="text-align:left;padding:7px 8px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary)">Spieler</th>`;
     alleTypen.forEach(t=>{
       const short=HAND_SHORT[t]||t;
@@ -2304,7 +2334,7 @@
       html+=`<td style="text-align:center;padding:7px 4px;border-top:2px solid var(--border);font-weight:700;color:${n>0?'var(--accent-text)':'var(--text-tertiary)'}">${n>0?n:'–'}</td>`;
     });
     html+=`<td style="text-align:center;padding:7px 8px;border-top:2px solid var(--border);font-weight:700;color:var(--text-primary)">${grandTotal}</td></tr>`;
-    html+=`</tbody></table></div>`;
+    html+=`</tbody></table></div></div>`;
 
     // ── Interaktive Drilldown: nach Hand-Typ → Spieler → Hände ──
     const byTyp={};
