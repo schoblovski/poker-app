@@ -1036,9 +1036,8 @@
           <div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div>
         </div>
       `;
-      
+
       html+=`
-        <div class="stat-card accent wide"><div class="stat-label">Kontostand</div><div class="stat-value ${ksClass(ks)}">${fmt(ks)}</div></div>
         <div class="stat-card wide"><div class="stat-label">Reingewinn gesamt</div><div class="stat-value sm ${ksClass(gRein)}">${fmtSigned(gRein)}</div><div class="stat-sub">Ø ${fmtSigned(avgRein)} pro Spiel</div></div>
         <div class="stat-card"><div class="stat-label">Bestes Ergebnis</div><div class="stat-value sm amount-pos">${fmtSigned(maxRein)}</div></div>
         <div class="stat-card"><div class="stat-label">Schlechtestes</div><div class="stat-value sm amount-neg">${fmtSigned(minRein)}</div></div>
@@ -2098,7 +2097,8 @@
       {typ:'verbessert',text:'Limitierte Höhe für Besondere Hände in Spieler Statistik (scrollbar)'},
       {typ:'verbessert',text:'Handmatrix Layout mit runden Ecken anstatt Tabelle'},
       {typ:'verbessert',text:'Benamung in Hand-Statistik homogenisiert'},
-      {typ:'verbessert',text:'Tausender-Trennzeichen für Beträge'}
+      {typ:'verbessert',text:'Tausender-Trennzeichen für Beträge'},
+      {typ:'verbessert',text:'Korrekte Farbcodierung des Kontostand in der Spieler Statisik'}
     ]},
     {version:'2.8',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Neues App Icon (Vorhandene App vom Home Screen entfernen und neu hinzufügen um Änderung zu sehen)'},
