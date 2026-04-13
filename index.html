@@ -1015,7 +1015,7 @@
     const gewinne=reingewinne.filter(v=>v>0).length;
     const winRate=n>0?Math.round(gewinne/n*100):0;
     const ks=spieler._ks||0;
-    const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).getFullYear():'–';
+    const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).toLocaleString('de-DE', { month: 'long', year: 'numeric' }):'–';
 
     // Avatar: initial letter fallback
     const src=getAvatar(spieler);
