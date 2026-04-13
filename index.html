@@ -683,7 +683,15 @@
 
   // ── HELPERS ────────────────────────────────────────────
   const ksClass=v=>v>0?'amount-pos':v<0?'amount-neg':'amount-zero';
-  const fmt=v=>{const abs=Math.abs(v).toFixed(2);return v<0?`−\u00a0€${abs}`:`€\u00a0${abs}`;};
+  /*const fmt=v=>{const abs=Math.abs(v).toFixed(2);return v<0?`−\u00a0€${abs}`:`€\u00a0${abs}`;};*/
+  const fmt = v => {
+    // Verwendet die deutsche Formatierung (Punkt als Tausender-Trennzeichen, Komma für Dezimal)
+    const formatted = Math.abs(v).toLocaleString('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    return v < 0 ? `−\u00a0€${formatted}` : `€\u00a0${formatted}`;
+  };
   const fmtSigned=v=>(v>=0?'+':'')+`\u00a0€${v.toFixed(2)}`;
   const escHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
@@ -2066,7 +2074,8 @@
     {version:'2.9',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Limitierte Höhe für Besondere Hände in Spieler Statistik (scrollbar)'},
       {typ:'verbessert',text:'Handmatrix Layout mit runden Ecken anstatt Tabelle'},
-      {typ:'verbessert',text:'Benamung in Hand-Statistik homogenisiert'}
+      {typ:'verbessert',text:'Benamung in Hand-Statistik homogenisiert'},
+      {typ:'verbessert',text:'Tausender-Trennzeichen für Beträge'}
     ]},
     {version:'2.8',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Neues App Icon (Vorhandene App vom Home Screen entfernen und neu hinzufügen um Änderung zu sehen)'},
