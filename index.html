@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.9">
+  <meta name="version" content="2.10">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -544,7 +544,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.9';
+  const VERSION='2.10';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1449,11 +1449,34 @@
     return{gesamtPot,zugeordnet,rest:gesamtPot-zugeordnet};
   }
 
-  function updatePotUI(){
-    const{gesamtPot,zugeordnet,rest}=calcPotInfo();
-    const dp=document.getElementById('gesamt-pot-display');if(dp)dp.textContent=`€${gesamtPot.toFixed(2)}`;
-    const ps=document.getElementById('pot-rest-summary');
-    if(ps){ps.querySelector('.pot-summary-label').textContent=`Pot €${gesamtPot.toFixed(2)} · Zugeteilt €${zugeordnet.toFixed(2)}`;const v=ps.querySelector('.pot-summary-value');v.textContent=`Rest €${rest.toFixed(2)}`;v.className='pot-summary-value'+(Math.abs(rest)>0.01?' warn':'');}
+  function updatePotUI() {
+    const { gesamtPot, zugeordnet, rest } = calcPotInfo();
+    
+    // 1. Anzeige des Gesamt-Pots
+    const dp = document.getElementById('gesamt-pot-display');
+    if (dp) dp.textContent = `€${gesamtPot.toFixed(2)}`;
+    
+    // 2. Zusammenfassung und Restwert-Anzeige
+    const ps = document.getElementById('pot-rest-summary');
+    if (ps) {
+      ps.querySelector('.pot-summary-label').textContent = `Pot €${gesamtPot.toFixed(2)} · Zugeteilt €${zugeordnet.toFixed(2)}`;
+      const v = ps.querySelector('.pot-summary-value');
+      v.textContent = `Rest €${rest.toFixed(2)}`;
+      
+      // Warn-Farbe (Gelb) hinzufügen, wenn der Restwert nicht 0 ist
+      v.className = 'pot-summary-value' + (Math.abs(rest) > 0.01 ? ' warn' : '');
+    }
+
+    // 3. Logik für den "Spiel abschließen" Button
+    const finishBtn = document.getElementById('btn-abschliessen');
+    if (finishBtn) {
+      // Der Button wird nur aktiviert, wenn der Restwert nahe 0 ist
+      const isReady = Math.abs(rest) < 0.01;
+      finishBtn.disabled = !isReady;
+      
+      // Optional: Optisches Feedback (Button wirkt blasser, wenn deaktiviert)
+      finishBtn.style.opacity = isReady ? "1" : "0.5";
+    }
   }
 
   function renderSpiel(){
@@ -1491,7 +1514,7 @@
     });
     html+=`</div>
     <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
-    <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
+    <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
     <button class="btn btn-ghost" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
 
     el.innerHTML=html;
@@ -2105,6 +2128,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.10',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Spiel-abschliessen Button ist inaktiv solange Restwert nicht 0 (TEST)'}
+    ]},
     {version:'2.9',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Limitierte Höhe für Besondere Hände in Spieler Statistik (scrollbar)'},
       {typ:'verbessert',text:'Handmatrix Layout mit runden Ecken anstatt Tabelle'},
