@@ -907,7 +907,7 @@
     }
     currentSpieler=sp;
     const av=currentUser?.user_metadata?.avatar_url;
-    if(av&&!sp.profilbild)await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
+    if(av)await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
     if(av)document.getElementById('user-avatar-btn').innerHTML=`<img src="${av}" alt="Avatar">`;
     document.getElementById('btn-verwaltung').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-einstellungen').style.display=sp.ist_admin?'flex':'none';
