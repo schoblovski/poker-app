@@ -20,42 +20,8 @@
     [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-
-
-    /* WICHTIG: Damit der graue Browser-Hintergrund sichtbar wird, 
-      musst du das html-Element anders einfärben */
-    html {
-      height:100%;
-      background-color: var(--bg-color); /* Ein dunklerer Ton für den "leeren" Bereich */
-    }
-
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text-primary);
-      /*min-height: 100dvh;*/
-      display: flex;
-      flex-direction: column;
-      transition: background var(--transition),
-      color var(--transition);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-
-      /* Bestehende Stile beibehalten, dann dies hinzufügen: */
-      max-width: 430;      /* Die typische Breite eines großen Smartphones */
-      margin: 0 auto;        /* Zentriert die App auf dem Bildschirm */
-      min-height: 100vh;     /* Sorgt dafür, dass der Hintergrund die volle Höhe füllt */
-      position: relative;
-      background-color: var(--bg-color); /* Deine Hintergrundfarbe */
-      
-      /* Optional: Ein leichter Schatten oder Rand, um die App vom Browser-Hintergrund abzuheben */
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      border-left: 1px solid #333;
-      border-right: 1px solid #333;
-
-
-    }
-
+    html{height:100%;}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
 
