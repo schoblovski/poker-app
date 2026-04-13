@@ -24,7 +24,17 @@
     body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
-    #login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top)+40px) var(--space-xl) calc(var(--safe-bottom)+40px);position:relative;overflow:hidden;}
+    #login-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Padding oben explizit mit Safe Area */
+  padding: calc(var(--safe-top) + 40px) var(--space-xl) calc(var(--safe-bottom) + 40px);
+  position: relative;
+  overflow: hidden;
+}
     .login-bg{display:none;}
     .btn-oauth:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
     .login-card{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:var(--space-md);width:100%;max-width:320px;}
@@ -44,7 +54,29 @@
 
     /* APP */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
-    .header{padding:calc(var(--safe-top)+12px) calc(var(--safe-right)+var(--space-md)) 12px calc(var(--safe-left)+var(--space-md));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    /* OPTIMIERUNG DER HEADER-KLASSE */
+.header {
+  /* Nutzt die Safe-Area plus deinen Standard-Abstand */
+  padding-top: calc(var(--safe-top) + 12px); 
+  padding-right: calc(var(--safe-right) + var(--space-md));
+  padding-bottom: 12px;
+  padding-left: calc(var(--safe-left) + var(--space-md));
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--header-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  
+  /* WICHTIG: Verhindert, dass der Header unter die Statusleiste rutscht */
+  width: 100%;
+  box-sizing: border-box;
+}
     .header-left{display:flex;flex-direction:column;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
