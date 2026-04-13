@@ -56,7 +56,24 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+    /*#app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}*/
+
+    /* 1. Standard-Stil für Desktop (Schatten hinzufügen) */
+    #app-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      max-width: 430px;
+      margin: 0 auto;
+      width: 100%;
+      /* Hier den Schatten und Rahmen für Desktop ergänzen: */
+      background: var(--surface);
+      box-shadow: 0 0 40px rgba(0,0,0,0.1), 0 0 1px rgba(0,0,0,0.2);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      position: relative;
+      min-height: 100dvh;
+    }
 
 
 
@@ -109,14 +126,21 @@
 
     /* OPTIMIERUNG: Rahmen entfernen auf Mobilgeräten ODER wenn als Web-App installiert */
     @media (max-width: 480px), (display-mode: standalone) {
-      .app-container {
-        max-width: 100%;
+      #app-screen {
+        box-shadow: none;
         border-left: none;
         border-right: none;
-        box-shadow: none;
+        max-width: 100%;
+      }
+      
+      /* Falls du auch die untere Navigationsleiste anpassen willst: */
+      .bottom-nav {
+        border-left: none;
+        border-right: none;
+        max-width: 100%;
       }
     }
-    
+
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
     .section-title:first-child{margin-top:0;}
