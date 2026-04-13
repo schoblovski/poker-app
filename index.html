@@ -625,7 +625,7 @@
   }
   function _pwaEscHandler(e){if(e.key==='Escape'){hidePwaSheet();localStorage.setItem(PWA_KEY,'1');}}
 
-  // Auto-show after 2.5s delay
+  // Auto-show after 1s delay
   setTimeout(()=>{
     if(!_isPwa()&&!localStorage.getItem(PWA_KEY)){
       if(_isIosSafari()||_pwaInstallEvent){showPwaSheet();}
