@@ -1333,7 +1333,7 @@
     const name=document.getElementById('form-name').value.trim(),email=document.getElementById('form-email').value.trim()||null;
     if(!name){await showAlert('Name ist erforderlich.');return;}
     if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
-    else{await save(()=>db.from('spieler').insert({name,email,aktiv:true}),`Neuer Spieler: ${name}`);}
+    else{await save(()=>db.from('spieler').insert({name,email,aktiv:true,eintrittsdatum:new Date().toISOString().split('T')[0]}),`Neuer Spieler: ${name}`);}
     document.getElementById('modal-spieler-form').classList.remove('open');
     await loadVerwaltung();await loadHome();
     if(editSpielerID)showPage('verwaltung');
@@ -2098,7 +2098,8 @@
       {typ:'verbessert',text:'Handmatrix Layout mit runden Ecken anstatt Tabelle'},
       {typ:'verbessert',text:'Benamung in Hand-Statistik homogenisiert'},
       {typ:'verbessert',text:'Tausender-Trennzeichen für Beträge'},
-      {typ:'verbessert',text:'Korrekte Farbcodierung des Kontostand in der Spieler Statisik'}
+      {typ:'verbessert',text:'Korrekte Farbcodierung des Kontostand in der Spieler Statisik'},
+      {typ:'verbessert',text:'Korrektes setzen des Eintrittsdatums bei neuem Spieler'}
     ]},
     {version:'2.8',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Neues App Icon (Vorhandene App vom Home Screen entfernen und neu hinzufügen um Änderung zu sehen)'},
