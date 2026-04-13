@@ -819,7 +819,7 @@
     const entry=CHANGELOG.find(c=>c.version===VERSION);
     if(!entry)return;
     const typColor={neu:'var(--accent-text)',fix:'var(--info)',verbessert:'var(--warning)'};
-    const typLabel={neu:'NEU',fix:'FIX',verbessert:'VERBESSERT'};
+    const typLabel={neu:'NEU',fix:'FIX',verbessert:'UPDATE'};
     const typBg={neu:'var(--accent-soft)',fix:'var(--info-soft)',verbessert:'var(--warning-soft)'};
     document.getElementById('whats-new-content').innerHTML=`
       <div style="text-align:center;margin-bottom:var(--space-lg)">
