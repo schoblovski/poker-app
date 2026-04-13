@@ -54,6 +54,24 @@
 
     /* APP */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+
+    .app-container {
+      width: 100%;
+      max-width: 480px; /* Deine Breite für den PC */
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-app);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      
+      /* Standardmäßig Rahmen und Schatten für Desktop */
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0,0,0,0.3);
+    }
+
+
     /* OPTIMIERUNG DER HEADER-KLASSE */
 .header {
   /* Nutzt die Safe-Area plus deinen Standard-Abstand */
@@ -98,10 +116,20 @@
     .nav-btn.active svg{stroke-width:2.2;}
     .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
-    /* DESKTOP SEPARATION */
+    /* DESKTOP SEPARATION 
     @media(min-width:431px){
       body{background:var(--bg-secondary);}
       #app-screen{box-shadow:0 0 0 1px var(--border),0 20px 60px rgba(0,0,0,.15);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;}
+    }
+*/
+
+    @media (max-width: 480px), (display-mode: standalone) {
+      .app-container {
+        max-width: 100%;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+      }
     }
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
