@@ -21,17 +21,7 @@
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
-    body {
-  font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text-primary);
-  /* NEU: Fixiert den Body auf die Displayhöhe */
-  height: 100dvh; 
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Verhindert den globalen Scrollbalken */
-  margin: 0;
-}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
     /* LOGIN */
 
@@ -66,15 +56,7 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    #app-screen {
-  /* NEU: Nimmt die volle Resthöhe ein */
-  display: none; 
-  flex-direction: column;
-  height: 100%; 
-  width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-}
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
 
 
 
@@ -117,18 +99,7 @@
     .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .avatar-btn img{width:100%;height:100%;object-fit:cover;}
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
-    .content {
-  flex: 1;
-  overflow-y: auto; /* Scrollbalken NUR hier */
-  -webkit-overflow-scrolling: touch;
-  
-  /* DEINE ORIGINALEN ABSTÄNDE */
-  padding: var(--space-lg) var(--space-lg);
-  padding-left: calc(var(--safe-left) + var(--space-lg));
-  padding-right: calc(var(--safe-right) + var(--space-lg));
-  /* WICHTIG: Das Padding-Bottom reduziert, da die Nav nicht mehr überlagert */
-  padding-bottom: calc(var(--safe-bottom) + var(--space-lg));
-}
+    .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);}
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
     .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
     .nav-btn.active{color:var(--accent);}
