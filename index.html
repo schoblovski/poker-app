@@ -22,17 +22,18 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
     body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text-primary);
-      /* Fixiert die Höhe auf das Display */
-      height: 100dvh; 
-      width: 100vw;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden; /* Verhindert den globalen Scrollbalken */
-      margin: 0;
-    }
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  /* Verhindert das "Gummiband"-Scrollen der ganzen Seite */
+  position: fixed; 
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
     /* LOGIN */
 
@@ -68,15 +69,16 @@
 
     /* APP */
     #app-screen {
-      /* Sicherstellen, dass die App die volle Höhe nutzt */
-      display: none; /* Wird per JS auf 'flex' gesetzt */
-      flex-direction: column;
-      height: 100%; 
-      width: 100%;
-      max-width: 430px;
-      margin: 0 auto;
-      overflow: hidden; /* WICHTIG */
-    }
+  /* Wichtig: Muss die volle Resthöhe einnehmen */
+  flex: 1;
+  display: none; /* Wird via JS auf 'flex' gesetzt */
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Der Screen selbst scrollt nicht... */
+}
 
 
 
@@ -121,29 +123,23 @@
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
     
     .content {
-  flex: 1; /* Nimmt allen verfügbaren Platz zwischen Header und Footer ein */
-  overflow-y: auto; /* Aktiviert den Scrollbalken NUR hier */
-  -webkit-overflow-scrolling: touch; /* Besseres Scrollgefühl auf iPhones */
+  /* ...nur der Content-Bereich im Inneren scrollt! */
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Ermöglicht sanftes Scrollen auf iOS */
   
-  /* Dein bestehendes Padding */
   padding: var(--space-lg);
   padding-left: calc(var(--safe-left) + var(--space-lg));
   padding-right: calc(var(--safe-right) + var(--space-lg));
-  
-  /* Da die Bottom-Nav jetzt fest unten im Flex-Layout sitzt, 
-     brauchst du hier kein riesiges Padding-Bottom mehr, 
-     außer du willst Abstand zum Nav-Rand. */
+  /* Das Padding-Bottom kann jetzt kleiner sein, da die Nav nicht mehr alles überlagert */
   padding-bottom: calc(var(--safe-bottom) + var(--space-lg));
 }
     
     .bottom-nav {
-  /* Ändere position von fixed zu relative oder lass es weg */
-  position: relative; 
+  position: sticky; /* Oder einfach weglassen, da sie das letzte Flex-Element ist */
   bottom: 0;
-  left: 0;
-  transform: none; /* transform: translateX(-50%) entfernen */
-  
   width: 100%;
+  max-width: 430px;
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -151,7 +147,8 @@
   display: flex;
   padding-bottom: var(--safe-bottom);
   z-index: 50;
-  flex-shrink: 0; /* Verhindert, dass die Nav gequetscht wird */
+  flex-shrink: 0; /* Verhindert, dass die Leiste zusammengedrückt wird */
+  /* transform: translateX(-50%); und left: 50%; ENTFERNEN */
 }
     .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
     .nav-btn.active{color:var(--accent);}
