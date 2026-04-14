@@ -136,7 +136,23 @@
   padding-bottom: calc(var(--safe-bottom) + var(--space-lg));
 }
     
-    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
+    .bottom-nav {
+  /* Ändere position von fixed zu relative oder lass es weg */
+  position: relative; 
+  bottom: 0;
+  left: 0;
+  transform: none; /* transform: translateX(-50%) entfernen */
+  
+  width: 100%;
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 50;
+  flex-shrink: 0; /* Verhindert, dass die Nav gequetscht wird */
+}
     .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
     .nav-btn.active{color:var(--accent);}
     .nav-btn svg{width:22px;height:22px;stroke-width:1.8;}
