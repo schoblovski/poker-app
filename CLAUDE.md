@@ -219,7 +219,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell haltenw wenn committed wird
-- **Aktuelle Version: 2.13**
+- **Aktuelle Version: 2.14**
 
 ## Login-Provider
 

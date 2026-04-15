@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.13">
+  <meta name="version" content="2.14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -589,7 +589,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.13';
+  const VERSION='2.14';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1087,22 +1087,25 @@
   // ── HOME ───────────────────────────────────────────────
   async function loadHome(){
     const el=document.getElementById('home-content');
-    const[{data:spieler},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
-      db.from('spieler').select('*').eq('aktiv',true).order('name'),
+    const[{data:alleSpielerDB},{data:aktiveSpieler},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
+      db.from('spieler').select('*'),                                          // alle (für Pokerkasse-Berechnung)
+      db.from('spieler').select('*').eq('aktiv',true).order('name'),           // nur aktive (für Anzeige)
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
-    if(!spieler)return;
-    alleSpieler=spieler;
+    if(!aktiveSpieler)return;
+    alleSpieler=aktiveSpieler; // globale Variable = nur aktive (für Dropdowns, Spiel-UI etc.)
     const spieleMap={};
     (spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
-    const kontostaende=berechneKontostaende(spieler,trans,verlauf,spieleMap);
+    // Kontostände über ALLE Spieler berechnen (inkl. inaktiver – für korrekte Pokerkasse)
+    const kontostaende=berechneKontostaende(alleSpielerDB||[],trans,verlauf,spieleMap);
     const bankkonto=berechneBankkonto(trans||[]);
     const pokerkasse=berechnePokerkasse(bankkonto, kontostaende);
 
+    // Anzeige: nur aktive Spieler, Bank und eigenes Profil separat
+    const spieler=aktiveSpieler;
     const ich=spieler.find(s=>s.id===currentSpieler?.id);
-    const bank=spieler.find(s=>s.ist_bank);
     const rest=spieler.filter(s=>s.id!==currentSpieler?.id&&!s.ist_bank);
     let html='';
 
@@ -2562,6 +2565,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.14',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Home: Inaktive Spieler werden auf der Übersicht nicht mehr angezeigt (nur aktive Spieler)'},
+      {typ:'fix',text:'Pokerkasse-Berechnung korrigiert: Kontostände inaktiver Spieler werden jetzt korrekt eingerechnet (war laut CLAUDE.md-Finanzlogik falsch)'},
+    ]},
     {version:'2.13',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Pull-to-Refresh: Auf allen Hauptseiten (Home, Spiel, Verlauf, Statistik, Konto, Hände) durch Runterziehen Daten neu laden – mit nativer Federanimation'},
       {typ:'fix',text:'Erstes Login: Google-Profilbild wird sofort als Base64 komprimiert gespeichert (nie mehr als reine URL)'},
