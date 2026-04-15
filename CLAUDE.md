@@ -265,7 +265,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 hier wurde bei der letzten Session abgebrochen:
 
 Testergebnisse:
-	•	entferne das drehende icon bei pull to refresh, ist nicht notwendig weil iOS bzw der browser selber eine animation anzeigt
+	•	das drehende icon bei dem pull to refresh, hat den Pfeil in die falsche Richtung. Spiegel das Bild damit der Pfeil in die andere Richtung zeigt
 	•	das mit den scrollbalken scheint funktionieren, aber sie sind wegen der Farbe fast nicht sichtbar? Zumindest im dunkel modus kann man es sehen, aber im hell modus ändern sie die Farbe nicht und bleiben hell und somit kaum sichtbar?
 	•	Die Fusszeile ist nun irgendwie IMMER weiter oben als sie sein sollte. Sie ist nicht mehr am unteren Bildschirmrand. Vorher war das besser vor dem letzten update. korrigiere das.
 und dann gern nächste Anpassungen weitermachen
