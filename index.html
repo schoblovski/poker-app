@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.14">
+  <meta name="version" content="2.15">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -589,7 +589,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.14';
+  const VERSION='2.15';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -961,7 +961,7 @@
       // Gedämpfte Bewegung: Wurzel-Kurve für natives Feeling
       const pull=Math.min(Math.sqrt(dy*28),52);
       bar.style.height=pull+'px';
-      pill.style.transform=`rotate(${Math.min(dy*2.5,360)}deg)`;
+      pill.style.transform=`rotate(${-Math.min(dy*2.5,360)}deg)`;
       bar.classList.toggle('ready',dy>=THRESHOLD);
     },{passive:true});
 
@@ -2565,6 +2565,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.15',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Pull-to-Refresh: Icon dreht sich jetzt in die richtige Richtung (gegen den Uhrzeigersinn)'},
+    ]},
     {version:'2.14',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Home: Inaktive Spieler werden auf der Übersicht nicht mehr angezeigt (nur aktive Spieler)'},
       {typ:'fix',text:'Pokerkasse-Berechnung korrigiert: Kontostände inaktiver Spieler werden jetzt korrekt eingerechnet (war laut CLAUDE.md-Finanzlogik falsch)'},
