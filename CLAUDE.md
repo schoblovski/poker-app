@@ -219,7 +219,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell haltenw wenn committed wird
-- **Aktuelle Version: 2.11**
+- **Aktuelle Version: 2.12**
 
 ## Login-Provider
 
@@ -258,7 +258,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Nächste geplante Features (Priorität)
 
-1. **Poker Infos Seite** – Hands-Übersicht (Royal Flush → High Card) + Texas Hold'em/Omaha Regeln im Avatar-Dropdown
+1. ~~**Poker Infos Seite**~~ ✅ v2.12
 2. **Pull-to-Refresh** – Native iOS/Android UX auf allen Hauptseiten
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand

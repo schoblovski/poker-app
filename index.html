@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.11">
+  <meta name="version" content="2.12">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -334,6 +334,26 @@
     .pwa-btn-row{display:flex;gap:var(--space-sm);margin-top:var(--space-sm);}
   
   
+  /* POKER INFOS */
+  .hand-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-md);}
+  .hand-rank{width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-tertiary);flex-shrink:0;font-family:var(--font-mono);}
+  .hand-rank.top{background:var(--accent-soft);color:var(--accent-text);}
+  .hand-cards-row{display:flex;gap:3px;flex-shrink:0;}
+  .play-card{width:22px;height:30px;border-radius:3px;background:var(--surface);border:1px solid var(--border-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.1);}
+  .play-card.red{color:#dc2626;}
+  .play-card.black{color:var(--text-primary);}
+  .hand-info{flex:1;min-width:0;}
+  .hand-name{font-size:15px;font-weight:600;color:var(--text-primary);}
+  .hand-desc{font-size:12px;color:var(--text-secondary);margin-top:2px;line-height:1.4;}
+  .hand-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+  .hand-badge.special{background:var(--accent-soft);color:var(--accent-text);}
+  .hand-badge.common{background:var(--bg-secondary);color:var(--text-tertiary);}
+  .rules-block{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md) var(--space-md) var(--space-sm);margin-bottom:var(--space-sm);}
+  .rules-title{font-size:15px;font-weight:700;margin-bottom:var(--space-sm);display:flex;align-items:center;gap:8px;}
+  .rules-item{font-size:13px;color:var(--text-secondary);padding:7px 0;border-bottom:1px solid var(--border);line-height:1.5;}
+  .rules-item:last-child{border-bottom:none;}
+  .rules-item strong{color:var(--text-primary);}
+
   /* PROFIL PAGE */
   .profil-avatar-wrap{position:relative;display:inline-block;margin:0 auto var(--space-md);cursor:pointer;}
   .profil-avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);pointer-events:none;}
@@ -434,6 +454,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Einstellungen
         </button>
+        <button class="dropdown-item" id="btn-poker-infos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/></svg>
+          Poker Infos
+        </button>
         <button class="dropdown-item" id="btn-profil">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Profil
@@ -472,6 +496,7 @@
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
     <div class="page" id="page-profil"><div id="profil-content"></div></div>
+    <div class="page" id="page-poker-infos"><div id="poker-infos-content"></div></div>
     <div class="page" id="page-haende">
       <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
       <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
@@ -552,7 +577,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.11';
+  const VERSION='2.12';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -851,7 +876,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -877,6 +902,7 @@
   // ── DROPDOWN ───────────────────────────────────────────
   document.getElementById('user-avatar-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');});
   document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
+  document.getElementById('btn-poker-infos').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('poker-infos');loadPokerInfos();});
   document.getElementById('btn-profil').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('profil');loadProfil();});
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
@@ -1211,6 +1237,123 @@
     });
   }
 
+  // ── POKER INFOS ────────────────────────────────────────
+  function loadPokerInfos(){
+    const el=document.getElementById('poker-infos-content');
+
+    // Hilfsfunktion: eine Spielkarte rendern
+    function card(rank, suit){
+      const isRed=suit==='♥'||suit==='♦';
+      return `<div class="play-card ${isRed?'red':'black'}"><span>${rank}</span><span>${suit}</span></div>`;
+    }
+
+    const HAENDE=[
+      {
+        rank:1, name:'Royal Flush', badge:'special',
+        cards:[['10','♠'],['J','♠'],['Q','♠'],['K','♠'],['A','♠']],
+        desc:'A–K–Q–J–10 in derselben Farbe. Die unschlagbare Besthand.'
+      },
+      {
+        rank:2, name:'Straight Flush', badge:'special',
+        cards:[['5','♥'],['6','♥'],['7','♥'],['8','♥'],['9','♥']],
+        desc:'Fünf aufeinanderfolgende Karten in derselben Farbe.'
+      },
+      {
+        rank:3, name:'Four of a Kind', badge:'special',
+        cards:[['K','♣'],['K','♦'],['K','♥'],['K','♠'],['3','♣']],
+        desc:'Viermal dieselbe Kartenwertstufe (Poker). Bei Gleichstand entscheidet der Kicker.'
+      },
+      {
+        rank:4, name:'Full House', badge:'special',
+        cards:[['Q','♠'],['Q','♣'],['Q','♦'],['9','♥'],['9','♦']],
+        desc:'Drilling + Paar. Rangfolge zuerst nach Drilling, dann nach Paar.'
+      },
+      {
+        rank:5, name:'Flush', badge:'common',
+        cards:[['2','♣'],['7','♣'],['9','♣'],['J','♣'],['K','♣']],
+        desc:'Fünf beliebige Karten in derselben Farbe. Höchste Karte entscheidet.'
+      },
+      {
+        rank:6, name:'Straight', badge:'common',
+        cards:[['6','♦'],['7','♣'],['8','♥'],['9','♠'],['10','♦']],
+        desc:'Fünf aufeinanderfolgende Karten in verschiedenen Farben. Ass kann hoch (A–K…) oder tief (A–2–3–4–5) zählen.'
+      },
+      {
+        rank:7, name:'Three of a Kind', badge:'common',
+        cards:[['J','♦'],['J','♥'],['J','♠'],['4','♣'],['8','♦']],
+        desc:'Dreimal dieselbe Kartenwertstufe. Auch „Drilling" oder „Set" genannt.'
+      },
+      {
+        rank:8, name:'Two Pair', badge:'common',
+        cards:[['A','♦'],['A','♣'],['6','♥'],['6','♦'],['K','♠']],
+        desc:'Zwei verschiedene Paare. Bei Gleichstand entscheidet das höhere Paar, dann das zweite, dann der Kicker.'
+      },
+      {
+        rank:9, name:'One Pair', badge:'common',
+        cards:[['10','♥'],['10','♣'],['3','♦'],['7','♠'],['Q','♥']],
+        desc:'Genau zwei Karten mit demselben Wert. Häufigste Gewinnhand.'
+      },
+      {
+        rank:10, name:'High Card', badge:'common',
+        cards:[['2','♦'],['5','♣'],['8','♥'],['J','♠'],['K','♦']],
+        desc:'Keine der obigen Kombinationen. Die höchste Karte zählt.'
+      },
+    ];
+
+    const REGELN=[
+      {
+        titel:'Texas Hold\'em',
+        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--accent-text)"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/></svg>`,
+        punkte:[
+          '<strong>2 Hole Cards</strong> verdeckt an jeden Spieler.',
+          '<strong>5 Community Cards</strong> offen in der Mitte: Flop (3), Turn (1), River (1).',
+          'Beste <strong>5-Karten-Hand</strong> aus 2 eigenen + 5 gemeinschaftlichen Karten gewinnt.',
+          'Vier Wettrunden: Pre-Flop, Flop, Turn, River.',
+          'Aktionen: <strong>Check, Bet, Call, Raise, Fold</strong>.',
+        ]
+      },
+      {
+        titel:'Omaha',
+        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--info)"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/></svg>`,
+        punkte:[
+          '<strong>4 Hole Cards</strong> verdeckt an jeden Spieler.',
+          'Gleich 5 Community Cards wie bei Hold\'em.',
+          'Hand muss <strong>genau 2</strong> der eigenen Karten + <strong>genau 3</strong> der Community Cards verwenden.',
+          'Mehr Karten → mehr Action, häufiger starke Hände.',
+          'Variante <strong>Omaha Hi-Lo</strong>: Pot wird zwischen bester hoher und bester niedriger Hand gesplittet.',
+        ]
+      },
+    ];
+
+    let html=`<button class="back-btn" id="poker-infos-back">${backIcon} Zurück</button>
+      <div class="section-title" style="margin-top:0">Hände-Rangfolge</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:var(--space-sm)">Von stärkster (1) bis schwächster (10) Hand</div>`;
+
+    HAENDE.forEach(h=>{
+      const isTop=h.rank<=4;
+      html+=`<div class="hand-card">
+        <div class="hand-rank${isTop?' top':''}">${h.rank}</div>
+        <div class="hand-cards-row">${h.cards.map(([r,s])=>card(r,s)).join('')}</div>
+        <div class="hand-info">
+          <div class="hand-name">${h.name}</div>
+          <div class="hand-desc">${h.desc}</div>
+        </div>
+      </div>`;
+    });
+
+    html+=`<div class="section-title" style="margin-top:var(--space-lg)">Spielregeln</div>`;
+
+    REGELN.forEach(r=>{
+      html+=`<div class="rules-block">
+        <div class="rules-title">${r.icon}${r.titel}</div>
+        ${r.punkte.map(p=>`<div class="rules-item">${p}</div>`).join('')}
+      </div>`;
+    });
+
+    el.innerHTML=html;
+    document.getElementById('poker-infos-back').addEventListener('click',()=>showPage('home'));
+  }
+
   // ── PROFIL ─────────────────────────────────────────────
   async function loadProfil(){
     const el=document.getElementById('profil-content');
@@ -1312,6 +1455,9 @@
         currentSpieler={...currentSpieler,name:newName};
         sp.name=newName;
       },`Name geändert: ${newName}`);
+      // Anzeigename unter dem Avatar sofort aktualisieren
+      const displayNameEl=el.querySelector('.profile-name');
+      if(displayNameEl)displayNameEl.textContent=newName;
       nameBadge.classList.add('show');
       setTimeout(()=>nameBadge.classList.remove('show'),2000);
       loadHome();
@@ -2315,6 +2461,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.12',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Poker Infos Seite: Hände-Rangfolge (Royal Flush bis High Card) mit Kartenvorschau + Texas Hold\'em & Omaha Kurzregeln – erreichbar über Avatar-Dropdown'},
+      {typ:'fix',text:'Profil-Seite: Anzeigename unter Avatar aktualisiert sich sofort nach dem Speichern'},
+    ]},
     {version:'2.11',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Profil-Seite: Anzeigename ändern, Profilbild hochladen (Base64), Profil wechseln & Abmelden direkt auf der Seite'},
       {typ:'neu',text:'Profilbild-Upload: Foto aus Galerie oder Kamera wählen – wird komprimiert (512×512, JPEG) und direkt in der Datenbank gespeichert'},
