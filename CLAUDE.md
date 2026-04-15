@@ -260,6 +260,27 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 1. ~~**Poker Infos Seite**~~ ✅ v2.12
 2. ~~**Pull-to-Refresh**~~ ✅ v2.13
+
+---
+hier wurde bei der letzten Session abgebrochen:
+
+Testergebnisse:
+	•	entferne das drehende icon bei pull to refresh, ist nicht notwendig weil iOS bzw der browser selber eine animation anzeigt
+	•	das mit den scrollbalken scheint funktionieren, aber sie sind wegen der Farbe fast nicht sichtbar? Zumindest im dunkel modus kann man es sehen, aber im hell modus ändern sie die Farbe nicht und bleiben hell und somit kaum sichtbar?
+	•	Die Fusszeile ist nun irgendwie IMMER weiter oben als sie sein sollte. Sie ist nicht mehr am unteren Bildschirmrand. Vorher war das besser vor dem letzten update. korrigiere das.
+und dann gern nächste Anpassungen weitermachen
+
+Claude hatte nach dieser Antwort wegen erreichtem Nutzungslimit abgebrochen:
+Alle drei Probleme klar. Ich fixe sie in einem Schritt:
+	1.	PTR-Icon entfernen – nur der Bar (Höhenanzeige) bleibt, kein Pill/Icon
+	2.	Scrollbar-Farbe – themed ::-webkit-scrollbar für hell + dunkel
+	3.	Bottom-Nav immer oben – visualViewport-Ansatz raus, ersetze durch einfachen focusout-Reset auf scrollTo(0,0)
+
+
+
+---
+
+wenn das erledigt ist,  dann hier weiter machen:
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
