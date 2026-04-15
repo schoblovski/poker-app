@@ -23,17 +23,17 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 
 ### `spieler`
 
-| Spalte         | Typ     | Beschreibung                              |
-|----------------|---------|-------------------------------------------|
-| id             | uuid    | Primary Key                               |
-| name           | text    | Anzeigename                               |
-| email          | text    | Für Login (unique)                        |
-| profilbild     | text    | URL (Google-Profilbild oder Google Drive) |
-| eintrittsdatum | date    |                                           |
-| aktiv          | boolean | Inaktive Spieler werden nicht angezeigt   |
-| ist_bank       | boolean | Genau 1 Spieler ist die "Bank"            |
-| ist_admin      | boolean | Darf Spieler verwalten + löschen          |
-| auth_user_id   | uuid    | Verknüpfung mit Supabase Auth             |
+| Spalte         | Typ     | Beschreibung                                       |
+|----------------|---------|----------------------------------------------------|
+| id             | uuid    | Primary Key                                        |
+| name           | text    | Anzeigename                                        |
+| email          | text    | Für Login (unique)                                 |
+| profilbild     | text    | URL (Google-Profilbild oder Google Drive)          |
+| eintrittsdatum | date    | Tag an dem der Spieler in der App erfasst wurde    |
+| aktiv          | boolean | Inaktive Spieler werden nicht angezeigt            |
+| ist_bank       | boolean | Genau 1 Spieler ist die "Bank"                     |
+| ist_admin      | boolean | Darf Spieler verwalten + löschen                   |
+| auth_user_id   | uuid    | Verknüpfung mit Supabase Auth                      |
 
 ### `spiele`
 
@@ -70,12 +70,12 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 
 **Transaktionstypen:**
 
-- `leer → Spieler` = Einzahlung (erhöht Bankkonto + Spieler-KS)
-- `Spieler → leer` = Auszahlung
+- `leer → Spieler`    = Einzahlung (erhöht Bankkonto + Spieler-KS)
+- `Spieler → leer`    = Auszahlung
 - `Spieler → Spieler` = Transfer (z.B. 7-2 Gewinn)
-- `Bank → Spieler` = Erstattung aus Pokerkasse (z.B. Snacks)
-- `Spieler → Bank` = Spende in Pokerkasse
-- `leer → Bank` = Zinsen, Eingang
+- `Bank → Spieler`    = Erstattung aus Pokerkasse (z.B. Snacks)
+- `Spieler → Bank`    = Spende in Pokerkasse
+- `leer → Bank`       = Zinsen, Eingang
 
 ### `hand_statistik`
 
@@ -101,34 +101,25 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 ### Spieler-Kontostand
 
 ```
-Kontostand = Σ(payout - buyins × kostenProBuyin) + Transaktionen_ein - Transaktionen_aus
+Kontostand = Σ(payout - buyins × buyin_kasse aus jeweiligem Spiel) + Transaktionen_ein - Transaktionen_aus
 
 kostenProBuyin:
-  - Alte Spiele (buyin_pot = 2.5): nur buyin_pot = 2.5
-  - Neue Spiele (buyin_pot = 5):   buyin_pot + buyin_kassa = 7.0
-  - Leihgabe wird NICHT abgezogen (wird über Transaktionen abgewickelt)
+  - Alte Spiele : buyin_pot kann variieren, da in der Vergangenheit bei besonderen Anlässen (z.B. Pokernacht) die Faktoren für die buyin_pot und buyin_kassa niedriger gestellt werden
+  - Neue Spiele : buyin_pot + buyin_kassa (bei eröffnen eines Spiels muss die zu dem Zeitpunkt gesetzten globalen Einstellungen (buyin_pot / puyin_kassa) berücksichtigt werden.
+  - Leihgabe ist nur informativ und wird niemals in Kontostände (Bankkonto, Pokerkasse, Spieler-Kontostand) berücksichtig
 ```
 
 ### Bankkonto
 
 ```
-Bankkonto = Einzahlungen (leer→Spieler)
-          - Auszahlungen (Spieler→leer)
-          + Eingänge (leer→Bank)
-          - Ausgaben (Bank→leer)
+Bankkonto = Einzahlungen (leer→Spieler) - Auszahlungen (Spieler→leer) + Eingänge (leer→Bank) - Ausgaben (Bank→leer)
 ```
 
 ### Pokerkasse
 
 ```
-Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
+Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des Spielers spielt keine Rolle, auch ein Inaktiver Spieler kann einen Kontostand haben)
 ```
-
-### Validierte Werte (aus Excel-Import, April 2026)
-
-- Chris: €140.40, Andreas: -€13.00, Bolla: €95.57, Cello: €100.00
-- Gutsch: €103.20, Macs: €118.70
-- Bankkonto: €1.532,19, Pokerkasse: €657,66
 
 ## Rollen & Berechtigungen
 
@@ -141,31 +132,31 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 
 ### Navigation (Bottom Nav)
 
-1. **Home** – Übersicht: Mein Konto, Kasse (Bankkonto + Pokerkasse), Alle Spieler
-2. **Spiel** – Aktuelles Spiel: Neues Spiel, Buy-Ins zählen, PayOut, Teilnehmer verwalten
-3. **Verlauf** – Abgeschlossene Spiele chronologisch mit Ergebnissen
+1. **Home**      – Übersicht: Mein Konto, Kasse (Bankkonto + Pokerkasse), Alle aktiven Spieler
+2. **Spiel**     – Aktuelles Spiel: Neues Spiel, Buy-Ins zählen, PayOut, Teilnehmer verwalten
+3. **Verlauf**   – Abgeschlossene Spiele chronologisch mit Ergebnissen
 4. **Statistik** – Rangliste, Statistiken, Besondere Hände
-5. **Konto** – Transaktionen: Liste + neue Transaktion
-6. **Hände** – Besondere Hände erfassen (neu in v1.7)
+5. **Konto**     – Transaktionen: Liste + neue Transaktion
+6. **Hände**     – Besondere Hände erfassen
 
 ### Dropdown (Avatar-Button oben rechts)
 
 - Theme-Wechsel (Hell/Dunkel/Auto)
 - Spielerverwaltung (nur Admin)
 - Einstellungen (nur Admin)
-- Info & Changelog
-- Debug: Console (nur Admin) – Browser-Logs in der App
+- App-Info & Changelog
+- Debug: Console (nur Admin)  – Browser-Logs in der App
 - Debug: Rohdaten (nur Admin) – Lesezugriff auf alle DB-Tabellen
 - Abmelden
 
 ### Sub-Seiten (ohne eigenen Nav-Tab)
 
-- `spieler-stats` – Spieler-Statistik (von Home oder Statistik erreichbar)
+- `spieler-stats`  – Spieler-Statistik (von Home oder Statistik erreichbar)
 - `spieler-detail` – Spieler bearbeiten (von Verwaltung)
-- `spiel-detail` – Spieldetail (von Verlauf, neu in v1.7)
-- `einstellungen` – BuyIn-Faktoren + Jahresspende (nur Admin)
-- `console` – Debug: Browser-Console (nur Admin)
-- `rohdaten` – Debug: Datenbank-Rohdaten (nur Admin)
+- `spiel-detail`   – Spieldetail (von Verlauf)
+- `einstellungen`  – BuyIn-Faktoren + Jahresspende (nur Admin)
+- `console`        – Debug: Browser-Console (nur Admin)
+- `rohdaten`       – Debug: Datenbank-Rohdaten (nur Admin)
 
 ## Design-Regeln (STRIKT einhalten)
 
@@ -177,8 +168,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 
 ### Was verwendet wird:
 
-- ✅ **Font:** DM Sans + DM Mono (Google Fonts)
-- ✅ **Icons:** SVG Inline (Lucide-Style, stroke-based)
+- ✅ **Font:**   DM Sans + DM Mono (Google Fonts)
+- ✅ **Icons:**  SVG Inline (Lucide-Style, stroke-based)
 - ✅ **Farben:** CSS Custom Properties (Design Tokens)
 - ✅ **Kein Gradient** – nur `var(--surface)`, `var(--bg-secondary)` etc.
 
@@ -225,52 +216,48 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank)
 - Meta-Tag: `<meta name="version" content="X.X">`
 - JS Konstante: `const VERSION = 'X.X'`
 - Bei jeder Änderung beide hochzählen (1.7 → 1.8 etc.)
-- **Aktuelle Version: 2.2**
+- Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
+- Bei kleineren Änderungen die Nebenversion hochzählen
+- Immer das Changelog aktuell haltenw wenn committed wird
+- **Aktuelle Version: 2.10**
 
 ## Login-Provider
 
 - ✅ Google (funktioniert)
-- ⏳ Facebook (konfiguriert, nicht getestet)
-- ⏳ Apple (konfiguriert, nicht getestet)
-- ⏳ Microsoft/Azure (konfiguriert, nicht getestet)
+- ⏳ Facebook (vorgesehen, noch nicht implementiert)
+- ⏳ Apple (vorgesehen, noch nicht implementiert)
+- ⏳ Microsoft/Azure (vorgesehen, noch nicht implementiert)
 - Callback URL: `https://bcvyhlzjpfezokvcjksn.supabase.co/auth/v1/callback`
 
 ## Feature-Roadmap / Offene TODOs
 
-| # | Feature | Status |
-|---|---------|--------|
-| 1 | Hand Statistik Seite (Erfassen mit Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL) | ✅ v1.7 |
-| 2 | 7-2 Automatismus: auto Transaktionen beim Erfassen | ✅ v1.7 |
-| 3 | Spiel Verlauf: Detail-Ansicht pro Abend (anklickbar) | ✅ v1.7 |
-| 4 | Admin: Jahres-Spende Automatismus | ✅ v1.7 |
-| 5 | Info & Changelog Seite | ✅ v1.8 |
-| 6 | Pokerkasse-Berechnung korrigiert (Bank-KS ausgeschlossen) | ✅ v1.9 |
-| 7 | iOS Input-Zoom behoben (font-size 16px) | ✅ v1.9 |
-| 8 | Spieldetail: Admin-Bearbeitung nachträglich | ✅ v1.9 |
-| 9 | Admin-guard für Transaktion löschen | ✅ v2.0 |
-| 10 | Spieler-Stats Backnavigation fix | ✅ v2.0 |
-| 11 | Admin: Debug-Console (Browser-Logs in der App) | ✅ v2.1 |
-| 12 | Admin: Rohdaten-Viewer (DB-Tabellen lesend) | ✅ v2.1 |
-| 13 | Admin: Admin-Rolle anderen Spielern zuweisen | ✅ v2.1 |
-| 14 | Numpad auf Mobil für Betragsfelder | ✅ v2.1 |
-| 15 | Horizontale Scrollbalken behoben | ✅ v2.1 |
-| 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts) | ✅ v2.2 |
-| 17 | Google Account-Wechsel (Profil wechseln beim Login) | ⏳ offen |
-| 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren | ⏳ offen |
-| 19 | Altdaten: Profilbilder (Google Drive Pfade) | ⏳ offen |
+| # | Feature                                                                             |  Status  |
+|---|-------------------------------------------------------------------------------------|----------|
+| 1 | Hand Statistik Seite (Erfassen mit Hand-Typ, Gewinner, Kommentar, Beweisfoto-URL)   | ✅ v1.7  |
+| 2 | 7-2 Automatismus: auto Transaktionen beim Erfassen                                  | ✅ v1.7  |
+| 3 | Spiel Verlauf: Detail-Ansicht pro Abend (anklickbar)                                | ✅ v1.7  |
+| 4 | Admin: Jahres-Spende Automatismus                                                   | ✅ v1.7  |
+| 5 | Info & Changelog Seite                                                              | ✅ v1.8  |
+| 6 | Pokerkasse-Berechnung korrigiert (Bank-KS ausgeschlossen)                           | ✅ v1.9  |
+| 7 | iOS Input-Zoom behoben (font-size 16px)                                             | ✅ v1.9  |
+| 8 | Spieldetail: Admin-Bearbeitung nachträglich                                         | ✅ v1.9  |
+| 9 | Admin-guard für Transaktion löschen                                                 | ✅ v2.0  |
+| 10 | Spieler-Stats Backnavigation fix                                                   | ✅ v2.0  |
+| 11 | Admin: Debug-Console (Browser-Logs in der App)                                     | ✅ v2.1  |
+| 12 | Admin: Rohdaten-Viewer (DB-Tabellen lesend)                                        | ✅ v2.1  |
+| 13 | Admin: Admin-Rolle anderen Spielern zuweisen                                       | ✅ v2.1  |
+| 14 | Numpad auf Mobil für Betragsfelder                                                 | ✅ v2.1  |
+| 15 | Horizontale Scrollbalken behoben                                                   | ✅ v2.1  |
+| 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts)           | ✅ v2.2  |
+| 17 | Google Account-Wechsel (Profil wechseln beim Login)                                | ✅ v2.2  |
+| 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren                       | ⏳ offen |
+| 19 | Altdaten: Profilbilder (Google Drive Pfade)                                        | ⏳ offen |
 
 ## Nächste geplante Features (Priorität)
 
 1. **Charts in Statistik** – Liniendiagramm Kontostand-Entwicklung pro Spieler, Balkendiagramm Gewinne/Verluste, Heatmap Spielhäufigkeit
-2. **Google Account-Wechsel** – `signInWithOAuth` mit `queryParams: { prompt: 'select_account' }` damit der Account-Picker erscheint
-3. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
+2. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
-## Bekannte Bugs / Limitierungen
-
-- Pokerkasse war falsch berechnet → wurde in v1.6 gefixt
-- Kontostand-Formel für alte Spiele (buyin_pot=2.5) → gefixt in v1.6
-- Facebook/Apple/Microsoft Login: Supabase-Konfiguration noch ausstehend
-- Google Drive Profilbilder werden nicht angezeigt → Spieler können Bild selbst updaten via Google-Login
 
 ## Migrations-Script
 
@@ -289,7 +276,7 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - **7-2 Regel:** Wer mit 7-2 (schlechtestes Blatt) gewinnt, bekommt von jedem Mitspieler €1
 - **Buy-In:** €5 für Chips + €2 in Pokerkasse = €7 Gesamtkosten pro Buy-In
 - **Pokerkasse** wird für Snacks, Getränke, Pokernächte, Karten etc. verwendet
-- **Jahresspende:** Am Jahresende spenden Spieler ihren Überschuss damit alle bei ~€100 starten
+- **Jahresspende:** Am Jahresende spenden Spieler ihren Überschuss damit alle bei ~€100 starten (freiwillig)
 
 ## Git-Workflow
 
