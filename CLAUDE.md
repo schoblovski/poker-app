@@ -144,6 +144,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Theme-Wechsel (Hell/Dunkel/Auto)
 - Spielerverwaltung (nur Admin)
 - Einstellungen (nur Admin)
+- Profil
+- Poker Infos
 - App-Info & Changelog
 - Debug: Console (nur Admin)  – Browser-Logs in der App
 - Debug: Rohdaten (nur Admin) – Lesezugriff auf alle DB-Tabellen
@@ -157,6 +159,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - `einstellungen`  – BuyIn-Faktoren + Jahresspende (nur Admin)
 - `console`        – Debug: Browser-Console (nur Admin)
 - `rohdaten`       – Debug: Datenbank-Rohdaten (nur Admin)
+- poker infos (über Avatar Menü)
+- profil (über Avatar Menü)
 
 ## Design-Regeln (STRIKT einhalten)
 
@@ -218,7 +222,13 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei jeder Änderung beide hochzählen (1.7 → 1.8 etc.)
 - Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
 - Bei kleineren Änderungen die Nebenversion hochzählen
-- Immer das Changelog aktuell haltenw wenn committed wird
+- Immer das Changelog aktuell halten NACH meiner Freigabe. 
+  - Ablauf:
+    1. comitten (immer auf Main)
+    2. Zusammenfassung der Anpassungen und was zu testen ist ausgeben
+    3. auf Test Ergebnisse warten
+    4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
+    5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
 - **Aktuelle Version: 2.14**
 
 ## Login-Provider
