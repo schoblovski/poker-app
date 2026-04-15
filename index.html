@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.10">
+  <meta name="version" content="2.11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -334,6 +334,18 @@
     .pwa-btn-row{display:flex;gap:var(--space-sm);margin-top:var(--space-sm);}
   
   
+  /* PROFIL PAGE */
+  .profil-avatar-wrap{position:relative;display:inline-block;margin:0 auto var(--space-md);cursor:pointer;}
+  .profil-avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);pointer-events:none;}
+  .profil-avatar-edit-badge svg{width:13px;height:13px;color:#fff;}
+  .profil-img-preview{width:80px;height:80px;border-radius:50%;object-fit:cover;display:block;}
+  .profil-img-initial{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:var(--text-secondary);}
+  .profil-name-row{display:flex;align-items:center;gap:10px;padding:12px var(--space-md);border-bottom:1px solid var(--border);}
+  .profil-name-input{flex:1;background:transparent;border:none;font-size:16px;font-weight:500;font-family:var(--font-sans);color:var(--text-primary);padding:0;}
+  .profil-name-input:focus{outline:none;color:var(--accent-text);}
+  .profil-save-badge{font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);border-radius:20px;padding:2px 8px;display:none;}
+  .profil-save-badge.show{display:inline-block;}
+
   /* Container für die Matrix, um abgerundete Ecken zu ermöglichen */
   .matrix-container {
     overflow-x: auto; /* Erlaubt horizontales Scrollen auf kleinen Handys */
@@ -422,6 +434,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Einstellungen
         </button>
+        <button class="dropdown-item" id="btn-profil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profil
+        </button>
         <button class="dropdown-item" id="btn-info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
           Info &amp; Changelog
@@ -433,15 +449,6 @@
         <button class="dropdown-item" id="btn-rohdaten" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
           Debug: Rohdaten
-        </button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item" id="btn-profil-wechseln">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>
-          Profil wechseln
-        </button>
-        <button class="dropdown-item danger" id="btn-logout">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Abmelden
         </button>
       </div>
     </div>
@@ -464,6 +471,7 @@
     <div class="page" id="page-spiel-detail"><div id="spiel-detail-content"></div></div>
     <div class="page" id="page-spieler-detail"><div id="spieler-detail-content"></div></div>
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
+    <div class="page" id="page-profil"><div id="profil-content"></div></div>
     <div class="page" id="page-haende">
       <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
       <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
@@ -544,7 +552,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.10';
+  const VERSION='2.11';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -713,10 +721,32 @@
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
   function getAvatar(s){
     if(!s?.profilbild) return null;
-    // Wenn volle URL (http/https) → direkt verwenden (Google/Apple Login)
+    // Base64 data URL (neu gespeicherte Bilder)
+    if(s.profilbild.startsWith('data:')) return s.profilbild;
+    // Volle URL (http/https) → Google-Profilbild oder externe URL
     if(s.profilbild.startsWith('http')) return s.profilbild;
-    // Alte relative Pfade (Spieler_Images/...) → kein Bild verfügbar bis Login
+    // Alte relative Pfade → kein Bild
     return null;
+  }
+
+  // Bild komprimieren und als Base64 zurückgeben (max 512×512, ~150-300KB)
+  function compressImageToBase64(file, maxSize=512, quality=0.82){
+    return new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{
+          const ratio=Math.min(maxSize/img.width, maxSize/img.height, 1);
+          const canvas=document.createElement('canvas');
+          canvas.width=Math.round(img.width*ratio);
+          canvas.height=Math.round(img.height*ratio);
+          canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
   function avatarHtml(s,size=44){
     const src=getAvatar(s);
@@ -821,7 +851,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -847,13 +877,12 @@
   // ── DROPDOWN ───────────────────────────────────────────
   document.getElementById('user-avatar-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');});
   document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
+  document.getElementById('btn-profil').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('profil');loadProfil();});
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
   document.getElementById('btn-info').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('info');loadInfo();});
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
-  document.getElementById('btn-profil-wechseln').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');db.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin,queryParams:{prompt:'select_account'}}});});
-  document.getElementById('btn-logout').addEventListener('click',async()=>{document.getElementById('dropdown').classList.remove('open');await db.auth.signOut();});
 
   // ── AUTH ───────────────────────────────────────────────
   async function loginWith(p){await db.auth.signInWithOAuth({provider:p,options:{redirectTo:window.location.origin}});}
@@ -906,9 +935,15 @@
       return;
     }
     currentSpieler=sp;
+    // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur als Fallback beim allerersten Login
     const av=currentUser?.user_metadata?.avatar_url;
-    if(av)await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
-    if(av)document.getElementById('user-avatar-btn').innerHTML=`<img src="${av}" alt="Avatar">`;
+    if(!sp.profilbild&&av){
+      // Beim ersten Login Google-Bild in DB speichern
+      await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
+      currentSpieler={...currentSpieler,profilbild:av};
+    }
+    const avatarSrc=getAvatar(currentSpieler)||av;
+    if(avatarSrc)document.getElementById('user-avatar-btn').innerHTML=`<img src="${avatarSrc}" alt="Avatar">`;
     document.getElementById('btn-verwaltung').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-einstellungen').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
@@ -1173,6 +1208,155 @@
         const{data:h}=await db.from('hand_statistik').select('*').eq('id',row.dataset.handId).single();
         if(h)openHandModal(h);
       });
+    });
+  }
+
+  // ── PROFIL ─────────────────────────────────────────────
+  async function loadProfil(){
+    const el=document.getElementById('profil-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
+    // Aktuellen Spieler frisch aus DB laden
+    const{data:sp}=await db.from('spieler').select('*').eq('id',currentSpieler.id).single();
+    if(!sp){el.innerHTML=`<div class="empty"><div class="empty-title">Fehler beim Laden</div></div>`;return;}
+    currentSpieler=sp;
+
+    const src=getAvatar(sp);
+    const avatarHtmlLg=src
+      ?`<img src="${src}" class="profil-img-preview" alt="Profilbild" id="profil-avatar-img" onerror="this.style.display='none';document.getElementById('profil-avatar-fallback').style.display='flex'">`
+      :``;
+    const initial=(sp.name?.trim()[0]||'?').toUpperCase();
+
+    let html=`
+      <button class="back-btn" id="profil-back">${backIcon} Zurück</button>
+      <div style="text-align:center;padding:var(--space-lg) 0 var(--space-md)">
+        <label class="profil-avatar-wrap" for="profil-foto-input" title="Profilbild ändern">
+          ${src?`<img src="${src}" class="profil-img-preview" alt="${escHtml(sp.name)}" id="profil-avatar-img" onerror="this.style.display='none';document.getElementById('profil-avatar-fallback').style.display='flex'">`:``}
+          <div class="profil-img-initial" id="profil-avatar-fallback" style="${src?'display:none':'display:flex'}">${initial}</div>
+          <div class="profil-avatar-edit-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </label>
+        <input type="file" id="profil-foto-input" accept="image/*" style="display:none">
+        <div id="profil-upload-status" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;min-height:16px"></div>
+        <div class="profile-name" style="margin-top:var(--space-sm)">${escHtml(sp.name)}</div>
+        <div class="profile-since">${sp.email||'Keine E-Mail'}</div>
+      </div>
+
+      <div class="section-title">Konto</div>
+      <div class="card">
+        <div class="profil-name-row">
+          <div class="item-body">
+            <div class="form-label" style="margin-bottom:2px">Anzeigename</div>
+            <input type="text" class="profil-name-input" id="profil-name" value="${escHtml(sp.name)}" maxlength="40" placeholder="Name…">
+          </div>
+          <span class="profil-save-badge" id="profil-name-badge">Gespeichert</span>
+        </div>
+        <div class="list-item">
+          <div class="item-body">
+            <div class="item-title">E-Mail</div>
+            <div class="item-subtitle">${sp.email||'–'}</div>
+          </div>
+          <span style="font-size:11px;color:var(--text-tertiary)">nur Admin</span>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:var(--space-lg)">Account</div>
+      <div class="card">
+        <button class="list-item clickable" id="profil-btn-wechseln" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans)">
+          <div class="item-avatar accent" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">Profil wechseln</div>
+            <div class="item-subtitle">Mit anderem Google-Account anmelden</div>
+          </div>
+          ${chevron}
+        </button>
+        <button class="list-item clickable" id="profil-btn-logout" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans)">
+          <div class="item-avatar danger" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title" style="color:var(--danger)">Abmelden</div>
+            <div class="item-subtitle">Von dieser App abmelden</div>
+          </div>
+          ${chevron}
+        </button>
+      </div>`;
+
+    el.innerHTML=html;
+
+    // Back button
+    document.getElementById('profil-back').addEventListener('click',()=>showPage('home'));
+
+    // Profil wechseln
+    document.getElementById('profil-btn-wechseln').addEventListener('click',()=>{
+      db.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin,queryParams:{prompt:'select_account'}}});
+    });
+
+    // Abmelden
+    document.getElementById('profil-btn-logout').addEventListener('click',async()=>{
+      if(!await confirmAction('Wirklich abmelden?'))return;
+      await db.auth.signOut();
+    });
+
+    // Name auto-save (bei focusout / Enter)
+    const nameInput=document.getElementById('profil-name');
+    const nameBadge=document.getElementById('profil-name-badge');
+    let _nameSaveTimeout=null;
+    async function saveName(){
+      const newName=nameInput.value.trim();
+      if(!newName||newName===sp.name)return;
+      await save(async()=>{
+        await db.from('spieler').update({name:newName}).eq('id',sp.id);
+        currentSpieler={...currentSpieler,name:newName};
+        sp.name=newName;
+      },`Name geändert: ${newName}`);
+      nameBadge.classList.add('show');
+      setTimeout(()=>nameBadge.classList.remove('show'),2000);
+      loadHome();
+    }
+    nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.target.blur();}});
+    nameInput.addEventListener('blur',saveName);
+
+    // Foto-Upload
+    const fotoInput=document.getElementById('profil-foto-input');
+    const uploadStatus=document.getElementById('profil-upload-status');
+    fotoInput.addEventListener('change',async()=>{
+      const file=fotoInput.files?.[0];
+      if(!file)return;
+      uploadStatus.textContent='Bild wird verarbeitet…';
+      try{
+        const b64=await compressImageToBase64(file,512,0.82);
+        // Größe prüfen (Supabase text-Spalte: praktisch unbegrenzt, aber ~500KB vernünftig)
+        const sizeKB=Math.round(b64.length*0.75/1024);
+        uploadStatus.textContent=`Speichern… (${sizeKB} KB)`;
+        await save(async()=>{
+          await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
+          currentSpieler={...currentSpieler,profilbild:b64};
+          sp.profilbild=b64;
+        },'Profilbild gespeichert');
+        // Avatar im Header aktualisieren
+        document.getElementById('user-avatar-btn').innerHTML=`<img src="${b64}" alt="Avatar">`;
+        // Vorschau aktualisieren
+        const imgEl=document.getElementById('profil-avatar-img');
+        const fbEl=document.getElementById('profil-avatar-fallback');
+        if(imgEl){imgEl.src=b64;imgEl.style.display='block';}
+        else{
+          // img nicht vorhanden → neu erstellen
+          const newImg=document.createElement('img');
+          newImg.src=b64;newImg.className='profil-img-preview';newImg.alt=sp.name;newImg.id='profil-avatar-img';
+          const wrap=document.querySelector('.profil-avatar-wrap');
+          if(wrap)wrap.insertBefore(newImg,wrap.firstChild);
+        }
+        if(fbEl)fbEl.style.display='none';
+        uploadStatus.textContent=`Gespeichert (${sizeKB} KB)`;
+        setTimeout(()=>{uploadStatus.textContent='';},2500);
+        loadHome();
+      }catch(err){
+        console.error('Foto-Upload Fehler',err);
+        uploadStatus.textContent='Fehler beim Verarbeiten';
+      }
     });
   }
 
@@ -1541,7 +1725,7 @@
   }
 
   async function buyinChange(id,delta){
-    const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=0))return;
+    const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=1))return;
     t.buyins=(t.buyins||0)+delta;
     document.getElementById('count-'+id).textContent=t.buyins;
     document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
@@ -1567,6 +1751,7 @@
   document.getElementById('teilnehmer-edit-speichern').addEventListener('click',async()=>{
     const selected=new Set(Array.from(document.querySelectorAll('#teilnehmer-edit-liste .select-card.selected')).map(c=>c.dataset.id));
     const aktuelleIds=new Set(spielTeilnehmer.map(t=>t.spieler_id));
+    // Nur wirklich neue Spieler hinzufügen (Duplikate vermeiden)
     const hinzu=[...selected].filter(id=>!aktuelleIds.has(id));
     const entf=spielTeilnehmer.filter(t=>!selected.has(t.spieler_id));
     const mitBuyins=entf.filter(t=>(t.buyins||0)>0);
@@ -1588,10 +1773,12 @@
   }
   document.getElementById('modal-auswahl-abbrechen').addEventListener('click',()=>document.getElementById('modal-spieler-auswahl').classList.remove('open'));
   document.getElementById('modal-auswahl-bestaetigen').addEventListener('click',async()=>{
-    const selected=document.querySelectorAll('#spieler-auswahl-liste .select-card.selected');
-    if(selected.length<2){await showAlert('Bitte mindestens 2 Spieler auswählen.');return;}
-    const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0]}).select().single();
-    await db.from('spiel_teilnehmer').insert(Array.from(selected).map(el=>({spiel_id:neuesSpiel.id,spieler_id:el.dataset.id,buyins:1,payout:0,leihgabe:0})));
+    const selectedCards=Array.from(document.querySelectorAll('#spieler-auswahl-liste .select-card.selected'));
+    if(selectedCards.length<2){await showAlert('Bitte mindestens 2 Spieler auswählen.');return;}
+    // Duplikate in Auswahl verhindern (Sicherheitsnetz)
+    const uniqueIds=[...new Set(selectedCards.map(el=>el.dataset.id))];
+    const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa}).select().single();
+    await db.from('spiel_teilnehmer').insert(uniqueIds.map(id=>({spiel_id:neuesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
     document.getElementById('modal-spieler-auswahl').classList.remove('open');
     aktuellesSpiel=neuesSpiel;await loadSpiel();
   });
@@ -1809,7 +1996,7 @@
       updateSummary();
     }));
     el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>{
-      if(editData[btn.dataset.id].buyins<=0)return;
+      if(editData[btn.dataset.id].buyins<=1)return;
       editData[btn.dataset.id].buyins--;
       document.getElementById('ec-'+btn.dataset.id).textContent=editData[btn.dataset.id].buyins;
       document.getElementById('ep-sub-'+btn.dataset.id).textContent=`€${(editData[btn.dataset.id].buyins*bPot).toFixed(2)} im Pot`;
@@ -2128,6 +2315,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.11',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Profil-Seite: Anzeigename ändern, Profilbild hochladen (Base64), Profil wechseln & Abmelden direkt auf der Seite'},
+      {typ:'neu',text:'Profilbild-Upload: Foto aus Galerie oder Kamera wählen – wird komprimiert (512×512, JPEG) und direkt in der Datenbank gespeichert'},
+      {typ:'fix',text:'Buy-In Minimum: Minus-Button kann Buy-Ins nicht mehr unter 1 reduzieren (im aktiven Spiel und in der Nachbearbeitung)'},
+      {typ:'fix',text:'Doppelte Spieler: Beim Starten eines neuen Spiels werden Duplikate in der Auswahl automatisch verhindert'},
+      {typ:'verbessert',text:'Dropdown-Menü: „Profil wechseln" und „Abmelden" wurden auf die neue Profil-Seite verschoben'},
+    ]},
     {version:'2.10',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Spiel-abschliessen Button ist inaktiv solange Restwert nicht 0'}
     ]},

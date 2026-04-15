@@ -219,7 +219,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell haltenw wenn committed wird
-- **Aktuelle Version: 2.10**
+- **Aktuelle Version: 2.11**
 
 ## Login-Provider
 
@@ -252,11 +252,17 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 | 17 | Google Account-Wechsel (Profil wechseln beim Login)                                | ✅ v2.2  |
 | 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren                       | ⏳ offen |
 | 19 | Altdaten: Profilbilder (Google Drive Pfade)                                        | ⏳ offen |
+| 20 | Profil-Seite: Name ändern, Profilbild (Base64), Profil wechseln, Abmelden          | ✅ v2.11 |
+| 21 | Buy-In Minimum = 1 (kein Minus auf 0 möglich)                                      | ✅ v2.11 |
+| 22 | Doppelte Spieler im aktiven Spiel verhindern                                        | ✅ v2.11 |
 
 ## Nächste geplante Features (Priorität)
 
-1. **Charts in Statistik** – Liniendiagramm Kontostand-Entwicklung pro Spieler, Balkendiagramm Gewinne/Verluste, Heatmap Spielhäufigkeit
-2. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
+1. **Poker Infos Seite** – Hands-Übersicht (Royal Flush → High Card) + Texas Hold'em/Omaha Regeln im Avatar-Dropdown
+2. **Pull-to-Refresh** – Native iOS/Android UX auf allen Hauptseiten
+3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
+4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
+5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
 
 ## Migrations-Script
