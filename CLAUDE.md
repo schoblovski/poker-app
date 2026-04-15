@@ -219,7 +219,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei grösseren Änderungen (DB Struktur ändert, neuer Service wie Push Notification, etc.) eine Hauptversion zählen
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell haltenw wenn committed wird
-- **Aktuelle Version: 2.12**
+- **Aktuelle Version: 2.13**
 
 ## Login-Provider
 
@@ -259,7 +259,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 ## Nächste geplante Features (Priorität)
 
 1. ~~**Poker Infos Seite**~~ ✅ v2.12
-2. **Pull-to-Refresh** – Native iOS/Android UX auf allen Hauptseiten
+2. ~~**Pull-to-Refresh**~~ ✅ v2.13
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
