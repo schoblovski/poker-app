@@ -282,6 +282,7 @@ Alle drei Probleme klar. Ich fixe sie in einem Schritt:
 
 wenn das erledigt ist,  dann hier weiter machen:
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
+3.5 als Anwender will ich mein profilbild beim beheizen oder erstehen auch croppen/move/zoom des Bildes mit einer runden maske, damit ich sehe wie das profilbild nachher angezeigt wird. und überall wo das profilbild eines Spielers angezeigt wird, soll man das Bild anrufen können um es in groß zu betrachten  
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
