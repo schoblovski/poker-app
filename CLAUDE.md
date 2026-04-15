@@ -285,6 +285,7 @@ wenn das erledigt ist,  dann hier weiter machen:
 3.5 **Probier Optimierung** - als Anwender will ich mein profilbild beim bearbeiten oder erstellen auch croppen/move/zoom des Bildes können. mit einer runden maskierung, damit ich sehe wie das profilbild nachher angezeigt wird. und überall wo das profilbild eines Spielers angezeigt wird, soll man das Bild antippen können um es in groß zu betrachten  
 3.6 **Verlauf Performance Optimierung** - die Verlauf Seite hat viel Daten zu laden, das dauert zu lange. Es soll vornezu beim scrollen nachgeladen werden wenn man nach unten scrollt, anstatt ALLE Daten auf einmal. da ist die Wartezeit zu lange. 
 3.7 **Spieler Detail Seite optimieren** - auf der Spieler detail bzw.  -Statistik-Seite: profilbild etwas größer machen. und die einzelnen Blöcke der besonderen Hände collapsable, mit collapsed per default
+3.8 **Spieler Verwaltung mit profilbild** - als Admin muss ich auch das profilbild der Spieler ändern können
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
