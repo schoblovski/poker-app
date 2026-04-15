@@ -10,7 +10,7 @@ Entwickelt von Chris (Admin) mit Claude als Entwicklungspartner.
 - **Frontend:** Vanilla HTML + CSS + JavaScript – alles in einer einzigen Datei: `index.html`
 - **Hosting:** Vercel → auto-deploy bei GitHub Push
 - **Datenbank:** Supabase (PostgreSQL) in Zürich
-- **Live URL:** https://poker-app-dusky.vercel.app
+- **Live URL:** https://dtks-poker.vercel.app
 
 ## Supabase
 
