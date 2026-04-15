@@ -286,6 +286,7 @@ wenn das erledigt ist,  dann hier weiter machen:
 3.6 **Verlauf Performance Optimierung** - die Verlauf Seite hat viel Daten zu laden, das dauert zu lange. Es soll vornezu beim scrollen nachgeladen werden wenn man nach unten scrollt, anstatt ALLE Daten auf einmal. da ist die Wartezeit zu lange. 
 3.7 **Spieler Detail Seite optimieren** - auf der Spieler detail bzw.  -Statistik-Seite: profilbild etwas größer machen. und die einzelnen Blöcke der besonderen Hände collapsable, mit collapsed per default
 3.8 **Spieler Verwaltung mit profilbild** - als Admin muss ich auch das profilbild der Spieler ändern können
+3.9 ** payouts zahlen Format** - wenn man bei einem aktiven Spiel die payouts eintippt, dann soll auch bei einer ganzzahl (zb. "5") automatisch die .00 dran gehängt werden. es sollten immer zwei Dezimalstellen sein. 
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 
