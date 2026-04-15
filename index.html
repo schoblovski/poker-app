@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.15">
+  <meta name="version" content="2.17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -20,8 +20,8 @@
     [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
     [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-    html{height:100%;}
-    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+    html{height:100%;overflow:hidden;}
+    body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);height:100%;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow:hidden;}
 
     /* LOGIN */
 
@@ -56,7 +56,7 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;height:100%;overflow:hidden;}
 
 
 
@@ -137,7 +137,7 @@
     .item-title{font-size:15px;font-weight:500;color:var(--text-primary);}
     .item-subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px;}
     .item-trailing{display:flex;align-items:center;gap:var(--space-sm);flex-shrink:0;}
-    .item-amount{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+    .item-amount{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;min-width:4.5ch;}
     .amount-pos{color:var(--accent-text);}
     .amount-neg{color:var(--danger);}
     .amount-zero{color:var(--text-tertiary);}
@@ -210,7 +210,7 @@
     .timeline-body{flex:1;}
     .timeline-title{font-size:14px;font-weight:500;}
     .timeline-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
-    .timeline-amount{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:2px;}
+    .timeline-amount{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:2px;text-align:right;min-width:5ch;}
     .select-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-sm);}
     .select-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);cursor:pointer;transition:all var(--transition);text-align:center;}
     .select-card.selected{border-color:var(--accent);background:var(--accent-soft);}
@@ -589,7 +589,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.15';
+  const VERSION='2.17';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1078,6 +1078,21 @@
     document.getElementById('app-screen').style.display='flex';
     loadHome();
     setTimeout(showWhatsNew, 600);
+
+    // iOS: Tastatur-Fix – Bottom-Nav bleibt am sichtbaren Bildschirmrand
+    // visualViewport-Events feuern wenn Tastatur auf-/zuklappt und positionieren
+    // das fixed Bottom-Nav neu, damit es nicht oben hängen bleibt.
+    if(window.visualViewport){
+      const nav=document.querySelector('.bottom-nav');
+      const fixNav=()=>{
+        if(!nav)return;
+        const vv=window.visualViewport;
+        const offset=Math.max(0,Math.round(window.innerHeight-vv.offsetTop-vv.height));
+        nav.style.bottom=offset+'px';
+      };
+      window.visualViewport.addEventListener('resize',fixNav);
+      window.visualViewport.addEventListener('scroll',fixNav);
+    }
   }
   db.auth.onAuthStateChange((ev,session)=>{
     if(session){currentUser=session.user;showApp();}
@@ -2565,6 +2580,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.17',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Scrollbalken: Nur der Inhaltsbereich scrollt – kein unerwünschter Scrollbalken auf Body/Page-Ebene mehr'},
+      {typ:'verbessert',text:'Beträge rechtsbündig ausgerichtet in allen Listen (Übersicht, Transaktionen, Verlauf)'},
+    ]},
+    {version:'2.16',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'iOS: Fusszeile bleibt nicht mehr oben hängen nach Tastatur-Eingabe (visualViewport-Fix für alle Eingabefelder)'},
+    ]},
     {version:'2.15',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Pull-to-Refresh: Icon dreht sich jetzt in die richtige Richtung (gegen den Uhrzeigersinn)'},
     ]},
