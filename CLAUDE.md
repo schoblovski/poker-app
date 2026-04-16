@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.24**
+- **Aktuelle Version: 2.25**
 
 ## Login-Provider
 
@@ -289,7 +289,7 @@ Claude hatte nach dieser Antwort wegen erreichtem Nutzungslimit abgebrochen:
 3.5 **Profilbild Crop/Zoom** – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
 3.6 **Verlauf Performance** – Lazy-Loading beim Scrollen (statt alle Daten auf einmal)
 3.7 ~~**Spieler Detail Seite optimieren**~~ ✅ v2.23/2.24 – Profilbild 140px, Besondere Hände collapsable
-3.8 **Spieler Verwaltung mit Profilbild** – Admin kann Profilbilder von Spielern ändern
+3.8 ~~**Spieler Verwaltung mit Profilbild**~~ ✅ v2.25 – Admin kann Profilbilder von Spielern ändern
 3.9 ~~**Payout Zahlen Format**~~ ✅ v2.23/2.24 – Auto .00 Formatierung, Komma → Punkt
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
