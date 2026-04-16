@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.37">
+  <meta name="version" content="2.40">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -14,7 +14,9 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='white'/%3E%3Ctext x='50%25' y='50%25' font-size='65' dominant-baseline='central' text-anchor='middle'%3E♠️%3C/text%3E%3C/svg%3E">
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
   <style>
     :root{--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--font-sans:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;--transition:180ms ease;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);}
     [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
@@ -666,12 +668,25 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.37';
+  const VERSION='2.40';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
+  const PUSH_FUNCTION_URL=`${SUPABASE_URL}/functions/v1/send-push`;
+
+  // Sendet Push-Notification über die Edge Function (fire-and-forget)
+  function triggerPush({spieler_ids=[], title, body, data={}, kategorie}){
+    fetch(PUSH_FUNCTION_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+      body:JSON.stringify({spieler_ids,title,body,data,kategorie}),
+    }).then(async r=>{
+      const j=await r.json().catch(()=>({}));
+      console.log(`📨 Push: ${j.sent??'?'} gesendet, ${j.errors??'?'} Fehler (HTTP ${r.status})`);
+    }).catch(e=>console.warn('Push-Trigger Fehler:',e));
+  }
 
   // ── CONSOLE INTERCEPTOR ────────────────────────────────
   const _consoleLogs=[];
@@ -689,6 +704,16 @@
 
   let currentUser=null, currentSpieler=null, alleSpieler=[], aktuellesSpiel=null, spielTeilnehmer=[], editSpielerID=null, editTransaktionID=null;
   let einstellungen={buyin_pot:5, buyin_kassa:2};
+  // Deep Link aus Notification (Hash beim Öffnen, oder SW NAVIGATE-Message)
+  let _pendingDeepLink=location.hash||null;
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message',e=>{
+      if(e.data?.type==='NAVIGATE'){
+        if(currentSpieler)handleDeepLink(e.data.url);
+        else _pendingDeepLink=e.data.url;
+      }
+    });
+  }
   console.log(`♠️ DTKS Poker v${VERSION}`);
 
   // ── THEME ──────────────────────────────────────────────
@@ -1214,6 +1239,42 @@
   document.getElementById('btn-login-apple').addEventListener('click',()=>loginWith('apple'));
   document.getElementById('btn-login-microsoft').addEventListener('click',()=>loginWith('azure'));
 
+  // ── DEEP LINK ──────────────────────────────────────────
+  async function handleDeepLink(href){
+    if(!href||href==='/'||href==='#')return;
+    const hash=(href.includes('#')?href.split('#')[1]:href).replace(/^\//,'');
+    if(!hash)return;
+    const[page,queryStr]=hash.split('?');
+    const params=new URLSearchParams(queryStr||'');
+    const id=params.get('id');
+    switch(page){
+      case 'spiel':
+        showPage('spiel');
+        break;
+      case 'transaktionen':
+        showPage('transaktionen');loadTransaktionen();
+        break;
+      case 'haende':
+        showPage('haende');loadHaende();
+        if(id){
+          const{data:h}=await db.from('hand_statistik').select('*').eq('id',id).single();
+          if(h)setTimeout(()=>openHandModal(h),400);
+        }
+        break;
+      case 'spiel-detail':
+        if(id){
+          showPage('verlauf');loadVerlauf();
+          const{data:spiel}=await db.from('spiele').select('*').eq('id',id).single();
+          if(spiel)setTimeout(()=>showSpielDetail(spiel),400);
+        }
+        break;
+      case 'info':
+        showPage('info');loadInfo();
+        break;
+    }
+    history.replaceState(null,'',location.pathname);
+  }
+
   function showWhatsNew(){
     const seen=localStorage.getItem('dtks_version_seen');
     if(seen===VERSION)return;
@@ -1293,6 +1354,12 @@
       return;
     }
     currentSpieler=sp;
+    // auth_user_id setzen falls noch nicht verknüpft (nötig für RLS-Policies)
+    if(!sp.auth_user_id&&currentUser?.id){
+      await db.from('spieler').update({auth_user_id:currentUser.id}).eq('id',sp.id);
+      currentSpieler={...currentSpieler,auth_user_id:currentUser.id};
+      console.log('🔗 auth_user_id verknüpft:',currentUser.id);
+    }
     // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur als Fallback beim allerersten Login
     const av=currentUser?.user_metadata?.avatar_url;
     if(!sp.profilbild&&av){
@@ -1319,6 +1386,7 @@
     loadHome();
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
+    if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
 
     // iOS: Tastatur-Fix – iOS recomputed position:fixed erst bei Scroll-Event.
     // Mini-Scroll auf .content triggert die Neuberechnung der Bottom-Nav Position.
@@ -1782,6 +1850,46 @@
         </div>
       </div>
 
+      <div class="section-title" style="margin-top:var(--space-lg)">Benachrichtigungen</div>
+      <div class="card" id="push-settings-card">
+        <div class="list-item">
+          <div class="item-avatar accent" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">Push Benachrichtigungen</div>
+            <div class="item-subtitle" id="push-status-text">Wird geprüft…</div>
+          </div>
+          <label class="toggle-switch" id="push-master-wrap" style="display:none">
+            <input type="checkbox" id="push-master-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="push-not-supported" style="display:none;font-size:11px;color:var(--text-tertiary)">Nicht verfügbar</span>
+        </div>
+        <div id="push-categories" style="display:none;border-top:1px solid var(--border)">
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Spielergebnisse</div><div class="item-subtitle">Dein Ergebnis nach Abschluss eines Spielabends</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="spielergebnisse" id="push-cat-spiele"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Buy-Ins</div><div class="item-subtitle">Wenn dir im aktiven Spiel ein Buy-In hinzugefügt wird</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="buyins" id="push-cat-buyins"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Besondere Hände</div><div class="item-subtitle">Wenn eine Hand mit dir als Gewinner erfasst wird</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="neue_hand" id="push-cat-hand"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Transaktionen</div><div class="item-subtitle">Bei neuen Transaktionen die dich betreffen</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="transaktionen" id="push-cat-trans"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
       <div class="section-title" style="margin-top:var(--space-lg)">Account</div>
       <div class="card">
         <button class="list-item clickable" id="profil-btn-wechseln" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans)">
@@ -1804,38 +1912,6 @@
           </div>
           ${chevron}
         </button>
-      </div>
-
-      <div class="section-title" style="margin-top:var(--space-lg)">Benachrichtigungen</div>
-      <div class="card" id="push-settings-card">
-        <div class="list-item">
-          <div class="item-avatar accent" style="width:40px;height:40px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          </div>
-          <div class="item-body">
-            <div class="item-title">Push Benachrichtigungen</div>
-            <div class="item-subtitle" id="push-status-text">Wird geprüft…</div>
-          </div>
-          <label class="toggle-switch" id="push-master-wrap" style="display:none">
-            <input type="checkbox" id="push-master-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <span id="push-not-supported" style="display:none;font-size:11px;color:var(--text-tertiary)">Nicht verfügbar</span>
-        </div>
-        <div id="push-categories" style="display:none;border-top:1px solid var(--border)">
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">Spielergebnisse</div><div class="item-subtitle">Nach Abschluss eines Spielabends</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="spielergebnisse" id="push-cat-spiele"><span class="toggle-slider"></span></label>
-          </div>
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">Transaktionen</div><div class="item-subtitle">Bei neuen Transaktionen die dich betreffen</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="transaktionen" id="push-cat-trans"><span class="toggle-slider"></span></label>
-          </div>
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
-          </div>
-        </div>
       </div>`;
 
     el.innerHTML=html;
@@ -1930,6 +2006,14 @@
     }
 
     async function loadPushState(){
+      // iOS: Push Notifications nur im Standalone-Modus (App am Homescreen)
+      const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+      const isStandalone=window.matchMedia('(display-mode: standalone)').matches||!!window.navigator.standalone;
+      if(isIOS&&!isStandalone){
+        pushStatusText.textContent='Zum Homescreen hinzufügen (Teilen → Zum Home-Bildschirm), dann Push aktivieren';
+        pushNotSupported.style.display='inline';
+        return;
+      }
       if(!('PushManager' in window)||!('serviceWorker' in navigator)){
         pushStatusText.textContent='Push-Benachrichtigungen werden von diesem Browser nicht unterstützt';
         pushNotSupported.style.display='inline';
@@ -1955,23 +2039,35 @@
         return;
       }
 
-      // Abonniert – Einstellungen aus DB laden
-      pushMasterToggle.checked=true;
-      pushCategories.style.display='block';
-      pushStatusText.textContent='Aktiv';
-
-      const{data:row}=await db.from('push_subscriptions')
+      // Abonniert – DB-Eintrag prüfen
+      const{data:row,error:dbErr}=await db.from('push_subscriptions')
         .select('einstellungen')
         .eq('spieler_id',currentSpieler.id)
         .eq('endpoint',sub.endpoint)
         .maybeSingle();
 
-      if(row?.einstellungen){
-        const e=row.einstellungen;
-        document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
-        document.getElementById('push-cat-trans').checked=!!e.transaktionen;
-        document.getElementById('push-cat-updates').checked=!!e.app_updates;
+      if(dbErr){console.error('Push DB Fehler:',dbErr);}
+
+      if(!row){
+        // Browser-Subscription existiert, aber kein DB-Eintrag → Browser-Sub aufräumen
+        console.warn('Push: Browser-Subscription ohne DB-Eintrag – bereinige...');
+        await sub.unsubscribe().catch(()=>{});
+        pushMasterToggle.checked=false;
+        pushCategories.style.display='none';
+        pushStatusText.textContent='Nicht aktiv';
+        return;
       }
+
+      pushMasterToggle.checked=true;
+      pushCategories.style.display='block';
+      pushStatusText.textContent='Aktiv';
+
+      const e=row.einstellungen||{};
+      document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
+      document.getElementById('push-cat-buyins').checked=e.buyins!==false;
+      document.getElementById('push-cat-hand').checked=e.neue_hand!==false;
+      document.getElementById('push-cat-trans').checked=!!e.transaktionen;
+      document.getElementById('push-cat-updates').checked=!!e.app_updates;
     }
 
     await loadPushState();
@@ -1993,21 +2089,28 @@
             applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
           const key=sub.getKey('p256dh');
-          const auth=sub.getKey('auth');
+          const authKey=sub.getKey('auth');
           const p256dh=btoa(String.fromCharCode(...new Uint8Array(key)));
-          const authStr=btoa(String.fromCharCode(...new Uint8Array(auth)));
-          await db.from('push_subscriptions').upsert({
+          const authStr=btoa(String.fromCharCode(...new Uint8Array(authKey)));
+          const{error:upsertErr}=await db.from('push_subscriptions').upsert({
             spieler_id:currentSpieler.id,
             endpoint:sub.endpoint,
             p256dh,
             auth:authStr,
-            einstellungen:{spielergebnisse:true,transaktionen:true,app_updates:true},
+            einstellungen:{spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true},
             aktualisiert_am:new Date().toISOString()
           },{onConflict:'endpoint'});
+          if(upsertErr){
+            console.error('Push DB Insert Fehler:',upsertErr);
+            await sub.unsubscribe().catch(()=>{});
+            throw new Error(`DB: ${upsertErr.message||upsertErr.code}`);
+          }
           pushStatusText.textContent='Aktiv';
           pushCategories.style.display='block';
           // Kategorie-Checkboxen auf Standard setzen
           document.getElementById('push-cat-spiele').checked=true;
+          document.getElementById('push-cat-buyins').checked=true;
+          document.getElementById('push-cat-hand').checked=true;
           document.getElementById('push-cat-trans').checked=true;
           document.getElementById('push-cat-updates').checked=true;
           console.log('✅ Push-Subscription gespeichert');
@@ -2042,14 +2145,17 @@
         if(!sub)return;
         const einstellungen={
           spielergebnisse:document.getElementById('push-cat-spiele').checked,
+          buyins:document.getElementById('push-cat-buyins').checked,
+          neue_hand:document.getElementById('push-cat-hand').checked,
           transaktionen:document.getElementById('push-cat-trans').checked,
           app_updates:document.getElementById('push-cat-updates').checked,
         };
-        await db.from('push_subscriptions')
+        const{error:catErr}=await db.from('push_subscriptions')
           .update({einstellungen,aktualisiert_am:new Date().toISOString()})
           .eq('endpoint',sub.endpoint)
           .eq('spieler_id',currentSpieler.id);
-        console.log('💾 Push-Einstellungen gespeichert',einstellungen);
+        if(catErr){console.error('Push Einstellungen Fehler:',catErr);}
+        else console.log('💾 Push-Einstellungen gespeichert',einstellungen);
       });
     });
   }
@@ -2097,6 +2203,20 @@
       <button class="btn btn-danger" id="btn-jahresspende" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
         Jahres-Spende durchführen
+      </button>
+
+      <div class="section-title" style="margin-top:var(--space-xl)">Push Benachrichtigungen</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">App-Update Push</div>
+            <div class="setting-sub">Benachrichtigt alle Nutzer mit aktiviertem App-Updates-Push über die neue Version</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" id="btn-push-update" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        App-Update Push senden (v${VERSION})
       </button>`;
 
     // Preview aktualisieren
@@ -2156,6 +2276,26 @@
       },`Jahres-Spende: ${n} Transaktionen erstellt`);
       await showAlert(`Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
       loadHome();
+    });
+
+    // App-Update Push Button
+    document.getElementById('btn-push-update').addEventListener('click',async()=>{
+      if(!await confirmAction(`App-Update Push senden?\n\nAlle Nutzer mit aktiviertem «App-Updates»-Push erhalten eine Benachrichtigung über Version ${VERSION}.`))return;
+      const entry=CHANGELOG.find(c=>c.version===VERSION);
+      const changeBody=entry
+        ? entry.eintraege.slice(0,4).map(e=>{
+            const p=e.typ==='neu'?'✦':e.typ==='fix'?'⚡':'↑';
+            return `${p} ${e.text}`;
+          }).join('\n')
+        : 'Tippe um zu aktualisieren.';
+      triggerPush({
+        spieler_ids:[],
+        title:`DTKS Poker ${VERSION} ist verfügbar`,
+        body:changeBody,
+        data:{url:'/#info',tag:'app-update',requireInteraction:false},
+        kategorie:'app_updates',
+      });
+      await showAlert('Push-Benachrichtigung wird versendet.');
     });
   }
 
@@ -2360,7 +2500,24 @@
     if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
     if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
-    else{await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);}
+    else{
+      await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);
+      // Push an betroffene Spieler (von + nach, ohne Bank, ohne null)
+      const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
+      const betroffene=[von,nach].filter(id=>id&&id!==bankId);
+      if(betroffene.length>0){
+        const vonName=alleSpieler.find(s=>s.id===von)?.name||'Jemand';
+        const nachName=alleSpieler.find(s=>s.id===nach)?.name||'Jemand';
+        const beschreibung=von&&nach?`${vonName} → ${nachName}`:(nach?`Einzahlung an ${nachName}`:`Auszahlung von ${vonName}`);
+        triggerPush({
+          spieler_ids:betroffene,
+          title:`Neue Transaktion: €${betrag.toFixed(2)}`,
+          body:`${beschreibung} – ${kommentar}`,
+          data:{url:'/#transaktionen',tag:'transaktion'},
+          kategorie:'transaktionen',
+        });
+      }
+    }
     document.getElementById('modal-transaktion').classList.remove('open');
     await loadTransaktionen();await loadHome();
   });
@@ -2490,11 +2647,40 @@
     document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
     updatePotUI();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
+    if(delta>0){
+      triggerPush({
+        spieler_ids:[t.spieler_id],
+        title:'Buy-In hinzugefügt',
+        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,
+        data:{url:'/#spiel',tag:'buyin'},
+        kategorie:'buyins',
+      });
+    }
   }
 
   async function schliesseSpielAb(){
     if(!await confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
+    // Push pro Spieler mit individuellen Ergebnissen
+    const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
+    const datumStr=new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const buyin_kassa=aktuellesSpiel.buyin_kassa||2;
+    const spielId=aktuellesSpiel.id;
+    for(const t of spielTeilnehmer){
+      if(!t.spieler_id)continue;
+      const buyins=t.buyins||0;
+      // Payout aus DOM lesen (spielTeilnehmer[].payout wird beim Tippen nicht aktualisiert)
+      const payout=parseFloat(document.getElementById('payout-'+t.id)?.value?.replace(',','.'))||t.payout||0;
+      const net=payout-buyins*buyin_kassa;
+      const netStr=(net>=0?'+':'')+fmt(net);
+      triggerPush({
+        spieler_ids:[t.spieler_id],
+        title:`Spielabend ${datumStr}`,
+        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · ${netStr}`,
+        data:{url:'/#spiel-detail?id='+spielId,tag:'spielergebnis'},
+        kategorie:'spielergebnisse',
+      });
+    }
     aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();await loadHome();
   }
 
@@ -3167,6 +3353,25 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.40',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Deep Links aus Push-Benachrichtigungen: Klick öffnet direkt den relevanten Screen (Spieldetail, Transaktionen, Handeintrag, Changelog)'},
+      {typ:'fix',text:'Spielergebnis-Push: Payout-Betrag wird nun korrekt aus dem Eingabefeld gelesen (nicht mehr 0)'},
+      {typ:'fix',text:'Login-Screen: Ladezeit verkürzt (Google Fonts nicht mehr render-blockend)'},
+    ]},
+    {version:'2.39',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push: Buy-In Benachrichtigung wenn ein Buy-In im aktiven Spiel hinzugefügt wird'},
+      {typ:'neu',text:'Push: Besondere Hand Benachrichtigung für den Gewinner einer erfassten Hand'},
+      {typ:'verbessert',text:'Profil-Seite: Benachrichtigungen-Block vor Account-Block verschoben'},
+    ]},
+    {version:'2.38',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push Trigger: Beim Spielabschluss erhalten alle Teilnehmer eine Benachrichtigung (wenn aktiviert)'},
+      {typ:'neu',text:'Push Trigger: Bei neuen Transaktionen werden betroffene Spieler benachrichtigt'},
+      {typ:'neu',text:'Admin Einstellungen: App-Update Push – sendet manuell eine Benachrichtigung an alle Nutzer'},
+    ]},
+    {version:'2.37',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push Benachrichtigungen: Aktivierung über Profil-Seite – Erlaubnis, Abonnieren und Kategorien (Spielergebnisse, Transaktionen, App-Updates)'},
+      {typ:'neu',text:'iOS Hinweis: Auf iPhone/iPad erst «Zum Homescreen hinzufügen», danach Push aktivierbar'},
+    ]},
     {version:'2.36',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Hand-Detail: Bestehende Hände öffnen jetzt im Ansichts-Modus (kein direktes Bearbeiten mehr)'},
       {typ:'verbessert',text:'Hand-Detail: Bearbeiten und Löschen nur noch für Admins – normaler Spieler sieht nur die Infos'},
@@ -3813,7 +4018,17 @@
       if(editHandID){
         await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).eq('id',editHandID);
       } else {
-        await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl});
+        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).select('id').single();
+        // Push an Gewinner
+        const gewinnerName=alleSpieler.find(s=>s.id===gewinnerID)?.name||'Dir';
+        const handUrl=insertedHand?.id?`/#haende?id=${insertedHand.id}`:'/#haende';
+        triggerPush({
+          spieler_ids:[gewinnerID],
+          title:`Besondere Hand erfasst: ${selectedHandType}`,
+          body:kommentar?`${kommentar}`:`${gewinnerName} gewinnt mit ${selectedHandType}!`,
+          data:{url:handUrl,tag:'neue-hand'},
+          kategorie:'neue_hand',
+        });
 
         // 7-2 Automatismus: 1€ von jedem Mitspieler zum Gewinner
         if(selectedHandType==='7-2'&&spielID){

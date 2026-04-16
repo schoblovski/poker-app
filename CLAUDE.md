@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.36**
+- **Aktuelle Version: 2.40**
 
 ## Login-Provider
 
@@ -268,6 +268,9 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Deep Links + Login Fix**~~ ✅ v2.40 – Klick auf Push-Notification navigiert direkt zum relevanten Screen; Spielergebnis-Payout-Bug gefixt; Login-Freeze durch async Font-Loading behoben
+- ~~**Push Notifications Trigger + Admin**~~ ✅ v2.38/2.39 – Spielabschluss + Transaktion + Buy-In + Hand → Push; Admin: manueller App-Update-Push
+- ~~**Push Notifications Profil-UI**~~ ✅ v2.37 – Subscribe/Unsubscribe Toggle, Kategorie-Toggles; iOS-Hinweis wenn nicht als PWA installiert
 - ~~**Hand-Modal Ansichts-/Editier-Modus**~~ ✅ v2.36 – Bestehende Hände öffnen im Ansichts-Modus; Bearbeiten/Löschen nur Admin
 - ~~**New App Version Meldung**~~ ✅ v2.35 – Modal nach App-Start wenn gecachte Version veraltet; Button löst Reload aus
 - ~~**Statistik-Seite Filter sticky Fix**~~ ✅ v2.34 – Filter nicht mehr sticky (hat andere Elemente überlagert)
@@ -280,7 +283,15 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 ## Aktueller Backlog / TODOs
 1. **Altdaten Migration** – Neues Migrationsskript zur Altdaten-Übernahme und Konvertierung der alten Foto-Dateien zu Base64
 2. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
-3. **Push Notifications** – Auf der Profil-Seite soll der Anwender seine (Push-)Benachrichtigungseinstellungen vornehmen können (Push Benachrichtigungen erlauben ja/nein, Opt-in/-out für Spielergebnisse, Transaktionen, App-Updates, etc.) Potentiell brauchen wir hier noch weitere Datenbank-Strukturen bei Supabase, machen wir das dann Schritt für Schritt wenn dieser Task ansteht.
+3. **Push Notifications** ✅ vollständig implementiert:
+   - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
+   - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
+   - ✅ Supabase Tabelle `push_subscriptions` angelegt
+   - ✅ Profil-Seite: Subscribe/Unsubscribe + Kategorie-Toggles (5 Kategorien)
+   - ✅ Supabase Edge Function `send-push` deployed (npm:web-push)
+   - ✅ App-Trigger: Spielabschluss, neue Transaktion, Buy-In, Besondere Hand
+   - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
+   - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
 
 
 ## Migrations-Script
