@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.29**
+- **Aktuelle Version: 2.30**
 
 ## Login-Provider
 
@@ -286,7 +286,7 @@ Claude hatte nach dieser Antwort wegen erreichtem Nutzungslimit abgebrochen:
 ## Nächste Todos (Priorität)
 
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
-3.5 **Profilbild Crop/Zoom** – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
+3.5 ~~**Profilbild Crop/Zoom**~~ ✅ v2.30 – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
 3.6 ~~**Verlauf Performance**~~ ✅ v2.26–2.29 – Lazy-Loading beim Scrollen (10er-Batches, Window-Scroll-Listener)
 3.7 ~~**Spieler Detail Seite optimieren**~~ ✅ v2.23/2.24 – Profilbild 140px, Besondere Hände collapsable
 3.8 ~~**Spieler Verwaltung mit Profilbild**~~ ✅ v2.25 – Admin kann Profilbilder von Spielern ändern
