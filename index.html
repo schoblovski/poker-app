@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.29">
+  <meta name="version" content="2.30">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -205,6 +205,9 @@
     .profile-avatar-lg{width:140px;height:140px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
     .profile-avatar-lg img{width:100%;height:100%;object-fit:cover;}
     .profile-avatar-lg svg{width:64px;height:64px;color:var(--text-tertiary);}
+    .avatar-lightbox{cursor:zoom-in;}
+    #crop-canvas{display:block;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;}
+    #crop-canvas:active{cursor:grabbing;}
     .profile-name{font-size:22px;font-weight:700;letter-spacing:-.3px;}
     .profile-since{font-size:13px;color:var(--text-secondary);margin-top:4px;}
     .timeline-item{display:flex;gap:var(--space-md);padding:12px var(--space-md);border-bottom:1px solid var(--border);}
@@ -595,7 +598,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.29';
+  const VERSION='2.30';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -809,6 +812,116 @@
       reader.readAsDataURL(file);
     });
   }
+  // ── LIGHTBOX ───────────────────────────────────────────
+  function openLightbox(src){
+    if(!src)return;
+    const img=document.getElementById('lightbox-img');
+    const size=Math.min(window.innerWidth-48,window.innerHeight-120,420);
+    img.style.width=size+'px';img.style.height=size+'px';
+    img.src=src;
+    document.getElementById('modal-lightbox').classList.add('open');
+  }
+
+  // ── CROP MODAL ─────────────────────────────────────────
+  function openCropModal(file){
+    return new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{
+          const canvas=document.getElementById('crop-canvas');
+          const S=Math.min(380,window.innerWidth-32);
+          const R=Math.floor(S*0.44);
+          canvas.width=S;canvas.height=S;
+          canvas.style.width=S+'px';canvas.style.height=S+'px';
+          // Initial scale: cover circle
+          let scale=Math.max((R*2)/img.naturalWidth,(R*2)/img.naturalHeight);
+          let ox=0,oy=0;
+          function draw(){
+            const ctx=canvas.getContext('2d');
+            ctx.clearRect(0,0,S,S);
+            ctx.fillStyle='#111';ctx.fillRect(0,0,S,S);
+            ctx.save();
+            ctx.translate(S/2+ox,S/2+oy);
+            ctx.scale(scale,scale);
+            ctx.drawImage(img,-img.naturalWidth/2,-img.naturalHeight/2);
+            ctx.restore();
+            // Overlay außerhalb des Kreises
+            ctx.fillStyle='rgba(0,0,0,.55)';
+            ctx.beginPath();ctx.rect(0,0,S,S);
+            ctx.arc(S/2,S/2,R,0,Math.PI*2,true);
+            ctx.fill('evenodd');
+            // Kreisrand
+            ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.5;
+            ctx.beginPath();ctx.arc(S/2,S/2,R,0,Math.PI*2);ctx.stroke();
+          }
+          draw();
+          document.getElementById('modal-crop').classList.add('open');
+          // Touch-Events
+          let lt=null;
+          function onTS(e){e.preventDefault();lt=Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY}));}
+          function onTM(e){
+            e.preventDefault();
+            const ts=Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY}));
+            if(!lt){lt=ts;return;}
+            if(ts.length===1&&lt.length>=1){ox+=ts[0].x-lt[0].x;oy+=ts[0].y-lt[0].y;}
+            else if(ts.length===2&&lt.length>=2){
+              const pd=Math.hypot(lt[1].x-lt[0].x,lt[1].y-lt[0].y);
+              const nd=Math.hypot(ts[1].x-ts[0].x,ts[1].y-ts[0].y);
+              if(pd>0)scale=Math.max(.05,Math.min(20,scale*nd/pd));
+            }
+            lt=ts;draw();
+          }
+          function onTE(e){lt=e.touches.length?Array.from(e.touches).map(t=>({x:t.clientX,y:t.clientY})):null;}
+          // Maus-Events (Desktop)
+          let md=false,ml=null;
+          function onMD(e){md=true;ml={x:e.clientX,y:e.clientY};e.preventDefault();}
+          function onMM(e){if(!md||!ml)return;ox+=e.clientX-ml.x;oy+=e.clientY-ml.y;ml={x:e.clientX,y:e.clientY};draw();}
+          function onMU(){md=false;ml=null;}
+          function onW(e){e.preventDefault();scale=Math.max(.05,Math.min(20,scale*(e.deltaY<0?1.1:.9)));draw();}
+          canvas.addEventListener('touchstart',onTS,{passive:false});
+          canvas.addEventListener('touchmove',onTM,{passive:false});
+          canvas.addEventListener('touchend',onTE,{passive:true});
+          canvas.addEventListener('mousedown',onMD);
+          canvas.addEventListener('mousemove',onMM);
+          canvas.addEventListener('mouseup',onMU);
+          canvas.addEventListener('mouseleave',onMU);
+          canvas.addEventListener('wheel',onW,{passive:false});
+          function cleanup(){
+            canvas.removeEventListener('touchstart',onTS);
+            canvas.removeEventListener('touchmove',onTM);
+            canvas.removeEventListener('touchend',onTE);
+            canvas.removeEventListener('mousedown',onMD);
+            canvas.removeEventListener('mousemove',onMM);
+            canvas.removeEventListener('mouseup',onMU);
+            canvas.removeEventListener('mouseleave',onMU);
+            canvas.removeEventListener('wheel',onW);
+          }
+          document.getElementById('crop-confirm').onclick=()=>{
+            const OUT=512,ratio=OUT/(R*2);
+            const oc=document.createElement('canvas');
+            oc.width=OUT;oc.height=OUT;
+            const ctx=oc.getContext('2d');
+            ctx.beginPath();ctx.arc(OUT/2,OUT/2,OUT/2,0,Math.PI*2);ctx.clip();
+            ctx.save();
+            ctx.translate(OUT/2+ox*ratio,OUT/2+oy*ratio);
+            ctx.scale(scale*ratio,scale*ratio);
+            ctx.drawImage(img,-img.naturalWidth/2,-img.naturalHeight/2);
+            ctx.restore();
+            document.getElementById('modal-crop').classList.remove('open');
+            cleanup();resolve(oc.toDataURL('image/jpeg',.85));
+          };
+          document.getElementById('crop-cancel').onclick=()=>{
+            document.getElementById('modal-crop').classList.remove('open');
+            cleanup();resolve(null);
+          };
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function avatarHtml(s,size=44){
     const src=getAvatar(s);
     if(src) return `<div class="item-avatar" style="width:${size}px;height:${size}px"><img src="${src}" alt="${s?.name||''}" onerror="this.parentElement.innerHTML='${userIcon.replace(/"/g,"'")}'">`+`</div>`;
@@ -935,6 +1048,15 @@
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
+
+  // Lightbox: delegierter Klick auf .avatar-lightbox Elemente
+  document.querySelector('.content').addEventListener('click',e=>{
+    const el=e.target.closest('[data-lightbox-src]');
+    if(el)openLightbox(el.dataset.lightboxSrc);
+  });
+  document.getElementById('modal-lightbox').addEventListener('click',()=>{
+    document.getElementById('modal-lightbox').classList.remove('open');
+  });
 
   // ── PULL TO REFRESH ────────────────────────────────────
   {
@@ -1223,7 +1345,7 @@
 
     const initial = (spieler.name?.trim()[0] || '?').toUpperCase();
     const avatarLg = src
-      ? `<div class="profile-avatar-lg">
+      ? `<div class="profile-avatar-lg avatar-lightbox" data-lightbox-src="${escHtml(src)}" title="${escHtml(spieler.name)}">
           <img src="${src}" alt="${escHtml(spieler.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
           <span style="display:none; font-size:32px; font-weight:700; color:var(--text-secondary)">${initial}</span>
         </div>`
@@ -1625,10 +1747,9 @@
     fotoInput.addEventListener('change',async()=>{
       const file=fotoInput.files?.[0];
       if(!file)return;
-      uploadStatus.textContent='Bild wird verarbeitet…';
       try{
-        const b64=await compressImageToBase64(file,512,0.82);
-        // Größe prüfen (Supabase text-Spalte: praktisch unbegrenzt, aber ~500KB vernünftig)
+        const b64=await openCropModal(file);
+        if(!b64)return;
         const sizeKB=Math.round(b64.length*0.75/1024);
         uploadStatus.textContent=`Speichern… (${sizeKB} KB)`;
         await save(async()=>{
@@ -1800,7 +1921,7 @@
         </label>
         <input type="file" id="detail-foto-input" accept="image/*" style="display:none">
         <div id="detail-upload-status" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;min-height:16px"></div>`
-      :`<div class="profile-avatar-lg">
+      :`<div class="profile-avatar-lg${src?' avatar-lightbox':''}" ${src?`data-lightbox-src="${escHtml(src)}"`:''}">
           ${src?`<img src="${src}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:700;color:var(--text-secondary)">${initial}</div>`}
         </div>`;
     el.innerHTML=`<button class="back-btn" id="detail-back">${backIcon} Zurück</button>
@@ -1840,9 +1961,9 @@
       fotoInput.addEventListener('change',async()=>{
         const file=fotoInput.files?.[0];
         if(!file)return;
-        status.textContent='Bild wird verarbeitet…';
         try{
-          const b64=await compressImageToBase64(file,512,0.82);
+          const b64=await openCropModal(file);
+          if(!b64)return;
           const sizeKB=Math.round(b64.length*0.75/1024);
           status.textContent=`Speichern… (${sizeKB} KB)`;
           await save(async()=>{
@@ -3410,6 +3531,26 @@
       <button class="btn btn-danger" id="modal-delete-ok">Löschen</button>
     </div>
   </div>
+</div>
+
+<!-- Crop Modal -->
+<div class="modal-overlay" id="modal-crop" style="align-items:center;z-index:400">
+  <div class="modal" style="padding:0;border-radius:var(--radius-xl);max-width:380px;width:calc(100vw - 32px);overflow:hidden;background:var(--surface)">
+    <div style="padding:var(--space-md) var(--space-md) var(--space-sm);text-align:center;border-bottom:1px solid var(--border)">
+      <div style="font-size:15px;font-weight:600;color:var(--text-primary)">Profilbild zuschneiden</div>
+      <div style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Ziehen zum Verschieben · Pinch zum Zoomen</div>
+    </div>
+    <div style="background:#111;line-height:0;text-align:center"><canvas id="crop-canvas"></canvas></div>
+    <div style="display:flex;gap:var(--space-sm);padding:var(--space-md)">
+      <button class="btn btn-secondary" id="crop-cancel" style="flex:1">Abbrechen</button>
+      <button class="btn btn-primary" id="crop-confirm" style="flex:1">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="modal-overlay" id="modal-lightbox" style="align-items:center;justify-content:center;z-index:400;background:rgba(0,0,0,.88);backdrop-filter:none;cursor:pointer">
+  <img id="lightbox-img" style="border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 3px rgba(255,255,255,.15)" alt="">
 </div>
 
 <!-- PWA Install Bottom Sheet
