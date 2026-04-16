@@ -680,8 +680,10 @@
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
       body:JSON.stringify({spieler_ids,title,body,data,kategorie}),
-    }).then(r=>console.log(`📨 Push gesendet (${r.status})`))
-      .catch(e=>console.warn('Push-Trigger Fehler:',e));
+    }).then(async r=>{
+      const j=await r.json().catch(()=>({}));
+      console.log(`📨 Push: ${j.sent??'?'} gesendet, ${j.errors??'?'} Fehler (HTTP ${r.status})`);
+    }).catch(e=>console.warn('Push-Trigger Fehler:',e));
   }
 
   // ── CONSOLE INTERCEPTOR ────────────────────────────────
