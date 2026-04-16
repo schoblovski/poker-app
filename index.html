@@ -1366,6 +1366,8 @@
       return;
     }
     currentSpieler=sp;
+    // letzter_login aktualisieren (fire-and-forget)
+    db.from('spieler').update({letzter_login:new Date().toISOString()}).eq('id',sp.id).then(()=>{});
     // auth_user_id setzen falls noch nicht verknüpft (nötig für RLS-Policies)
     if(!sp.auth_user_id&&currentUser?.id){
       // Fire-and-forget: blockiert App-Start nicht
@@ -1521,7 +1523,7 @@
     const fmtAbs=v=>'€\u00a0'+Math.abs(v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
     const mkRow=(label,val,isPos)=>{
       if(!val)return'';
-      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md);border-bottom:1px solid var(--border)">
         <span style="color:var(--text-secondary);font-size:14px">${label}</span>
         <span class="${isPos?'amount-pos':'amount-neg'}" style="font-weight:600">${isPos?'+':'−'}\u00a0${fmtAbs(val)}</span>
       </div>`;
@@ -1545,16 +1547,16 @@
       h+=`</div>`;
       return h;
     };
-    let html=`<div class="card" style="margin-bottom:var(--space-md)"><div style="padding:4px 0">
+    let html=`<div class="card" style="margin-bottom:var(--space-md)">
       ${mkRow(`Einzahlungen (${einzahlungen.length})`,sumEinz,true)}
       ${mkRow(`Eingänge (${eingaenge.length})`,sumEing,true)}
       ${mkRow(`Auszahlungen (${auszahlungen.length})`,sumAusz,false)}
       ${mkRow(`Ausgaben (${ausgaben.length})`,sumAusg,false)}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md)">
         <span style="font-weight:700">Bankkonto</span>
         <span class="${ksClass(bankkonto)}" style="font-size:22px;font-weight:700">${fmt(bankkonto)}</span>
       </div>
-    </div></div>`;
+    </div>`;
     html+=renderSection('Einzahlungen',einzahlungen,true);
     html+=renderSection('Eingänge',eingaenge,true);
     html+=renderSection('Auszahlungen',auszahlungen,false);
@@ -1585,20 +1587,20 @@
       ...nichtBank.filter(s=>s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
       ...nichtBank.filter(s=>!s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
     ];
-    let html=`<div class="card" style="margin-bottom:var(--space-md)"><div style="padding:4px 0">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+    let html=`<div class="card" style="margin-bottom:var(--space-md)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md);border-bottom:1px solid var(--border)">
         <span style="color:var(--text-secondary);font-size:14px">Bankkonto</span>
         <span class="${ksClass(bankkonto)}" style="font-weight:600">${fmt(bankkonto)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md);border-bottom:1px solid var(--border)">
         <span style="color:var(--text-secondary);font-size:14px">Spieler-Kontostände (${nichtBank.length})</span>
         <span class="${ksClass(-spielerSumme)}" style="font-weight:600">−\u00a0${fmtAbs(spielerSumme)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md)">
         <span style="font-weight:700">Pokerkasse</span>
         <span class="${ksClass(pokerkasse)}" style="font-size:22px;font-weight:700">${fmt(pokerkasse)}</span>
       </div>
-    </div></div>
+    </div>
     <div class="section-title">Spieler-Kontostände</div>
     <div class="card">`;
     sorted.forEach(s=>{
@@ -2461,13 +2463,15 @@
     if(!currentSpieler?.ist_admin){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="empty-title">Kein Zugriff</div></div>`;return;}
     const{data:spieler}=await db.from('spieler').select('*').order('name');if(!spieler)return;
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
+    const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
+    const loginSub=s=>s.letzter_login?`<div class="item-subtitle">Zuletzt: ${fmtLogin(s.letzter_login)}</div>`:'';
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
     html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
-    aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div></div><div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
+    aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>${loginSub(s)}</div><div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
     html+=`</div>`;
     if(inaktive.length>0){
       html+=`<div class="section-title">Inaktiv · ${inaktive.length}</div><div class="card">`;
-      inaktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title" style="color:var(--text-secondary)">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div></div><div class="item-trailing"><span class="badge badge-red">Inaktiv</span>${chevron}</div></div>`;});
+      inaktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title" style="color:var(--text-secondary)">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}</div>${loginSub(s)}</div><div class="item-trailing"><span class="badge badge-red">Inaktiv</span>${chevron}</div></div>`;});
       html+=`</div>`;
     }
     el.innerHTML=html;
