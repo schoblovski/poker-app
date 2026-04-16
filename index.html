@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.46">
+  <meta name="version" content="3.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -283,6 +283,8 @@
     .kasse-tile.bank{background:var(--accent-soft);}
     .kasse-tile.bank .kasse-tile-label{color:var(--accent-text);}
     .kasse-tile.bank .kasse-tile-value{color:var(--accent-text);}
+    .kasse-tile.clickable{cursor:pointer;transition:opacity .15s;}
+    .kasse-tile.clickable:active{opacity:.65;}
     .hand-type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-xs);margin-top:var(--space-xs);}
     .hand-type-btn{background:var(--bg-secondary);border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);}
     .hand-type-btn.selected{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
@@ -542,6 +544,8 @@
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
     <div class="page" id="page-profil"><div id="profil-content"></div></div>
     <div class="page" id="page-poker-infos"><div id="poker-infos-content"></div></div>
+    <div class="page" id="page-bankkonto-detail"><div id="bankkonto-detail-content"></div></div>
+    <div class="page" id="page-pokerkasse-detail"><div id="pokerkasse-detail-content"></div></div>
     <div class="page" id="page-haende">
       <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
       <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
@@ -667,7 +671,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.46';
+  const VERSION='3.0';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1127,7 +1131,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1456,17 +1460,18 @@
     }
 
     // Bank & Pokerkasse
+    const tileChev=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;opacity:.35;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>`;
     html+=`<div class="section-title">Kasse</div>
     <div class="kasse-grid">
-      <div class="kasse-tile bank">
+      <div class="kasse-tile bank clickable" id="tile-bankkonto">
         <div class="kasse-tile-label">Bankkonto</div>
         <div class="kasse-tile-value">${fmt(bankkonto)}</div>
-        <div class="kasse-tile-sub">Physisches Sparbuch</div>
+        <div class="kasse-tile-sub" style="display:flex;align-items:center;justify-content:space-between">Physisches Sparbuch${tileChev}</div>
       </div>
-      <div class="kasse-tile">
+      <div class="kasse-tile clickable" id="tile-pokerkasse">
         <div class="kasse-tile-label">Pokerkasse</div>
         <div class="kasse-tile-value ${ksClass(pokerkasse)}">${fmt(pokerkasse)}</div>
-        <div class="kasse-tile-sub">Überschuss</div>
+        <div class="kasse-tile-sub" style="display:flex;align-items:center;justify-content:space-between">Überschuss${tileChev}</div>
       </div>
     </div>`;
 
@@ -1484,6 +1489,131 @@
     el.querySelectorAll('.list-item.clickable[data-id]').forEach(row=>{
       row.addEventListener('click',()=>{const s=spieler.find(x=>x.id===row.dataset.id);if(s)showSpielerStats({...s,_ks:kontostaende[s.id]||0});});
     });
+    document.getElementById('tile-bankkonto')?.addEventListener('click',loadBankkontoDetail);
+    document.getElementById('tile-pokerkasse')?.addEventListener('click',loadPokerkasseDetail);
+  }
+
+  // ── BANKKONTO DETAIL ────────────────────────────────────
+  async function loadBankkontoDetail(){
+    const el=document.getElementById('bankkonto-detail-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
+    showPage('bankkonto-detail');
+    const [{data:allSpielerDB},{data:trans}]=await Promise.all([
+      db.from('spieler').select('*'),
+      db.from('transaktionen').select('*').order('datum',{ascending:false}),
+    ]);
+    const sMap={};(allSpielerDB||[]).forEach(s=>{sMap[s.id]=s;});
+    const einzahlungen=[],eingaenge=[],auszahlungen=[],ausgaben=[];
+    (trans||[]).forEach(t=>{
+      const vId=t.von_spieler_id,nId=t.nach_spieler_id;
+      const vBank=vId&&sMap[vId]?.ist_bank,nBank=nId&&sMap[nId]?.ist_bank;
+      if(!vId&&nId&&!nBank) einzahlungen.push(t);
+      if(!vId&&nBank) eingaenge.push(t);
+      if(vId&&!vBank&&!nId) auszahlungen.push(t);
+      if(vBank&&!nId) ausgaben.push(t);
+    });
+    const sumEinz=einzahlungen.reduce((s,t)=>s+(t.betrag||0),0);
+    const sumEing=eingaenge.reduce((s,t)=>s+(t.betrag||0),0);
+    const sumAusz=auszahlungen.reduce((s,t)=>s+(t.betrag||0),0);
+    const sumAusg=ausgaben.reduce((s,t)=>s+(t.betrag||0),0);
+    const bankkonto=sumEinz+sumEing-sumAusz-sumAusg;
+    const fmtD=d=>{if(!d)return'';const p=d.split('-');return`${p[2]}.${p[1]}.${p[0].slice(2)}`;};
+    const fmtAbs=v=>'€\u00a0'+Math.abs(v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const mkRow=(label,val,isPos)=>{
+      if(!val)return'';
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-secondary);font-size:14px">${label}</span>
+        <span class="${isPos?'amount-pos':'amount-neg'}" style="font-weight:600">${isPos?'+':'−'}\u00a0${fmtAbs(val)}</span>
+      </div>`;
+    };
+    const renderSection=(label,items,isPos)=>{
+      if(!items.length)return'';
+      const total=items.reduce((s,t)=>s+(t.betrag||0),0);
+      const cls=isPos?'amount-pos':'amount-neg';
+      let h=`<div class="section-title" style="display:flex;justify-content:space-between;align-items:center">${label}<span class="${cls}" style="font-size:12px;font-weight:600">${isPos?'+':'−'}\u00a0${fmtAbs(total)}</span></div><div class="card">`;
+      items.forEach(t=>{
+        const nameId=isPos?t.nach_spieler_id:t.von_spieler_id;
+        const name=nameId?sMap[nameId]?.name:'';
+        const komm=t.kommentar?escHtml(t.kommentar):'';
+        const main=name||komm||'–';
+        const sub=(name&&komm)?`<div class="item-subtitle">${komm}</div>`:'';
+        h+=`<div class="list-item">
+          <div class="item-body"><div class="item-title">${main}</div>${sub}<div class="item-subtitle">${fmtD(t.datum)}</div></div>
+          <div class="item-trailing"><span class="item-amount ${cls}">${fmtAbs(t.betrag)}</span></div>
+        </div>`;
+      });
+      h+=`</div>`;
+      return h;
+    };
+    let html=`<div class="card" style="margin-bottom:var(--space-md)"><div style="padding:4px 0">
+      ${mkRow(`Einzahlungen (${einzahlungen.length})`,sumEinz,true)}
+      ${mkRow(`Eingänge (${eingaenge.length})`,sumEing,true)}
+      ${mkRow(`Auszahlungen (${auszahlungen.length})`,sumAusz,false)}
+      ${mkRow(`Ausgaben (${ausgaben.length})`,sumAusg,false)}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+        <span style="font-weight:700">Bankkonto</span>
+        <span class="${ksClass(bankkonto)}" style="font-size:22px;font-weight:700">${fmt(bankkonto)}</span>
+      </div>
+    </div></div>`;
+    html+=renderSection('Einzahlungen',einzahlungen,true);
+    html+=renderSection('Eingänge',eingaenge,true);
+    html+=renderSection('Auszahlungen',auszahlungen,false);
+    html+=renderSection('Ausgaben',ausgaben,false);
+    el.innerHTML=html;
+  }
+
+  // ── POKERKASSE DETAIL ───────────────────────────────────
+  async function loadPokerkasseDetail(){
+    const el=document.getElementById('pokerkasse-detail-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
+    showPage('pokerkasse-detail');
+    const [{data:allSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
+      db.from('spieler').select('*').order('name'),
+      db.from('transaktionen').select('*'),
+      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+    ]);
+    const spieleMap={};(spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
+    const kontostaende=berechneKontostaende(allSpielerDB||[],trans,verlauf,spieleMap);
+    const bankkonto=berechneBankkonto(trans||[]);
+    const bankId=(allSpielerDB||[]).find(s=>s.ist_bank)?.id;
+    const nichtBank=(allSpielerDB||[]).filter(s=>!s.ist_bank);
+    const spielerSumme=nichtBank.reduce((s,sp)=>s+(kontostaende[sp.id]||0),0);
+    const pokerkasse=bankkonto-spielerSumme;
+    const fmtAbs=v=>'€\u00a0'+Math.abs(v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const sorted=[
+      ...nichtBank.filter(s=>s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
+      ...nichtBank.filter(s=>!s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
+    ];
+    let html=`<div class="card" style="margin-bottom:var(--space-md)"><div style="padding:4px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-secondary);font-size:14px">Bankkonto</span>
+        <span class="${ksClass(bankkonto)}" style="font-weight:600">${fmt(bankkonto)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-secondary);font-size:14px">Spieler-Kontostände (${nichtBank.length})</span>
+        <span class="${ksClass(-spielerSumme)}" style="font-weight:600">−\u00a0${fmtAbs(spielerSumme)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+        <span style="font-weight:700">Pokerkasse</span>
+        <span class="${ksClass(pokerkasse)}" style="font-size:22px;font-weight:700">${fmt(pokerkasse)}</span>
+      </div>
+    </div></div>
+    <div class="section-title">Spieler-Kontostände</div>
+    <div class="card">`;
+    sorted.forEach(s=>{
+      const ks=kontostaende[s.id]||0;
+      html+=`<div class="list-item">
+        ${avatarHtml(s)}
+        <div class="item-body"><div class="item-title">${s.name}${!s.aktiv?'<span style="font-size:11px;color:var(--text-tertiary);margin-left:4px">(inaktiv)</span>':''}</div></div>
+        <div class="item-trailing"><span class="item-amount ${ksClass(ks)}">${fmt(ks)}</span></div>
+      </div>`;
+    });
+    html+=`<div class="list-item" style="border-top:2px solid var(--border)">
+      <div class="item-body"><div class="item-title" style="font-weight:700">Gesamt</div></div>
+      <div class="item-trailing"><span class="item-amount ${ksClass(spielerSumme)}" style="font-weight:700">${fmt(spielerSumme)}</span></div>
+    </div></div>`;
+    el.innerHTML=html;
   }
 
   // ── SPIELER STATS ──────────────────────────────────────
@@ -3394,8 +3524,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
-    {version:'2.46',datum:'April 2026',eintraege:[
+    {version:'3.0',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Bankkonto-Detail: Kachel auf Home antippen zeigt alle Buchungen (Einzahlungen, Auszahlungen, Eingänge, Ausgaben) mit Subtotals und Gesamtberechnung'},
+      {typ:'neu',text:'Pokerkasse-Detail: Kachel auf Home antippen zeigt Formelaufschlüsselung (Bankkonto minus alle Spieler-Kontostände) mit vollständiger Spielerliste'},
       {typ:'neu',text:'LinkedIn Login aktiviert'},
+      {typ:'verbessert',text:'Facebook Login aktiviert; Apple und Microsoft Login entfernt'},
+      {typ:'fix',text:'Login-Freeze auf Mobilgeräten behoben: Sofortige Ladeanimation, parallele DB-Calls, Profilbild-Download im Hintergrund'},
     ]},
     {version:'2.45',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Facebook Login aktiviert'},

@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.46**
+- **Aktuelle Version: 3.0**
 
 ## Login-Provider
 
@@ -268,6 +268,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Bankkonto & Pokerkasse Detail-Seiten**~~ ✅ v3.0 – Kacheln auf Home anklickbar; Bankkonto-Detail zeigt alle Buchungsgruppen mit Subtotals; Pokerkasse-Detail zeigt Formel-Aufschlüsselung mit Spielerliste; LinkedIn Login hinzugefügt; Facebook Login aktiviert; Apple & Microsoft Login entfernt
 - ~~**Qualitätskontrolle + Login-Fix**~~ ✅ v2.42 – Login-Freeze behoben (Ladeanimation + parallele DB-Calls + fire-and-forget Profilbild); buyin_kassa in allen Queries konsistent
 - ~~**Statistik KPIs + App Features**~~ ✅ v2.41 – Neue KPIs Einzahlungen + BuyIn-Kosten in Spieler-Stats und Gesamtstatistik; Info-Seite: collapsible «App Features» Sektion
 - ~~**Deep Links + Login Fix**~~ ✅ v2.40 – Klick auf Push-Notification navigiert direkt zum relevanten Screen; Spielergebnis-Payout-Bug gefixt; Login-Freeze durch async Font-Loading behoben
