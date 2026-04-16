@@ -224,12 +224,18 @@ async function sendWebPush(
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' } });
+    return new Response(null, { headers: CORS });
   }
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return new Response('Method Not Allowed', { status: 405, headers: CORS });
   }
 
   const supabase = createClient(
@@ -241,12 +247,12 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON', { status: 400 });
+    return new Response('Invalid JSON', { status: 400, headers: CORS });
   }
 
   const { spieler_ids, title, body: msg, data = {}, kategorie } = body;
   if (!title || !msg) {
-    return new Response('Missing title or body', { status: 400 });
+    return new Response('Missing title or body', { status: 400, headers: CORS });
   }
 
   // Subscriptions laden
@@ -262,11 +268,11 @@ Deno.serve(async (req) => {
   const { data: subs, error } = await query;
   if (error) {
     console.error('DB Fehler:', error);
-    return new Response('DB Error', { status: 500 });
+    return new Response('DB Error', { status: 500, headers: CORS });
   }
   if (!subs || subs.length === 0) {
     return new Response(JSON.stringify({ sent: 0, errors: 0 }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...CORS }
     });
   }
 
@@ -303,6 +309,6 @@ Deno.serve(async (req) => {
 
   console.log(`Push gesendet: ${sent} OK, ${errors} Fehler`);
   return new Response(JSON.stringify({ sent, errors }), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json', ...CORS }
   });
 });
