@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.27">
+  <meta name="version" content="2.28">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.27';
+  const VERSION='2.28';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -925,6 +925,7 @@
       else{_pageHistory.push(page);}
       history.pushState({},'',' ');
     }
+    if(page!=='verlauf')_verlaufCleanup();
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -1014,24 +1015,37 @@
   function showWhatsNew(){
     const seen=localStorage.getItem('dtks_version_seen');
     if(seen===VERSION)return;
-    const entry=CHANGELOG.find(c=>c.version===VERSION);
-    if(!entry)return;
+    const parseVer=v=>v.split('.').map(Number);
+    const isNewer=(a,b)=>{const[aM,am]=parseVer(a),[bM,bm]=parseVer(b);return aM>bM||(aM===bM&&am>bm);};
+    // Wenn keine gespeicherte Version: nur aktuellen Eintrag zeigen (Erstbesuch)
+    const entries=seen
+      ?CHANGELOG.filter(c=>isNewer(c.version,seen))
+      :[CHANGELOG.find(c=>c.version===VERSION)].filter(Boolean);
+    if(!entries.length){localStorage.setItem('dtks_version_seen',VERSION);return;}
     const typColor={neu:'var(--accent-text)',fix:'var(--info)',verbessert:'var(--warning)'};
     const typLabel={neu:'NEU',fix:'FIX',verbessert:'UPDATE'};
     const typBg={neu:'var(--accent-soft)',fix:'var(--info-soft)',verbessert:'var(--warning-soft)'};
+    const mehrere=entries.length>1;
+    const header=mehrere
+      ?`<div style="text-align:center;margin-bottom:var(--space-lg)">
+          <div class="stat-label" style="margin-bottom:4px">Neu seit deinem letzten Besuch</div>
+          <div style="font-size:28px;font-weight:800;letter-spacing:-.6px;color:var(--accent-text)">v${seen} → v${VERSION}</div>
+        </div>`
+      :`<div style="text-align:center;margin-bottom:var(--space-lg)">
+          <div class="stat-label" style="margin-bottom:4px">Neue Version</div>
+          <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:var(--accent-text)">v${VERSION}</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${escHtml(entries[0].datum)}</div>
+        </div>`;
+    const body=entries.map(entry=>`
+      ${mehrere?`<div style="font-size:11px;font-weight:700;color:var(--text-tertiary);letter-spacing:.5px;text-transform:uppercase;padding:var(--space-sm) 0 6px">Version ${entry.version} · ${escHtml(entry.datum)}</div>`:''}
+      ${entry.eintraege.map(e=>`
+        <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+          <span style="font-size:10px;font-weight:700;color:${typColor[e.typ]||'var(--text-tertiary)'};background:${typBg[e.typ]||'var(--bg-secondary)'};border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:2px;white-space:nowrap">${typLabel[e.typ]||e.typ.toUpperCase()}</span>
+          <span style="font-size:13px;color:var(--text-primary);line-height:1.5">${escHtml(e.text)}</span>
+        </div>`).join('')}`).join('');
     document.getElementById('whats-new-content').innerHTML=`
-      <div style="text-align:center;margin-bottom:var(--space-lg)">
-        <div class="stat-label" style="margin-bottom:4px">Neue Version</div>
-        <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:var(--accent-text)">v${VERSION}</div>
-        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${escHtml(entry.datum)}</div>
-      </div>
-      <div style="margin-bottom:var(--space-lg)">
-        ${entry.eintraege.map(e=>`
-          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-            <span style="font-size:10px;font-weight:700;color:${typColor[e.typ]||'var(--text-tertiary)'};background:${typBg[e.typ]||'var(--bg-secondary)'};border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:2px;white-space:nowrap">${typLabel[e.typ]||e.typ.toUpperCase()}</span>
-            <span style="font-size:13px;color:var(--text-primary);line-height:1.5">${escHtml(e.text)}</span>
-          </div>`).join('')}
-      </div>
+      ${header}
+      <div style="margin-bottom:var(--space-lg)">${body}</div>
       <button class="btn btn-primary" id="whats-new-close">Los geht's!</button>`;
     document.getElementById('modal-whats-new').classList.add('open');
     document.getElementById('whats-new-close').addEventListener('click',()=>{
@@ -2136,13 +2150,18 @@
 
   // ── SPIEL VERLAUF ──────────────────────────────────────
   // ── VERLAUF STATE ──────────────────────────────────────
-  const _VERLAUF_PAGE=12;
+  const _VERLAUF_PAGE=10;
   let _verlaufOffset=0,_verlaufLoading=false,_verlaufDone=false;
-  let _verlaufSpiele=[],_verlaufObserver=null;
+  let _verlaufSpiele=[],_verlaufScrollEl=null,_verlaufScrollFn=null;
+
+  function _verlaufCleanup(){
+    if(_verlaufScrollEl&&_verlaufScrollFn){
+      _verlaufScrollEl.removeEventListener('scroll',_verlaufScrollFn);
+      _verlaufScrollEl=null;_verlaufScrollFn=null;
+    }
+  }
 
   function _verlaufRenderBatch(el,spiele){
-    // Sentinel bleibt persistent – neuer Inhalt wird davor eingefügt
-    const sentinel=document.getElementById('verlauf-sentinel');
     spiele.forEach(spiel=>{
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       const teilnehmer=spiel.spiel_teilnehmer||[];
@@ -2180,8 +2199,9 @@
         }).join('')}
       </div>`;
       wrap.querySelector('[data-spiel-id]').addEventListener('click',()=>showSpielDetail(spiel));
-      // Vor Sentinel einfügen (oder ans Ende falls kein Sentinel mehr)
-      if(sentinel&&sentinel.parentNode===el) el.insertBefore(wrap,sentinel);
+      // Loader immer am Ende halten – davor einfügen
+      const loader=document.getElementById('verlauf-loader');
+      if(loader&&loader.parentNode===el) el.insertBefore(wrap,loader);
       else el.appendChild(wrap);
     });
   }
@@ -2200,9 +2220,8 @@
     _verlaufLoading=false;
     if(!spiele||spiele.length===0){
       _verlaufDone=true;
-      document.getElementById('verlauf-sentinel')?.remove();
       document.getElementById('verlauf-loader')?.remove();
-      if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
+      _verlaufCleanup();
       return;
     }
     _verlaufSpiele.push(...spiele);
@@ -2210,21 +2229,17 @@
     if(spiele.length<_VERLAUF_PAGE)_verlaufDone=true;
     const el=document.getElementById('verlauf-content');
     _verlaufRenderBatch(el,spiele);
-    // Alle Daten geladen → Sentinel entfernen
     if(_verlaufDone){
-      document.getElementById('verlauf-sentinel')?.remove();
       document.getElementById('verlauf-loader')?.remove();
-      if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
+      _verlaufCleanup();
     }
   }
 
   async function loadVerlauf(){
-    // State zurücksetzen
+    _verlaufCleanup();
     _verlaufOffset=0;_verlaufLoading=false;_verlaufDone=false;_verlaufSpiele=[];
-    if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
     const el=document.getElementById('verlauf-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    // Erste Seite laden
     const{data:first}=await db.from('spiele')
       .select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))')
       .eq('abgeschlossen',true)
@@ -2238,30 +2253,25 @@
     _verlaufSpiele.push(...first);
     _verlaufOffset=first.length;
     if(first.length<_VERLAUF_PAGE){
-      // Alle Daten in einem Rutsch – kein Observer nötig
       _verlaufDone=true;
       _verlaufRenderBatch(el,first);
       return;
     }
-    // Persistenten Sentinel + Loader einmalig anlegen
-    const sentinel=document.createElement('div');
-    sentinel.id='verlauf-sentinel';sentinel.style.height='1px';
-    el.appendChild(sentinel);
+    // Loader dauerhaft am Ende
     const loader=document.createElement('div');
     loader.id='verlauf-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
     loader.innerHTML='<div class="spinner"></div>Lade…';
     el.appendChild(loader);
-    // Ersten Batch vor Sentinel rendern
     _verlaufRenderBatch(el,first);
-    // Observer mit Verzögerung starten (verhindert sofortiges Feuern)
-    setTimeout(()=>{
-      const s=document.getElementById('verlauf-sentinel');
-      if(!s||_verlaufDone)return;
-      _verlaufObserver=new IntersectionObserver(entries=>{
-        if(entries[0].isIntersecting)_verlaufLoadMore();
-      },{root:document.querySelector('.content'),threshold:0.1});
-      _verlaufObserver.observe(s);
-    },400);
+    // Scroll-Listener auf .content (zuverlässiger als IntersectionObserver)
+    const content=document.querySelector('.content');
+    _verlaufScrollEl=content;
+    _verlaufScrollFn=()=>{
+      if(_verlaufLoading||_verlaufDone)return;
+      const remaining=content.scrollHeight-content.scrollTop-content.clientHeight;
+      if(remaining<400)_verlaufLoadMore();
+    };
+    content.addEventListener('scroll',_verlaufScrollFn,{passive:true});
   }
 
   // ── SPIEL DETAIL ────────────────────────────────────────
