@@ -1949,6 +1949,7 @@
     document.getElementById('profil-btn-logout').addEventListener('click',async()=>{
       if(!await confirmAction('Wirklich abmelden?'))return;
       await db.auth.signOut();
+      location.reload();
     });
 
     // Name auto-save (bei focusout / Enter)
