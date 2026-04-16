@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.37**
+- **Aktuelle Version: 2.38**
 
 ## Login-Provider
 
@@ -268,6 +268,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Push Notifications Trigger + Admin**~~ ✅ v2.38 – Spielabschluss + Transaktion → Push; Admin-Einstellungen: manueller App-Update-Push
 - ~~**Push Notifications Profil-UI**~~ ✅ v2.37 – Subscribe/Unsubscribe Toggle, Kategorie-Toggles; iOS-Hinweis wenn nicht als PWA installiert
 - ~~**Hand-Modal Ansichts-/Editier-Modus**~~ ✅ v2.36 – Bestehende Hände öffnen im Ansichts-Modus; Bearbeiten/Löschen nur Admin
 - ~~**New App Version Meldung**~~ ✅ v2.35 – Modal nach App-Start wenn gecachte Version veraltet; Button löst Reload aus
@@ -286,9 +287,10 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
    - ✅ Service Worker `sw.js` mit Push-Handler
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
    - ✅ Profil-Seite: Subscribe/Unsubscribe + Kategorie-Toggles
-   - ⏳ Supabase Edge Function `send-push` – eigentlicher Push-Versand
-   - ⏳ App-Trigger: Spielabschluss → Spielergebnisse-Push, neue Transaktion → betroffene Spieler
-   - ⏳ Admin: manueller App-Update-Push aus Einstellungen-Screen
+   - ✅ Supabase Edge Function `send-push` – eigentlicher Push-Versand
+   - ✅ App-Trigger: Spielabschluss → Spielergebnisse-Push, neue Transaktion → betroffene Spieler
+   - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
+   - ⏳ Edge Function deployen: `supabase functions deploy send-push` + Secrets setzen
 
 
 ## Migrations-Script

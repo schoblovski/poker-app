@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.37">
+  <meta name="version" content="2.38">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -666,12 +666,23 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.37';
+  const VERSION='2.38';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
+  const PUSH_FUNCTION_URL=`${SUPABASE_URL}/functions/v1/send-push`;
+
+  // Sendet Push-Notification über die Edge Function (fire-and-forget)
+  function triggerPush({spieler_ids=[], title, body, data={}, kategorie}){
+    fetch(PUSH_FUNCTION_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+      body:JSON.stringify({spieler_ids,title,body,data,kategorie}),
+    }).then(r=>console.log(`📨 Push gesendet (${r.status})`))
+      .catch(e=>console.warn('Push-Trigger Fehler:',e));
+  }
 
   // ── CONSOLE INTERCEPTOR ────────────────────────────────
   const _consoleLogs=[];
@@ -2105,6 +2116,20 @@
       <button class="btn btn-danger" id="btn-jahresspende" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
         Jahres-Spende durchführen
+      </button>
+
+      <div class="section-title" style="margin-top:var(--space-xl)">Push Benachrichtigungen</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">App-Update Push</div>
+            <div class="setting-sub">Benachrichtigt alle Nutzer mit aktiviertem App-Updates-Push über die neue Version</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" id="btn-push-update" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        App-Update Push senden (v${VERSION})
       </button>`;
 
     // Preview aktualisieren
@@ -2164,6 +2189,19 @@
       },`Jahres-Spende: ${n} Transaktionen erstellt`);
       await showAlert(`Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
       loadHome();
+    });
+
+    // App-Update Push Button
+    document.getElementById('btn-push-update').addEventListener('click',async()=>{
+      if(!await confirmAction(`App-Update Push senden?\n\nAlle Nutzer mit aktiviertem «App-Updates»-Push erhalten eine Benachrichtigung über Version ${VERSION}.`))return;
+      triggerPush({
+        spieler_ids:[],  // leer = alle
+        title:`DTKS Poker ${VERSION} ist verfügbar`,
+        body:'Eine neue Version der App ist online. Tippe hier um zu aktualisieren.',
+        data:{url:'/',tag:'app-update',requireInteraction:false},
+        kategorie:'app_updates',
+      });
+      await showAlert('Push-Benachrichtigung wird versendet.');
     });
   }
 
@@ -2368,7 +2406,24 @@
     if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
     if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
-    else{await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);}
+    else{
+      await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);
+      // Push an betroffene Spieler (von + nach, ohne Bank, ohne null)
+      const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
+      const betroffene=[von,nach].filter(id=>id&&id!==bankId);
+      if(betroffene.length>0){
+        const vonName=alleSpieler.find(s=>s.id===von)?.name||'Jemand';
+        const nachName=alleSpieler.find(s=>s.id===nach)?.name||'Jemand';
+        const beschreibung=von&&nach?`${vonName} → ${nachName}`:(nach?`Einzahlung an ${nachName}`:`Auszahlung von ${vonName}`);
+        triggerPush({
+          spieler_ids:betroffene,
+          title:`Neue Transaktion: €${betrag.toFixed(2)}`,
+          body:`${beschreibung} – ${kommentar}`,
+          data:{url:'/',tag:'transaktion'},
+          kategorie:'transaktionen',
+        });
+      }
+    }
     document.getElementById('modal-transaktion').classList.remove('open');
     await loadTransaktionen();await loadHome();
   });
@@ -2503,6 +2558,16 @@
   async function schliesseSpielAb(){
     if(!await confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
+    // Push Notification an alle Teilnehmer
+    const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
+    const ids=spielTeilnehmer.map(t=>t.spieler_id).filter(Boolean);
+    triggerPush({
+      spieler_ids:ids,
+      title:'Spielabend abgeschlossen 🃏',
+      body:`Die Ergebnisse vom ${new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'})} sind jetzt verfügbar.`,
+      data:{url:'/',tag:'spielergebnis'},
+      kategorie:'spielergebnisse',
+    });
     aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();await loadHome();
   }
 
@@ -3175,6 +3240,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.38',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push Trigger: Beim Spielabschluss erhalten alle Teilnehmer eine Benachrichtigung (wenn aktiviert)'},
+      {typ:'neu',text:'Push Trigger: Bei neuen Transaktionen werden betroffene Spieler benachrichtigt'},
+      {typ:'neu',text:'Admin Einstellungen: App-Update Push – sendet manuell eine Benachrichtigung an alle Nutzer'},
+    ]},
     {version:'2.37',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Push Benachrichtigungen: Aktivierung über Profil-Seite – Erlaubnis, Abonnieren und Kategorien (Spielergebnisse, Transaktionen, App-Updates)'},
       {typ:'neu',text:'iOS Hinweis: Auf iPhone/iPad erst «Zum Homescreen hinzufügen», danach Push aktivierbar'},
