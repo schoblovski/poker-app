@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.22">
+  <meta name="version" content="2.23">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -202,9 +202,9 @@
 
 
     .profile-header{text-align:center;padding:var(--space-lg) 0 var(--space-md);}
-    .profile-avatar-lg{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
+    .profile-avatar-lg{width:110px;height:110px;border-radius:50%;background:var(--bg-secondary);overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
     .profile-avatar-lg img{width:100%;height:100%;object-fit:cover;}
-    .profile-avatar-lg svg{width:40px;height:40px;color:var(--text-tertiary);}
+    .profile-avatar-lg svg{width:52px;height:52px;color:var(--text-tertiary);}
     .profile-name{font-size:22px;font-weight:700;letter-spacing:-.3px;}
     .profile-since{font-size:13px;color:var(--text-secondary);margin-top:4px;}
     .timeline-item{display:flex;gap:var(--space-md);padding:12px var(--space-md);border-bottom:1px solid var(--border);}
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.22';
+  const VERSION='2.23';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1273,14 +1273,19 @@
       const orderedTypes=HAND_TYPEN.filter(t=>handsByType[t]);
       const extraTypes=Object.keys(handsByType).filter(t=>!HAND_TYPEN.includes(t));
       html+=`<div class="section-title">Besondere Hände</div>`;
-      [...orderedTypes,...extraTypes].forEach(typ=>{
+      [...orderedTypes,...extraTypes].forEach((typ,idx)=>{
         const items=handsByType[typ].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
-        html += `<div class="card" style="margin-bottom:var(--space-xs); overflow:hidden">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);border-bottom:1px solid var(--border)">
+        const bodyId=`hand-body-${spieler.id}-${idx}`;
+        html += `<div class="card" style="margin-bottom:var(--space-xs);overflow:hidden">
+            <div class="hand-collapse-header" data-body="${bodyId}" style="display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);cursor:pointer;user-select:none;">
               <span style="font-size:13px;font-weight:700;color:var(--accent-text)">${escHtml(typ)}</span>
-              <span style="font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);border-radius:20px;padding:2px 8px">${items.length}×</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);border-radius:20px;padding:2px 8px">${items.length}×</span>
+                <svg class="hand-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);transition:transform 200ms ease;transform:rotate(-90deg)"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
             </div>
-            <div class="history-scroll" style="max-height: 200px; overflow-y: auto;">`; // Scrollbereich für die Liste
+            <div id="${bodyId}" style="display:none">
+            <div class="history-scroll" style="max-height:200px;overflow-y:auto;">`; // Scrollbereich
 
         items.forEach((h,i)=>{
           const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
@@ -1289,12 +1294,25 @@
             <div class="timeline-body"><div class="timeline-sub" style="color:var(--text-primary)">${escHtml(h.kommentar||'–')}</div></div>
           </div>`;
         });
-        html += `</div></div>`; // Schließt scroll-bereich und card
+        html += `</div></div></div>`; // Schließt scroll, body, card
       });
     }
 
     el.innerHTML=html;
     document.getElementById('stats-back').addEventListener('click',()=>showPage(backPage));
+
+    // Collapsable Besondere Hände
+    el.querySelectorAll('.hand-collapse-header').forEach(header=>{
+      header.addEventListener('click',()=>{
+        const body=document.getElementById(header.dataset.body);
+        const chevron=header.querySelector('.hand-chevron');
+        const open=body.style.display==='none';
+        body.style.display=open?'block':'none';
+        chevron.style.transform=open?'rotate(0deg)':'rotate(-90deg)';
+        if(open)header.style.borderBottom='1px solid var(--border)';
+        else header.style.borderBottom='none';
+      });
+    });
 
     // Scrollable history list with tabs
     function buildHistoryHtml(items){
@@ -1977,8 +1995,13 @@
     spielTeilnehmer.forEach(t=>{
       document.getElementById('payout-'+t.id)?.addEventListener('change',async e=>{
         const payout=parseFloat(e.target.value)||0;
+        if(e.target.value!=='') e.target.value=payout.toFixed(2);
         await save(()=>db.from('spiel_teilnehmer').update({payout}).eq('id',t.id),`PayOut ${t.spieler.name}: €${payout}`);
         updatePotUI();
+      });
+      document.getElementById('payout-'+t.id)?.addEventListener('blur',e=>{
+        const v=parseFloat(e.target.value);
+        if(!isNaN(v)&&e.target.value!=='') e.target.value=v.toFixed(2);
       });
       document.getElementById('payout-'+t.id)?.addEventListener('input',updatePotUI);
     });
