@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.35**
+- **Aktuelle Version: 2.36**
 
 ## Login-Provider
 
@@ -268,6 +268,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Hand-Modal Ansichts-/Editier-Modus**~~ ✅ v2.36 – Bestehende Hände öffnen im Ansichts-Modus; Bearbeiten/Löschen nur Admin
 - ~~**New App Version Meldung**~~ ✅ v2.35 – Modal nach App-Start wenn gecachte Version veraltet; Button löst Reload aus
 - ~~**Statistik-Seite Filter sticky Fix**~~ ✅ v2.34 – Filter nicht mehr sticky (hat andere Elemente überlagert)
 - ~~**Hand-Erfassung Beweisfoto**~~ ✅ v2.34 – Base64-Upload statt URL-Feld; Vorschau mit Lightbox und ×-Button; Thumbnail im Spiel-Detail
