@@ -142,10 +142,13 @@ def main():
     # ── SCHRITT 2: Spieler aktualisieren + Profilbilder ───
     print("\n📋 Schritt 2: Spieler aktualisieren (inkl. Profilbilder)...")
     res = db.table('spieler').select('id,name,email,ist_bank').execute()
-    spieler_map = {}
+    spieler_map = {}   # name → id
+    email_map   = {}   # email (lowercase) → id
     bank_id = None
     for s in res.data:
         spieler_map[s['name']] = s['id']
+        if s.get('email'):
+            email_map[s['email'].strip().lower()] = s['id']
         if s['ist_bank']:
             bank_id = s['id']
     print(f"  ✅ {len(spieler_map)} Spieler in DB gefunden")
@@ -176,7 +179,19 @@ def main():
         if email:                   updates['email']           = str(email)
         if aktiv is not None:       updates['aktiv']           = bool(aktiv)
 
-        if name not in spieler_map:
+        # Spieler suchen: erst nach Name, dann nach E-Mail (Fallback)
+        spieler_id = spieler_map.get(name)
+        if not spieler_id and email:
+            spieler_id = email_map.get(str(email).strip().lower())
+            if spieler_id:
+                print(f"  🔗 '{name}' per E-Mail zugeordnet (Name weicht ab)")
+                spieler_map[name] = spieler_id  # für spätere Schritte
+
+        if spieler_id:
+            if updates:
+                db.table('spieler').update(updates).eq('id', spieler_id).execute()
+        else:
+            # Wirklich neuer Spieler – INSERT
             new = db.table('spieler').insert({
                 'name':           name,
                 'email':          str(email)      if email      else None,
@@ -189,8 +204,6 @@ def main():
             if name == 'Bank':
                 bank_id = new.data[0]['id']
             print(f"  ➕ Neuer Spieler: {name}")
-        elif updates:
-            db.table('spieler').update(updates).eq('id', spieler_map[name]).execute()
 
     print(f"  ✅ Spieler fertig – {foto_konvertiert} Profilbilder konvertiert"
           + (f", {foto_fehler} Fehler" if foto_fehler else ""))
