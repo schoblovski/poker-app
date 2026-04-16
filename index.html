@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.41">
+  <meta name="version" content="2.42">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -668,7 +668,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.41';
+  const VERSION='2.42';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1340,41 +1340,54 @@
   });
 
   async function showApp(){
-    document.getElementById('login-screen').style.display='none';
-    // Einstellungen laden
-    const{data:einst}=await db.from('einstellungen').select('*');
+    // Sofort Ladeanimation zeigen – verhindert leeren Bildschirm während DB-Calls
+    const loginEl=document.getElementById('login-screen');
+    loginEl.innerHTML=`<div class="login-card" style="gap:var(--space-xl)">
+      <div class="login-title">DTKS Poker</div>
+      <div class="spinner" style="width:36px;height:36px;border-width:3px;border-color:var(--accent-soft);border-top-color:var(--accent)"></div>
+    </div>`;
+
+    // Einstellungen + Spieler parallel laden
+    const[{data:einst},{data:sp}]=await Promise.all([
+      db.from('einstellungen').select('*'),
+      db.from('spieler').select('*').eq('email',currentUser.email).eq('aktiv',true).single(),
+    ]);
     if(einst){einst.forEach(e=>{einstellungen[e.key]=parseFloat(e.wert)||0;});}
     console.log(`⚙️ Einstellungen:`,einstellungen);
 
-    const{data:sp}=await db.from('spieler').select('*').eq('email',currentUser.email).eq('aktiv',true).single();
     if(!sp){
-      document.getElementById('login-screen').style.display='flex';
-      document.getElementById('login-screen').innerHTML=`<div class="login-bg"></div><div class="login-card"><div style="font-size:48px">🚫</div><div class="login-title" style="font-size:22px">Kein Zugang</div><div style="font-size:14px;color:var(--text-secondary);text-align:center;line-height:1.5">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div><button class="btn-oauth" id="btn-logout-err">Abmelden</button></div>`;
+      loginEl.style.display='flex';
+      loginEl.innerHTML=`<div class="login-bg"></div><div class="login-card"><div style="font-size:48px">🚫</div><div class="login-title" style="font-size:22px">Kein Zugang</div><div style="font-size:14px;color:var(--text-secondary);text-align:center;line-height:1.5">Du bist nicht als Spieler registriert.<br>Bitte den Admin kontaktieren.</div><button class="btn-oauth" id="btn-logout-err">Abmelden</button></div>`;
       document.getElementById('btn-logout-err').addEventListener('click',async()=>{await db.auth.signOut();location.reload();});
       return;
     }
     currentSpieler=sp;
     // auth_user_id setzen falls noch nicht verknüpft (nötig für RLS-Policies)
     if(!sp.auth_user_id&&currentUser?.id){
-      await db.from('spieler').update({auth_user_id:currentUser.id}).eq('id',sp.id);
-      currentSpieler={...currentSpieler,auth_user_id:currentUser.id};
-      console.log('🔗 auth_user_id verknüpft:',currentUser.id);
+      // Fire-and-forget: blockiert App-Start nicht
+      db.from('spieler').update({auth_user_id:currentUser.id}).eq('id',sp.id).then(()=>{
+        currentSpieler={...currentSpieler,auth_user_id:currentUser.id};
+        console.log('🔗 auth_user_id verknüpft:',currentUser.id);
+      });
     }
-    // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur als Fallback beim allerersten Login
+    // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur beim allerersten Login
     const av=currentUser?.user_metadata?.avatar_url;
     if(!sp.profilbild&&av){
-      // Beim ersten Login: Google-Bild direkt als Base64 konvertieren und speichern
-      try{
-        const b64=await fetchUrlAsBase64(av);
-        await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
-        currentSpieler={...currentSpieler,profilbild:b64};
-        console.log('✅ Google-Profilbild als Base64 gespeichert');
-      }catch(e){
-        // Fallback: URL speichern wenn CORS o.ä. fehlschlägt
-        console.warn('⚠️ Base64-Konvertierung fehlgeschlagen, speichere URL als Fallback',e);
-        await db.from('spieler').update({profilbild:av}).eq('id',sp.id);
-        currentSpieler={...currentSpieler,profilbild:av};
-      }
+      // Sofort Google-URL verwenden, Base64-Konvertierung im Hintergrund
+      currentSpieler={...currentSpieler,profilbild:av};
+      (async()=>{
+        try{
+          const b64=await fetchUrlAsBase64(av);
+          await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
+          currentSpieler={...currentSpieler,profilbild:b64};
+          const btn=document.getElementById('user-avatar-btn');
+          if(btn)btn.innerHTML=`<img src="${b64}" alt="Avatar">`;
+          console.log('✅ Google-Profilbild als Base64 gespeichert');
+        }catch(e){
+          console.warn('⚠️ Base64-Konvertierung fehlgeschlagen, speichere URL als Fallback',e);
+          await db.from('spieler').update({profilbild:av}).eq('id',sp.id).catch(()=>{});
+        }
+      })();
     }
     const avatarSrc=getAvatar(currentSpieler)||av;
     if(avatarSrc)document.getElementById('user-avatar-btn').innerHTML=`<img src="${avatarSrc}" alt="Avatar">`;
@@ -1382,6 +1395,7 @@
     document.getElementById('btn-einstellungen').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
+    loginEl.style.display='none';
     document.getElementById('app-screen').style.display='flex';
     loadHome();
     setTimeout(showWhatsNew, 600);
@@ -1416,7 +1430,7 @@
       db.from('spieler').select('*'),                                          // alle (für Pokerkasse-Berechnung)
       db.from('spieler').select('*').eq('aktiv',true).order('name'),           // nur aktive (für Anzeige)
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
     if(!aktiveSpieler)return;
@@ -2261,7 +2275,7 @@
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
         db.from('spieler').select('*').eq('aktiv',true),
         db.from('transaktionen').select('*'),
-        db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot)').eq('spiele.abgeschlossen',true),
+        db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
         db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
       ]);
       const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -3379,6 +3393,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.42',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Login-Freeze auf Mobilgeräten behoben: Sofortige Ladeanimation statt leerem Bildschirm; Einstellungen und Spielerdaten werden parallel geladen'},
+      {typ:'fix',text:'Erster Login: Profilbild-Download von Google läuft jetzt im Hintergrund und blockiert den App-Start nicht mehr'},
+    ]},
     {version:'2.41',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Statistik: Neue KPIs – Einzahlungen und BuyIn-Kosten in Spieler-Statistik und Gesamtstatistik (mit Charts)'},
       {typ:'neu',text:'Info: Neue Sektion «App Features» beschreibt alle Funktionen der App – collapsible'},
