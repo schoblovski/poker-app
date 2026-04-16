@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.26">
+  <meta name="version" content="2.27">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.26';
+  const VERSION='2.27';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -2141,10 +2141,8 @@
   let _verlaufSpiele=[],_verlaufObserver=null;
 
   function _verlaufRenderBatch(el,spiele){
-    // Sentinel + Loader temporär entfernen
-    document.getElementById('verlauf-sentinel')?.remove();
-    document.getElementById('verlauf-loader')?.remove();
-
+    // Sentinel bleibt persistent – neuer Inhalt wird davor eingefügt
+    const sentinel=document.getElementById('verlauf-sentinel');
     spiele.forEach(spiel=>{
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       const teilnehmer=spiel.spiel_teilnehmer||[];
@@ -2182,18 +2180,10 @@
         }).join('')}
       </div>`;
       wrap.querySelector('[data-spiel-id]').addEventListener('click',()=>showSpielDetail(spiel));
-      el.appendChild(wrap);
+      // Vor Sentinel einfügen (oder ans Ende falls kein Sentinel mehr)
+      if(sentinel&&sentinel.parentNode===el) el.insertBefore(wrap,sentinel);
+      else el.appendChild(wrap);
     });
-
-    if(!_verlaufDone){
-      const sentinel=document.createElement('div');
-      sentinel.id='verlauf-sentinel';sentinel.style.height='1px';
-      el.appendChild(sentinel);
-      const loader=document.createElement('div');
-      loader.id='verlauf-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
-      loader.innerHTML='<div class="spinner"></div>Lade…';
-      el.appendChild(loader);
-    }
   }
 
   async function _verlaufLoadMore(){
@@ -2208,12 +2198,24 @@
       .range(_verlaufOffset,_verlaufOffset+_VERLAUF_PAGE-1);
     if(loader)loader.style.display='none';
     _verlaufLoading=false;
-    if(!spiele||spiele.length===0){_verlaufDone=true;document.getElementById('verlauf-sentinel')?.remove();document.getElementById('verlauf-loader')?.remove();return;}
+    if(!spiele||spiele.length===0){
+      _verlaufDone=true;
+      document.getElementById('verlauf-sentinel')?.remove();
+      document.getElementById('verlauf-loader')?.remove();
+      if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
+      return;
+    }
     _verlaufSpiele.push(...spiele);
     _verlaufOffset+=spiele.length;
     if(spiele.length<_VERLAUF_PAGE)_verlaufDone=true;
     const el=document.getElementById('verlauf-content');
     _verlaufRenderBatch(el,spiele);
+    // Alle Daten geladen → Sentinel entfernen
+    if(_verlaufDone){
+      document.getElementById('verlauf-sentinel')?.remove();
+      document.getElementById('verlauf-loader')?.remove();
+      if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
+    }
   }
 
   async function loadVerlauf(){
@@ -2235,16 +2237,31 @@
     el.innerHTML='';
     _verlaufSpiele.push(...first);
     _verlaufOffset=first.length;
-    if(first.length<_VERLAUF_PAGE)_verlaufDone=true;
+    if(first.length<_VERLAUF_PAGE){
+      // Alle Daten in einem Rutsch – kein Observer nötig
+      _verlaufDone=true;
+      _verlaufRenderBatch(el,first);
+      return;
+    }
+    // Persistenten Sentinel + Loader einmalig anlegen
+    const sentinel=document.createElement('div');
+    sentinel.id='verlauf-sentinel';sentinel.style.height='1px';
+    el.appendChild(sentinel);
+    const loader=document.createElement('div');
+    loader.id='verlauf-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
+    loader.innerHTML='<div class="spinner"></div>Lade…';
+    el.appendChild(loader);
+    // Ersten Batch vor Sentinel rendern
     _verlaufRenderBatch(el,first);
-    // IntersectionObserver für automatisches Nachladen
-    const sentinel=document.getElementById('verlauf-sentinel');
-    if(sentinel){
+    // Observer mit Verzögerung starten (verhindert sofortiges Feuern)
+    setTimeout(()=>{
+      const s=document.getElementById('verlauf-sentinel');
+      if(!s||_verlaufDone)return;
       _verlaufObserver=new IntersectionObserver(entries=>{
         if(entries[0].isIntersecting)_verlaufLoadMore();
       },{root:document.querySelector('.content'),threshold:0.1});
-      _verlaufObserver.observe(sentinel);
-    }
+      _verlaufObserver.observe(s);
+    },400);
   }
 
   // ── SPIEL DETAIL ────────────────────────────────────────
