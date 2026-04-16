@@ -266,34 +266,23 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 | 21 | Buy-In Minimum = 1 (kein Minus auf 0 möglich)                                      | ✅ v2.11 |
 | 22 | Doppelte Spieler im aktiven Spiel verhindern                                        | ✅ v2.11 |
 
-## Nächste geplante Features (Priorität)
+## Letzte Anpassungen
 
-1. ~~**Poker Infos Seite**~~ ✅ v2.12
-2. ~~**Pull-to-Refresh**~~ ✅ v2.13
+- ~~**Profilbild Crop/Zoom**~~ ✅ v2.30 – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
+- ~~**Verlauf Performance**~~ ✅ v2.26–2.29 – Lazy-Loading beim Scrollen (10er-Batches, Window-Scroll-Listener)
+- ~~**Spieler Detail Seite optimieren**~~ ✅ v2.23/2.24 – Profilbild 140px, Besondere Hände collapsable
+- ~~**Spieler Verwaltung mit Profilbild**~~ ✅ v2.25 – Admin kann Profilbilder von Spielern ändern
+- ~~**Payout Zahlen Format**~~ ✅ v2.23/2.24 – Auto .00 Formatierung, Komma → Punkt
+- ~~**Was ist neu seit letztem Besuch**~~ ✅ v2.28 – Modal zeigt alle Änderungen seit letztem Login
 
----
-hier wurde bei der letzten Session abgebrochen:
 
-Testergebnisse:
-	•	das drehende icon bei dem pull to refresh, hat den Pfeil in die falsche Richtung. Spiegel das Bild damit der Pfeil in die andere Richtung zeigt
-	•	das mit den scrollbalken scheint funktionieren, aber sie sind wegen der Farbe fast nicht sichtbar? Zumindest im dunkel modus kann man es sehen, aber im hell modus ändern sie die Farbe nicht und bleiben hell und somit kaum sichtbar?
-	•	Die Fusszeile ist nun irgendwie IMMER weiter oben als sie sein sollte. Sie ist nicht mehr am unteren Bildschirmrand. Vorher war das besser vor dem letzten update. korrigiere das.
-und dann gern nächste Anpassungen weitermachen
-
-Claude hatte nach dieser Antwort wegen erreichtem Nutzungslimit abgebrochen:
----
-
-## Nächste Todos (Priorität)
-
-3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
-3.5 ~~**Profilbild Crop/Zoom**~~ ✅ v2.30 – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
-3.6 ~~**Verlauf Performance**~~ ✅ v2.26–2.29 – Lazy-Loading beim Scrollen (10er-Batches, Window-Scroll-Listener)
-3.7 ~~**Spieler Detail Seite optimieren**~~ ✅ v2.23/2.24 – Profilbild 140px, Besondere Hände collapsable
-3.8 ~~**Spieler Verwaltung mit Profilbild**~~ ✅ v2.25 – Admin kann Profilbilder von Spielern ändern
-3.9 ~~**Payout Zahlen Format**~~ ✅ v2.23/2.24 – Auto .00 Formatierung, Komma → Punkt
-3.10 ~~**Was ist neu seit letztem Besuch**~~ ✅ v2.28 – Modal zeigt alle Änderungen seit letztem Login
-4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
+## Aktueller Backlog / TODOs
+1. **Statistik-Seite Optimierung - BUGS FIXEN** – kompakterer Filter, Range-Slider, Vollbild-Charts - Der Filterblock nicht mehr sticky machen, sondern ganz normal platzieren. Aktuell überlagert der Filterblock andere Elemente auf der Seite, korrigiere das.
+2. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand. Beim betrachten einer Hand soll das gespeicherte Foto auch sichtbar sein (crop/move/roundmask ist hier nicht notwendig - aber komprimiert speichern wie auch beim Profilbild). Das Feld "Beweisfoto-Url" muss nicht mehr im Formular angezeigt werden, da dies direkt durch das base64 foto ersetzt wird.
+3. **New App Version Meldung** – Wenn die App geöffnet wird, diese aber in einer älteren Version (cecached auf dem ios/android gerät) offen ist, soll die App ein modal anzeigen mit der Info, dass eine neue Version der App verfügbar ist. Wenn möglich, direkt aus dem modal via Button den App-Refresh erzwinge.
+4. **Altdaten Migration** – Neues Migrationsskript zur Altedaten übernahme und konvertierung der alten foto-dateien zu base64
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
+6. **Push Notifications** – Auf der Profil-Seite soll der Anwender seine (Push-)Benachrichtigungseinstellungen vornehmen können (Push Benachrichtungen erlauben ja/nein, Opt-in/-out für Spielergebnisse, Transatkionen, App-Updates, etc.) Potentiell brauchen wir hier noch weiter Datenbank-strukturen bei Supabase, machen wir das dann schritt für schritt wenn dieser Task ansteht.
 
 
 ## Migrations-Script
