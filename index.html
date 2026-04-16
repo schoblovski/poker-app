@@ -1930,6 +1930,14 @@
     }
 
     async function loadPushState(){
+      // iOS: Push Notifications nur im Standalone-Modus (App am Homescreen)
+      const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+      const isStandalone=window.matchMedia('(display-mode: standalone)').matches||!!window.navigator.standalone;
+      if(isIOS&&!isStandalone){
+        pushStatusText.textContent='Zum Homescreen hinzufügen (Teilen → Zum Home-Bildschirm), dann Push aktivieren';
+        pushNotSupported.style.display='inline';
+        return;
+      }
       if(!('PushManager' in window)||!('serviceWorker' in navigator)){
         pushStatusText.textContent='Push-Benachrichtigungen werden von diesem Browser nicht unterstützt';
         pushNotSupported.style.display='inline';
@@ -3167,6 +3175,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.37',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push Benachrichtigungen: Aktivierung über Profil-Seite – Erlaubnis, Abonnieren und Kategorien (Spielergebnisse, Transaktionen, App-Updates)'},
+      {typ:'neu',text:'iOS Hinweis: Auf iPhone/iPad erst «Zum Homescreen hinzufügen», danach Push aktivierbar'},
+    ]},
     {version:'2.36',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Hand-Detail: Bestehende Hände öffnen jetzt im Ansichts-Modus (kein direktes Bearbeiten mehr)'},
       {typ:'verbessert',text:'Hand-Detail: Bearbeiten und Löschen nur noch für Admins – normaler Spieler sieht nur die Infos'},
