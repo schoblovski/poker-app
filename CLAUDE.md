@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.40**
+- **Aktuelle Version: 2.41**
 
 ## Login-Provider
 
@@ -268,6 +268,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Statistik KPIs + App Features**~~ ✅ v2.41 – Neue KPIs Einzahlungen + BuyIn-Kosten in Spieler-Stats und Gesamtstatistik; Info-Seite: collapsible «App Features» Sektion
 - ~~**Deep Links + Login Fix**~~ ✅ v2.40 – Klick auf Push-Notification navigiert direkt zum relevanten Screen; Spielergebnis-Payout-Bug gefixt; Login-Freeze durch async Font-Loading behoben
 - ~~**Push Notifications Trigger + Admin**~~ ✅ v2.38/2.39 – Spielabschluss + Transaktion + Buy-In + Hand → Push; Admin: manueller App-Update-Push
 - ~~**Push Notifications Profil-UI**~~ ✅ v2.37 – Subscribe/Unsubscribe Toggle, Kategorie-Toggles; iOS-Hinweis wenn nicht als PWA installiert
