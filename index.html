@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.38">
+  <meta name="version" content="2.39">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -666,7 +666,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.38';
+  const VERSION='2.39';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1801,6 +1801,46 @@
         </div>
       </div>
 
+      <div class="section-title" style="margin-top:var(--space-lg)">Benachrichtigungen</div>
+      <div class="card" id="push-settings-card">
+        <div class="list-item">
+          <div class="item-avatar accent" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">Push Benachrichtigungen</div>
+            <div class="item-subtitle" id="push-status-text">Wird geprüft…</div>
+          </div>
+          <label class="toggle-switch" id="push-master-wrap" style="display:none">
+            <input type="checkbox" id="push-master-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="push-not-supported" style="display:none;font-size:11px;color:var(--text-tertiary)">Nicht verfügbar</span>
+        </div>
+        <div id="push-categories" style="display:none;border-top:1px solid var(--border)">
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Spielergebnisse</div><div class="item-subtitle">Dein Ergebnis nach Abschluss eines Spielabends</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="spielergebnisse" id="push-cat-spiele"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Buy-Ins</div><div class="item-subtitle">Wenn dir im aktiven Spiel ein Buy-In hinzugefügt wird</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="buyins" id="push-cat-buyins"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Besondere Hände</div><div class="item-subtitle">Wenn eine Hand mit dir als Gewinner erfasst wird</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="neue_hand" id="push-cat-hand"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Transaktionen</div><div class="item-subtitle">Bei neuen Transaktionen die dich betreffen</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="transaktionen" id="push-cat-trans"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
       <div class="section-title" style="margin-top:var(--space-lg)">Account</div>
       <div class="card">
         <button class="list-item clickable" id="profil-btn-wechseln" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans)">
@@ -1823,38 +1863,6 @@
           </div>
           ${chevron}
         </button>
-      </div>
-
-      <div class="section-title" style="margin-top:var(--space-lg)">Benachrichtigungen</div>
-      <div class="card" id="push-settings-card">
-        <div class="list-item">
-          <div class="item-avatar accent" style="width:40px;height:40px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          </div>
-          <div class="item-body">
-            <div class="item-title">Push Benachrichtigungen</div>
-            <div class="item-subtitle" id="push-status-text">Wird geprüft…</div>
-          </div>
-          <label class="toggle-switch" id="push-master-wrap" style="display:none">
-            <input type="checkbox" id="push-master-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <span id="push-not-supported" style="display:none;font-size:11px;color:var(--text-tertiary)">Nicht verfügbar</span>
-        </div>
-        <div id="push-categories" style="display:none;border-top:1px solid var(--border)">
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">Spielergebnisse</div><div class="item-subtitle">Nach Abschluss eines Spielabends</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="spielergebnisse" id="push-cat-spiele"><span class="toggle-slider"></span></label>
-          </div>
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">Transaktionen</div><div class="item-subtitle">Bei neuen Transaktionen die dich betreffen</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="transaktionen" id="push-cat-trans"><span class="toggle-slider"></span></label>
-          </div>
-          <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
-            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
-          </div>
-        </div>
       </div>`;
 
     el.innerHTML=html;
@@ -2007,6 +2015,8 @@
 
       const e=row.einstellungen||{};
       document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
+      document.getElementById('push-cat-buyins').checked=e.buyins!==false;
+      document.getElementById('push-cat-hand').checked=e.neue_hand!==false;
       document.getElementById('push-cat-trans').checked=!!e.transaktionen;
       document.getElementById('push-cat-updates').checked=!!e.app_updates;
     }
@@ -2038,7 +2048,7 @@
             endpoint:sub.endpoint,
             p256dh,
             auth:authStr,
-            einstellungen:{spielergebnisse:true,transaktionen:true,app_updates:true},
+            einstellungen:{spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true},
             aktualisiert_am:new Date().toISOString()
           },{onConflict:'endpoint'});
           if(upsertErr){
@@ -2050,6 +2060,8 @@
           pushCategories.style.display='block';
           // Kategorie-Checkboxen auf Standard setzen
           document.getElementById('push-cat-spiele').checked=true;
+          document.getElementById('push-cat-buyins').checked=true;
+          document.getElementById('push-cat-hand').checked=true;
           document.getElementById('push-cat-trans').checked=true;
           document.getElementById('push-cat-updates').checked=true;
           console.log('✅ Push-Subscription gespeichert');
@@ -2084,6 +2096,8 @@
         if(!sub)return;
         const einstellungen={
           spielergebnisse:document.getElementById('push-cat-spiele').checked,
+          buyins:document.getElementById('push-cat-buyins').checked,
+          neue_hand:document.getElementById('push-cat-hand').checked,
           transaktionen:document.getElementById('push-cat-trans').checked,
           app_updates:document.getElementById('push-cat-updates').checked,
         };
@@ -2584,6 +2598,15 @@
     document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
     updatePotUI();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
+    if(delta>0){
+      triggerPush({
+        spieler_ids:[t.spieler_id],
+        title:'Buy-In hinzugefügt',
+        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,
+        data:{url:'/',tag:'buyin'},
+        kategorie:'buyins',
+      });
+    }
   }
 
   async function schliesseSpielAb(){
@@ -3279,6 +3302,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.39',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Push: Buy-In Benachrichtigung wenn ein Buy-In im aktiven Spiel hinzugefügt wird'},
+      {typ:'neu',text:'Push: Besondere Hand Benachrichtigung für den Gewinner einer erfassten Hand'},
+      {typ:'verbessert',text:'Profil-Seite: Benachrichtigungen-Block vor Account-Block verschoben'},
+    ]},
     {version:'2.38',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Push Trigger: Beim Spielabschluss erhalten alle Teilnehmer eine Benachrichtigung (wenn aktiviert)'},
       {typ:'neu',text:'Push Trigger: Bei neuen Transaktionen werden betroffene Spieler benachrichtigt'},
@@ -3935,6 +3963,15 @@
         await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).eq('id',editHandID);
       } else {
         await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl});
+        // Push an Gewinner
+        const gewinnerName=alleSpieler.find(s=>s.id===gewinnerID)?.name||'Dir';
+        triggerPush({
+          spieler_ids:[gewinnerID],
+          title:`Besondere Hand erfasst: ${selectedHandType}`,
+          body:kommentar?`${kommentar}`:`${gewinnerName} gewinnt mit ${selectedHandType}!`,
+          data:{url:'/',tag:'neue-hand'},
+          kategorie:'neue_hand',
+        });
 
         // 7-2 Automatismus: 1€ von jedem Mitspieler zum Gewinner
         if(selectedHandType==='7-2'&&spielID){
