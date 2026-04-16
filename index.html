@@ -488,14 +488,6 @@
           <button class="theme-btn" data-theme="dark">Dunkel</button>
         </div>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item" id="btn-verwaltung">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          Spielerverwaltung
-        </button>
-        <button class="dropdown-item" id="btn-einstellungen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          Einstellungen
-        </button>
         <button class="dropdown-item" id="btn-info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
           Info &amp; Changelog
@@ -509,6 +501,18 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Profil
         </button>
+        <div class="dropdown-divider" id="dropdown-admin-divider" style="display:none"></div>
+        <div id="dropdown-admin-label" style="display:none;padding:6px var(--space-md) 2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)">Administration</div>
+        <button class="dropdown-item" id="btn-verwaltung" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Spielerverwaltung
+        </button>
+        <button class="dropdown-item" id="btn-einstellungen" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Einstellungen
+        </button>
+        <div class="dropdown-divider" id="dropdown-debug-divider" style="display:none"></div>
+        <div id="dropdown-debug-label" style="display:none;padding:6px var(--space-md) 2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)">Debug</div>
         <button class="dropdown-item" id="btn-console" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           Debug: Console
@@ -672,7 +676,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.0';
+  const VERSION='3.1';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1404,8 +1408,9 @@
     }
     const avatarSrc=getAvatar(currentSpieler)||av;
     if(avatarSrc)document.getElementById('user-avatar-btn').innerHTML=`<img src="${avatarSrc}" alt="Avatar">`;
-    document.getElementById('btn-verwaltung').style.display=sp.ist_admin?'flex':'none';
-    document.getElementById('btn-einstellungen').style.display=sp.ist_admin?'flex':'none';
+    const _adm=sp.ist_admin;
+    ['btn-verwaltung','btn-einstellungen','btn-console','btn-rohdaten'].forEach(id=>{document.getElementById(id).style.display=_adm?'flex':'none';});
+    ['dropdown-admin-divider','dropdown-admin-label','dropdown-debug-divider','dropdown-debug-label'].forEach(id=>{document.getElementById(id).style.display=_adm?'block':'none';});
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
     loginEl.style.display='none';
@@ -3553,6 +3558,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.1',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Avatar-Menü: Einheitliche Reihenfolge für alle Nutzer – Info & Changelog, Poker Infos, Profil (hervorgehoben). Admin-Funktionen und Debug-Tools erscheinen für Admins in eigenen Sektionen darunter'},
+    ]},
     {version:'3.0',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Bankkonto-Detail: Kachel auf Home antippen zeigt alle Buchungen (Einzahlungen, Auszahlungen, Eingänge, Ausgaben) mit Subtotals und Gesamtberechnung'},
       {typ:'neu',text:'Pokerkasse-Detail: Kachel auf Home antippen zeigt Formelaufschlüsselung (Bankkonto minus alle Spieler-Kontostände) mit vollständiger Spielerliste'},
