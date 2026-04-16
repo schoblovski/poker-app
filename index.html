@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.28">
+  <meta name="version" content="2.29">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.28';
+  const VERSION='2.29';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -925,7 +925,7 @@
       else{_pageHistory.push(page);}
       history.pushState({},'',' ');
     }
-    if(page!=='verlauf')_verlaufCleanup();
+    if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -2155,9 +2155,9 @@
   let _verlaufSpiele=[],_verlaufScrollEl=null,_verlaufScrollFn=null;
 
   function _verlaufCleanup(){
-    if(_verlaufScrollEl&&_verlaufScrollFn){
-      _verlaufScrollEl.removeEventListener('scroll',_verlaufScrollFn);
-      _verlaufScrollEl=null;_verlaufScrollFn=null;
+    if(_verlaufScrollFn){
+      window.removeEventListener('scroll',_verlaufScrollFn);
+      _verlaufScrollFn=null;_verlaufScrollEl=null;
     }
   }
 
@@ -2263,15 +2263,14 @@
     loader.innerHTML='<div class="spinner"></div>Lade…';
     el.appendChild(loader);
     _verlaufRenderBatch(el,first);
-    // Scroll-Listener auf .content (zuverlässiger als IntersectionObserver)
-    const content=document.querySelector('.content');
-    _verlaufScrollEl=content;
+    // Window-Scroll-Listener (body scrollt, nicht .content – nav ist position:fixed)
+    _verlaufScrollEl=window;
     _verlaufScrollFn=()=>{
       if(_verlaufLoading||_verlaufDone)return;
-      const remaining=content.scrollHeight-content.scrollTop-content.clientHeight;
+      const remaining=document.documentElement.scrollHeight-window.scrollY-window.innerHeight;
       if(remaining<400)_verlaufLoadMore();
     };
-    content.addEventListener('scroll',_verlaufScrollFn,{passive:true});
+    window.addEventListener('scroll',_verlaufScrollFn,{passive:true});
   }
 
   // ── SPIEL DETAIL ────────────────────────────────────────
