@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.39">
+  <meta name="version" content="2.41">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -14,7 +14,9 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='white'/%3E%3Ctext x='50%25' y='50%25' font-size='65' dominant-baseline='central' text-anchor='middle'%3E♠️%3C/text%3E%3C/svg%3E">
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
   <style>
     :root{--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--font-sans:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;--transition:180ms ease;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);}
     [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
@@ -666,7 +668,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.39';
+  const VERSION='2.41';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -702,6 +704,16 @@
 
   let currentUser=null, currentSpieler=null, alleSpieler=[], aktuellesSpiel=null, spielTeilnehmer=[], editSpielerID=null, editTransaktionID=null;
   let einstellungen={buyin_pot:5, buyin_kassa:2};
+  // Deep Link aus Notification (Hash beim Öffnen, oder SW NAVIGATE-Message)
+  let _pendingDeepLink=location.hash||null;
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message',e=>{
+      if(e.data?.type==='NAVIGATE'){
+        if(currentSpieler)handleDeepLink(e.data.url);
+        else _pendingDeepLink=e.data.url;
+      }
+    });
+  }
   console.log(`♠️ DTKS Poker v${VERSION}`);
 
   // ── THEME ──────────────────────────────────────────────
@@ -1227,6 +1239,42 @@
   document.getElementById('btn-login-apple').addEventListener('click',()=>loginWith('apple'));
   document.getElementById('btn-login-microsoft').addEventListener('click',()=>loginWith('azure'));
 
+  // ── DEEP LINK ──────────────────────────────────────────
+  async function handleDeepLink(href){
+    if(!href||href==='/'||href==='#')return;
+    const hash=(href.includes('#')?href.split('#')[1]:href).replace(/^\//,'');
+    if(!hash)return;
+    const[page,queryStr]=hash.split('?');
+    const params=new URLSearchParams(queryStr||'');
+    const id=params.get('id');
+    switch(page){
+      case 'spiel':
+        showPage('spiel');
+        break;
+      case 'transaktionen':
+        showPage('transaktionen');loadTransaktionen();
+        break;
+      case 'haende':
+        showPage('haende');loadHaende();
+        if(id){
+          const{data:h}=await db.from('hand_statistik').select('*').eq('id',id).single();
+          if(h)setTimeout(()=>openHandModal(h),400);
+        }
+        break;
+      case 'spiel-detail':
+        if(id){
+          showPage('verlauf');loadVerlauf();
+          const{data:spiel}=await db.from('spiele').select('*').eq('id',id).single();
+          if(spiel)setTimeout(()=>showSpielDetail(spiel),400);
+        }
+        break;
+      case 'info':
+        showPage('info');loadInfo();
+        break;
+    }
+    history.replaceState(null,'',location.pathname);
+  }
+
   function showWhatsNew(){
     const seen=localStorage.getItem('dtks_version_seen');
     if(seen===VERSION)return;
@@ -1338,6 +1386,7 @@
     loadHome();
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
+    if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
 
     // iOS: Tastatur-Fix – iOS recomputed position:fixed erst bei Scroll-Event.
     // Mini-Scroll auf .content triggert die Neuberechnung der Bottom-Nav Position.
@@ -1455,6 +1504,15 @@
     const maxBuyins=abg.length>0?Math.max(...abg.map(t=>t.buyins||0)):0;
     const gewinne=reingewinne.filter(v=>v>0).length;
     const winRate=n>0?Math.round(gewinne/n*100):0;
+    // Einzahlungen: leer → Spieler (von_spieler_id IS NULL)
+    const einzahlungen=(transIn||[]).filter(t=>t.von_spieler_id===null);
+    const gEinzahlungen=einzahlungen.reduce((s,t)=>s+(t.betrag||0),0);
+    // BuyIn-Kosten: Anzahl BuyIns × (buyin_pot + buyin_kassa) je Spiel
+    const gBuyinKosten=abg.reduce((s,t)=>{
+      const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+      const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+      return s+(t.buyins||0)*(bPot+bKassa);
+    },0);
     const ks=spieler._ks||0;
     const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).toLocaleString('de-DE', { month: 'long', year: 'numeric' }):'–';
 
@@ -1498,6 +1556,8 @@
         <div class="stat-card"><div class="stat-label">Buy-Ins gesamt</div><div class="stat-value sm">${gBuyins}</div><div class="stat-sub">Ø ${avgBuyins.toFixed(1)} · Max ${maxBuyins}</div></div>
         <div class="stat-card"><div class="stat-label">Besondere Hände</div><div class="stat-value sm">${(haende||[]).length}</div></div>
         <div class="stat-card"><div class="stat-label">7-2 Gewinne</div><div class="stat-value sm">${(haende||[]).filter(h=>h.hand==='7-2').length}</div></div>
+        <div class="stat-card"><div class="stat-label">Einzahlungen</div><div class="stat-value sm amount-pos">${fmt(gEinzahlungen)}</div><div class="stat-sub">${einzahlungen.length}×</div></div>
+        <div class="stat-card"><div class="stat-label">BuyIn-Kosten</div><div class="stat-value sm amount-neg">${fmt(gBuyinKosten)}</div><div class="stat-sub">${gBuyins} Buy-Ins</div></div>
       </div>`;
 
     // ── History: Spiele + Transaktionen (scrollbar, tabs) ──
@@ -2243,7 +2303,7 @@
         spieler_ids:[],
         title:`DTKS Poker ${VERSION} ist verfügbar`,
         body:changeBody,
-        data:{url:'/',tag:'app-update',requireInteraction:false},
+        data:{url:'/#info',tag:'app-update',requireInteraction:false},
         kategorie:'app_updates',
       });
       await showAlert('Push-Benachrichtigung wird versendet.');
@@ -2464,7 +2524,7 @@
           spieler_ids:betroffene,
           title:`Neue Transaktion: €${betrag.toFixed(2)}`,
           body:`${beschreibung} – ${kommentar}`,
-          data:{url:'/',tag:'transaktion'},
+          data:{url:'/#transaktionen',tag:'transaktion'},
           kategorie:'transaktionen',
         });
       }
@@ -2603,7 +2663,7 @@
         spieler_ids:[t.spieler_id],
         title:'Buy-In hinzugefügt',
         body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,
-        data:{url:'/',tag:'buyin'},
+        data:{url:'/#spiel',tag:'buyin'},
         kategorie:'buyins',
       });
     }
@@ -2616,17 +2676,19 @@
     const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
     const datumStr=new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
     const buyin_kassa=aktuellesSpiel.buyin_kassa||2;
+    const spielId=aktuellesSpiel.id;
     for(const t of spielTeilnehmer){
       if(!t.spieler_id)continue;
       const buyins=t.buyins||0;
-      const payout=t.payout||0;
+      // Payout aus DOM lesen (spielTeilnehmer[].payout wird beim Tippen nicht aktualisiert)
+      const payout=parseFloat(document.getElementById('payout-'+t.id)?.value?.replace(',','.'))||t.payout||0;
       const net=payout-buyins*buyin_kassa;
       const netStr=(net>=0?'+':'')+fmt(net);
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:`Spielabend ${datumStr}`,
         body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · ${netStr}`,
-        data:{url:'/',tag:'spielergebnis'},
+        data:{url:'/#spiel-detail?id='+spielId,tag:'spielergebnis'},
         kategorie:'spielergebnisse',
       });
     }
@@ -3171,6 +3233,9 @@
         return _statSpielerFilter.size===0||_statSpielerFilter.has(h.gewinner_id);
       });
 
+      // Transaktionen nach Jahr filtern
+      const filtTrans=(trans||[]).filter(t=>_statYearFilter.size===0||_statYearFilter.has(t.datum?.slice(0,4)));
+
       // Rangliste
       const ranking=filtSpieler.map(s=>{
         const abg=filtVerlauf.filter(t=>t.spieler_id===s.id);
@@ -3179,7 +3244,13 @@
           const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
           return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
         },0);
-        return{...s,abg:abg.length,gRein};
+        const gEinz=filtTrans.filter(t=>t.nach_spieler_id===s.id&&t.von_spieler_id===null).reduce((x,t)=>x+(t.betrag||0),0);
+        const gBuyinK=abg.reduce((x,t)=>{
+          const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+          const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          return x+(t.buyins||0)*(bPot+bKassa);
+        },0);
+        return{...s,abg:abg.length,gRein,gEinz,gBuyinK};
       }).sort((a,b)=>b.gRein-a.gRein);
 
       const totalSpiele=filtSpielIds.size;
@@ -3223,6 +3294,8 @@
       const reinChartData=ranking.map(s=>({label:s.name,value:s.gRein}));
       const spieleChartData=[...ranking].sort((a,b)=>b.abg-a.abg).map(s=>({label:s.name,value:s.abg}));
       const avgChartData=[...ranking].filter(s=>s.abg>=3).sort((a,b)=>(b.abg>0?b.gRein/b.abg:0)-(a.abg>0?a.gRein/a.abg:0)).map(s=>({label:s.name,value:s.abg>0?s.gRein/s.abg:0}));
+      const einzChartData=[...ranking].filter(s=>s.gEinz>0).sort((a,b)=>b.gEinz-a.gEinz).map(s=>({label:s.name,value:s.gEinz}));
+      const buyinKChartData=[...ranking].filter(s=>s.gBuyinK>0).sort((a,b)=>b.gBuyinK-a.gBuyinK).map(s=>({label:s.name,value:s.gBuyinK}));
 
       let html=filterHtml+`
         <div class="stats-grid">
@@ -3237,6 +3310,10 @@
         <div class="card">${renderBarChart(spieleChartData,v=>`${v}×`,true)}</div>
         ${avgChartData.length>1?`<div class="section-title">Ø Reingewinn pro Spiel</div>
         <div class="card">${renderBarChart(avgChartData,v=>fmtSigned(v))}</div>`:''}
+        ${einzChartData.length>0?`<div class="section-title">Einzahlungen (gesamt)</div>
+        <div class="card">${renderBarChart(einzChartData,v=>fmt(v),true)}</div>`:''}
+        ${buyinKChartData.length>0?`<div class="section-title">BuyIn-Kosten (gesamt)</div>
+        <div class="card">${renderBarChart(buyinKChartData,v=>fmt(v),true)}</div>`:''}
         <div class="section-title">Spieler</div>
         <div class="card">`;
       ranking.forEach((s,i)=>{
@@ -3302,6 +3379,15 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.41',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Statistik: Neue KPIs – Einzahlungen und BuyIn-Kosten in Spieler-Statistik und Gesamtstatistik (mit Charts)'},
+      {typ:'neu',text:'Info: Neue Sektion «App Features» beschreibt alle Funktionen der App – collapsible'},
+    ]},
+    {version:'2.40',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Deep Links aus Push-Benachrichtigungen: Klick öffnet direkt den relevanten Screen (Spieldetail, Transaktionen, Handeintrag, Changelog)'},
+      {typ:'fix',text:'Spielergebnis-Push: Payout-Betrag wird nun korrekt aus dem Eingabefeld gelesen (nicht mehr 0)'},
+      {typ:'fix',text:'Login-Screen: Ladezeit verkürzt (Google Fonts nicht mehr render-blockend)'},
+    ]},
     {version:'2.39',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Push: Buy-In Benachrichtigung wenn ein Buy-In im aktiven Spiel hinzugefügt wird'},
       {typ:'neu',text:'Push: Besondere Hand Benachrichtigung für den Gewinner einer erfassten Hand'},
@@ -3578,6 +3664,53 @@
       </div>`;
     });
     html+=`</div>`;
+
+    // App Features (collapsible)
+    html+=`<div class="section-title">App Features</div>
+    <div class="card" style="overflow:hidden">
+      <div id="app-features-toggle" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md);cursor:pointer;user-select:none;" onclick="const b=document.getElementById('app-features-body');const open=b.style.display!=='none';b.style.display=open?'none':'block';this.querySelector('.af-chevron').style.transform=open?'rotate(-90deg)':'rotate(0deg)'">
+        <span style="font-size:14px;font-weight:600">Was kann diese App?</span>
+        <svg class="af-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--text-tertiary);transition:transform 200ms ease"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="app-features-body" style="display:none;border-top:1px solid var(--border)">
+        ${[
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+            titel:'Übersicht & Kontostand',
+            text:'Die Home-Seite zeigt deinen aktuellen Kontostand, die Pokerkasse, das Bankkonto sowie alle aktiven Spieler. Tippe auf einen Spieler um seine detaillierte Statistik zu sehen.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>',
+            titel:'Spiel verwalten',
+            text:'Eröffne einen neuen Spielabend, verwalte Teilnehmer, zähle Buy-Ins und trage Payouts ein. Nach dem Abschluss wird das Spiel archiviert und alle Teilnehmer erhalten eine Push-Benachrichtigung mit ihrem Ergebnis.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+            titel:'Statistik & Rangliste',
+            text:'Filtere nach Spieler und Zeitraum. Sieh Reingewinn-Verlauf, Gewinnquoten, Buy-In-Kosten und Einzahlungen pro Spieler als Charts. Tippe auf einen Spieler für seine persönliche Statistik mit kompletter Spielhistory.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+            titel:'Transaktionen',
+            text:'Erfasse Einzahlungen, Auszahlungen und Transfers zwischen Spielern. Betroffene Spieler erhalten automatisch eine Push-Benachrichtigung. Admins können Transaktionen auch löschen.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+            titel:'Besondere Hände',
+            text:'Erfasse Poker, Straight Flush, Royal Flush und 7-2 Gewinne mit optionalem Beweisfoto. Bei 7-2 werden automatisch Transaktionen (1€ von jedem Mitspieler) erstellt. Der Gewinner erhält eine Push-Benachrichtigung.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+            titel:'Push-Benachrichtigungen',
+            text:'Aktiviere Benachrichtigungen im Profil. Wähle welche Kategorien du erhalten möchtest: Spielergebnisse, Buy-Ins, Besondere Hände, Transaktionen, App-Updates. Auf iOS muss die App zuerst zum Homescreen hinzugefügt werden.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+            titel:'Profil & Profilbild',
+            text:'Im Profil kannst du deinen Namen ändern und ein Profilbild hochladen (mit Crop/Zoom). Tippe auf dein Profilbild für eine Grossansicht.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/></svg>',
+            titel:'Admin-Funktionen',
+            text:'Admins können Spieler verwalten (hinzufügen, bearbeiten, deaktivieren), Buy-In-Faktoren ändern, die Jahresspende auslösen, App-Update-Push manuell versenden und auf Debug-Tools (Console, Rohdaten) zugreifen.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>',
+            titel:'PWA & Theme',
+            text:'Füge die App zum Homescreen hinzu (iOS: Teilen → Zum Homescreen; Android: Menü → App installieren) für volle PWA-Funktion inkl. Push-Benachrichtigungen. Das Theme (Hell/Dunkel/Auto) ist über den Avatar-Button wechselbar.'},
+        ].map((f,i,arr)=>`
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px var(--space-md)${i<arr.length-1?';border-bottom:1px solid var(--border)':''}">
+            ${f.icon}
+            <div>
+              <div style="font-size:13px;font-weight:600;margin-bottom:2px">${f.titel}</div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.45">${f.text}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
 
     // Changelog
     html+=`<div class="section-title">Changelog</div>`;
@@ -3962,14 +4095,15 @@
       if(editHandID){
         await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).eq('id',editHandID);
       } else {
-        await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl});
+        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).select('id').single();
         // Push an Gewinner
         const gewinnerName=alleSpieler.find(s=>s.id===gewinnerID)?.name||'Dir';
+        const handUrl=insertedHand?.id?`/#haende?id=${insertedHand.id}`:'/#haende';
         triggerPush({
           spieler_ids:[gewinnerID],
           title:`Besondere Hand erfasst: ${selectedHandType}`,
           body:kommentar?`${kommentar}`:`${gewinnerName} gewinnt mit ${selectedHandType}!`,
-          data:{url:'/',tag:'neue-hand'},
+          data:{url:handUrl,tag:'neue-hand'},
           kategorie:'neue_hand',
         });
 
