@@ -583,7 +583,7 @@
     <div class="form-group"><label class="form-label">Nach</label><select class="form-input" id="trans-nach"></select></div>
     <div class="form-group"><label class="form-label">Kommentar</label><div id="kommentar-chips"></div><input type="text" class="form-input" id="trans-kommentar-text" placeholder="Freitext…"></div>
     <div class="form-group"><label class="form-label">Betrag (€)</label><input type="number" inputmode="decimal" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00"></div>
-    <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-bearbeiten" style="display:none">Bearbeiten</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
   </div>
 </div>
 
@@ -2618,9 +2618,8 @@
 
   function openTransaktionModal(t){
     editTransaktionID=t?.id||null;
-    document.getElementById('trans-modal-title').textContent=t?'Transaktion bearbeiten':'Neue Transaktion';
     document.getElementById('trans-datum').value=t?.datum||new Date().toISOString().split('T')[0];
-    document.getElementById('trans-betrag').value=t?.betrag||'';
+    document.getElementById('trans-betrag').value=t?t.betrag.toFixed(2):'';
     const opts=alleSpieler.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
     document.getElementById('trans-von').innerHTML=`<option value="">– leer –</option>${opts}`;
     document.getElementById('trans-nach').innerHTML=`<option value="">– leer –</option>${opts}`;
@@ -2634,17 +2633,36 @@
     document.getElementById('trans-kommentar-text').addEventListener('input',()=>{sel='';chips.querySelectorAll('.kommentar-chip').forEach(c=>c.classList.remove('active'));});
     document.getElementById('modal-transaktion')._getKommentar=()=>sel||document.getElementById('trans-kommentar-text').value.trim();
     const existDel=document.getElementById('trans-loeschen');if(existDel)existDel.remove();
-    if(t&&currentSpieler?.ist_admin){
-      const btn=document.createElement('button');btn.id='trans-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
-      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
-      btn.addEventListener('click',async()=>{
-        if(!await confirmDelete(`Transaktion "${t.kommentar}" über €${t.betrag.toFixed(2)} löschen?`))return;
-        await save(()=>db.from('transaktionen').delete().eq('id',t.id),'Transaktion gelöscht');
-        document.getElementById('modal-transaktion').classList.remove('open');
-        await loadTransaktionen();await loadHome();
-      });
-      document.getElementById('modal-transaktion').querySelector('.modal-actions').before(btn);
-    }
+    const isView=!!t;
+    // Felder sperren/freischalten
+    ['trans-datum','trans-von','trans-nach','trans-betrag','trans-kommentar-text'].forEach(id=>{document.getElementById(id).disabled=isView;});
+    chips.style.pointerEvents=isView?'none':'';chips.style.opacity=isView?'0.5':'';
+    // Buttons
+    document.getElementById('trans-modal-title').textContent=isView?'Transaktion':'Neue Transaktion';
+    document.getElementById('trans-abbrechen').textContent=isView?'Schliessen':'Abbrechen';
+    document.getElementById('trans-bearbeiten').style.display=isView?'':'none';
+    document.getElementById('trans-speichern').style.display=isView?'none':'';
+    // Bearbeiten-Button: beim Klick in Edit-Modus wechseln
+    const btnBearbeiten=document.getElementById('trans-bearbeiten');
+    btnBearbeiten.onclick=()=>{
+      ['trans-datum','trans-von','trans-nach','trans-betrag','trans-kommentar-text'].forEach(id=>{document.getElementById(id).disabled=false;});
+      chips.style.pointerEvents='';chips.style.opacity='';
+      document.getElementById('trans-modal-title').textContent='Transaktion bearbeiten';
+      document.getElementById('trans-abbrechen').textContent='Abbrechen';
+      btnBearbeiten.style.display='none';
+      document.getElementById('trans-speichern').style.display='';
+      if(currentSpieler?.ist_admin&&!document.getElementById('trans-loeschen')){
+        const btn=document.createElement('button');btn.id='trans-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
+        btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
+        btn.addEventListener('click',async()=>{
+          if(!await confirmDelete(`Transaktion "${t.kommentar}" über €${t.betrag.toFixed(2)} löschen?`))return;
+          await save(()=>db.from('transaktionen').delete().eq('id',t.id),'Transaktion gelöscht');
+          document.getElementById('modal-transaktion').classList.remove('open');
+          await loadTransaktionen();await loadHome();
+        });
+        document.getElementById('modal-transaktion').querySelector('.modal-actions').before(btn);
+      }
+    };
     document.getElementById('modal-transaktion').classList.add('open');
   }
   document.getElementById('trans-abbrechen').addEventListener('click',()=>document.getElementById('modal-transaktion').classList.remove('open'));
