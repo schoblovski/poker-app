@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.25">
+  <meta name="version" content="2.26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.25';
+  const VERSION='2.26';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -2135,12 +2135,16 @@
   });
 
   // ── SPIEL VERLAUF ──────────────────────────────────────
-  async function loadVerlauf(){
-    const el=document.getElementById('verlauf-content');
-    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:spiele}=await db.from('spiele').select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))').eq('abgeschlossen',true).order('datum',{ascending:false}).limit(50);
-    if(!spiele||spiele.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`;return;}
-    let html='';
+  // ── VERLAUF STATE ──────────────────────────────────────
+  const _VERLAUF_PAGE=12;
+  let _verlaufOffset=0,_verlaufLoading=false,_verlaufDone=false;
+  let _verlaufSpiele=[],_verlaufObserver=null;
+
+  function _verlaufRenderBatch(el,spiele){
+    // Sentinel + Loader temporär entfernen
+    document.getElementById('verlauf-sentinel')?.remove();
+    document.getElementById('verlauf-loader')?.remove();
+
     spiele.forEach(spiel=>{
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       const teilnehmer=spiel.spiel_teilnehmer||[];
@@ -2148,48 +2152,99 @@
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
       const sorted=[...teilnehmer].sort((a,b)=>{
-        const bKassaSort=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
-        const ra=(a.payout||0)-(a.buyins||0)*(bPot+bKassaSort);
-        const rb=(b.payout||0)-(b.buyins||0)*(bPot+bKassaSort);
-        return rb-ra;
+        const bK=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+        return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
       });
-      html+=`<div class="section-title">${datum}</div><div class="card" data-spiel-id="${spiel.id}" style="cursor:pointer">`;
-      // Spiel-Header (anklickbar)
-      html+=`<div class="list-item clickable" data-spiel-id="${spiel.id}" style="padding:var(--space-md)">
-        <div style="flex:1;display:flex;gap:var(--space-md)">
-          <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
-          <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
-          <div style="width:1px;background:var(--border)"></div>
-          <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
-        </div>
-        <div style="margin-left:var(--space-sm)">${chevron}</div>
-      </div>`;
-      // Spieler-Ergebnisse
-      sorted.forEach((t,i)=>{
-        const bKassaV=(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
-        const rein=(t.payout||0)-(t.buyins||0)*(bPot+bKassaV);
-        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-        html+=`<div class="list-item">
-          ${avatarHtml(t.spieler,36)}
-          <div class="item-body">
-            <div class="item-title">${medal?medal+' ':''}${t.spieler?.name||'?'}</div>
-            <div class="item-subtitle">${t.buyins||0}× BuyIn · PayOut €${(t.payout||0).toFixed(2)}</div>
+      const wrap=document.createElement('div');
+      wrap.innerHTML=`<div class="section-title">${datum}</div><div class="card" style="cursor:pointer">
+        <div class="list-item clickable" data-spiel-id="${spiel.id}" style="padding:var(--space-md)">
+          <div style="flex:1;display:flex;gap:var(--space-md)">
+            <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
+            <div style="width:1px;background:var(--border)"></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
+            <div style="width:1px;background:var(--border)"></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
           </div>
-          <div class="item-trailing"><span class="item-amount ${ksClass(rein)}">${fmtSigned(rein)}</span></div>
-        </div>`;
-      });
-      html+=`</div>`;
+          <div style="margin-left:var(--space-sm)">${chevron}</div>
+        </div>
+        ${sorted.map((t,i)=>{
+          const bK=(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
+          const rein=(t.payout||0)-(t.buyins||0)*(bPot+bK);
+          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          return`<div class="list-item">
+            ${avatarHtml(t.spieler,36)}
+            <div class="item-body">
+              <div class="item-title">${medal?medal+' ':''}${t.spieler?.name||'?'}</div>
+              <div class="item-subtitle">${t.buyins||0}× BuyIn · PayOut €${(t.payout||0).toFixed(2)}</div>
+            </div>
+            <div class="item-trailing"><span class="item-amount ${ksClass(rein)}">${fmtSigned(rein)}</span></div>
+          </div>`;
+        }).join('')}
+      </div>`;
+      wrap.querySelector('[data-spiel-id]').addEventListener('click',()=>showSpielDetail(spiel));
+      el.appendChild(wrap);
     });
-    el.innerHTML=html;
 
-    // Klick auf Spiel → Detail
-    el.querySelectorAll('.list-item.clickable[data-spiel-id]').forEach(row=>{
-      row.addEventListener('click',()=>{
-        const spiel=spiele.find(s=>s.id===row.dataset.spielId);
-        if(spiel)showSpielDetail(spiel);
-      });
-    });
+    if(!_verlaufDone){
+      const sentinel=document.createElement('div');
+      sentinel.id='verlauf-sentinel';sentinel.style.height='1px';
+      el.appendChild(sentinel);
+      const loader=document.createElement('div');
+      loader.id='verlauf-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
+      loader.innerHTML='<div class="spinner"></div>Lade…';
+      el.appendChild(loader);
+    }
+  }
+
+  async function _verlaufLoadMore(){
+    if(_verlaufLoading||_verlaufDone)return;
+    _verlaufLoading=true;
+    const loader=document.getElementById('verlauf-loader');
+    if(loader)loader.style.display='flex';
+    const{data:spiele}=await db.from('spiele')
+      .select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))')
+      .eq('abgeschlossen',true)
+      .order('datum',{ascending:false})
+      .range(_verlaufOffset,_verlaufOffset+_VERLAUF_PAGE-1);
+    if(loader)loader.style.display='none';
+    _verlaufLoading=false;
+    if(!spiele||spiele.length===0){_verlaufDone=true;document.getElementById('verlauf-sentinel')?.remove();document.getElementById('verlauf-loader')?.remove();return;}
+    _verlaufSpiele.push(...spiele);
+    _verlaufOffset+=spiele.length;
+    if(spiele.length<_VERLAUF_PAGE)_verlaufDone=true;
+    const el=document.getElementById('verlauf-content');
+    _verlaufRenderBatch(el,spiele);
+  }
+
+  async function loadVerlauf(){
+    // State zurücksetzen
+    _verlaufOffset=0;_verlaufLoading=false;_verlaufDone=false;_verlaufSpiele=[];
+    if(_verlaufObserver){_verlaufObserver.disconnect();_verlaufObserver=null;}
+    const el=document.getElementById('verlauf-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    // Erste Seite laden
+    const{data:first}=await db.from('spiele')
+      .select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))')
+      .eq('abgeschlossen',true)
+      .order('datum',{ascending:false})
+      .range(0,_VERLAUF_PAGE-1);
+    if(!first||first.length===0){
+      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`;
+      return;
+    }
+    el.innerHTML='';
+    _verlaufSpiele.push(...first);
+    _verlaufOffset=first.length;
+    if(first.length<_VERLAUF_PAGE)_verlaufDone=true;
+    _verlaufRenderBatch(el,first);
+    // IntersectionObserver für automatisches Nachladen
+    const sentinel=document.getElementById('verlauf-sentinel');
+    if(sentinel){
+      _verlaufObserver=new IntersectionObserver(entries=>{
+        if(entries[0].isIntersecting)_verlaufLoadMore();
+      },{root:document.querySelector('.content'),threshold:0.1});
+      _verlaufObserver.observe(sentinel);
+    }
   }
 
   // ── SPIEL DETAIL ────────────────────────────────────────
