@@ -229,13 +229,13 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.44**
+- **Aktuelle Version: 2.45**
 
 ## Login-Provider
 
 - ✅ Google (funktioniert)
 - ⏳ Facebook (vorgesehen, noch nicht implementiert)
-- ⏳ Apple (vorgesehen, noch nicht implementiert)
+- ~~Apple~~ (entfernt)
 - ~~Microsoft/Azure~~ (entfernt)
 - Callback URL: `https://bcvyhlzjpfezokvcjksn.supabase.co/auth/v1/callback`
 

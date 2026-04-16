@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.44">
+  <meta name="version" content="2.45">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -459,10 +459,7 @@
       <svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
       Mit Facebook anmelden
     </button>
-    <button class="btn-oauth" id="btn-login-apple" disabled>
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/></svg>
-      Mit Apple anmelden
-    </button>
+
   </div>
 </div>
 
@@ -664,7 +661,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='2.44';
+  const VERSION='2.45';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1232,7 +1229,6 @@
   async function loginWith(p){await db.auth.signInWithOAuth({provider:p,options:{redirectTo:window.location.origin}});}
   document.getElementById('btn-login-google').addEventListener('click',()=>loginWith('google'));
   document.getElementById('btn-login-facebook').addEventListener('click',()=>loginWith('facebook'));
-  document.getElementById('btn-login-apple').addEventListener('click',()=>loginWith('apple'));
 
   // ── DEEP LINK ──────────────────────────────────────────
   async function handleDeepLink(href){
@@ -3388,9 +3384,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
-    {version:'2.44',datum:'April 2026',eintraege:[
+    {version:'2.45',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Facebook Login aktiviert'},
-      {typ:'verbessert',text:'Microsoft Login entfernt (nicht benötigt)'},
+      {typ:'verbessert',text:'Apple und Microsoft Login entfernt'},
     ]},
     {version:'2.42',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Login-Freeze auf Mobilgeräten behoben: Sofortige Ladeanimation statt leerem Bildschirm; Einstellungen und Spielerdaten werden parallel geladen'},
