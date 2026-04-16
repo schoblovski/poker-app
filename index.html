@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.36">
+  <meta name="version" content="2.37">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -396,6 +396,14 @@
   .profil-name-input:focus{outline:none;color:var(--accent-text);}
   .profil-save-badge{font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);border-radius:20px;padding:2px 8px;display:none;}
   .profil-save-badge.show{display:inline-block;}
+  /* Toggle Switch (Push Notifications) */
+  .toggle-switch{position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;}
+  .toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+  .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg-secondary);border-radius:31px;transition:.25s;}
+  .toggle-slider:before{content:'';position:absolute;width:27px;height:27px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .toggle-switch input:checked+.toggle-slider{background:var(--accent);}
+  .toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px);}
+  .toggle-switch input:disabled+.toggle-slider{opacity:.5;cursor:not-allowed;}
 
   /* Container für die Matrix, um abgerundete Ecken zu ermöglichen */
   .matrix-container {
@@ -650,9 +658,18 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.36';
+
+  // ── SERVICE WORKER REGISTRIERUNG ───────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('✅ Service Worker registriert', reg.scope);
+    }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
+  }
+
+  const VERSION='2.37';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
+  const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
 
@@ -1787,6 +1804,38 @@
           </div>
           ${chevron}
         </button>
+      </div>
+
+      <div class="section-title" style="margin-top:var(--space-lg)">Benachrichtigungen</div>
+      <div class="card" id="push-settings-card">
+        <div class="list-item">
+          <div class="item-avatar accent" style="width:40px;height:40px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">Push Benachrichtigungen</div>
+            <div class="item-subtitle" id="push-status-text">Wird geprüft…</div>
+          </div>
+          <label class="toggle-switch" id="push-master-wrap" style="display:none">
+            <input type="checkbox" id="push-master-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="push-not-supported" style="display:none;font-size:11px;color:var(--text-tertiary)">Nicht verfügbar</span>
+        </div>
+        <div id="push-categories" style="display:none;border-top:1px solid var(--border)">
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Spielergebnisse</div><div class="item-subtitle">Nach Abschluss eines Spielabends</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="spielergebnisse" id="push-cat-spiele"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Transaktionen</div><div class="item-subtitle">Bei neuen Transaktionen die dich betreffen</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="transaktionen" id="push-cat-trans"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
       </div>`;
 
     el.innerHTML=html;
@@ -1864,6 +1913,144 @@
         console.error('Foto-Upload Fehler',err);
         uploadStatus.textContent='Fehler beim Verarbeiten';
       }
+    });
+
+    // ── PUSH NOTIFICATIONS ────────────────────────────────
+    const pushMasterWrap=document.getElementById('push-master-wrap');
+    const pushMasterToggle=document.getElementById('push-master-toggle');
+    const pushStatusText=document.getElementById('push-status-text');
+    const pushCategories=document.getElementById('push-categories');
+    const pushNotSupported=document.getElementById('push-not-supported');
+
+    function urlBase64ToUint8Array(base64String){
+      const padding='='.repeat((4-base64String.length%4)%4);
+      const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+      const raw=atob(base64);
+      return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+    }
+
+    async function loadPushState(){
+      if(!('PushManager' in window)||!('serviceWorker' in navigator)){
+        pushStatusText.textContent='Push-Benachrichtigungen werden von diesem Browser nicht unterstützt';
+        pushNotSupported.style.display='inline';
+        return;
+      }
+      pushMasterWrap.style.display='inline-block';
+
+      // Vorhandene Subscription prüfen
+      const reg=await navigator.serviceWorker.ready;
+      const sub=await reg.pushManager.getSubscription();
+
+      if(!sub){
+        // Noch nicht abonniert
+        const perm=Notification.permission;
+        if(perm==='denied'){
+          pushStatusText.textContent='Benachrichtigungen blockiert – bitte in den Browser-Einstellungen erlauben';
+          pushMasterToggle.disabled=true;
+        }else{
+          pushStatusText.textContent='Nicht aktiv';
+        }
+        pushMasterToggle.checked=false;
+        pushCategories.style.display='none';
+        return;
+      }
+
+      // Abonniert – Einstellungen aus DB laden
+      pushMasterToggle.checked=true;
+      pushCategories.style.display='block';
+      pushStatusText.textContent='Aktiv';
+
+      const{data:row}=await db.from('push_subscriptions')
+        .select('einstellungen')
+        .eq('spieler_id',currentSpieler.id)
+        .eq('endpoint',sub.endpoint)
+        .maybeSingle();
+
+      if(row?.einstellungen){
+        const e=row.einstellungen;
+        document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
+        document.getElementById('push-cat-trans').checked=!!e.transaktionen;
+        document.getElementById('push-cat-updates').checked=!!e.app_updates;
+      }
+    }
+
+    await loadPushState();
+
+    // Master-Toggle: An/Aus
+    pushMasterToggle.addEventListener('change',async()=>{
+      if(pushMasterToggle.checked){
+        // Einschalten: Permission anfragen + subscriben
+        const perm=await Notification.requestPermission();
+        if(perm!=='granted'){
+          pushStatusText.textContent='Berechtigung verweigert';
+          pushMasterToggle.checked=false;
+          return;
+        }
+        try{
+          const reg=await navigator.serviceWorker.ready;
+          const sub=await reg.pushManager.subscribe({
+            userVisibleOnly:true,
+            applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+          const key=sub.getKey('p256dh');
+          const auth=sub.getKey('auth');
+          const p256dh=btoa(String.fromCharCode(...new Uint8Array(key)));
+          const authStr=btoa(String.fromCharCode(...new Uint8Array(auth)));
+          await db.from('push_subscriptions').upsert({
+            spieler_id:currentSpieler.id,
+            endpoint:sub.endpoint,
+            p256dh,
+            auth:authStr,
+            einstellungen:{spielergebnisse:true,transaktionen:true,app_updates:true},
+            aktualisiert_am:new Date().toISOString()
+          },{onConflict:'endpoint'});
+          pushStatusText.textContent='Aktiv';
+          pushCategories.style.display='block';
+          // Kategorie-Checkboxen auf Standard setzen
+          document.getElementById('push-cat-spiele').checked=true;
+          document.getElementById('push-cat-trans').checked=true;
+          document.getElementById('push-cat-updates').checked=true;
+          console.log('✅ Push-Subscription gespeichert');
+        }catch(err){
+          console.error('Push-Subscribe Fehler',err);
+          pushStatusText.textContent='Fehler beim Aktivieren';
+          pushMasterToggle.checked=false;
+        }
+      }else{
+        // Ausschalten: Subscription kündigen + aus DB löschen
+        try{
+          const reg=await navigator.serviceWorker.ready;
+          const sub=await reg.pushManager.getSubscription();
+          if(sub){
+            await db.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);
+            await sub.unsubscribe();
+          }
+          pushStatusText.textContent='Nicht aktiv';
+          pushCategories.style.display='none';
+          console.log('🔕 Push-Subscription deaktiviert');
+        }catch(err){
+          console.error('Push-Unsubscribe Fehler',err);
+        }
+      }
+    });
+
+    // Kategorie-Toggles: Einstellungen in DB speichern
+    document.querySelectorAll('.push-cat').forEach(cb=>{
+      cb.addEventListener('change',async()=>{
+        const reg=await navigator.serviceWorker.ready;
+        const sub=await reg.pushManager.getSubscription();
+        if(!sub)return;
+        const einstellungen={
+          spielergebnisse:document.getElementById('push-cat-spiele').checked,
+          transaktionen:document.getElementById('push-cat-trans').checked,
+          app_updates:document.getElementById('push-cat-updates').checked,
+        };
+        await db.from('push_subscriptions')
+          .update({einstellungen,aktualisiert_am:new Date().toISOString()})
+          .eq('endpoint',sub.endpoint)
+          .eq('spieler_id',currentSpieler.id);
+        console.log('💾 Push-Einstellungen gespeichert',einstellungen);
+      });
     });
   }
 
