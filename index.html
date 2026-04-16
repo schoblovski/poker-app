@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.24">
+  <meta name="version" content="2.25">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -371,8 +371,8 @@
   .profil-avatar-wrap{position:relative;display:inline-block;margin:0 auto var(--space-md);cursor:pointer;}
   .profil-avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);pointer-events:none;}
   .profil-avatar-edit-badge svg{width:13px;height:13px;color:#fff;}
-  .profil-img-preview{width:80px;height:80px;border-radius:50%;object-fit:cover;display:block;}
-  .profil-img-initial{width:80px;height:80px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:var(--text-secondary);}
+  .profil-img-preview{width:140px;height:140px;border-radius:50%;object-fit:cover;display:block;}
+  .profil-img-initial{width:140px;height:140px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:700;color:var(--text-secondary);}
   .profil-name-row{display:flex;align-items:center;gap:10px;padding:12px var(--space-md);border-bottom:1px solid var(--border);}
   .profil-name-input{flex:1;background:transparent;border:none;font-size:16px;font-weight:500;font-family:var(--font-sans);color:var(--text-primary);padding:0;}
   .profil-name-input:focus{outline:none;color:var(--accent-text);}
@@ -595,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.24';
+  const VERSION='2.25';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1773,9 +1773,27 @@
 
   function showSpielerDetail(s){
     const el=document.getElementById('spieler-detail-content');
+    const isAdmin=currentSpieler?.ist_admin;
+    const src=getAvatar(s);
+    const initial=(s.name?.trim()[0]||'?').toUpperCase();
+    const avatarBlock=isAdmin
+      ?`<label for="detail-foto-input" style="position:relative;display:inline-block;cursor:pointer;margin:0 auto var(--space-md)">
+          <div class="profile-avatar-lg" style="margin:0">
+            ${src?`<img src="${src}" id="detail-avatar-img" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';document.getElementById('detail-avatar-fallback').style.display='flex'">`:``}
+            <div id="detail-avatar-fallback" style="${src?'display:none':'display:flex'};width:100%;height:100%;align-items:center;justify-content:center;font-size:52px;font-weight:700;color:var(--text-secondary)">${initial}</div>
+          </div>
+          <div class="profil-avatar-edit-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        </label>
+        <input type="file" id="detail-foto-input" accept="image/*" style="display:none">
+        <div id="detail-upload-status" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;min-height:16px"></div>`
+      :`<div class="profile-avatar-lg">
+          ${src?`<img src="${src}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:700;color:var(--text-secondary)">${initial}</div>`}
+        </div>`;
     el.innerHTML=`<button class="back-btn" id="detail-back">${backIcon} Zurück</button>
-      <div class="profile-header">${s.profilbild?`<div class="profile-avatar-lg"><img src="${s.profilbild}"></div>`:`<div class="profile-avatar-lg">${userIcon}</div>`}
-        <div class="profile-name">${s.name}</div><div class="profile-since">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>
+      <div class="profile-header" style="display:flex;flex-direction:column;align-items:center">
+        ${avatarBlock}
+        <div class="profile-name">${escHtml(s.name)}</div>
+        <div class="profile-since">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>
         <div style="margin-top:var(--space-sm)"><span class="badge ${s.aktiv?'badge-green':'badge-red'}">${s.aktiv?'Aktiv':'Inaktiv'}</span></div>
       </div>
       <button class="btn btn-secondary" id="detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
@@ -1801,6 +1819,48 @@
       await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
+    // Admin: Profilbild Upload
+    if(isAdmin){
+      const fotoInput=document.getElementById('detail-foto-input');
+      const status=document.getElementById('detail-upload-status');
+      fotoInput.addEventListener('change',async()=>{
+        const file=fotoInput.files?.[0];
+        if(!file)return;
+        status.textContent='Bild wird verarbeitet…';
+        try{
+          const b64=await compressImageToBase64(file,512,0.82);
+          const sizeKB=Math.round(b64.length*0.75/1024);
+          status.textContent=`Speichern… (${sizeKB} KB)`;
+          await save(async()=>{
+            await db.from('spieler').update({profilbild:b64}).eq('id',s.id);
+            s.profilbild=b64;
+          },`Profilbild von ${s.name} gespeichert`);
+          // Vorschau aktualisieren
+          const img=document.getElementById('detail-avatar-img');
+          const fb=document.getElementById('detail-avatar-fallback');
+          if(img){img.src=b64;img.style.display='block';}
+          else{
+            const newImg=document.createElement('img');
+            newImg.src=b64;newImg.id='detail-avatar-img';
+            newImg.style.cssText='width:100%;height:100%;object-fit:cover';
+            const wrap=document.querySelector('.profile-avatar-lg');
+            if(wrap)wrap.insertBefore(newImg,wrap.firstChild);
+          }
+          if(fb)fb.style.display='none';
+          // Falls eigenes Profil: Header-Avatar auch aktualisieren
+          if(s.id===currentSpieler?.id){
+            currentSpieler={...currentSpieler,profilbild:b64};
+            document.getElementById('user-avatar-btn').innerHTML=`<img src="${b64}" alt="Avatar">`;
+          }
+          status.textContent=`Gespeichert (${sizeKB} KB)`;
+          setTimeout(()=>{status.textContent='';},2500);
+          loadHome();
+        }catch(err){
+          console.error('Foto-Upload Fehler',err);
+          status.textContent='Fehler beim Verarbeiten';
+        }
+      });
+    }
   }
 
   function openSpielerForm(s){
