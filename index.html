@@ -1304,6 +1304,12 @@
       return;
     }
     currentSpieler=sp;
+    // auth_user_id setzen falls noch nicht verknüpft (nötig für RLS-Policies)
+    if(!sp.auth_user_id&&currentUser?.id){
+      await db.from('spieler').update({auth_user_id:currentUser.id}).eq('id',sp.id);
+      currentSpieler={...currentSpieler,auth_user_id:currentUser.id};
+      console.log('🔗 auth_user_id verknüpft:',currentUser.id);
+    }
     // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur als Fallback beim allerersten Login
     const av=currentUser?.user_metadata?.avatar_url;
     if(!sp.profilbild&&av){
