@@ -2218,10 +2218,17 @@
     // App-Update Push Button
     document.getElementById('btn-push-update').addEventListener('click',async()=>{
       if(!await confirmAction(`App-Update Push senden?\n\nAlle Nutzer mit aktiviertem «App-Updates»-Push erhalten eine Benachrichtigung über Version ${VERSION}.`))return;
+      const entry=CHANGELOG.find(c=>c.version===VERSION);
+      const changeBody=entry
+        ? entry.eintraege.slice(0,4).map(e=>{
+            const p=e.typ==='neu'?'✦':e.typ==='fix'?'⚡':'↑';
+            return `${p} ${e.text}`;
+          }).join('\n')
+        : 'Tippe um zu aktualisieren.';
       triggerPush({
-        spieler_ids:[],  // leer = alle
+        spieler_ids:[],
         title:`DTKS Poker ${VERSION} ist verfügbar`,
-        body:'Eine neue Version der App ist online. Tippe hier um zu aktualisieren.',
+        body:changeBody,
         data:{url:'/',tag:'app-update',requireInteraction:false},
         kategorie:'app_updates',
       });
@@ -2582,16 +2589,24 @@
   async function schliesseSpielAb(){
     if(!await confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
-    // Push Notification an alle Teilnehmer
+    // Push pro Spieler mit individuellen Ergebnissen
     const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
-    const ids=spielTeilnehmer.map(t=>t.spieler_id).filter(Boolean);
-    triggerPush({
-      spieler_ids:ids,
-      title:'Spielabend abgeschlossen 🃏',
-      body:`Die Ergebnisse vom ${new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'})} sind jetzt verfügbar.`,
-      data:{url:'/',tag:'spielergebnis'},
-      kategorie:'spielergebnisse',
-    });
+    const datumStr=new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const buyin_kassa=aktuellesSpiel.buyin_kassa||2;
+    for(const t of spielTeilnehmer){
+      if(!t.spieler_id)continue;
+      const buyins=t.buyins||0;
+      const payout=t.payout||0;
+      const net=payout-buyins*buyin_kassa;
+      const netStr=(net>=0?'+':'')+fmt(net);
+      triggerPush({
+        spieler_ids:[t.spieler_id],
+        title:`Spielabend ${datumStr}`,
+        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · ${netStr}`,
+        data:{url:'/',tag:'spielergebnis'},
+        kategorie:'spielergebnisse',
+      });
+    }
     aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();await loadHome();
   }
 
