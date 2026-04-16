@@ -2464,7 +2464,7 @@
     const{data:spieler}=await db.from('spieler').select('*').order('name');if(!spieler)return;
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
     const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
-    const loginSub=s=>s.letzter_login?`<div class="item-subtitle">Zuletzt: ${fmtLogin(s.letzter_login)}</div>`:'';
+    const loginSub=s=>s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'';
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
     html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
     aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>${loginSub(s)}</div><div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
