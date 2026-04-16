@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.35">
+  <meta name="version" content="2.36">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -284,6 +284,11 @@
     .hand-type-btn{background:var(--bg-secondary);border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);}
     .hand-type-btn.selected{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
     .hand-type-btn.danger-sel{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+    .hand-view-badge{display:inline-flex;align-items:center;padding:5px 14px;border-radius:20px;font-size:14px;font-weight:700;background:var(--accent-soft);color:var(--accent-text);}
+    .hand-view-badge.is72{background:var(--danger-soft);color:var(--danger);}
+    .hand-view-row{display:flex;flex-direction:column;gap:3px;margin-bottom:var(--space-md);}
+    .hand-view-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
+    .hand-view-value{font-size:15px;font-weight:500;color:var(--text-primary);}
     .foto-preview{width:100%;border-radius:var(--radius-md);margin-top:var(--space-xs);display:none;max-height:200px;object-fit:cover;}
     .foto-preview.show{display:block;}
     .roh-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-md);}
@@ -574,41 +579,69 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="hand-modal-title">Hand erfassen</div>
-    <div class="form-group">
-      <label class="form-label">Hand-Typ</label>
-      <div class="hand-type-grid" id="hand-type-grid">
-        <button class="hand-type-btn" data-hand="Poker">Poker</button>
-        <button class="hand-type-btn" data-hand="7-2">7-2 🤑</button>
-        <button class="hand-type-btn" data-hand="Straight Flush">Straight Flush</button>
-        <button class="hand-type-btn" data-hand="Royal Flush">Royal Flush</button>
+
+    <!-- ANSICHTS-MODUS -->
+    <div id="hand-view" style="display:none">
+      <div class="hand-view-row">
+        <span class="hand-view-label">Hand-Typ</span>
+        <span id="hand-view-typ" class="hand-view-badge"></span>
+      </div>
+      <div class="hand-view-row">
+        <span class="hand-view-label">Gewinner</span>
+        <span class="hand-view-value" id="hand-view-gewinner"></span>
+      </div>
+      <div class="hand-view-row" id="hand-view-kommentar-row">
+        <span class="hand-view-label">Kommentar</span>
+        <span class="hand-view-value" id="hand-view-kommentar"></span>
+      </div>
+      <div id="hand-view-foto-wrap" style="display:none;margin-bottom:var(--space-md)">
+        <img id="hand-view-foto" style="width:100%;border-radius:var(--radius-md);max-height:220px;object-fit:cover;cursor:zoom-in;display:block" alt="Beweisfoto">
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Gewinner</label>
-      <select class="form-input" id="hand-gewinner"></select>
-    </div>
-    <div id="hand-7-2-info" style="display:none;background:var(--warning-soft);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);font-size:13px;color:var(--warning);margin-bottom:var(--space-md)">
-      <strong id="hand-7-2-info-text">7-2 Hausregel:</strong> <span id="hand-7-2-info-detail">Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.</span>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Kommentar (optional)</label>
-      <input type="text" class="form-input" id="hand-kommentar" placeholder="z.B. All-In auf dem River">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Beweisfoto (optional)</label>
-      <input type="file" id="hand-foto-input" accept="image/*" style="display:none">
-      <button type="button" class="hand-foto-upload-btn" id="hand-foto-upload-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Foto hinzufügen
-      </button>
-      <div id="hand-foto-preview-wrap" style="display:none;position:relative;margin-top:var(--space-xs)">
-        <img id="hand-foto-preview" style="width:100%;border-radius:var(--radius-md);max-height:220px;object-fit:cover;cursor:zoom-in;display:block" alt="Beweisfoto">
-        <button type="button" id="hand-foto-remove" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+    <!-- EDIT-MODUS -->
+    <div id="hand-edit" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Hand-Typ</label>
+        <div class="hand-type-grid" id="hand-type-grid">
+          <button class="hand-type-btn" data-hand="Poker">Poker</button>
+          <button class="hand-type-btn" data-hand="7-2">7-2 🤑</button>
+          <button class="hand-type-btn" data-hand="Straight Flush">Straight Flush</button>
+          <button class="hand-type-btn" data-hand="Royal Flush">Royal Flush</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gewinner</label>
+        <select class="form-input" id="hand-gewinner"></select>
+      </div>
+      <div id="hand-7-2-info" style="display:none;background:var(--warning-soft);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);font-size:13px;color:var(--warning);margin-bottom:var(--space-md)">
+        <strong id="hand-7-2-info-text">7-2 Hausregel:</strong> <span id="hand-7-2-info-detail">Automatisch wird 1€ von jedem Mitspieler zum Gewinner transferiert.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kommentar (optional)</label>
+        <input type="text" class="form-input" id="hand-kommentar" placeholder="z.B. All-In auf dem River">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Beweisfoto (optional)</label>
+        <input type="file" id="hand-foto-input" accept="image/*" style="display:none">
+        <button type="button" class="hand-foto-upload-btn" id="hand-foto-upload-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Foto hinzufügen
         </button>
+        <div id="hand-foto-preview-wrap" style="display:none;position:relative;margin-top:var(--space-xs)">
+          <img id="hand-foto-preview" style="width:100%;border-radius:var(--radius-md);max-height:220px;object-fit:cover;cursor:zoom-in;display:block" alt="Beweisfoto">
+          <button type="button" id="hand-foto-remove" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
     </div>
-    <div class="modal-actions">
+
+    <div class="modal-actions" id="hand-actions-view" style="display:none">
+      <button class="btn btn-secondary" id="hand-schliessen">Schliessen</button>
+      <button class="btn btn-primary" id="hand-bearbeiten-btn" style="display:none">Bearbeiten</button>
+    </div>
+    <div class="modal-actions" id="hand-actions-edit" style="display:none">
       <button class="btn btn-secondary" id="hand-abbrechen">Abbrechen</button>
       <button class="btn btn-primary" id="hand-speichern">Speichern</button>
     </div>
@@ -617,7 +650,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.35';
+  const VERSION='2.36';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -3223,7 +3256,7 @@
   // ── HÄNDE ──────────────────────────────────────────────
   const HAND_TYPEN=['7-2','Poker','Straight Flush','Royal Flush'];
   const HAND_SHORT={'7-2':'7-2','Poker':'Poker','Straight Flush':'Straight F.','Royal Flush':'Royal F.'};
-  let editHandID=null, selectedHandType=null, _handFotoBase64=null;
+  let editHandID=null, selectedHandType=null, _handFotoBase64=null, _editHandGewinnerId=null;
   let _haendeData=null;
   let _haendeExpanded=new Set(); // keys: `${hand}||${spielerId}`
   let _haendeFilter=new Set(); // empty = alle Spieler
@@ -3395,50 +3428,107 @@
     editHandID=h?.id||null;
     selectedHandType=h?.hand||null;
     _handFotoBase64=h?.beweisfoto||null;
-    document.getElementById('hand-modal-title').textContent=h?'Hand bearbeiten':'Hand erfassen';
-    document.getElementById('hand-kommentar').value=h?.kommentar||'';
+    _editHandGewinnerId=h?.gewinner_id||null;
+    // Löschen-Button aus vorherigem Aufruf entfernen
+    document.getElementById('hand-loeschen')?.remove();
+
+    if(!h){
+      // ── NEUES ERFASSEN: direkt in Edit-Modus ──────────
+      _showHandEditMode();
+    } else {
+      // ── BESTEHENDE HAND: Ansichts-Modus ───────────────
+      _showHandViewMode(h);
+    }
+    document.getElementById('modal-hand').classList.add('open');
+  }
+
+  function _showHandViewMode(h){
+    document.getElementById('hand-modal-title').textContent='Hand Details';
+    document.getElementById('hand-view').style.display='block';
+    document.getElementById('hand-edit').style.display='none';
+    document.getElementById('hand-actions-view').style.display='flex';
+    document.getElementById('hand-actions-edit').style.display='none';
+
+    // Badge (Hand-Typ)
+    const badge=document.getElementById('hand-view-typ');
+    const is72=h.hand==='7-2';
+    badge.textContent=h.hand+(is72?' 🤑':'');
+    badge.className='hand-view-badge'+(is72?' is72':'');
+
+    // Gewinner (Name aus alleSpieler)
+    const sp=alleSpieler.find(s=>s.id===h.gewinner_id);
+    document.getElementById('hand-view-gewinner').textContent=sp?.name||'?';
+
+    // Kommentar
+    const komRow=document.getElementById('hand-view-kommentar-row');
+    if(h.kommentar){
+      document.getElementById('hand-view-kommentar').textContent=h.kommentar;
+      komRow.style.display='flex';
+    } else {
+      komRow.style.display='none';
+    }
+
+    // Foto
+    const fotoWrap=document.getElementById('hand-view-foto-wrap');
+    const fotoImg=document.getElementById('hand-view-foto');
+    if(h.beweisfoto){
+      fotoImg.src=h.beweisfoto;
+      fotoWrap.style.display='block';
+    } else {
+      fotoWrap.style.display='none';
+    }
+
+    // Bearbeiten-Button (nur Admin)
+    const bearbBtn=document.getElementById('hand-bearbeiten-btn');
+    bearbBtn.style.display=currentSpieler?.ist_admin?'flex':'none';
+  }
+
+  function _showHandEditMode(){
+    const isNew=!editHandID;
+    document.getElementById('hand-modal-title').textContent=isNew?'Hand erfassen':'Hand bearbeiten';
+    document.getElementById('hand-view').style.display='none';
+    document.getElementById('hand-edit').style.display='block';
+    document.getElementById('hand-actions-view').style.display='none';
+    document.getElementById('hand-actions-edit').style.display='flex';
+
+    // Formular befüllen
+    document.getElementById('hand-kommentar').value=editHandID
+      ? (document.getElementById('hand-view-kommentar').textContent||'')
+      : '';
     document.getElementById('hand-foto-input').value='';
-    // Foto-Preview
     const prev=document.getElementById('hand-foto-preview');
     const wrap=document.getElementById('hand-foto-preview-wrap');
     const uploadBtn=document.getElementById('hand-foto-upload-btn');
     if(_handFotoBase64){
-      prev.src=_handFotoBase64;
-      wrap.style.display='block';
-      uploadBtn.style.display='none';
+      prev.src=_handFotoBase64;wrap.style.display='block';uploadBtn.style.display='none';
     } else {
-      prev.src='';
-      wrap.style.display='none';
-      uploadBtn.style.display='flex';
+      prev.src='';wrap.style.display='none';uploadBtn.style.display='flex';
     }
 
     // Gewinner Dropdown
     const spieler=alleSpieler.filter(s=>!s.ist_bank);
-    document.getElementById('hand-gewinner').innerHTML=spieler.map(s=>`<option value="${s.id}"${h?.gewinner_id===s.id?' selected':''}>${s.name}</option>`).join('');
+    document.getElementById('hand-gewinner').innerHTML=spieler.map(s=>`<option value="${s.id}"${s.id===_editHandGewinnerId?' selected':''}>${s.name}</option>`).join('');
 
     // Hand-Typ Buttons
     document.querySelectorAll('.hand-type-btn').forEach(btn=>{
       btn.classList.remove('selected','danger-sel');
-      if(btn.dataset.hand===selectedHandType){
+      if(btn.dataset.hand===selectedHandType)
         btn.classList.add(selectedHandType==='7-2'?'danger-sel':'selected');
-      }
     });
     update72Info();
 
-    // Löschen-Button
-    const existDel=document.getElementById('hand-loeschen');if(existDel)existDel.remove();
-    if(h&&currentSpieler?.ist_admin){
+    // Löschen-Button (Admin + bestehende Hand)
+    if(editHandID&&currentSpieler?.ist_admin){
       const btn=document.createElement('button');btn.id='hand-loeschen';btn.className='btn btn-danger';btn.style.marginTop='var(--space-sm)';
       btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Hand löschen`;
       btn.addEventListener('click',async()=>{
-        if(!await confirmDelete(`Hand "${h.hand}" löschen?`))return;
-        await save(()=>db.from('hand_statistik').delete().eq('id',h.id),'Hand gelöscht');
+        if(!await confirmDelete(`Hand "${selectedHandType}" löschen?`))return;
+        await save(()=>db.from('hand_statistik').delete().eq('id',editHandID),'Hand gelöscht');
         document.getElementById('modal-hand').classList.remove('open');
         loadHaende();
       });
-      document.getElementById('modal-hand').querySelector('.modal-actions').before(btn);
+      document.getElementById('hand-actions-edit').before(btn);
     }
-    document.getElementById('modal-hand').classList.add('open');
   }
 
   function update72Info(){
@@ -3486,8 +3576,27 @@
     document.getElementById('hand-foto-upload-btn').style.display='flex';
   });
 
-  document.getElementById('hand-abbrechen').addEventListener('click',()=>{
+  document.getElementById('hand-schliessen').addEventListener('click',()=>{
     document.getElementById('modal-hand').classList.remove('open');
+  });
+  document.getElementById('hand-bearbeiten-btn').addEventListener('click',()=>{
+    document.getElementById('hand-loeschen')?.remove();
+    _showHandEditMode();
+  });
+  document.getElementById('hand-view-foto').addEventListener('click',()=>{
+    if(_handFotoBase64)openLightbox(_handFotoBase64,false);
+  });
+  document.getElementById('hand-abbrechen').addEventListener('click',()=>{
+    // Bei bestehender Hand: zurück in Ansichts-Modus; bei neuer Hand: schliessen
+    document.getElementById('hand-loeschen')?.remove();
+    if(editHandID){
+      const h={id:editHandID,hand:selectedHandType,gewinner_id:_editHandGewinnerId,
+        kommentar:document.getElementById('hand-view-kommentar').textContent||null,
+        beweisfoto:_handFotoBase64};
+      _showHandViewMode(h);
+    } else {
+      document.getElementById('modal-hand').classList.remove('open');
+    }
   });
 
   document.getElementById('hand-speichern').addEventListener('click',async()=>{
@@ -3525,6 +3634,7 @@
       }
     },editHandID?'Hand aktualisiert':'Hand erfasst');
 
+    document.getElementById('hand-loeschen')?.remove();
     document.getElementById('modal-hand').classList.remove('open');
     loadHaende();
     loadHome();
