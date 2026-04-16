@@ -582,7 +582,7 @@
     <div class="form-group"><label class="form-label">Von</label><select class="form-input" id="trans-von"></select></div>
     <div class="form-group"><label class="form-label">Nach</label><select class="form-input" id="trans-nach"></select></div>
     <div class="form-group"><label class="form-label">Kommentar</label><div id="kommentar-chips"></div><input type="text" class="form-input" id="trans-kommentar-text" placeholder="Freitext…"></div>
-    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="number" inputmode="decimal" class="form-input" id="trans-betrag" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="text" inputmode="decimal" class="form-input" id="trans-betrag" placeholder="0.00"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-bearbeiten" style="display:none">Bearbeiten</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
   </div>
 </div>
@@ -718,6 +718,12 @@
     });
   }
   console.log(`♠️ DTKS Poker v${VERSION}`);
+
+  // Scroll-Lock: .content nicht scrollbar wenn ein Modal offen ist
+  const _contentEl=document.querySelector('.content');
+  new MutationObserver(()=>{
+    _contentEl.style.overflowY=document.querySelector('.modal-overlay.open')?'hidden':'';
+  }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
 
   // ── THEME ──────────────────────────────────────────────
   function applyTheme(p){
@@ -2666,12 +2672,12 @@
     document.getElementById('modal-transaktion').classList.add('open');
   }
   document.getElementById('trans-abbrechen').addEventListener('click',()=>document.getElementById('modal-transaktion').classList.remove('open'));
-  document.getElementById('trans-betrag').addEventListener('blur',e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0)e.target.value=v.toFixed(2);});
+  document.getElementById('trans-betrag').addEventListener('blur',e=>{const v=parseFloat(e.target.value.replace(',','.'));if(!isNaN(v)&&v>0)e.target.value=v.toFixed(2);});
   document.getElementById('trans-speichern').addEventListener('click',async()=>{
     const datum=document.getElementById('trans-datum').value;
     const von=document.getElementById('trans-von').value||null;
     const nach=document.getElementById('trans-nach').value||null;
-    const betrag=parseFloat(document.getElementById('trans-betrag').value)||0;
+    const betrag=parseFloat(String(document.getElementById('trans-betrag').value).replace(',','.'))||0;
     const kommentar=document.getElementById('modal-transaktion')._getKommentar();
     if(!nach&&!von){await showAlert('Bitte Von oder Nach auswählen.');return;}
     if(betrag<=0){await showAlert('Bitte einen Betrag eingeben.');return;}
