@@ -229,7 +229,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 2.14**
+- **Aktuelle Version: 2.24**
 
 ## Login-Provider
 
@@ -281,22 +281,16 @@ Testergebnisse:
 und dann gern nächste Anpassungen weitermachen
 
 Claude hatte nach dieser Antwort wegen erreichtem Nutzungslimit abgebrochen:
-Alle drei Probleme klar. Ich fixe sie in einem Schritt:
-	1.	PTR-Icon entfernen – nur der Bar (Höhenanzeige) bleibt, kein Pill/Icon
-	2.	Scrollbar-Farbe – themed ::-webkit-scrollbar für hell + dunkel
-	3.	Bottom-Nav immer oben – visualViewport-Ansatz raus, ersetze durch einfachen focusout-Reset auf scrollTo(0,0)
-
-
-
 ---
 
-wenn das erledigt ist,  dann hier weiter machen:
+## Nächste Todos (Priorität)
+
 3. **Statistik-Seite Optimierung** – kompakterer Filter, Range-Slider, Vollbild-Charts
-3.5 **Probier Optimierung** - als Anwender will ich mein profilbild beim bearbeiten oder erstellen auch croppen/move/zoom des Bildes können. mit einer runden maskierung, damit ich sehe wie das profilbild nachher angezeigt wird. und überall wo das profilbild eines Spielers angezeigt wird, soll man das Bild antippen können um es in groß zu betrachten  
-3.6 **Verlauf Performance Optimierung** - die Verlauf Seite hat viel Daten zu laden, das dauert zu lange. Es soll vornezu beim scrollen nachgeladen werden wenn man nach unten scrollt, anstatt ALLE Daten auf einmal. da ist die Wartezeit zu lange. 
-3.7 **Spieler Detail Seite optimieren** - auf der Spieler detail bzw.  -Statistik-Seite: profilbild etwas größer machen. und die einzelnen Blöcke der besonderen Hände collapsable, mit collapsed per default
-3.8 **Spieler Verwaltung mit profilbild** - als Admin muss ich auch das profilbild der Spieler ändern können
-3.9 ** payouts zahlen Format** - wenn man bei einem aktiven Spiel die payouts eintippt, dann soll auch bei einer ganzzahl (zb. "5") automatisch die .00 dran gehängt werden. es sollten immer zwei Dezimalstellen sein. 
+3.5 **Profilbild Crop/Zoom** – Crop/Move/Zoom beim Hochladen mit runder Vorschau-Maske; Profilbild antippen → Grossansicht
+3.6 **Verlauf Performance** – Lazy-Loading beim Scrollen (statt alle Daten auf einmal)
+3.7 ~~**Spieler Detail Seite optimieren**~~ ✅ v2.23/2.24 – Profilbild 140px, Besondere Hände collapsable
+3.8 **Spieler Verwaltung mit Profilbild** – Admin kann Profilbilder von Spielern ändern
+3.9 ~~**Payout Zahlen Format**~~ ✅ v2.23/2.24 – Auto .00 Formatierung, Komma → Punkt
 4. **Hand-Erfassung Beweisfoto** – Base64-Upload direkt beim Erfassen einer Hand
 5. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
 

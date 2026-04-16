@@ -2606,20 +2606,39 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'2.24',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Payout-Eingabe: Dezimalstellen immer mit Punkt (nicht Komma) – Komma-Eingabe wird automatisch umgewandelt'},
+      {typ:'verbessert',text:'Profilbild in Spieler-Statistik vergrössert (140px)'},
+    ]},
+    {version:'2.23',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Spieler-Statistik: Besondere Hände eingeklappt per default – einzeln durch Antippen aufklappbar'},
+      {typ:'fix',text:'Payout-Felder formatieren automatisch auf zwei Dezimalstellen (.00) nach Eingabe'},
+    ]},
+    {version:'2.22',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Kopfzeile bleibt beim Scrollen immer sichtbar (Sticky-Header wiederhergestellt)'},
+      {typ:'verbessert',text:'Scrollbalken liegt hinter Kopf- und Fusszeile (korrekter Layer)'},
+    ]},
+    {version:'2.21',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Pull-to-Refresh: Icon dreht sich jetzt im Uhrzeigersinn'},
+    ]},
+    {version:'2.20',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Pull-to-Refresh: Lade-Icon zurück – Pfeil zeigt jetzt in die richtige Richtung'},
+      {typ:'verbessert',text:'Scrollbalken im Hell- und Dunkelmodus sichtbar (angepasste Farbe)'},
+    ]},
+    {version:'2.19',datum:'April 2026',eintraege:[
+      {typ:'fix',text:'Fusszeile sitzt wieder korrekt am unteren Bildschirmrand'},
+    ]},
     {version:'2.18',datum:'April 2026',eintraege:[
-      {typ:'fix',text:'Pull-to-Refresh: Drehendes Icon entfernt – der Browser/iOS zeigt selbst eine Lade-Animation'},
-      {typ:'fix',text:'Scrollbalken im Inhaltsbereich jetzt sichtbar (angepasste Farbe für Hell- und Dunkelmodus)'},
-      {typ:'fix',text:'iOS: Bottom-Nav hängt nicht mehr nach Tastatur-Eingabe (focusout-Reset statt visualViewport)'},
+      {typ:'verbessert',text:'Beträge in allen Listen rechtsbündig ausgerichtet'},
     ]},
     {version:'2.17',datum:'April 2026',eintraege:[
-      {typ:'fix',text:'Scrollbalken: Nur der Inhaltsbereich scrollt – kein unerwünschter Scrollbalken auf Body/Page-Ebene mehr'},
       {typ:'verbessert',text:'Beträge rechtsbündig ausgerichtet in allen Listen (Übersicht, Transaktionen, Verlauf)'},
     ]},
     {version:'2.16',datum:'April 2026',eintraege:[
-      {typ:'fix',text:'iOS: Fusszeile bleibt nicht mehr oben hängen nach Tastatur-Eingabe (visualViewport-Fix für alle Eingabefelder)'},
+      {typ:'fix',text:'iOS: Tastatur-Fix für alle Eingabefelder (Fusszeile hängt nach Tippen nicht mehr)'},
     ]},
     {version:'2.15',datum:'April 2026',eintraege:[
-      {typ:'fix',text:'Pull-to-Refresh: Icon dreht sich jetzt in die richtige Richtung (gegen den Uhrzeigersinn)'},
+      {typ:'fix',text:'Pull-to-Refresh: Lade-Icon dreht sich in die richtige Richtung'},
     ]},
     {version:'2.14',datum:'April 2026',eintraege:[
       {typ:'fix',text:'Home: Inaktive Spieler werden auf der Übersicht nicht mehr angezeigt (nur aktive Spieler)'},
