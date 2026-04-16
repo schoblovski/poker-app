@@ -1974,23 +1974,33 @@
         return;
       }
 
-      // Abonniert – Einstellungen aus DB laden
-      pushMasterToggle.checked=true;
-      pushCategories.style.display='block';
-      pushStatusText.textContent='Aktiv';
-
-      const{data:row}=await db.from('push_subscriptions')
+      // Abonniert – DB-Eintrag prüfen
+      const{data:row,error:dbErr}=await db.from('push_subscriptions')
         .select('einstellungen')
         .eq('spieler_id',currentSpieler.id)
         .eq('endpoint',sub.endpoint)
         .maybeSingle();
 
-      if(row?.einstellungen){
-        const e=row.einstellungen;
-        document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
-        document.getElementById('push-cat-trans').checked=!!e.transaktionen;
-        document.getElementById('push-cat-updates').checked=!!e.app_updates;
+      if(dbErr){console.error('Push DB Fehler:',dbErr);}
+
+      if(!row){
+        // Browser-Subscription existiert, aber kein DB-Eintrag → Browser-Sub aufräumen
+        console.warn('Push: Browser-Subscription ohne DB-Eintrag – bereinige...');
+        await sub.unsubscribe().catch(()=>{});
+        pushMasterToggle.checked=false;
+        pushCategories.style.display='none';
+        pushStatusText.textContent='Nicht aktiv';
+        return;
       }
+
+      pushMasterToggle.checked=true;
+      pushCategories.style.display='block';
+      pushStatusText.textContent='Aktiv';
+
+      const e=row.einstellungen||{};
+      document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
+      document.getElementById('push-cat-trans').checked=!!e.transaktionen;
+      document.getElementById('push-cat-updates').checked=!!e.app_updates;
     }
 
     await loadPushState();
@@ -2012,10 +2022,10 @@
             applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
           const key=sub.getKey('p256dh');
-          const auth=sub.getKey('auth');
+          const authKey=sub.getKey('auth');
           const p256dh=btoa(String.fromCharCode(...new Uint8Array(key)));
-          const authStr=btoa(String.fromCharCode(...new Uint8Array(auth)));
-          await db.from('push_subscriptions').upsert({
+          const authStr=btoa(String.fromCharCode(...new Uint8Array(authKey)));
+          const{error:upsertErr}=await db.from('push_subscriptions').upsert({
             spieler_id:currentSpieler.id,
             endpoint:sub.endpoint,
             p256dh,
@@ -2023,6 +2033,11 @@
             einstellungen:{spielergebnisse:true,transaktionen:true,app_updates:true},
             aktualisiert_am:new Date().toISOString()
           },{onConflict:'endpoint'});
+          if(upsertErr){
+            console.error('Push DB Insert Fehler:',upsertErr);
+            await sub.unsubscribe().catch(()=>{});
+            throw new Error(`DB: ${upsertErr.message||upsertErr.code}`);
+          }
           pushStatusText.textContent='Aktiv';
           pushCategories.style.display='block';
           // Kategorie-Checkboxen auf Standard setzen
@@ -2064,11 +2079,12 @@
           transaktionen:document.getElementById('push-cat-trans').checked,
           app_updates:document.getElementById('push-cat-updates').checked,
         };
-        await db.from('push_subscriptions')
+        const{error:catErr}=await db.from('push_subscriptions')
           .update({einstellungen,aktualisiert_am:new Date().toISOString()})
           .eq('endpoint',sub.endpoint)
           .eq('spieler_id',currentSpieler.id);
-        console.log('💾 Push-Einstellungen gespeichert',einstellungen);
+        if(catErr){console.error('Push Einstellungen Fehler:',catErr);}
+        else console.log('💾 Push-Einstellungen gespeichert',einstellungen);
       });
     });
   }
