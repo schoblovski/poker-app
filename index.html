@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.30">
+  <meta name="version" content="2.31">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -303,6 +303,21 @@
     .stat-filter-chips{display:flex;flex-wrap:wrap;gap:6px;}
     .stat-filter-chip{background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
     .stat-filter-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+    .stat-filter-header{width:100%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0;font-family:var(--font-sans);gap:var(--space-sm);}
+    .stat-filter-summary{font-size:13px;font-weight:500;color:var(--text-primary);text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .stat-filter-chevron{width:18px;height:18px;color:var(--text-tertiary);flex-shrink:0;transition:transform var(--transition);}
+    .stat-filter-body{margin-top:var(--space-md);display:none;}
+    .stat-filter-body.open{display:block;}
+    /* Range Slider */
+    .range-slider{position:relative;margin:var(--space-xs) 0 var(--space-sm);}
+    .range-slider-track{height:4px;background:var(--bg-secondary);border-radius:2px;position:relative;margin:10px 0;}
+    .range-slider-fill{position:absolute;top:0;height:100%;background:var(--accent);border-radius:2px;pointer-events:none;}
+    .range-slider input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:transparent;position:absolute;top:-10px;left:0;pointer-events:none;outline:none;margin:0;}
+    .range-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--accent);border-radius:50%;border:2.5px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:all;cursor:pointer;}
+    .range-slider input[type=range]::-moz-range-thumb{width:16px;height:16px;background:var(--accent);border-radius:50%;border:2.5px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:all;cursor:pointer;}
+    .range-slider-labels{display:flex;justify-content:space-between;font-size:11px;font-family:var(--font-mono);color:var(--text-secondary);margin-top:2px;}
+    /* Full-bleed charts */
+    .chart-bleed{margin:0 calc(-1 * var(--space-lg));background:var(--surface);overflow:hidden;margin-bottom:var(--space-sm);}
 .linechart-legend{display:flex;flex-wrap:wrap;gap:4px 10px;padding:var(--space-sm) var(--space-md) var(--space-md);}
     .linechart-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;}
     .linechart-legend-dot{width:16px;height:2px;border-radius:1px;flex-shrink:0;}
@@ -598,7 +613,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.30';
+  const VERSION='2.31';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -646,6 +661,7 @@
   let _statVon='';
   let _statBis='';
   let _statPreset='alle';
+  let _statFromYearIdx=0,_statToYearIdx=0,_statFilterOpen=true;
 
   // ── PWA + NAVIGATION STATE ─────────────────────────────
   let _pwaInstallEvent=null;
@@ -2656,7 +2672,7 @@
     });
     legend+=`</div>`;
     return `<div class="section-title">Zeitverlauf (kumulierter Reingewinn)</div>
-    <div class="card" style="padding:var(--space-md) var(--space-md) 0;overflow:hidden;">${svg}${legend}</div>`;
+    <div class="chart-bleed" style="padding:var(--space-sm) 0 0">${svg}${legend}</div>`;
   }
 
   function renderGameColumnsChart(games, verlauf){
@@ -2710,11 +2726,11 @@
     const svgPot=buildSvg(d=>d.pot,()=>maxPot,v=>`€${Math.round(v)}`,'var(--accent)');
     const svgBuyins=buildSvg(d=>d.buyins,()=>maxBuyins,v=>`${v}×`,'var(--info)');
     return `<div class="section-title">Spiele im Zeitverlauf</div>
-    <div class="card" style="padding:var(--space-md) var(--space-md) var(--space-sm);overflow:hidden">
-      <div class="stat-filter-label" style="margin-bottom:6px">Pot (€)</div>
-      <div style="margin-bottom:var(--space-md)">${svgPot}</div>
-      <div class="stat-filter-label" style="margin-bottom:6px">Buy-Ins</div>
-      <div>${svgBuyins}</div>
+    <div class="chart-bleed" style="padding:var(--space-sm) var(--space-lg)">
+      <div class="stat-filter-label" style="margin-bottom:4px">Pot (€)</div>
+      <div style="margin-bottom:var(--space-md);overflow-x:auto">${svgPot}</div>
+      <div class="stat-filter-label" style="margin-bottom:4px">Buy-Ins</div>
+      <div style="overflow-x:auto">${svgBuyins}</div>
     </div>
     <div class="stats-grid" style="margin-top:var(--space-sm)">
       <div class="stat-card"><div class="stat-label">Ø Pot</div><div class="stat-value sm">€${avgPot}</div></div>
@@ -2742,30 +2758,38 @@
     const allSpiele=spieleData||[];
     const allHaende=haende||[];
 
-    // Reset filter on load
+    // Jahres-Liste einmalig aus Daten berechnen (aufsteigend)
+    const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort();
+
+    // Filter zurücksetzen
     _statSpielerFilter=new Set();
-    _statVon='';
-    _statBis='';
-    _statPreset='alle';
+    _statFromYearIdx=0;
+    _statToYearIdx=Math.max(0,allYears.length-1);
+    _statFilterOpen=true;
 
     function render(){
-      // Apply player filter
       const filtSpieler=_statSpielerFilter.size>0?allSpieler.filter(s=>_statSpielerFilter.has(s.id)):allSpieler;
-      // Apply date filter to games
+
+      // Datum-Filter aus Jahr-Slider ableiten
+      const fromYear=allYears[_statFromYearIdx]||'';
+      const toYear=allYears[_statToYearIdx]||'';
+      const statVon=fromYear?`${fromYear}-01-01`:'';
+      const statBis=toYear?`${toYear}-12-31`:'';
+
       const filtSpiele=allSpiele.filter(s=>{
-        if(_statVon&&s.datum<_statVon)return false;
-        if(_statBis&&s.datum>_statBis)return false;
+        if(statVon&&s.datum<statVon)return false;
+        if(statBis&&s.datum>statBis)return false;
         return true;
       });
       const filtSpielIds=new Set(filtSpiele.map(s=>s.id));
       const filtVerlauf=allVerlauf.filter(t=>filtSpielIds.has(t.spiel_id)&&(_statSpielerFilter.size===0||_statSpielerFilter.has(t.spieler_id)));
       const filtHaende=allHaende.filter(h=>{
-        if(_statVon&&h.datum&&h.datum<_statVon)return false;
-        if(_statBis&&h.datum&&h.datum>_statBis)return false;
+        if(statVon&&h.datum&&h.datum<statVon)return false;
+        if(statBis&&h.datum&&h.datum>statBis)return false;
         return _statSpielerFilter.size===0||_statSpielerFilter.has(h.gewinner_id);
       });
 
-      // Compute ranking
+      // Rangliste
       const ranking=filtSpieler.map(s=>{
         const abg=filtVerlauf.filter(t=>t.spieler_id===s.id);
         const gRein=abg.reduce((x,t)=>{
@@ -2779,28 +2803,49 @@
       const totalSpiele=filtSpielIds.size;
       const total7_2=filtHaende.filter(h=>h.hand==='7-2').length;
 
-      // Preset years from actual game data
-      const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort().reverse();
+      // Filter-Zusammenfassung
+      const spSummary=_statSpielerFilter.size===0?'Alle Spieler'
+        :_statSpielerFilter.size===1?escHtml(allSpieler.find(s=>_statSpielerFilter.has(s.id))?.name||'')
+        :`${_statSpielerFilter.size} Spieler`;
+      const yrSummary=allYears.length<=1?''
+        :_statFromYearIdx===0&&_statToYearIdx===allYears.length-1?' · Alles'
+        :_statFromYearIdx===_statToYearIdx?` · ${fromYear}`
+        :` · ${fromYear}–${toYear}`;
+      const summary=spSummary+yrSummary;
 
-      // Filter UI
-      const filterHtml=`<div class="stat-filter-box">
-        <div class="stat-filter-label">Spieler</div>
-        <div class="stat-filter-chips">
-          ${allSpieler.map(s=>{
-            const active=_statSpielerFilter.size===0||_statSpielerFilter.has(s.id);
-            return `<button class="stat-filter-chip${active?' active':''}" data-filter-sp="${s.id}">${escHtml(s.name)}</button>`;
-          }).join('')}
-        </div>
-        <div style="margin-top:var(--space-sm)">
-          <div class="stat-filter-label" style="margin-bottom:6px">Zeitraum</div>
-          <div class="stat-filter-chips">
-            <button class="stat-filter-chip${_statPreset==='alle'?' active':''}" data-preset="alle">Alles</button>
-            ${allYears.map(y=>`<button class="stat-filter-chip${_statPreset===y?' active':''}" data-preset="${y}">${y}</button>`).join('')}
+      // Range-Slider HTML (nur wenn >1 Jahr)
+      const sliderHtml=allYears.length>1?`
+        <div class="stat-filter-label" style="margin-top:var(--space-md)">Zeitraum</div>
+        <div class="range-slider">
+          <div class="range-slider-track">
+            <div class="range-slider-fill" id="stat-slider-fill"></div>
           </div>
+          <input type="range" id="stat-slider-from" min="0" max="${allYears.length-1}" value="${_statFromYearIdx}" step="1">
+          <input type="range" id="stat-slider-to" min="0" max="${allYears.length-1}" value="${_statToYearIdx}" step="1">
+        </div>
+        <div class="range-slider-labels">
+          <span id="stat-yr-from">${fromYear}</span>
+          <span id="stat-yr-to">${_statFromYearIdx!==_statToYearIdx?toYear:''}</span>
+        </div>`:'';
+
+      // Filter-Box
+      const filterHtml=`<div class="stat-filter-box">
+        <button class="stat-filter-header" id="stat-filter-toggle">
+          <span class="stat-filter-summary">${summary}</span>
+          <svg class="stat-filter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:rotate(${_statFilterOpen?'0':'180'}deg)"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="stat-filter-body${_statFilterOpen?' open':''}">
+          <div class="stat-filter-label">Spieler</div>
+          <div class="stat-filter-chips">
+            ${allSpieler.map(s=>{
+              const active=_statSpielerFilter.size===0||_statSpielerFilter.has(s.id);
+              return `<button class="stat-filter-chip${active?' active':''}" data-filter-sp="${s.id}">${escHtml(s.name)}</button>`;
+            }).join('')}
+          </div>
+          ${sliderHtml}
         </div>
       </div>`;
 
-      // Bar chart data
       const reinChartData=ranking.map(s=>({label:s.name,value:s.gRein}));
       const spieleChartData=[...ranking].sort((a,b)=>b.abg-a.abg).map(s=>({label:s.name,value:s.abg}));
       const avgChartData=[...ranking].filter(s=>s.abg>=3).sort((a,b)=>(b.abg>0?b.gRein/b.abg:0)-(a.abg>0?a.gRein/a.abg:0)).map(s=>({label:s.name,value:s.abg>0?s.gRein/s.abg:0}));
@@ -2832,7 +2877,13 @@
       html+=`</div>`;
       el.innerHTML=html;
 
-      // Player filter chips
+      // Filter toggle
+      el.querySelector('#stat-filter-toggle')?.addEventListener('click',()=>{
+        _statFilterOpen=!_statFilterOpen;
+        render();
+      });
+
+      // Spieler-Chips
       el.querySelectorAll('[data-filter-sp]').forEach(btn=>{
         btn.addEventListener('click',()=>{
           const id=btn.dataset.filterSp;
@@ -2847,15 +2898,45 @@
           render();
         });
       });
-      el.querySelectorAll('[data-preset]').forEach(btn=>{
-        btn.addEventListener('click',()=>{
-          _statPreset=btn.dataset.preset;
-          if(_statPreset==='alle'){_statVon='';_statBis='';}
-          else{_statVon=`${_statPreset}-01-01`;_statBis=`${_statPreset}-12-31`;}
-          render();
+
+      // Jahr-Slider
+      if(allYears.length>1){
+        const fromSlider=el.querySelector('#stat-slider-from');
+        const toSlider=el.querySelector('#stat-slider-to');
+        const fill=el.querySelector('#stat-slider-fill');
+        const yrFrom=el.querySelector('#stat-yr-from');
+        const yrTo=el.querySelector('#stat-yr-to');
+        const max=allYears.length-1;
+
+        function updateFill(){
+          const l=(_statFromYearIdx/max)*100;
+          const r=(_statToYearIdx/max)*100;
+          if(fill){fill.style.left=l+'%';fill.style.width=(r-l)+'%';}
+          if(yrFrom)yrFrom.textContent=allYears[_statFromYearIdx]||'';
+          if(yrTo)yrTo.textContent=_statFromYearIdx!==_statToYearIdx?allYears[_statToYearIdx]:'';
+          // z-index: fromSlider on top when both at max, else toSlider on top
+          if(fromSlider&&toSlider){
+            fromSlider.style.zIndex=_statFromYearIdx===max?'2':'1';
+            toSlider.style.zIndex=_statFromYearIdx===max?'1':'2';
+          }
+        }
+        updateFill();
+
+        fromSlider?.addEventListener('input',()=>{
+          let v=parseInt(fromSlider.value);
+          if(v>_statToYearIdx){v=_statToYearIdx;fromSlider.value=v;}
+          _statFromYearIdx=v;updateFill();
         });
-      });
-      // Click on player → Spieler-Statistik
+        fromSlider?.addEventListener('change',()=>render());
+        toSlider?.addEventListener('input',()=>{
+          let v=parseInt(toSlider.value);
+          if(v<_statFromYearIdx){v=_statFromYearIdx;toSlider.value=v;}
+          _statToYearIdx=v;updateFill();
+        });
+        toSlider?.addEventListener('change',()=>render());
+      }
+
+      // Klick auf Spieler → Spieler-Statistik
       el.querySelectorAll('.list-item.clickable[data-stats-id]').forEach(row=>{
         row.addEventListener('click',()=>{
           const s=ranking.find(x=>x.id===row.dataset.statsId);
