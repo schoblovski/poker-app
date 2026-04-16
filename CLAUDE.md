@@ -96,6 +96,18 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | buyin_pot   | 5.00 | €/BuyIn für Chips      |
 | buyin_kassa | 2.00 | €/BuyIn für Pokerkasse |
 
+### `push_subscriptions`
+
+| Spalte          | Typ       | Beschreibung                                                              |
+|-----------------|-----------|---------------------------------------------------------------------------|
+| id              | uuid      | Primary Key                                                               |
+| spieler_id      | uuid      | FK → spieler                                                              |
+| endpoint        | text      | Browser Push-Endpoint URL (unique)                                        |
+| p256dh          | text      | ECDH Public Key (Base64)                                                  |
+| auth            | text      | Auth Secret (Base64)                                                      |
+| einstellungen   | jsonb     | Kategorie-Toggles: spielergebnisse, buyins, neue_hand, transaktionen, app_updates |
+| aktualisiert_am | timestamp | Letztes Update der Subscription                                           |
+
 ## Finanz-Logik (KRITISCH – exakt so umsetzen!)
 
 ### Spieler-Kontostand
@@ -229,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 3.0**
+- **Aktuelle Version: 3.2**
 
 ## Login-Provider
 
@@ -268,6 +280,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**push_subscriptions in Rohdaten + CLAUDE.md aktualisiert**~~ ✅ v3.2 – Debug: Rohdaten zeigt jetzt auch die push_subscriptions-Tabelle; CLAUDE.md mit Tabellen-Schema ergänzt
+- ~~**Admin-Dropdown Sektionen**~~ ✅ v3.1 – Avatar-Menü: Einheitliche Reihenfolge und Sektionen für Admin-Funktionen und Debug-Tools
 - ~~**Bankkonto & Pokerkasse Detail-Seiten**~~ ✅ v3.0 – Kacheln auf Home anklickbar; Bankkonto-Detail zeigt alle Buchungsgruppen mit Subtotals; Pokerkasse-Detail zeigt Formel-Aufschlüsselung mit Spielerliste; LinkedIn Login hinzugefügt; Facebook Login aktiviert; Apple & Microsoft Login entfernt
 - ~~**Qualitätskontrolle + Login-Fix**~~ ✅ v2.42 – Login-Freeze behoben (Ladeanimation + parallele DB-Calls + fire-and-forget Profilbild); buyin_kassa in allen Queries konsistent
 - ~~**Statistik KPIs + App Features**~~ ✅ v2.41 – Neue KPIs Einzahlungen + BuyIn-Kosten in Spieler-Stats und Gesamtstatistik; Info-Seite: collapsible «App Features» Sektion
