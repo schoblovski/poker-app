@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.32">
+  <meta name="version" content="2.33">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -299,6 +299,7 @@
     .chart-zero{position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border-strong);}
     .chart-row-value{width:56px;font-size:11px;font-family:var(--font-mono);font-weight:600;flex-shrink:0;text-align:right;}
     .stat-filter-box{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);}
+    .stat-filter-sticky{position:sticky;top:var(--header-h,56px);z-index:40;}
     .stat-filter-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
     .stat-filter-chips{display:flex;flex-wrap:wrap;gap:6px;}
     .stat-filter-chip{background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
@@ -308,7 +309,6 @@
     .stat-filter-chevron{width:18px;height:18px;color:var(--text-tertiary);flex-shrink:0;transition:transform var(--transition);}
     .stat-filter-body{margin-top:var(--space-md);display:none;}
     .stat-filter-body.open{display:block;}
-    /* Range Slider */
     /* Full-bleed charts */
     .chart-bleed{margin:0 calc(-1 * var(--space-lg));background:var(--surface);overflow:hidden;margin-bottom:var(--space-sm);}
 .linechart-legend{display:flex;flex-wrap:wrap;gap:4px 10px;padding:var(--space-sm) var(--space-md) var(--space-md);}
@@ -606,7 +606,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.32';
+  const VERSION='2.33';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1223,6 +1223,10 @@
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('app-screen').style.display='flex';
+    // Header-Höhe als CSS-Variable setzen (für sticky Filter)
+    function updateHeaderH(){const h=document.querySelector('.header');if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');}
+    updateHeaderH();
+    window.addEventListener('resize',updateHeaderH);
     loadHome();
     setTimeout(showWhatsNew, 600);
 
@@ -2806,7 +2810,7 @@
         </div>`:'';
 
       // Filter-Box
-      const filterHtml=`<div class="stat-filter-box">
+      const filterHtml=`<div class="stat-filter-box stat-filter-sticky">
         <button class="stat-filter-header" id="stat-filter-toggle">
           <span class="stat-filter-summary">${summary}</span>
           <svg class="stat-filter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:rotate(${_statFilterOpen?'0':'180'}deg)"><polyline points="6 9 12 15 18 9"/></svg>
