@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.34">
+  <meta name="version" content="2.35">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -323,7 +323,7 @@
     .drilldown-item{display:flex;align-items:center;gap:8px;padding:7px var(--space-md) 7px 0;cursor:pointer;border-bottom:1px solid var(--border);}
     .drilldown-item:last-child{border-bottom:none;}
     .drilldown-item:active{background:var(--bg-secondary);}
-    .drilldown-date{font-size:11px;color:var(--text-tertiary);width:42px;flex-shrink:0;font-family:var(--font-mono);}
+    .drilldown-date{font-size:11px;color:var(--text-tertiary);width:56px;flex-shrink:0;font-family:var(--font-mono);}
     .drilldown-comment{flex:1;font-size:13px;color:var(--text-primary);}
     .pwa-banner{background:var(--accent-soft);border-radius:var(--radius-lg);padding:12px var(--space-md);display:flex;align-items:center;gap:10px;margin-bottom:var(--space-sm);}
     .pwa-banner-body{flex:1;min-width:0;}
@@ -617,7 +617,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.34';
+  const VERSION='2.35';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1206,6 +1206,28 @@
     });
   }
 
+  // ── UPDATE CHECK ───────────────────────────────────────
+  async function checkForUpdate(){
+    try{
+      const r=await fetch('/index.html?_='+Date.now(),{cache:'no-store'});
+      if(!r.ok)return;
+      const html=await r.text();
+      const m=html.match(/<meta name="version" content="([^"]+)"/);
+      if(!m)return;
+      const serverVersion=m[1];
+      if(serverVersion===VERSION)return;
+      document.getElementById('modal-update-msg').textContent=
+        `Version ${serverVersion} ist jetzt verfügbar – du nutzt noch ${VERSION}. Lade die App neu um die neueste Version zu erhalten.`;
+      document.getElementById('modal-update').classList.add('open');
+    }catch(e){console.log('Update-Check fehlgeschlagen:',e.message);}
+  }
+  document.getElementById('modal-update-later').addEventListener('click',()=>{
+    document.getElementById('modal-update').classList.remove('open');
+  });
+  document.getElementById('modal-update-reload').addEventListener('click',()=>{
+    window.location.reload();
+  });
+
   async function showApp(){
     document.getElementById('login-screen').style.display='none';
     // Einstellungen laden
@@ -1246,6 +1268,7 @@
     document.getElementById('app-screen').style.display='flex';
     loadHome();
     setTimeout(showWhatsNew, 600);
+    setTimeout(checkForUpdate, 4000);
 
     // iOS: Tastatur-Fix – iOS recomputed position:fixed erst bei Scroll-Event.
     // Mini-Scroll auf .content triggert die Neuberechnung der Bottom-Nav Position.
@@ -3614,6 +3637,22 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" id="modal-delete-cancel">Abbrechen</button>
       <button class="btn btn-danger" id="modal-delete-ok">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- App Update Modal -->
+<div class="modal-overlay" id="modal-update">
+  <div class="modal" style="max-height:fit-content">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-md)">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--accent)"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg></div>
+      <div style="font-size:17px;font-weight:700">Update verfügbar</div>
+    </div>
+    <div id="modal-update-msg" style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-lg)"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modal-update-later">Später</button>
+      <button class="btn btn-primary" id="modal-update-reload">Jetzt aktualisieren</button>
     </div>
   </div>
 </div>
