@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.20">
+  <meta name="version" content="2.21">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -56,7 +56,7 @@
     .btn-oauth svg{width:20px;height:20px;flex-shrink:0;}
 
     /* APP */
-    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+    #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;overflow:hidden;}
 
 
 
@@ -101,7 +101,7 @@
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
     .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);}
     .content::-webkit-scrollbar{width:4px;}
-    .content::-webkit-scrollbar-track{background:transparent;margin-bottom:calc(var(--safe-bottom) + 56px);}
+    .content::-webkit-scrollbar-track{background:transparent;}
     .content::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:2px;}
     .content::-webkit-scrollbar-thumb:hover{background:var(--text-secondary);}
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
@@ -251,6 +251,7 @@
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
     .spinner{width:20px;height:20px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes ptr-spin{from{transform:scaleX(-1) rotate(0deg);}to{transform:scaleX(-1) rotate(-360deg);}}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
     .empty{text-align:center;padding:48px var(--space-md);}
     .empty-icon{width:56px;height:56px;border-radius:var(--radius-xl);background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);}
@@ -344,7 +345,7 @@
   .ptr-pill svg{width:16px;height:16px;color:var(--text-tertiary);transition:color 180ms ease;transform:scaleX(-1);}
   .ptr-bar.ready .ptr-pill{background:var(--accent-soft);}
   .ptr-bar.ready .ptr-pill svg{color:var(--accent);}
-  .ptr-pill.spin svg{animation:spin .7s linear infinite;color:var(--accent);}
+  .ptr-pill.spin svg{animation:ptr-spin .7s linear infinite;color:var(--accent);}
 
   /* POKER INFOS */
   .hand-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-md);}
@@ -594,7 +595,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.20';
+  const VERSION='2.21';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1086,11 +1087,13 @@
       const tag=e.target.tagName;
       if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable){
         const c=document.querySelector('.content');
+        // 300ms: iOS Tastatur-Animationsdauer abwarten, dann Mini-Scroll
+        // erzwingt Neuberechnung von position:fixed Elementen
         setTimeout(()=>{
           const t=c.scrollTop;
           c.scrollTop=t+1;
-          requestAnimationFrame(()=>{c.scrollTop=t;});
-        },150);
+          setTimeout(()=>{c.scrollTop=t;},80);
+        },300);
       }
     });
   }
