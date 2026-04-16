@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="2.19">
+  <meta name="version" content="2.20">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -101,7 +101,7 @@
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
     .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);}
     .content::-webkit-scrollbar{width:4px;}
-    .content::-webkit-scrollbar-track{background:transparent;}
+    .content::-webkit-scrollbar-track{background:transparent;margin-bottom:calc(var(--safe-bottom) + 56px);}
     .content::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:2px;}
     .content::-webkit-scrollbar-thumb:hover{background:var(--text-secondary);}
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
@@ -339,8 +339,12 @@
   
   
   /* PULL TO REFRESH */
-  .ptr-bar{height:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:0;flex-shrink:0;transition:background 180ms ease;}
-  .ptr-bar.ready{background:var(--accent-soft);}
+  .ptr-bar{height:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:0;flex-shrink:0;}
+  .ptr-pill{width:32px;height:32px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;margin-bottom:6px;transition:background 180ms ease;}
+  .ptr-pill svg{width:16px;height:16px;color:var(--text-tertiary);transition:color 180ms ease;transform:scaleX(-1);}
+  .ptr-bar.ready .ptr-pill{background:var(--accent-soft);}
+  .ptr-bar.ready .ptr-pill svg{color:var(--accent);}
+  .ptr-pill.spin svg{animation:spin .7s linear infinite;color:var(--accent);}
 
   /* POKER INFOS */
   .hand-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-md);}
@@ -486,7 +490,11 @@
     </div>
   </div>
 
-  <div class="ptr-bar" id="ptr-bar"></div>
+  <div class="ptr-bar" id="ptr-bar">
+    <div class="ptr-pill" id="ptr-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+    </div>
+  </div>
   <div class="content">
     <div class="page active" id="page-home"><div id="home-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
     <div class="page" id="page-spiel"><div id="spiel-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div></div>
@@ -586,7 +594,7 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const VERSION='2.19';
+  const VERSION='2.20';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const db=createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -930,6 +938,7 @@
   {
     const content=document.querySelector('.content');
     const bar=document.getElementById('ptr-bar');
+    const pill=document.getElementById('ptr-pill');
     const THRESHOLD=72; // px Zugabstand bis Refresh ausgelöst wird
     let _startY=0,_deltaY=0,_active=false,_refreshing=false;
 
@@ -965,12 +974,14 @@
       const triggered=_deltaY>=THRESHOLD;
       if(triggered){
         _refreshing=true;
-        bar.style.height='6px';
+        bar.style.height='44px';
         bar.style.transition='height 150ms ease';
         bar.classList.remove('ready');
+        pill.classList.add('spin');
         const page=_pageHistory[_pageHistory.length-1];
         if(PAGE_LOADERS[page])await PAGE_LOADERS[page]();
         _refreshing=false;
+        pill.classList.remove('spin');
       }
       // Zurückfedern
       bar.style.transition='height 320ms cubic-bezier(.32,1.1,.6,1)';
@@ -1069,12 +1080,17 @@
     loadHome();
     setTimeout(showWhatsNew, 600);
 
-    // iOS: Tastatur-Fix – nach Eingabe-Blur scrollt iOS das Viewport nicht immer zurück,
-    // wodurch die Bottom-Nav hängen bleibt. scrollTo(0,0) erzwingt den Reset.
+    // iOS: Tastatur-Fix – iOS recomputed position:fixed erst bei Scroll-Event.
+    // Mini-Scroll auf .content triggert die Neuberechnung der Bottom-Nav Position.
     document.addEventListener('focusout',e=>{
       const tag=e.target.tagName;
       if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable){
-        setTimeout(()=>window.scrollTo(0,0),100);
+        const c=document.querySelector('.content');
+        setTimeout(()=>{
+          const t=c.scrollTop;
+          c.scrollTop=t+1;
+          requestAnimationFrame(()=>{c.scrollTop=t;});
+        },150);
       }
     });
   }
