@@ -20,5 +20,51 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Aktuelles Spiel",
+      "short_name": "Spiel",
+      "description": "Zum aktuellen Spiel springen",
+      "url": "/#spiel",
+      "icons": [{
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='20' fill='%2316a34a'/%3E%3Ctext x='50%25' y='50%25' font-size='56' dominant-baseline='central' text-anchor='middle' fill='white'%3E♠%3C/text%3E%3C/svg%3E",
+        "sizes": "96x96",
+        "type": "image/svg+xml"
+      }]
+    },
+    {
+      "name": "Neue Transaktion",
+      "short_name": "Transaktion",
+      "description": "Transaktion erfassen",
+      "url": "/#transaktionen",
+      "icons": [{
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='20' fill='%230ea5e9'/%3E%3Ctext x='50%25' y='50%25' font-size='60' dominant-baseline='central' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E€%3C/text%3E%3C/svg%3E",
+        "sizes": "96x96",
+        "type": "image/svg+xml"
+      }]
+    },
+    {
+      "name": "Hand erfassen",
+      "short_name": "Hand",
+      "description": "Besondere Hand erfassen",
+      "url": "/#haende",
+      "icons": [{
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='20' fill='%23dc2626'/%3E%3Ctext x='50%25' y='50%25' font-size='56' dominant-baseline='central' text-anchor='middle' fill='white'%3E♥%3C/text%3E%3C/svg%3E",
+        "sizes": "96x96",
+        "type": "image/svg+xml"
+      }]
+    },
+    {
+      "name": "Blind-Timer",
+      "short_name": "Timer",
+      "description": "Blind-Timer öffnen",
+      "url": "/#blindtimer",
+      "icons": [{
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='20' fill='%23f59e0b'/%3E%3Ctext x='50%25' y='50%25' font-size='48' dominant-baseline='central' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E⏱%3C/text%3E%3C/svg%3E",
+        "sizes": "96x96",
+        "type": "image/svg+xml"
+      }]
+    }
   ]
 }

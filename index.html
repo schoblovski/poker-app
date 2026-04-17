@@ -639,6 +639,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/></svg>
           Poker Infos
         </button>
+        <button class="dropdown-item" id="btn-install-pwa" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          App installieren
+        </button>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item" id="btn-profil" style="color:var(--accent-text);font-weight:600;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -846,6 +850,19 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
+  // ── APP-BADGE CLEAREN beim Öffnen/Fokussieren ──────────
+  function _clearAppBadge(){
+    if('clearAppBadge' in navigator){
+      try{ navigator.clearAppBadge(); }catch{}
+    }
+    if('caches' in self){
+      caches.open('dtks-badge').then(c=>c.put('/badge-count',new Response('0'))).catch(()=>{});
+    }
+  }
+  _clearAppBadge();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)_clearAppBadge();});
+  window.addEventListener('focus',_clearAppBadge);
+
   const VERSION='3.11';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
@@ -950,8 +967,9 @@
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_pwaInstallEvent=e;console.log('PWA install prompt ready');});
   window.addEventListener('appinstalled',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');console.log('PWA installed');});
 
-  function showPwaSheet(){
-    if(_isPwa()||localStorage.getItem(PWA_KEY))return;
+  function showPwaSheet(force=false){
+    if(_isPwa())return;
+    if(!force&&localStorage.getItem(PWA_KEY))return;
     const overlay=document.getElementById('pwa-overlay');
     if(!overlay||overlay.classList.contains('open'))return;
     const isIos=_isIosSafari();
@@ -1367,12 +1385,28 @@
   // ── NAVIGATION ─────────────────────────────────────────
   const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
+  // Landscape-Lock für Blind-Timer (nur in PWA mit Orientation-API)
+  function _tryLockLandscape(){
+    if(screen.orientation && typeof screen.orientation.lock==='function'){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  }
+  function _tryUnlockOrientation(){
+    if(screen.orientation && typeof screen.orientation.unlock==='function'){
+      try{ screen.orientation.unlock(); }catch{}
+    }
+  }
+
   function showPage(page){
+    const prevPage=document.querySelector('.page.active')?.id?.replace('page-','');
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
     document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
     document.getElementById('page-title').textContent=pageTitles[page]||page;
+    // Blind-Timer im Querformat, sonst Portrait
+    if(page==='blindtimer')_tryLockLandscape();
+    else if(prevPage==='blindtimer')_tryUnlockOrientation();
     if(!_handlingPopstate){
       if(ROOT_PAGES.has(page)){_pageHistory=[page];}
       else{_pageHistory.push(page);}
@@ -1463,6 +1497,14 @@
   document.getElementById('user-avatar-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');});
   document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
   document.getElementById('btn-poker-infos').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('poker-infos');loadPokerInfos();});
+  // App-Installation-Eintrag nur anzeigen wenn noch kein PWA
+  if(!_isPwa()){
+    const btnInstall=document.getElementById('btn-install-pwa');
+    if(btnInstall){
+      btnInstall.style.display='';
+      btnInstall.addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPwaSheet(true);});
+    }
+  }
   document.getElementById('btn-profil').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('profil');loadProfil();});
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
@@ -1514,6 +1556,9 @@
         break;
       case 'info':
         showPage('info');loadInfo();
+        break;
+      case 'blindtimer':
+        showPage('blindtimer');loadBlindtimer();
         break;
     }
     history.replaceState(null,'',location.pathname);
