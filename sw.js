@@ -30,15 +30,33 @@ self.addEventListener('push', event => {
     vibrate: [200, 100, 200],
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+  event.waitUntil((async () => {
+    await self.registration.showNotification(title, options);
+    // App-Badge hochzählen (zeigt ungelesene Zahl auf dem Icon)
+    if (self.navigator && 'setAppBadge' in self.navigator) {
+      try {
+        const cache = await caches.open('dtks-badge');
+        const res = await cache.match('/badge-count');
+        const current = res ? parseInt(await res.text(), 10) || 0 : 0;
+        const next = current + 1;
+        await cache.put('/badge-count', new Response(String(next)));
+        await self.navigator.setAppBadge(next);
+      } catch (e) { /* Badge-API nicht verfügbar → ignorieren */ }
+    }
+  })());
 });
 
 // ── NOTIFICATION CLICK ─────────────────────────────────────────────────────
 // Wird ausgelöst wenn der Nutzer die Notification antippt
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  // Badge beim Öffnen via Notification clearen
+  if (self.navigator && 'clearAppBadge' in self.navigator) {
+    try {
+      self.navigator.clearAppBadge();
+      caches.open('dtks-badge').then(c => c.put('/badge-count', new Response('0')));
+    } catch (e) {}
+  }
 
   const data = event.notification.data || {};
   // Optionale URL aus dem Payload (z.B. '/app#transaktionen')

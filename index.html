@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.11">
+  <meta name="version" content="3.12">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -110,6 +110,12 @@
     .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .avatar-btn img{width:100%;height:100%;object-fit:cover;}
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
+    .bell-btn{position:relative;width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-secondary);}
+    .bell-btn svg{width:18px;height:18px;}
+    .bell-btn:hover{background:var(--border);}
+    .bell-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;}
+    .bell-badge[hidden]{display:none!important;}
+    .bell-btn[hidden]{display:none!important;}
     .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
     .content::-webkit-scrollbar{width:4px;}
     .content::-webkit-scrollbar-track{background:transparent;}
@@ -521,6 +527,41 @@
   .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:var(--font-mono);text-align:right;}
   .blind-level-row.active-level td{background:var(--accent-soft);}
 
+  /* Benachrichtigungen */
+  .benachr-list{display:flex;flex-direction:column;gap:6px;}
+  .benachr-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);cursor:pointer;transition:background .15s;}
+  .benachr-item:hover{background:var(--bg-secondary);}
+  .benachr-item.unread{background:var(--accent-soft);}
+  [data-theme="dark"] .benachr-item.unread{background:rgba(34,197,94,.08);}
+  .benachr-row{display:flex;gap:var(--space-sm);align-items:flex-start;}
+  .benachr-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px;}
+  .benachr-dot-spacer{width:8px;flex-shrink:0;}
+  .benachr-body{flex:1;min-width:0;}
+  .benachr-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+  .benachr-kat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  .benachr-time{font-size:11px;color:var(--text-tertiary);}
+  .benachr-title{font-size:14px;font-weight:600;color:var(--text-primary);line-height:1.3;}
+  .benachr-text{font-size:13px;color:var(--text-secondary);margin-top:2px;line-height:1.35;}
+
+  /* Blind-Timer Vollbild bei Landscape */
+  body.bt-fullscreen .header,
+  body.bt-fullscreen .bottom-nav,
+  body.bt-fullscreen #page-blindtimer .back-btn,
+  body.bt-fullscreen #page-blindtimer details,
+  body.bt-fullscreen #page-blindtimer #bt-reset{display:none!important;}
+  body.bt-fullscreen #app-screen{max-width:none!important;}
+  body.bt-fullscreen .content{padding:0!important;height:100vh;height:100dvh;overflow:hidden;width:100vw;}
+  body.bt-fullscreen #page-blindtimer{padding:0;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;}
+  body.bt-fullscreen #page-blindtimer .blind-timer-wrap{padding:0;gap:max(2vh,12px);width:100%;height:100%;justify-content:center;}
+  body.bt-fullscreen #page-blindtimer .blind-progress-bar{width:90vw;height:6px;}
+  body.bt-fullscreen #page-blindtimer .blind-countdown{font-size:min(36vh,28vw);line-height:.9;}
+  body.bt-fullscreen #page-blindtimer .blind-blinds{gap:min(8vw,48px);}
+  body.bt-fullscreen #page-blindtimer .blind-blinds-item span{font-size:min(8vh,42px);}
+  body.bt-fullscreen #page-blindtimer .blind-blinds-item label{font-size:13px;}
+  body.bt-fullscreen #page-blindtimer .blind-level-badge{font-size:14px;}
+  body.bt-fullscreen #page-blindtimer .blind-level-next{font-size:13px;}
+  body.bt-fullscreen #page-blindtimer .blind-controls{gap:var(--space-md);}
+
   /* Head-to-Head */
   .h2h-selectors{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-md);}
   .h2h-sel{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;}
@@ -623,6 +664,10 @@
     </button>
     <div class="header-right">
       <div class="sync-badge synced" id="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sync</span></div>
+      <button class="bell-btn" id="bell-btn" hidden aria-label="Benachrichtigungen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        <span class="bell-badge" id="bell-badge" hidden>0</span>
+      </button>
       <button class="avatar-btn" id="user-avatar-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
       <div class="dropdown" id="dropdown">
         <div class="theme-picker">
@@ -638,6 +683,10 @@
         <button class="dropdown-item" id="btn-poker-infos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/></svg>
           Poker Infos
+        </button>
+        <button class="dropdown-item" id="btn-install-pwa" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          App installieren
         </button>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item" id="btn-profil" style="color:var(--accent-text);font-weight:600;">
@@ -714,6 +763,7 @@
     <div class="page" id="page-spieler-stats"><div id="spieler-stats-content"></div></div>
     <div class="page" id="page-profil"><div id="profil-content"></div></div>
     <div class="page" id="page-poker-infos"><div id="poker-infos-content"></div></div>
+    <div class="page" id="page-benachrichtigungen"><div id="benachrichtigungen-content"></div></div>
     <div class="page" id="page-bankkonto-detail"><div id="bankkonto-detail-content"></div></div>
     <div class="page" id="page-pokerkasse-detail"><div id="pokerkasse-detail-content"></div></div>
     <div class="page" id="page-randomizer"><div id="randomizer-content"></div></div>
@@ -846,7 +896,20 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.11';
+  // ── APP-BADGE CLEAREN beim Öffnen/Fokussieren ──────────
+  function _clearAppBadge(){
+    if('clearAppBadge' in navigator){
+      try{ navigator.clearAppBadge(); }catch{}
+    }
+    if('caches' in self){
+      caches.open('dtks-badge').then(c=>c.put('/badge-count',new Response('0'))).catch(()=>{});
+    }
+  }
+  _clearAppBadge();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
+  window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
+
+  const VERSION='3.12';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -855,6 +918,7 @@
   const PUSH_FUNCTION_URL=`${SUPABASE_URL}/functions/v1/send-push`;
 
   // Sendet Push-Notification über die Edge Function (fire-and-forget)
+  // + speichert In-App-Benachrichtigung pro Empfänger in der DB
   function triggerPush({spieler_ids=[], title, body, data={}, kategorie}){
     fetch(PUSH_FUNCTION_URL,{
       method:'POST',
@@ -864,6 +928,26 @@
       const j=await r.json().catch(()=>({}));
       console.log(`📨 Push: ${j.sent??'?'} gesendet, ${j.errors??'?'} Fehler (HTTP ${r.status})`);
     }).catch(e=>console.warn('Push-Trigger Fehler:',e));
+
+    // In-App Benachrichtigungen schreiben
+    let recipients=spieler_ids;
+    if(!recipients||!recipients.length){
+      recipients=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank).map(s=>s.id);
+    }
+    if(recipients.length){
+      const rows=recipients.map(sid=>({
+        spieler_id:sid,
+        kategorie:kategorie||null,
+        title:title||'',
+        body:body||'',
+        url:data?.url||null,
+        tag:data?.tag||null,
+      }));
+      db.from('benachrichtigungen').insert(rows).then(({error})=>{
+        if(error)console.warn('Benachrichtigung Insert Fehler:',error.message||error);
+        else{console.log(`🔔 ${rows.length} Benachrichtigung(en) gespeichert`);if(typeof refreshBellBadge==='function')refreshBellBadge();}
+      });
+    }
   }
 
   // ── CONSOLE INTERCEPTOR ────────────────────────────────
@@ -950,8 +1034,9 @@
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_pwaInstallEvent=e;console.log('PWA install prompt ready');});
   window.addEventListener('appinstalled',()=>{hidePwaSheet();localStorage.setItem(PWA_KEY,'1');console.log('PWA installed');});
 
-  function showPwaSheet(){
-    if(_isPwa()||localStorage.getItem(PWA_KEY))return;
+  function showPwaSheet(force=false){
+    if(_isPwa())return;
+    if(!force&&localStorage.getItem(PWA_KEY))return;
     const overlay=document.getElementById('pwa-overlay');
     if(!overlay||overlay.classList.contains('open'))return;
     const isIos=_isIosSafari();
@@ -1365,14 +1450,39 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner',benachrichtigungen:'Benachrichtigungen'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
+  // Blind-Timer Vollbild-Modus: bei Landscape-Rotation auf der Timer-Seite
+  // wird Header/Nav ausgeblendet und nur der Countdown gross angezeigt.
+  function _btCheckFullscreen(){
+    const onBt=document.getElementById('page-blindtimer')?.classList.contains('active');
+    const isLandscape=window.matchMedia('(orientation: landscape)').matches;
+    const wasFullscreen=document.body.classList.contains('bt-fullscreen');
+    const isFullscreen=!!onBt&&isLandscape;
+    document.body.classList.toggle('bt-fullscreen',isFullscreen);
+    // Wake-Lock: im Vollbild immer aktiv (wie Netflix), sonst nur wenn Timer läuft
+    if(isFullscreen&&!wasFullscreen){
+      if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
+    } else if(wasFullscreen&&!isFullscreen){
+      if(typeof _btReleaseWakeLock==='function'&&!(_btState&&_btState.running))_btReleaseWakeLock();
+    }
+  }
+  window.addEventListener('orientationchange',_btCheckFullscreen);
+  window.matchMedia('(orientation: landscape)').addEventListener?.('change',_btCheckFullscreen);
+  // Wake-Lock bei Tab-Rückkehr neu anfordern (Browser gibt ihn bei Hidden frei)
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&document.body.classList.contains('bt-fullscreen')){
+      if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
+    }
+  });
+
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
     document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
     document.getElementById('page-title').textContent=pageTitles[page]||page;
+    _btCheckFullscreen();
     if(!_handlingPopstate){
       if(ROOT_PAGES.has(page)){_pageHistory=[page];}
       else{_pageHistory.push(page);}
@@ -1386,6 +1496,7 @@
     if(page==='statistik')loadStatistik();
     if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=()=>openTransaktionModal(null);}
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
+    if(page==='benachrichtigungen')loadBenachrichtigungen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
@@ -1463,6 +1574,14 @@
   document.getElementById('user-avatar-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');});
   document.addEventListener('click',()=>document.getElementById('dropdown').classList.remove('open'));
   document.getElementById('btn-poker-infos').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('poker-infos');loadPokerInfos();});
+  // App-Installation-Eintrag nur anzeigen wenn noch kein PWA
+  if(!_isPwa()){
+    const btnInstall=document.getElementById('btn-install-pwa');
+    if(btnInstall){
+      btnInstall.style.display='';
+      btnInstall.addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPwaSheet(true);});
+    }
+  }
   document.getElementById('btn-profil').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('profil');loadProfil();});
   document.getElementById('btn-verwaltung').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('verwaltung');});
   document.getElementById('btn-einstellungen').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('einstellungen');});
@@ -1474,6 +1593,79 @@
   document.getElementById('btn-equity').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('equity');loadEquity();});
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
+  document.getElementById('bell-btn').addEventListener('click',()=>{showPage('benachrichtigungen');});
+
+  // ── BENACHRICHTIGUNGEN ─────────────────────────────────
+  async function refreshBellBadge(){
+    if(!currentSpieler)return;
+    const bellBtn=document.getElementById('bell-btn');
+    const badge=document.getElementById('bell-badge');
+    if(!bellBtn||!badge)return;
+    // Glocke nur anzeigen wenn Push-Notifications aktiviert (≥1 Subscription)
+    const{count:subCount}=await db.from('push_subscriptions').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id);
+    if(!subCount){bellBtn.hidden=true;return;}
+    bellBtn.hidden=false;
+    const{count,error}=await db.from('benachrichtigungen').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
+    if(error){console.warn('Benachrichtigung Badge-Refresh Fehler:',error.message||error);badge.hidden=true;return;}
+    if(count&&count>0){badge.textContent=count>99?'99+':String(count);badge.hidden=false;}
+    else{badge.hidden=true;}
+  }
+  function _benachrTimeAgo(ts){
+    const sec=Math.floor((Date.now()-new Date(ts).getTime())/1000);
+    if(sec<60)return 'gerade eben';
+    if(sec<3600)return `vor ${Math.floor(sec/60)} Min`;
+    if(sec<86400)return `vor ${Math.floor(sec/3600)} Std`;
+    if(sec<604800)return `vor ${Math.floor(sec/86400)} Tg`;
+    return new Date(ts).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }
+  const _BENACHR_KAT_LABEL={spielergebnisse:'Spielergebnis',buyins:'Buy-In',neue_hand:'Hand',transaktionen:'Transaktion',app_updates:'App-Update'};
+  const _BENACHR_KAT_COLOR={spielergebnisse:'var(--accent-text)',buyins:'var(--info)',neue_hand:'var(--warning)',transaktionen:'var(--text-secondary)',app_updates:'var(--text-tertiary)'};
+  async function loadBenachrichtigungen(){
+    const el=document.getElementById('benachrichtigungen-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    if(!currentSpieler){el.innerHTML=`<div class="empty">Kein Spieler.</div>`;return;}
+    const{data,error}=await db.from('benachrichtigungen').select('*').eq('spieler_id',currentSpieler.id).order('datum',{ascending:false}).limit(200);
+    if(error){el.innerHTML=`<div class="empty">Fehler: ${escHtml(error.message)}</div>`;return;}
+    const list=data||[];
+    const ungelesen=list.filter(n=>!n.gelesen).map(n=>n.id);
+    const head=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)">
+        <div style="font-size:13px;color:var(--text-secondary)">${list.length} Benachrichtigung${list.length===1?'':'en'}</div>
+      </div>`;
+    if(!list.length){el.innerHTML=head+`<div class="empty">Noch keine Benachrichtigungen.</div>`;return;}
+    const items=list.map(n=>{
+      const katLbl=_BENACHR_KAT_LABEL[n.kategorie]||n.kategorie||'';
+      const katColor=_BENACHR_KAT_COLOR[n.kategorie]||'var(--text-tertiary)';
+      const unread=!n.gelesen;
+      return `<div class="benachr-item${unread?' unread':''}" data-id="${n.id}"${n.url?` data-url="${escHtml(n.url)}"`:''}>
+        <div class="benachr-row">
+          ${unread?`<div class="benachr-dot"></div>`:`<div class="benachr-dot-spacer"></div>`}
+          <div class="benachr-body">
+            <div class="benachr-meta">
+              ${katLbl?`<span class="benachr-kat" style="color:${katColor}">${escHtml(katLbl)}</span>`:''}
+              <span class="benachr-time">${_benachrTimeAgo(n.datum)}</span>
+            </div>
+            <div class="benachr-title">${escHtml(n.title||'')}</div>
+            ${n.body?`<div class="benachr-text">${escHtml(n.body)}</div>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    el.innerHTML=head+`<div class="benachr-list">${items}</div>`;
+    el.querySelectorAll('.benachr-item').forEach(it=>it.addEventListener('click',()=>{
+      const url=it.dataset.url;
+      if(url)handleDeepLink(url);
+    }));
+    // Auto-Mark-as-Read: alle ungelesenen sofort als gelesen markieren,
+    // visuelles "Neu"-Styling bleibt bis zum nächsten Seitenaufruf erhalten
+    if(ungelesen.length){
+      db.from('benachrichtigungen').update({gelesen:true}).in('id',ungelesen).then(({error})=>{
+        if(error)console.warn('Auto-Mark-as-Read Fehler:',error.message||error);
+        refreshBellBadge();
+      });
+    } else {
+      refreshBellBadge();
+    }
+  }
 
   // ── AUTH ───────────────────────────────────────────────
   async function loginWith(p){await db.auth.signInWithOAuth({provider:p,options:{redirectTo:window.location.origin}});}
@@ -1514,6 +1706,12 @@
         break;
       case 'info':
         showPage('info');loadInfo();
+        break;
+      case 'blindtimer':
+        showPage('blindtimer');loadBlindtimer();
+        break;
+      case 'benachrichtigungen':
+        showPage('benachrichtigungen');
         break;
     }
     history.replaceState(null,'',location.pathname);
@@ -1653,6 +1851,7 @@
     document.getElementById('app-screen').style.display='flex';
     loadHome();
     _btInit();
+    refreshBellBadge();
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -5206,6 +5405,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.12',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'In-App Benachrichtigungen: neue Glocke im Header mit Unread-Badge (nur sichtbar wenn Push-Notifications aktiviert). Eigene Seite mit allen Benachrichtigungen chronologisch; Klick folgt dem Deep-Link; beim Öffnen der Seite werden alle automatisch als gelesen markiert'},
+      {typ:'neu',text:'Blind-Timer Vollbild-Modus: wenn das Handy in Querformat gedreht wird, zeigt der Blind-Timer nur noch Countdown, Blinds und Progress gross über den ganzen Bildschirm – Header und Nav verschwinden. Bildschirm schläft im Vollbild nicht mehr ein (Wake-Lock, wie bei Netflix)'},
+      {typ:'neu',text:'App-Badge-API: ungelesene Push-Notifications werden als Zahl auf dem App-Icon angezeigt (unterstützte Browser/Geräte). Beim Öffnen der App wird das Badge automatisch zurückgesetzt'},
+      {typ:'verbessert',text:'Avatar-Menü: neuer Eintrag "App installieren" (nur sichtbar wenn noch nicht als PWA installiert) öffnet den Installations-Dialog'},
+    ]},
     {version:'3.11',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Equity-Rechner unter Poker Tools: bis zu 6 Hände gegeneinander rechnen mit optionalem Flop/Turn/River; Monte-Carlo Simulation mit 20.000 Iterationen; Karten-Picker mit Farb- und Rang-Auswahl, bereits verwendete Karten werden ausgegraut'},
       {typ:'neu',text:'Equity-Rechner: Modus-Schalter zwischen Omaha (Standard, 4 Holecards) und Texas Hold\'em (2 Holecards); Ergebnisse werden automatisch neu berechnet bei jeder Änderung'},
@@ -6094,7 +6299,7 @@
   }
 
   // ── DEBUG: ROHDATEN ────────────────────────────────────
-  const ROHDATEN_TABELLEN=['spieler','spiele','spiel_teilnehmer','transaktionen','hand_statistik','einstellungen','push_subscriptions'];
+  const ROHDATEN_TABELLEN=['spieler','spiele','spiel_teilnehmer','transaktionen','hand_statistik','einstellungen','push_subscriptions','benachrichtigungen'];
   const ROHDATEN_ORDER={spieler:'name',spiele:'datum',spiel_teilnehmer:'created_at',transaktionen:'datum',hand_statistik:'datum',einstellungen:'key',push_subscriptions:'aktualisiert_am'};
   let _rohdatenAktiv='spieler', _rohdatenAlles=false;
 

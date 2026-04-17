@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.11**
+- **Aktuelle Version: 3.12**
 
 ## Login-Provider
 
@@ -280,6 +280,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**PWA Mobile Polish + In-App Benachrichtigungen**~~ ✅ v3.12 – Neue Tabelle `benachrichtigungen` (id, spieler_id, datum, kategorie, title, body, url, tag, gelesen) – triggerPush schreibt zusätzlich pro Empfänger einen Eintrag (broadcast → alle aktiven Nicht-Bank-Spieler); Glocke im Header mit Unread-Badge, nur sichtbar wenn Push-Subscription existiert; eigene Benachrichtigungen-Seite, Auto-Mark-as-Read beim Öffnen, visueller Neu-Zustand bleibt für den Besuch; Deep-Link bei Klick. Blind-Timer: Vollbild im Landscape (Header/Nav weg, Countdown gross, volle Bildschirmbreite via max-width-Override), Wake-Lock aktiv solange Vollbild aktiv (wie Netflix). App-Badge-API: Service Worker zählt ungelesene Pushes aufs App-Icon, Clear bei Öffnen/Fokus. Manueller "App installieren"-Eintrag im Avatar-Menü (nur wenn noch nicht als PWA installiert).
 - ~~**Equity-Rechner (Omaha + Texas Hold'em)**~~ ✅ v3.11 – Neues Poker Tool unter Avatar-Menü: bis zu 6 Hände vergleichen, optionales Board (Flop/Turn/River); Modus-Schalter Omaha (Default, 4 Holecards, exakt 2+3 Regel über 60 Kombinationen) vs Texas Hold'em (2 Holecards, 7-Karten-Evaluator); Monte-Carlo 20.000 Iterationen in Batches á 1000 mit Cancellation-Token – laufende Simulationen werden bei Karten-Änderung verworfen; Auto-Calc sobald alle Holecards gesetzt sind, Split-Anzeige bei Gleichstand; Karten-Picker (Farbe + Rang) mit Disable für bereits verwendete Karten; fester 44×62 Slot-Wrapper verhindert Layout-Sprünge; Theme-Umschalter im Avatar-Menü schliesst das Menü nicht mehr (stopPropagation)
 - ~~**Spieler×Gegner-Matrix in der Statistik**~~ ✅ v3.10 – Neue Sektion in der Statistik-Seite: Matrix aller aktiven Spieler mit Netto-Saldo pro Paar, Farbcodierung (grün/rot) mit Intensität proportional zum Betrag, Avatare als Spalten-Header mit sticky erster Spalte; Klick auf eine Zelle öffnet Head-to-Head mit dem Paar vorbelegt; respektiert Jahres- und Spieler-Filter; loadH2H akzeptiert jetzt optionale preAId/preBId
 - ~~**Head-to-Head in den Poker Tools**~~ ✅ v3.9 – Zwei-Spieler-Vergleich mit großen Profilbildern (140px, Klick → Lightbox), Dropdown mit aktiv/inaktiv-Trennung, Zeitraum-Filter als Jahres-Chips (wie Statistik), KPI-Kacheln, Linien-Chart zum kumulierten Saldo, Besondere-Hände-Sektion für alle Hand-Typen gruppiert (Hände auch via Datum gematcht für Altdaten ohne spiel_id), scrollbare Liste aller gemeinsamen Spiele mit Drilldown in Hand-Modal bzw. Spiel-Detail; Fix im Sidepot-Rechner: × bleibt bei 2 Spielern stabil sichtbar (disabled statt hidden)
