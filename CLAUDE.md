@@ -273,7 +273,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 | 16 | Statistik: Charts + bessere Datenvisualisierung (Verlauf, Gewinn-Charts)           | ✅ v2.2  |
 | 17 | Google Account-Wechsel (Profil wechseln beim Login)                                | ✅ v2.2  |
 | 18 | Facebook / Apple / Microsoft Login in Supabase konfigurieren                       | ⏳ offen |
-| 19 | Altdaten: Profilbilder (Google Drive Pfade)                                        | ⏳ offen |
+| 19 | Altdaten-Migration (inkl. Profilbilder)                                            | ✅ fertig |
 | 20 | Profil-Seite: Name ändern, Profilbild (Base64), Profil wechseln, Abmelden          | ✅ v2.11 |
 | 21 | Buy-In Minimum = 1 (kein Minus auf 0 möglich)                                      | ✅ v2.11 |
 | 22 | Doppelte Spieler im aktiven Spiel verhindern                                        | ✅ v2.11 |
@@ -305,9 +305,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 
 ## Aktueller Backlog / TODOs
-1. **Altdaten Migration** – Neues Migrationsskript zur Altdaten-Übernahme und Konvertierung der alten Foto-Dateien zu Base64
-2. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
-3. **Push Notifications** ✅ vollständig implementiert:
+1. **Facebook/Apple/Microsoft Login** – Supabase Dashboard Konfiguration erforderlich (nicht via Code)
+2. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
