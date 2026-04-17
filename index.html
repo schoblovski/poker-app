@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.3">
+  <meta name="version" content="3.4">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -677,7 +677,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.3';
+  const VERSION='3.4';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -3629,6 +3629,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.4',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Statistik-Screen lädt deutlich schneller: Base64-Beweisfotos und Profilbilder werden nicht mehr unnötig mitgeladen'},
+      {typ:'verbessert',text:'Hände-Screen lädt deutlich schneller: redundante Profilbild-Transfers (ca. 9 MB) entfernt – Fotos werden erst beim Öffnen einer Hand geladen'},
+      {typ:'verbessert',text:'Verlauf-Screen lädt schneller: Profilbilder kommen aus einem einmaligen Spieler-Cache statt bei jedem Spiel neu übertragen zu werden'},
+      {typ:'verbessert',text:'Home-Screen: eine statt zwei Spieler-Abfragen beim Laden'},
+    ]},
     {version:'3.3',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Admin: Push-Benachrichtigungen pro Spieler einsehen – Spieler-Detail in der Verwaltung zeigt alle registrierten Geräte und deren Kategorie-Einstellungen (schreibgeschützt)'},
       {typ:'fix',text:'Home-Kontostand: nach Spielabschluss oder Transaktion wird der Kontostand sofort korrekt angezeigt, ohne die App neu zu öffnen'},
