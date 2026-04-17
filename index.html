@@ -3528,7 +3528,7 @@
         <div class="card">${renderBarChart(einzChartData,v=>fmt(v),true)}</div>`:''}
         ${buyinKChartData.length>0?`<div class="section-title">BuyIn-Kosten (gesamt)</div>
         <div class="card">${renderBarChart(buyinKChartData,v=>fmt(v),true)}</div>`:''}
-        <div class="section-title">Spieler</div>
+        <div class="section-title">Spieler <span style="font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">· Ø Reingewinn pro Spiel</span></div>
         <div class="card">`;
       ranking.forEach((s,i)=>{
         const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
