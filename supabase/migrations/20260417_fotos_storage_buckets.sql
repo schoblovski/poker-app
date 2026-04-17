@@ -28,50 +28,33 @@ ON CONFLICT (id) DO UPDATE
 
 -- ─────────────────────────────────────────────────────────────
 -- RLS-Policies für storage.objects
--- Public-Read über bucket.public = true geregelt (keine Policy nötig).
--- Für INSERT/UPDATE/DELETE brauchen wir explizite Policies.
--- Alle registrierten Spieler (authenticated) dürfen schreiben,
--- da z.B. Admin Profilbilder anderer Spieler hochlädt und jeder
--- Spieler Beweisfotos von Händen erfassen darf.
+-- Public-Read via bucket.public=true. Für Schreib-Zugriff eine
+-- FOR ALL Policy pro Bucket (nur Bucket-ID geprüft).
+-- Sicherheit via public Bucket + UUID-Dateinamen (praktisch unerratbar).
+-- HINWEIS: auth.role()-Checks auf storage.objects funktionierten in
+-- diesem Supabase-Setup nicht zuverlässig → daher Bucket-ID-only.
 -- ─────────────────────────────────────────────────────────────
 
--- Alte Policies (aus früheren Migrations-Versuchen) entfernen – idempotent
+-- Alte Policies entfernen – idempotent
 DROP POLICY IF EXISTS "poker_profilbilder_insert" ON storage.objects;
 DROP POLICY IF EXISTS "poker_profilbilder_update" ON storage.objects;
 DROP POLICY IF EXISTS "poker_profilbilder_delete" ON storage.objects;
+DROP POLICY IF EXISTS "poker_profilbilder_all"    ON storage.objects;
 DROP POLICY IF EXISTS "poker_beweisfotos_insert"  ON storage.objects;
 DROP POLICY IF EXISTS "poker_beweisfotos_update"  ON storage.objects;
 DROP POLICY IF EXISTS "poker_beweisfotos_delete"  ON storage.objects;
+DROP POLICY IF EXISTS "poker_beweisfotos_all"     ON storage.objects;
 
--- profilbilder: authenticated darf alles
--- (auth.role() im CHECK ist zuverlässiger als TO authenticated-Klausel)
-CREATE POLICY "poker_profilbilder_insert" ON storage.objects
-  FOR INSERT
-  WITH CHECK (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
+CREATE POLICY "poker_profilbilder_all" ON storage.objects
+  FOR ALL
+  USING (bucket_id = 'profilbilder')
+  WITH CHECK (bucket_id = 'profilbilder');
 
-CREATE POLICY "poker_profilbilder_update" ON storage.objects
-  FOR UPDATE
-  USING (bucket_id = 'profilbilder' AND auth.role() = 'authenticated')
-  WITH CHECK (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
-
-CREATE POLICY "poker_profilbilder_delete" ON storage.objects
-  FOR DELETE
-  USING (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
-
--- beweisfotos: authenticated darf alles
-CREATE POLICY "poker_beweisfotos_insert" ON storage.objects
-  FOR INSERT
-  WITH CHECK (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
-
-CREATE POLICY "poker_beweisfotos_update" ON storage.objects
-  FOR UPDATE
-  USING (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated')
-  WITH CHECK (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
-
-CREATE POLICY "poker_beweisfotos_delete" ON storage.objects
-  FOR DELETE
-  USING (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
+CREATE POLICY "poker_beweisfotos_all" ON storage.objects
+  FOR ALL
+  USING (bucket_id = 'beweisfotos')
+  WITH CHECK (bucket_id = 'beweisfotos');
 
 -- Kontrolle (optional):
 -- SELECT id, name, public FROM storage.buckets WHERE id IN ('profilbilder','beweisfotos');
--- SELECT policyname FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage';
+-- SELECT policyname, cmd FROM pg_policies WHERE tablename='objects' AND schemaname='storage' AND policyname LIKE 'poker_%';
