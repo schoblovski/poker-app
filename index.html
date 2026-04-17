@@ -499,8 +499,10 @@
   .blind-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
   .blind-controls{display:flex;gap:var(--space-sm);align-items:center;}
   .blind-ctrl-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .blind-ctrl-btn svg{width:22px;height:22px;}
   .blind-ctrl-btn:hover{background:var(--bg-secondary);}
   .blind-ctrl-btn.primary{width:64px;height:64px;background:var(--accent);border-color:var(--accent);color:#fff;}
+  .blind-ctrl-btn.primary svg{width:28px;height:28px;}
   .blind-ctrl-btn.primary:hover{opacity:.9;}
   .blind-levels-editor{width:100%;}
   .blind-levels-editor table{width:100%;border-collapse:collapse;font-size:13px;}
@@ -4012,11 +4014,39 @@
       return opts;
     }
 
-    function render(){
+    function computePotHtml(){
       const pots=calcPots();
       const totalIn=players.reduce((s,p)=>s+(parseFloat(p.einsatz)||0),0);
-      const activeCount=players.filter(p=>(parseFloat(p.einsatz)||0)>0).length;
+      if(pots.length===0){
+        return `<div class="sp-empty">Mindestens 2 Spieler mit Einsatz &gt; 0 eingeben, um Pots zu berechnen.</div>`;
+      }
+      let html='';
+      pots.forEach((pot,i)=>{
+        const label=i===0?'Main Pot':`Side Pot ${i}`;
+        const verb=pot.eligible.length===1?'kann':'können';
+        const winners=pot.eligible.length>0
+          ? `<strong>${escHtml(pot.eligible.join(', '))}</strong> ${verb} gewinnen`
+          : '<em>Alle gefoldet</em>';
+        html+=`<div class="sp-pot-card${i===0?' main':''}">
+          <div class="sp-pot-head">
+            <div class="sp-pot-label">${label}</div>
+            <div class="sp-pot-amount">€ ${pot.amount.toFixed(2)}</div>
+          </div>
+          <div class="sp-pot-players">${winners}</div>
+        </div>`;
+      });
+      if(pots.length>1){
+        html+=`<div class="sp-total-card"><span class="sp-total-label">Gesamt-Pot</span><span class="sp-total-amount">€ ${totalIn.toFixed(2)}</span></div>`;
+      }
+      return html;
+    }
 
+    function updatePotsOnly(){
+      const box=el.querySelector('#sp-pots');
+      if(box) box.innerHTML=computePotHtml();
+    }
+
+    function render(){
       let rows='';
       players.forEach((p,i)=>{
         const canRemove=players.length>2;
@@ -4036,29 +4066,6 @@
         </div>`;
       });
 
-      let potHtml='';
-      if(pots.length>0){
-        pots.forEach((pot,i)=>{
-          const label=i===0?'Main Pot':`Side Pot ${i}`;
-          const verb=pot.eligible.length===1?'kann':'können';
-          const winners=pot.eligible.length>0
-            ? `<strong>${escHtml(pot.eligible.join(', '))}</strong> ${verb} gewinnen`
-            : '<em>Alle gefoldet</em>';
-          potHtml+=`<div class="sp-pot-card${i===0?' main':''}">
-            <div class="sp-pot-head">
-              <div class="sp-pot-label">${label}</div>
-              <div class="sp-pot-amount">€ ${pot.amount.toFixed(2)}</div>
-            </div>
-            <div class="sp-pot-players">${winners}</div>
-          </div>`;
-        });
-        if(pots.length>1){
-          potHtml+=`<div class="sp-total-card"><span class="sp-total-label">Gesamt-Pot</span><span class="sp-total-amount">€ ${totalIn.toFixed(2)}</span></div>`;
-        }
-      } else {
-        potHtml=`<div class="sp-empty">Mindestens 2 Spieler mit Einsatz &gt; 0 eingeben, um Pots zu berechnen.</div>`;
-      }
-
       const contextHint = aktuellesSpiel && spielTeilnehmer && spielTeilnehmer.length>0
         ? `Auswahl aus den ${pool.length} Teilnehmern des aktiven Spiels.`
         : `Auswahl aus ${pool.length} aktiven Spielern.`;
@@ -4075,7 +4082,7 @@
         </button>`:''}
 
         <div class="section-title">Pot-Aufteilung</div>
-        ${potHtml}`;
+        <div id="sp-pots">${computePotHtml()}</div>`;
 
       el.querySelector('#sp-back').addEventListener('click',()=>history.back());
       const addBtn=el.querySelector('#sp-add');
@@ -4091,14 +4098,22 @@
       el.querySelectorAll('[data-field="einsatz"]').forEach(inp=>{
         inp.addEventListener('input',e=>{
           players[parseInt(e.target.dataset.idx)].einsatz=e.target.value;
-          render();
+          // Nur Pots neu berechnen – kein Re-Render des Inputs (sonst verliert iOS den Fokus)
+          updatePotsOnly();
         });
       });
       el.querySelectorAll('[data-action="fold"]').forEach(btn=>{
         btn.addEventListener('click',e=>{
           const b=e.currentTarget;
-          players[parseInt(b.dataset.idx)].fold=!players[parseInt(b.dataset.idx)].fold;
-          render();
+          const idx=parseInt(b.dataset.idx);
+          players[idx].fold=!players[idx].fold;
+          // Toggle-Look inline umschalten, Pots aktualisieren – kein Re-Render
+          b.classList.toggle('in');
+          b.classList.toggle('out');
+          b.innerHTML=players[idx].fold
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Fold`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Im Spiel`;
+          updatePotsOnly();
         });
       });
       el.querySelectorAll('[data-action="remove"]').forEach(btn=>{
@@ -4129,7 +4144,6 @@
   let _btState=null; // {level, secsLeft, running, totalSecs}
   let _btLevels=null;
   let _wakeLock=null;
-  let _btSilentAudio=null; // für Media Session auf Lockscreen
 
   function _btGetDefaults(){
     const src=(Array.isArray(_btServerDefaults) && _btServerDefaults.length>0) ? _btServerDefaults : _BT_FALLBACK_LEVELS;
@@ -4163,54 +4177,11 @@
     _btState.secsLeft--;
     if(_btState.secsLeft<=0){
       const next=_btState.level+1;
-      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;_btStopSilentAudio();}
+      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;}
       else{_btState.level=next;_btState.secsLeft=_btLevels[next].min*60;_btState.totalSecs=_btLevels[next].min*60;_btBeep(660,'sine');}
     } else if(_btState.secsLeft===30){_btBeep(440,'sine');}
     _btSave();
     _btUpdateUI();
-    _btUpdateMediaSession();
-  }
-
-  // ── Media Session (Lockscreen "Live Activity" – Best Effort) ───
-  // Hack: stummer Audio-Loop ermöglicht dass der Timer als Media-Player
-  // auf dem Lockscreen/Notification-Shade erscheint (iOS & Android).
-  // Achtung: echte Live Activities gibt es nur in nativen Apps.
-  function _btStartSilentAudio(){
-    if(_btSilentAudio)return;
-    try{
-      // 1 Sekunde Stille als Data-URL (WAV, mono 8kHz)
-      const audio=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
-      audio.loop=true;
-      audio.volume=0.001;
-      audio.play().catch(()=>{});
-      _btSilentAudio=audio;
-    }catch{}
-  }
-  function _btStopSilentAudio(){
-    try{_btSilentAudio?.pause();}catch{}
-    _btSilentAudio=null;
-    if('mediaSession' in navigator){
-      navigator.mediaSession.metadata=null;
-      navigator.mediaSession.playbackState='none';
-    }
-  }
-  function _btUpdateMediaSession(){
-    if(!('mediaSession' in navigator)||!_btState)return;
-    const lvl=_btLevels[_btState.level];
-    const title=`Level ${_btState.level+1}: ${lvl.sb}/${lvl.bb}${lvl.ante>0?` · Ante ${lvl.ante}`:''}`;
-    const artist=`${_btFmt(_btState.secsLeft)} verbleibend`;
-    try{
-      navigator.mediaSession.metadata=new MediaMetadata({title,artist,album:'DTKS Poker · Blind-Timer'});
-      navigator.mediaSession.playbackState=_btState.running?'playing':'paused';
-      navigator.mediaSession.setActionHandler('play',()=>{_btState.running=true;_btSave();_btUpdateUI();_btStartSilentAudio();_btRequestWakeLock();});
-      navigator.mediaSession.setActionHandler('pause',()=>{_btState.running=false;_btSave();_btUpdateUI();_btReleaseWakeLock();});
-      navigator.mediaSession.setActionHandler('previoustrack',()=>{
-        if(_btState.level>0){_btState.level--;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();_btUpdateUI();}
-      });
-      navigator.mediaSession.setActionHandler('nexttrack',()=>{
-        if(_btState.level<_btLevels.length-1){_btState.level++;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();_btUpdateUI();}
-      });
-    }catch{}
   }
   function _btUpdateUI(){
     const s=_btState,lvl=_btLevels[s.level];
@@ -4335,20 +4306,20 @@
     el.querySelector('#bt-back').addEventListener('click',()=>{history.back();});
     el.querySelector('#bt-play').addEventListener('click',()=>{
       _btState.running=!_btState.running;
-      if(_btState.running){_btRequestWakeLock();_btStartSilentAudio();}
-      else{_btReleaseWakeLock();_btStopSilentAudio();}
-      _btSave();_btUpdateUI();_btUpdateMediaSession();
+      if(_btState.running)_btRequestWakeLock();
+      else _btReleaseWakeLock();
+      _btSave();_btUpdateUI();
     });
     el.querySelector('#bt-prev').addEventListener('click',()=>{
-      if(_btState.level>0){_btState.level--;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();_btUpdateMediaSession();}
+      if(_btState.level>0){_btState.level--;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
     });
     el.querySelector('#bt-next-btn').addEventListener('click',()=>{
-      if(_btState.level<_btLevels.length-1){_btState.level++;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();_btUpdateMediaSession();}
+      if(_btState.level<_btLevels.length-1){_btState.level++;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
     });
     el.querySelector('#bt-reset').addEventListener('click',async()=>{
       if(!await confirmAction('Timer wirklich neu starten? Der aktuelle Level und die verbleibende Zeit gehen verloren.'))return;
       _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
-      _btReleaseWakeLock();_btStopSilentAudio();_btSave();renderEditor();_btUpdateUI();
+      _btReleaseWakeLock();_btSave();renderEditor();_btUpdateUI();
     });
     el.querySelector('#bt-add-level').addEventListener('click',()=>{
       const last=_btLevels[_btLevels.length-1];
