@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.7">
+  <meta name="version" content="3.8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -67,14 +67,14 @@
     /* OPTIMIERUNG DER HEADER-KLASSE */
     .header {
       /* Nutzt die Safe-Area plus deinen Standard-Abstand */
-      padding-top: calc(var(--safe-top) + 12px); 
+      padding-top: calc(var(--safe-top) + 12px);
       padding-right: calc(var(--safe-right) + var(--space-md));
       padding-bottom: 12px;
       padding-left: calc(var(--safe-left) + var(--space-md));
-      
-      display: flex;
+
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 50;
@@ -82,23 +82,31 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      
+
       /* WICHTIG: Verhindert, dass der Header unter die Statusleiste rutscht */
       width: 100%;
       box-sizing: border-box;
     }
 
 
-    .header-left{display:flex;flex-direction:column;}
+    .header-left{display:flex;flex-direction:column;justify-self:start;grid-column:1;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
-    .header-right{display:flex;align-items:center;gap:10px;position:relative;}
+    .header-right{display:flex;align-items:center;gap:10px;position:relative;justify-self:end;grid-column:3;}
     .sync-badge{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;transition:all var(--transition);}
     .sync-badge.synced{background:var(--accent-soft);color:var(--accent-text);}
     .sync-badge.pending{background:var(--warning-soft);color:var(--warning);}
     .sync-badge.error{background:var(--danger-soft);color:var(--danger);}
     .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
     .sync-dot.spin{animation:spin .8s linear infinite;}
+    .header-timer-badge{position:relative;grid-column:2;justify-self:center;display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-text);border:none;border-radius:18px;padding:6px 12px 8px 10px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.3px;line-height:1;box-shadow:var(--shadow);transition:transform var(--transition);}
+    .header-timer-badge[hidden]{display:none;}
+    .header-timer-badge:active{transform:scale(.95);}
+    .header-timer-badge svg{width:14px;height:14px;stroke-width:2.2;}
+    .header-timer-time{font-variant-numeric:tabular-nums;}
+    .header-timer-progress{position:absolute;left:8px;right:8px;bottom:3px;height:2px;border-radius:2px;background:rgba(0,0,0,.12);overflow:hidden;}
+    [data-theme="dark"] .header-timer-progress{background:rgba(255,255,255,.14);}
+    .header-timer-progress>div{height:100%;background:var(--accent);width:100%;transition:width .5s linear;}
     .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .avatar-btn img{width:100%;height:100%;object-fit:cover;}
     .avatar-btn svg{width:18px;height:18px;color:var(--text-secondary);}
@@ -458,6 +466,59 @@
   .randomizer-slot{font-size:22px;font-weight:800;color:var(--accent-text);min-height:36px;transition:opacity .1s;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+  /* Symmetrische 2-Button-Reihe (überschreibt .btn max-width + .btn+.btn margin) */
+  .btn-row-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);max-width:400px;}
+  .btn-row-2 .btn{max-width:none;margin:0;}
+
+  /* Sidepot-Rechner */
+  .sp-player-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;flex-direction:column;gap:var(--space-sm);}
+  .sp-row-top{display:flex;gap:var(--space-sm);align-items:stretch;}
+  .sp-row-top .form-input{flex:1;min-width:0;}
+  .sp-row-bottom{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);align-items:stretch;}
+  .sp-remove-btn{width:48px;height:48px;flex-shrink:0;border-radius:var(--radius-md);border:none;background:var(--danger-soft);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--transition);}
+  .sp-remove-btn:active{transform:scale(.92);}
+  .sp-remove-btn svg{width:16px;height:16px;}
+  .sp-fold-toggle{width:100%;min-height:48px;padding:0 var(--space-md);border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all var(--transition);font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:6px;}
+  .sp-fold-toggle svg{width:16px;height:16px;}
+  .sp-fold-toggle.in{background:var(--accent-soft);color:var(--accent-text);border-color:transparent;}
+  .sp-fold-toggle.out{background:var(--danger-soft);color:var(--danger);border-color:transparent;text-decoration:line-through;}
+  .sp-pot-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);}
+  .sp-pot-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .sp-pot-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+  .sp-pot-amount{font-size:24px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+  .sp-pot-players{font-size:13px;color:var(--text-secondary);line-height:1.4;}
+  .sp-pot-players strong{color:var(--text-primary);font-weight:600;}
+  .sp-pot-card.main .sp-pot-label{color:var(--accent-text);}
+  .sp-total-card{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--space-md);display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-sm);}
+  .sp-total-label{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;}
+  .sp-total-amount{font-size:20px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;}
+  .sp-empty{text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;}
+
+  /* Blind-Timer */
+  .blind-timer-wrap{display:flex;flex-direction:column;align-items:center;gap:var(--space-md);padding:var(--space-md) 0;}
+  .blind-level-badge{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);}
+  .blind-level-next{font-size:11px;color:var(--text-tertiary);}
+  .blind-countdown{font-size:72px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary);letter-spacing:-.02em;line-height:1;}
+  .blind-countdown.warning{color:var(--danger);}
+  .blind-blinds{display:flex;gap:var(--space-lg);text-align:center;}
+  .blind-blinds-item label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);display:block;}
+  .blind-blinds-item span{font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary);}
+  .blind-progress-bar{width:100%;height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;}
+  .blind-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
+  .blind-controls{display:flex;gap:var(--space-sm);align-items:center;}
+  .blind-ctrl-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .blind-ctrl-btn svg{width:22px;height:22px;}
+  .blind-ctrl-btn:hover{background:var(--bg-secondary);}
+  .blind-ctrl-btn.primary{width:64px;height:64px;background:var(--accent);border-color:var(--accent);color:#fff;}
+  .blind-ctrl-btn.primary svg{width:28px;height:28px;}
+  .blind-ctrl-btn.primary:hover{opacity:.9;}
+  .blind-levels-editor{width:100%;}
+  .blind-levels-editor table{width:100%;border-collapse:collapse;font-size:13px;}
+  .blind-levels-editor th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+  .blind-levels-editor td{padding:4px 4px;}
+  .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:var(--font-mono);text-align:right;}
+  .blind-level-row.active-level td{background:var(--accent-soft);}
+
   </style>
 </head>
 <body>
@@ -499,6 +560,11 @@
       <div class="header-app-name">DTKS Poker</div>
       <div class="header-page-title" id="page-title">Übersicht</div>
     </div>
+    <button class="header-timer-badge" id="header-timer-badge" hidden aria-label="Blind-Timer öffnen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M19 5l1.5-1.5"/></svg>
+      <span class="header-timer-time" id="header-timer-time">00:00</span>
+      <div class="header-timer-progress"><div id="header-timer-progress-fill"></div></div>
+    </button>
     <div class="header-right">
       <div class="sync-badge synced" id="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sync</span></div>
       <button class="avatar-btn" id="user-avatar-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
@@ -529,11 +595,11 @@
           Asse legen
         </button>
         <button class="dropdown-item" id="btn-sidepot">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/><path d="M5 10v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4"/><path d="M5 14v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4"/></svg>
           Sidepot-Rechner
         </button>
         <button class="dropdown-item" id="btn-blindtimer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="19" y1="5" x2="21" y2="7"/></svg>
           Blind-Timer
         </button>
         <button class="dropdown-item" id="btn-h2h">
@@ -719,7 +785,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.7';
+  const VERSION='3.8';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1259,6 +1325,7 @@
     if(page==='statistik')loadStatistik();
     if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=()=>openTransaktionModal(null);}
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
+    if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
@@ -1463,11 +1530,15 @@
     </div>`;
 
     // Einstellungen + Spieler parallel laden
-    const[{data:einst},{data:sp}]=await Promise.all([
+    const[{data:einst},{data:sp},{data:blindLevels}]=await Promise.all([
       db.from('einstellungen').select('*'),
       db.from('spieler').select('*').eq('email',currentUser.email).eq('aktiv',true).single(),
+      db.from('blind_struktur').select('level_nr,small_blind,big_blind,ante,dauer_min').order('level_nr'),
     ]);
     if(einst){einst.forEach(e=>{einstellungen[e.key]=parseFloat(e.wert)||0;});}
+    if(Array.isArray(blindLevels) && blindLevels.length>0){
+      _btServerDefaults=blindLevels.map(l=>({sb:l.small_blind,bb:l.big_blind,ante:l.ante,min:l.dauer_min}));
+    }
     console.log(`⚙️ Einstellungen:`,einstellungen);
 
     if(!sp){
@@ -1519,6 +1590,7 @@
     loginEl.style.display='none';
     document.getElementById('app-screen').style.display='flex';
     loadHome();
+    _btInit();
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -2485,6 +2557,28 @@
         Jahres-Spende durchführen
       </button>
 
+      <div class="section-title" style="margin-top:var(--space-xl)">Blind-Timer Standard</div>
+      <div class="card" style="padding:var(--space-md)">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);line-height:1.4">
+          Standard-Blind-Struktur, die allen Spielern beim ersten Öffnen des Blind-Timers vorgeschlagen wird. Spieler können lokal weiterhin eigene Anpassungen vornehmen.
+        </div>
+        <div class="blind-levels-editor" id="bt-admin-editor"></div>
+        <div class="btn-row-2" style="margin-top:var(--space-md)">
+          <button class="btn btn-secondary" id="bt-admin-add">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Level hinzufügen
+          </button>
+          <button class="btn btn-ghost" id="bt-admin-fallback">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+            Fallback laden
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="bt-admin-save" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Blind-Struktur speichern
+      </button>
+
       <div class="section-title" style="margin-top:var(--space-xl)">Push Benachrichtigungen</div>
       <div class="card">
         <div class="setting-row">
@@ -2556,6 +2650,67 @@
       },`Jahres-Spende: ${n} Transaktionen erstellt`);
       await showAlert(`Jahres-Spende abgeschlossen. ${n} Transaktionen erstellt.`);
       loadHome();
+    });
+
+    // ── Admin Blind-Struktur Editor ────────────────────────
+    // Arbeitskopie der Server-Defaults (oder Fallback falls noch keine gespeichert)
+    let adminLevels=(Array.isArray(_btServerDefaults)&&_btServerDefaults.length>0)
+      ? _btServerDefaults.map(l=>({sb:+l.sb||0,bb:+l.bb||0,ante:+l.ante||0,min:+l.min||15}))
+      : _BT_FALLBACK_LEVELS.map(l=>({...l}));
+
+    function renderAdminEditor(){
+      const ed=document.getElementById('bt-admin-editor');if(!ed)return;
+      const rows=adminLevels.map((l,i)=>`
+        <tr data-idx="${i}">
+          <td style="padding:4px 8px;font-size:12px;color:var(--text-tertiary);font-family:var(--font-mono)">${i+1}</td>
+          <td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric" min="0"></td>
+          <td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric" min="0"></td>
+          <td><input type="number" value="${l.ante}" data-field="ante" data-idx="${i}" inputmode="numeric" min="0"></td>
+          <td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" min="1" style="width:48px"></td>
+          <td><button class="sp-remove-btn" data-action="admin-del" data-idx="${i}" title="Level entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
+        </tr>`).join('');
+      ed.innerHTML=`<table><thead><tr><th>#</th><th>SB</th><th>BB</th><th>Ante</th><th>Min</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+      ed.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',e=>{
+        const i=parseInt(e.target.dataset.idx),f=e.target.dataset.field;
+        adminLevels[i][f]=parseInt(e.target.value)||0;
+      }));
+      ed.querySelectorAll('[data-action="admin-del"]').forEach(btn=>btn.addEventListener('click',e=>{
+        const i=parseInt(e.currentTarget.dataset.idx);
+        if(adminLevels.length<=2)return;
+        adminLevels.splice(i,1);renderAdminEditor();
+      }));
+    }
+    renderAdminEditor();
+
+    document.getElementById('bt-admin-add').addEventListener('click',()=>{
+      const last=adminLevels[adminLevels.length-1];
+      adminLevels.push({sb:last.sb*2,bb:last.bb*2,ante:last.ante,min:last.min});
+      renderAdminEditor();
+    });
+    document.getElementById('bt-admin-fallback').addEventListener('click',async()=>{
+      if(!await confirmAction('Die eingebaute Fallback-Struktur laden? Nicht gespeicherte Änderungen gehen verloren.'))return;
+      adminLevels=_BT_FALLBACK_LEVELS.map(l=>({...l}));
+      renderAdminEditor();
+    });
+    document.getElementById('bt-admin-save').addEventListener('click',async()=>{
+      const bad=adminLevels.some(l=>l.sb<=0||l.bb<=0||l.min<=0);
+      if(bad){await showAlert('Small Blind, Big Blind und Minuten müssen > 0 sein.');return;}
+      await save(async()=>{
+        // Alle bestehenden Levels löschen, neue einfügen (level_nr UNIQUE)
+        const{error:delErr}=await db.from('blind_struktur').delete().gte('level_nr',0);
+        if(delErr)throw delErr;
+        const rows=adminLevels.map((l,i)=>({
+          level_nr:i+1,
+          small_blind:l.sb,
+          big_blind:l.bb,
+          ante:l.ante,
+          dauer_min:l.min,
+        }));
+        const{error:insErr}=await db.from('blind_struktur').insert(rows);
+        if(insErr)throw insErr;
+        _btServerDefaults=adminLevels.map(l=>({...l}));
+      },'Blind-Struktur gespeichert');
+      await showAlert('Standard-Blind-Struktur gespeichert.');
     });
 
     // App-Update Push Button
@@ -3821,30 +3976,448 @@
     render();
   }
 
-  // ── Sidepot-Rechner (Stub) ──────────────────────────────
+  // ── Sidepot-Rechner ─────────────────────────────────────
   function loadSidepot(){
-    document.getElementById('sidepot-content').innerHTML=`
-      <button class="back-btn" id="sidepot-back">${backIcon} Zurück</button>
-      <div class="tool-coming-soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <div class="tool-title">Sidepot-Rechner</div>
-        <div class="tool-desc">Berechnet Main-Pot und Side-Pots bei All-In-Situationen mit unterschiedlichen Stack-Größen.</div>
-        <span class="badge-soon">Coming in Sprint 3</span>
-      </div>`;
-    document.getElementById('sidepot-back').addEventListener('click',()=>history.back());
+    const el=document.getElementById('sidepot-content');
+
+    // Spieler-Pool: aktives Spiel > alle aktiven Spieler
+    const pool=(()=>{
+      if(aktuellesSpiel && spielTeilnehmer && spielTeilnehmer.length>0){
+        const ids=new Set(spielTeilnehmer.map(t=>t.spieler_id));
+        return (alleSpieler||[]).filter(s=>ids.has(s.id) && !s.ist_bank);
+      }
+      return (alleSpieler||[]).filter(s=>s.aktiv && !s.ist_bank);
+    })();
+
+    // Start mit 3 leeren Spieler-Rows
+    let players=[
+      {spielerId:'',einsatz:'',fold:false},
+      {spielerId:'',einsatz:'',fold:false},
+      {spielerId:'',einsatz:'',fold:false},
+    ];
+
+    function playerName(p,idx){
+      if(!p.spielerId) return `Spieler ${idx+1}`;
+      const s=pool.find(x=>x.id===p.spielerId);
+      return s?s.name:`Spieler ${idx+1}`;
+    }
+
+    function calcPots(){
+      const ps=players.map((p,i)=>({name:playerName(p,i),einsatz:parseFloat(p.einsatz)||0,fold:p.fold}));
+      const active=ps.filter(p=>p.einsatz>0);
+      if(active.length<2) return [];
+      const work=active.map(p=>({...p,rem:p.einsatz}));
+      const pots=[];
+      while(work.some(c=>c.rem>0)){
+        const nz=work.filter(c=>c.rem>0);
+        const level=Math.min(...nz.map(c=>c.rem));
+        let total=0;
+        work.forEach(c=>{const v=Math.min(c.rem,level);total+=v;c.rem-=v;});
+        const eligible=nz.filter(c=>!c.fold);
+        pots.push({amount:total,eligible:eligible.map(c=>c.name)});
+      }
+      return pots;
+    }
+
+    function buildSelect(idx,currentId){
+      const usedIds=new Set(players.map((p,i)=>i!==idx?p.spielerId:null).filter(Boolean));
+      let opts=`<option value="">– Spieler wählen –</option>`;
+      pool.forEach(s=>{
+        const disabled=usedIds.has(s.id) && s.id!==currentId;
+        opts+=`<option value="${s.id}"${s.id===currentId?' selected':''}${disabled?' disabled':''}>${escHtml(s.name)}</option>`;
+      });
+      return opts;
+    }
+
+    function computePotHtml(){
+      const pots=calcPots();
+      const totalIn=players.reduce((s,p)=>s+(parseFloat(p.einsatz)||0),0);
+      if(pots.length===0){
+        return `<div class="sp-empty">Mindestens 2 Spieler mit Einsatz &gt; 0 eingeben, um Pots zu berechnen.</div>`;
+      }
+      let html='';
+      pots.forEach((pot,i)=>{
+        const label=i===0?'Main Pot':`Side Pot ${i}`;
+        const verb=pot.eligible.length===1?'kann':'können';
+        const winners=pot.eligible.length>0
+          ? `<strong>${escHtml(pot.eligible.join(', '))}</strong> ${verb} gewinnen`
+          : '<em>Alle gefoldet</em>';
+        html+=`<div class="sp-pot-card${i===0?' main':''}">
+          <div class="sp-pot-head">
+            <div class="sp-pot-label">${label}</div>
+            <div class="sp-pot-amount">€ ${pot.amount.toFixed(2)}</div>
+          </div>
+          <div class="sp-pot-players">${winners}</div>
+        </div>`;
+      });
+      if(pots.length>1){
+        html+=`<div class="sp-total-card"><span class="sp-total-label">Gesamt-Pot</span><span class="sp-total-amount">€ ${totalIn.toFixed(2)}</span></div>`;
+      }
+      return html;
+    }
+
+    function updatePotsOnly(){
+      const box=el.querySelector('#sp-pots');
+      if(box) box.innerHTML=computePotHtml();
+    }
+
+    function render(){
+      let rows='';
+      players.forEach((p,i)=>{
+        const canRemove=players.length>2;
+        rows+=`<div class="sp-player-card">
+          <div class="sp-row-top">
+            <select class="form-input" data-idx="${i}" data-field="spielerId">${buildSelect(i,p.spielerId)}</select>
+            ${canRemove?`<button class="sp-remove-btn" data-idx="${i}" data-action="remove" title="Entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+          </div>
+          <div class="sp-row-bottom">
+            <input class="form-input" type="number" inputmode="decimal" placeholder="Einsatz" value="${p.einsatz}" data-idx="${i}" data-field="einsatz" min="0" step="0.01">
+            <button class="sp-fold-toggle ${p.fold?'out':'in'}" data-idx="${i}" data-action="fold">
+              ${p.fold
+                ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Fold`
+                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Im Spiel`}
+            </button>
+          </div>
+        </div>`;
+      });
+
+      const contextHint = aktuellesSpiel && spielTeilnehmer && spielTeilnehmer.length>0
+        ? `Auswahl aus den ${pool.length} Teilnehmern des aktiven Spiels.`
+        : `Auswahl aus ${pool.length} aktiven Spielern.`;
+
+      el.innerHTML=`
+        <button class="back-btn" id="sp-back">${backIcon} Zurück</button>
+
+        <div class="section-title" style="margin-top:0">Spieler &amp; Einsätze</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 var(--space-md);line-height:1.4;">${escHtml(contextHint)}</p>
+        <div id="sp-rows">${rows}</div>
+        ${players.length<pool.length?`<button class="btn btn-secondary" id="sp-add" style="margin-bottom:var(--space-lg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Spieler hinzufügen
+        </button>`:''}
+
+        <div class="section-title">Pot-Aufteilung</div>
+        <div id="sp-pots">${computePotHtml()}</div>`;
+
+      el.querySelector('#sp-back').addEventListener('click',()=>history.back());
+      const addBtn=el.querySelector('#sp-add');
+      if(addBtn) addBtn.addEventListener('click',()=>{
+        players.push({spielerId:'',einsatz:'',fold:false});render();
+      });
+      el.querySelectorAll('[data-field="spielerId"]').forEach(sel=>{
+        sel.addEventListener('change',e=>{
+          players[parseInt(e.target.dataset.idx)].spielerId=e.target.value;
+          render();
+        });
+      });
+      el.querySelectorAll('[data-field="einsatz"]').forEach(inp=>{
+        inp.addEventListener('input',e=>{
+          players[parseInt(e.target.dataset.idx)].einsatz=e.target.value;
+          // Nur Pots neu berechnen – kein Re-Render des Inputs (sonst verliert iOS den Fokus)
+          updatePotsOnly();
+        });
+      });
+      el.querySelectorAll('[data-action="fold"]').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          const b=e.currentTarget;
+          const idx=parseInt(b.dataset.idx);
+          players[idx].fold=!players[idx].fold;
+          // Toggle-Look inline umschalten, Pots aktualisieren – kein Re-Render
+          b.classList.toggle('in');
+          b.classList.toggle('out');
+          b.innerHTML=players[idx].fold
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Fold`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Im Spiel`;
+          updatePotsOnly();
+        });
+      });
+      el.querySelectorAll('[data-action="remove"]').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          const b=e.currentTarget;
+          if(players.length<=2) return;
+          players.splice(parseInt(b.dataset.idx),1);
+          render();
+        });
+      });
+    }
+    render();
   }
 
-  // ── Blind-Timer (Stub) ──────────────────────────────────
+  // ── Blind-Timer ─────────────────────────────────────────
+  const _BT_KEY='dtks_blind_timer';
+  const _BT_LEVELS_KEY='dtks_blind_levels';
+  const _BT_FALLBACK_LEVELS=[
+    {sb:25,bb:50,ante:0,min:15},{sb:50,bb:100,ante:0,min:15},
+    {sb:75,bb:150,ante:0,min:15},{sb:100,bb:200,ante:0,min:15},
+    {sb:150,bb:300,ante:0,min:15},{sb:200,bb:400,ante:0,min:15},
+    {sb:300,bb:600,ante:0,min:15},{sb:400,bb:800,ante:0,min:15},
+    {sb:500,bb:1000,ante:0,min:20},{sb:750,bb:1500,ante:0,min:20},
+    {sb:1000,bb:2000,ante:200,min:20},{sb:1500,bb:3000,ante:300,min:20},
+  ];
+  let _btServerDefaults=null; // aus DB-Einstellungen geladen (Admin-konfigurierbar)
+  let _btInterval=null;
+  let _btState=null; // {level, secsLeft, running, totalSecs}
+  let _btLevels=null;
+  let _wakeLock=null;
+
+  function _btGetDefaults(){
+    const src=(Array.isArray(_btServerDefaults) && _btServerDefaults.length>0) ? _btServerDefaults : _BT_FALLBACK_LEVELS;
+    // Deep-Copy damit Edits nicht die Defaults mutieren
+    return src.map(l=>({sb:+l.sb||0,bb:+l.bb||0,ante:+l.ante||0,min:+l.min||15}));
+  }
+
+  function _btLoad(){
+    try{const raw=localStorage.getItem(_BT_LEVELS_KEY);_btLevels=raw?JSON.parse(raw):null;}
+    catch{_btLevels=null;}
+    if(!Array.isArray(_btLevels)||_btLevels.length===0)_btLevels=_btGetDefaults();
+    try{_btState=JSON.parse(localStorage.getItem(_BT_KEY));}
+    catch{_btState=null;}
+    if(!_btState||_btState.level>=_btLevels.length){
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+    }
+    // Beim Laden: wenn running=true aber kein endTime gespeichert, nachziehen
+    if(_btState.running&&typeof _btState.endTime!=='number'){
+      _btState.endTime=Date.now()+_btState.secsLeft*1000;
+    }
+  }
+  function _btSave(){localStorage.setItem(_BT_KEY,JSON.stringify(_btState));localStorage.setItem(_BT_LEVELS_KEY,JSON.stringify(_btLevels));}
+  function _btFmt(s){const m=Math.floor(s/60);return`${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function _btBeep(freq=880,type='sine'){
+    try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type=type;o.frequency.value=freq;
+      g.gain.setValueAtTime(0.4,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start();o.stop(ctx.currentTime+0.5);}catch{}
+  }
+  function _btStartAnchor(){
+    // Setzt endTime basierend auf aktueller secsLeft; Wall-Clock-Anker
+    _btState.endTime=Date.now()+_btState.secsLeft*1000;
+  }
+  function _btPauseAnchor(){
+    // Übernimmt die verbleibende Zeit zurück in secsLeft
+    if(typeof _btState.endTime==='number'){
+      _btState.secsLeft=Math.max(0,Math.ceil((_btState.endTime-Date.now())/1000));
+      delete _btState.endTime;
+    }
+  }
+  function _btTick(){
+    if(!_btState||!_btState.running){_btUpdateHeaderBadge();return;}
+    if(typeof _btState.endTime!=='number')_btStartAnchor();
+    const prevSecs=_btState.secsLeft;
+    let secs=Math.ceil((_btState.endTime-Date.now())/1000);
+    let leveledUp=false;
+    // Falls einer oder mehrere Level im Hintergrund durchgelaufen sind, nachziehen
+    while(secs<=0){
+      const next=_btState.level+1;
+      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;delete _btState.endTime;leveledUp=true;break;}
+      _btState.level=next;
+      _btState.totalSecs=_btLevels[next].min*60;
+      _btState.endTime+=_btState.totalSecs*1000;
+      secs=Math.ceil((_btState.endTime-Date.now())/1000);
+      leveledUp=true;
+    }
+    if(_btState.running){_btState.secsLeft=secs;}
+    // Beeps nur wenn Tab sichtbar ist, um Audio-Errors im Hintergrund zu vermeiden
+    if(!document.hidden){
+      if(leveledUp)_btBeep(660,'sine');
+      else if(prevSecs>30&&_btState.secsLeft<=30&&_btState.secsLeft>0)_btBeep(440,'sine');
+    }
+    _btSave();
+    _btUpdateUI();
+    _btUpdateHeaderBadge();
+  }
+  function _btUpdateHeaderBadge(){
+    const badge=document.getElementById('header-timer-badge');
+    if(!badge)return;
+    const onBtPage=document.getElementById('page-blindtimer')?.classList.contains('active');
+    if(!_btState||!_btState.running||!_btLevels||onBtPage){badge.hidden=true;return;}
+    badge.hidden=false;
+    const tEl=document.getElementById('header-timer-time');
+    const pEl=document.getElementById('header-timer-progress-fill');
+    if(tEl)tEl.textContent=_btFmt(_btState.secsLeft);
+    if(pEl){
+      const pct=_btState.totalSecs>0?Math.max(0,Math.min(100,(_btState.secsLeft/_btState.totalSecs)*100)):0;
+      pEl.style.width=pct+'%';
+    }
+  }
+  function _btInit(){
+    if(!_btState)_btLoad();
+    if(!_btInterval)_btInterval=setInterval(_btTick,1000);
+    const badge=document.getElementById('header-timer-badge');
+    if(badge&&!badge._wired){
+      badge._wired=true;
+      badge.addEventListener('click',()=>{showPage('blindtimer');loadBlindtimer();});
+    }
+    if(!window._btVisWired){
+      window._btVisWired=true;
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)_btTick();});
+    }
+    _btUpdateHeaderBadge();
+  }
+  function _btUpdateUI(){
+    const s=_btState,lvl=_btLevels[s.level];
+    const cd=document.getElementById('bt-countdown');
+    const prog=document.getElementById('bt-progress');
+    const levelBadge=document.getElementById('bt-level-badge');
+    const sbEl=document.getElementById('bt-sb');
+    const bbEl=document.getElementById('bt-bb');
+    const anteEl=document.getElementById('bt-ante-wrap');
+    const nextEl=document.getElementById('bt-next');
+    const playIcon=document.getElementById('bt-play-icon');
+    if(!cd)return;
+    cd.textContent=_btFmt(s.secsLeft);
+    cd.className='blind-countdown'+(s.secsLeft<=30?' warning':'');
+    if(prog)prog.style.width=`${Math.round((s.secsLeft/s.totalSecs)*100)}%`;
+    if(levelBadge)levelBadge.textContent=`Level ${s.level+1} von ${_btLevels.length}`;
+    if(sbEl)sbEl.textContent=lvl.sb;
+    if(bbEl)bbEl.textContent=lvl.bb;
+    if(anteEl)anteEl.style.display=lvl.ante>0?'flex':'none';
+    document.getElementById('bt-ante')&&(document.getElementById('bt-ante').textContent=lvl.ante);
+    if(nextEl){const nx=_btLevels[s.level+1];nextEl.textContent=nx?`Nächstes Level: ${nx.sb}/${nx.bb}`:'Letztes Level';}
+    if(playIcon)playIcon.innerHTML=s.running
+      ?`<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+      :`<polygon points="5 3 19 12 5 21 5 3"/>`;
+    _btUpdateHeaderBadge();
+  }
+
+  async function _btRequestWakeLock(){
+    try{if('wakeLock' in navigator){_wakeLock=await navigator.wakeLock.request('screen');}}catch{}
+  }
+  function _btReleaseWakeLock(){try{_wakeLock?.release();_wakeLock=null;}catch{}}
+
   function loadBlindtimer(){
-    document.getElementById('blindtimer-content').innerHTML=`
-      <button class="back-btn" id="blindtimer-back">${backIcon} Zurück</button>
-      <div class="tool-coming-soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div class="tool-title">Blind-Timer</div>
-        <div class="tool-desc">Konfigurierbarer Blind-Timer mit Levels, Pausen und akustischem Signal bei Level-Wechsel.</div>
-        <span class="badge-soon">Coming in Sprint 3</span>
-      </div>`;
-    document.getElementById('blindtimer-back').addEventListener('click',()=>history.back());
+    if(!_btState)_btLoad();
+    if(!_btInterval)_btInterval=setInterval(_btTick,1000);
+
+    const el=document.getElementById('blindtimer-content');
+    const lvl=_btLevels[_btState.level];
+    const nextLvl=_btLevels[_btState.level+1];
+
+    el.innerHTML=`
+      <button class="back-btn" id="bt-back">${backIcon} Zurück</button>
+
+      <div class="blind-timer-wrap">
+        <div class="blind-level-badge" id="bt-level-badge">Level ${_btState.level+1} von ${_btLevels.length}</div>
+
+        <div class="blind-progress-bar"><div class="blind-progress-fill" id="bt-progress" style="width:${Math.round((_btState.secsLeft/_btState.totalSecs)*100)}%"></div></div>
+
+        <div class="blind-countdown${_btState.secsLeft<=30?' warning':''}" id="bt-countdown">${_btFmt(_btState.secsLeft)}</div>
+
+        <div class="blind-blinds">
+          <div class="blind-blinds-item"><label>Small Blind</label><span id="bt-sb">${lvl.sb}</span></div>
+          <div class="blind-blinds-item"><label>Big Blind</label><span id="bt-bb">${lvl.bb}</span></div>
+          <div class="blind-blinds-item" id="bt-ante-wrap" style="display:${lvl.ante>0?'flex':'none'};flex-direction:column;align-items:center"><label>Ante</label><span id="bt-ante">${lvl.ante}</span></div>
+        </div>
+
+        <div class="blind-level-next" id="bt-next">${nextLvl?`Nächstes Level: ${nextLvl.sb}/${nextLvl.bb}`:'Letztes Level'}</div>
+
+        <div class="blind-controls">
+          <button class="blind-ctrl-btn" id="bt-prev" title="Vorheriges Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="blind-ctrl-btn primary" id="bt-play" title="Start/Pause">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="28" height="28" id="bt-play-icon">
+              ${_btState.running
+                ?`<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+                :`<polygon points="5 3 19 12 5 21 5 3"/>`}
+            </svg>
+          </button>
+          <button class="blind-ctrl-btn" id="bt-next-btn" title="Nächstes Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <button class="btn btn-secondary" id="bt-reset">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+          Timer neu starten
+        </button>
+      </div>
+
+      <details style="margin-top:var(--space-lg)">
+        <summary style="font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);user-select:none;padding:var(--space-sm) 0">Blind-Struktur bearbeiten</summary>
+        <div class="blind-levels-editor" id="bt-editor"></div>
+        <div class="btn-row-2" style="margin-top:var(--space-md)">
+          <button class="btn btn-secondary" id="bt-add-level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Level hinzufügen
+          </button>
+          <button class="btn btn-ghost" id="bt-reset-levels">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+            Zurücksetzen
+          </button>
+        </div>
+      </details>`;
+
+    function renderEditor(){
+      const ed=document.getElementById('bt-editor');if(!ed)return;
+      let rows=_btLevels.map((l,i)=>`
+        <tr class="blind-level-row${i===_btState.level?' active-level':''}" data-idx="${i}">
+          <td style="padding:4px 8px;font-size:12px;color:var(--text-tertiary);font-family:var(--font-mono)">${i+1}</td>
+          <td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.ante}" data-field="ante" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" style="width:48px"></td>
+          <td><button class="sidepot-remove" data-action="del" data-idx="${i}">×</button></td>
+        </tr>`).join('');
+      ed.innerHTML=`<table><thead><tr><th>#</th><th>SB</th><th>BB</th><th>Ante</th><th>Min</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+      ed.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',e=>{
+        const i=parseInt(e.target.dataset.idx),f=e.target.dataset.field;
+        _btLevels[i][f]=parseInt(e.target.value)||0;
+        _btSave();_btUpdateUI();
+      }));
+      ed.querySelectorAll('[data-action="del"]').forEach(btn=>btn.addEventListener('click',e=>{
+        const i=parseInt(e.target.dataset.idx);
+        if(_btLevels.length<=2)return;
+        _btLevels.splice(i,1);
+        if(_btState.level>=_btLevels.length)_btState.level=_btLevels.length-1;
+        _btSave();renderEditor();_btUpdateUI();
+      }));
+    }
+    renderEditor();
+
+    el.querySelector('#bt-back').addEventListener('click',()=>{history.back();});
+    el.querySelector('#bt-play').addEventListener('click',()=>{
+      _btState.running=!_btState.running;
+      if(_btState.running){_btRequestWakeLock();_btStartAnchor();}
+      else{_btReleaseWakeLock();_btPauseAnchor();}
+      _btSave();_btUpdateUI();
+    });
+    el.querySelector('#bt-prev').addEventListener('click',()=>{
+      if(_btState.level>0){
+        _btState.level--;
+        _btState.secsLeft=_btLevels[_btState.level].min*60;
+        _btState.totalSecs=_btLevels[_btState.level].min*60;
+        if(_btState.running)_btStartAnchor();
+        _btSave();renderEditor();_btUpdateUI();
+      }
+    });
+    el.querySelector('#bt-next-btn').addEventListener('click',()=>{
+      if(_btState.level<_btLevels.length-1){
+        _btState.level++;
+        _btState.secsLeft=_btLevels[_btState.level].min*60;
+        _btState.totalSecs=_btLevels[_btState.level].min*60;
+        if(_btState.running)_btStartAnchor();
+        _btSave();renderEditor();_btUpdateUI();
+      }
+    });
+    el.querySelector('#bt-reset').addEventListener('click',async()=>{
+      if(!await confirmAction('Timer wirklich neu starten? Der aktuelle Level und die verbleibende Zeit gehen verloren.'))return;
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+      _btReleaseWakeLock();_btSave();renderEditor();_btUpdateUI();
+    });
+    el.querySelector('#bt-add-level').addEventListener('click',()=>{
+      const last=_btLevels[_btLevels.length-1];
+      _btLevels.push({sb:last.sb*2,bb:last.bb*2,ante:last.ante,min:last.min});
+      _btSave();renderEditor();
+    });
+    el.querySelector('#bt-reset-levels').addEventListener('click',async()=>{
+      if(!await confirmAction('Blind-Struktur auf den Standard zurücksetzen? Eigene Anpassungen werden verworfen.'))return;
+      _btLevels=_btGetDefaults();
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+      _btSave();renderEditor();_btUpdateUI();
+    });
   }
 
   // ── Head-to-Head (Stub) ─────────────────────────────────
@@ -3862,6 +4435,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.8',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Sidepot-Rechner: Spieler aus dem aktiven Spiel oder aus allen aktiven Spielern auswählen, Einsätze eintragen, All-Ins markieren – Pots und Haupt-Pot werden live berechnet'},
+      {typ:'neu',text:'Blind-Timer: Countdown mit Level-Anzeige, Prev/Next/Pause/Neu-Starten, automatischer Wechsel zum nächsten Level, Warn-Beep bei 30 Sekunden, Wake-Lock hält den Bildschirm an'},
+      {typ:'neu',text:'Blind-Timer läuft mit Wallclock-Anker auch weiter, wenn die App minimiert, der Browser-Tab im Hintergrund oder das Gerät im Standby ist; beim Öffnen wird die verstrichene Zeit exakt nachgezogen'},
+      {typ:'neu',text:'Timer-Badge in der Kopfzeile: sobald der Blind-Timer läuft, erscheint mittig im Header die Restzeit mit Mini-Progress-Balken – antippen springt direkt zur Timer-Seite'},
+      {typ:'neu',text:'Admin: Blind-Struktur (Standard-Levels) konfigurierbar in den Einstellungen – wird aus der neuen Tabelle blind_struktur geladen und gilt als Default für alle Spieler'},
+    ]},
     {version:'3.7',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Poker Tools: neue Sektion im Avatar-Menü für alle Spieler – Asse legen, Sidepot-Rechner, Blind-Timer und Head-to-Head direkt erreichbar'},
       {typ:'neu',text:'Asse legen: Randomizer bestimmt per Slot-Maschinen-Animation wer mit Dealen beginnt – mit Vorauswahl aus dem aktiven Spiel'},
