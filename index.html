@@ -1519,6 +1519,25 @@
     const pill=document.getElementById('ptr-pill');
     const THRESHOLD=72; // px Zugabstand bis Refresh ausgelöst wird
     let _startY=0,_deltaY=0,_active=false,_refreshing=false;
+    // PTR darf erst nach kurzer Ruhezeit oben ausgelöst werden –
+    // verhindert Fehlauslösung wenn der Nutzer zurück nach oben scrollt und
+    // die natürliche Fingerbewegung noch weitergeht.
+    let _atTopSettled=true,_settleTimer=null;
+
+    content.addEventListener('scroll',()=>{
+      const st=content.scrollTop;
+      if(st>0){
+        // Seite wurde nach unten gescrollt: PTR sperren und laufenden Zug abbrechen
+        _atTopSettled=false;
+        clearTimeout(_settleTimer);
+        _settleTimer=null;
+        if(_active)_active=false;
+      } else if(!_atTopSettled){
+        // Seite ist wieder ganz oben: erst nach 300 ms PTR freigeben
+        clearTimeout(_settleTimer);
+        _settleTimer=setTimeout(()=>{_atTopSettled=true;},300);
+      }
+    },{passive:true});
 
     const PAGE_LOADERS={
       home:()=>loadHome(),
@@ -1530,7 +1549,8 @@
     };
 
     content.addEventListener('touchstart',e=>{
-      if(_refreshing||content.scrollTop>0)return;
+      _active=false;
+      if(_refreshing||content.scrollTop>0||!_atTopSettled)return;
       _startY=e.touches[0].clientY;
       _active=true;
       _deltaY=0;
@@ -1538,8 +1558,9 @@
 
     content.addEventListener('touchmove',e=>{
       if(!_active||_refreshing)return;
+      if(content.scrollTop>0||!_atTopSettled){_active=false;return;}
       const dy=e.touches[0].clientY-_startY;
-      if(dy<=0||content.scrollTop>0){_active=false;return;}
+      if(dy<=0){_active=false;return;}
       _deltaY=dy;
       const pull=Math.min(Math.sqrt(dy*28),52);
       bar.style.height=pull+'px';
