@@ -284,7 +284,7 @@
     @keyframes item-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
     .page{display:none;}
     .page.active{display:block;animation:page-enter 340ms cubic-bezier(0.22,1,0.36,1) both;}
-    .page .card,.page .kasse-tile,.page .stat-card{animation:item-enter 400ms cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--stagger-delay,0ms);}
+    [id$="-content"]>*:not(.loading){animation:item-enter 400ms cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--stagger-delay,0ms);}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -1521,20 +1521,19 @@
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
-  // Stagger-Animation: --stagger-delay wird synchron im MutationObserver gesetzt (vor dem nächsten Paint,
-  // kein Reflow nötig → blockiert Main Thread nicht)
+  // Stagger-Animation: direkte Kinder aller *-content Container erhalten --stagger-delay (synchron,
+  // vor dem nächsten Paint, kein Reflow) → funktioniert auf allen Seiten automatisch
   (function(){
-    const SEL='.card,.kasse-tile,.stat-card';
     new MutationObserver(muts=>{
       const batch=[];
       for(const m of muts)for(const n of m.addedNodes){
         if(n.nodeType!==1||!n.closest?.('.page.active'))continue;
-        n.matches?.(SEL)?batch.push(n):batch.push(...n.querySelectorAll(SEL));
+        if((n.parentElement?.id||'').endsWith('-content')&&!n.classList?.contains('loading'))
+          batch.push(n);
       }
       if(!batch.length)return;
-      const deduped=batch.filter(el=>!batch.some(o=>o!==el&&o.contains(el)));
-      deduped.forEach((el,i)=>{
-        el.style.setProperty('--stagger-delay',(i*85)+'ms');
+      batch.forEach((el,i)=>{
+        el.style.setProperty('--stagger-delay',Math.min(i,6)*80+'ms');
         el.style.pointerEvents='none';
         el.addEventListener('animationend',()=>{el.style.pointerEvents='';},{once:true});
       });
