@@ -1527,7 +1527,8 @@
     new MutationObserver(muts=>{
       for(const m of muts)for(const n of m.addedNodes){
         if(n.nodeType!==1||!n.closest?.('.page.active'))continue;
-        n.classList?.contains('card')?batch.push(n):batch.push(...n.querySelectorAll('.card'));
+        const _isAnim=el=>el.classList?.contains('card')||el.classList?.contains('kasse-tile');
+        _isAnim(n)?batch.push(n):batch.push(...n.querySelectorAll('.card,.kasse-tile'));
       }
       if(!batch.length)return;
       clearTimeout(timer);
