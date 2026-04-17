@@ -236,11 +236,11 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell halten NACH meiner Freigabe. 
   - Ablauf:
-    1. comitten (immer auf Main)
-    2. Zusammenfassung der Anpassungen und was zu testen ist ausgeben
+    1. auf einem Feature-Branch committen und pushen (NICHT direkt auf main)
+    2. Zusammenfassung der Anpassungen und was zu testen ist ausgeben (inkl. Vercel Preview-URL falls bekannt)
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
-    5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
+    5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
 - **Aktuelle Version: 3.2**
 
 ## Login-Provider
@@ -332,9 +332,16 @@ Sonder-Eintrag: Bank (ist_bank=true)
 
 ## Git-Workflow
 
-- **Direkt auf `main` entwickeln und pushen** – Vercel deployed automatisch
-- Kein Feature-Branch nötig (Chris ist alleiniger Entwickler)
-- Push: `git push origin main`
+- **Entwicklung IMMER auf einem Feature-Branch**, nicht direkt auf `main`
+- Branch-Naming: `claude/<kurze-beschreibung>` (z.B. `claude/admin-push-notification-view`)
+- Ablauf:
+  1. Branch anlegen/auschecken, Änderungen committen, auf Remote pushen (`git push -u origin <branch>`)
+  2. Vercel erzeugt automatisch einen Preview-Deploy unter `https://poker-app-git-<branch>-schoblovskis-projects.vercel.app`
+  3. Chris testet auf der Preview-URL (Google-Login über Supabase Redirect-URL-Whitelist freigegeben)
+  4. Erst nach Freigabe: Version & Changelog bumpen, auf Feature-Branch committen, in `main` mergen und `main` pushen
+- Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
+  - `https://poker-app-*-schoblovskis-projects.vercel.app/**`
+  - `https://poker-app-git-*-schoblovskis-projects.vercel.app/**`
 
 ## Kommentar-Vorlagen (Transaktionen)
 
