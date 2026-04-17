@@ -114,6 +114,7 @@
     .bell-btn svg{width:18px;height:18px;}
     .bell-btn:hover{background:var(--border);}
     .bell-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;}
+    .bell-badge[hidden]{display:none!important;}
     .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
     .content::-webkit-scrollbar{width:4px;}
     .content::-webkit-scrollbar-track{background:transparent;}
@@ -942,8 +943,8 @@
         tag:data?.tag||null,
       }));
       db.from('benachrichtigungen').insert(rows).then(({error})=>{
-        if(error)console.warn('Benachrichtigung Insert Fehler:',error);
-        else if(typeof refreshBellBadge==='function')refreshBellBadge();
+        if(error)console.warn('Benachrichtigung Insert Fehler:',error.message||error);
+        else{console.log(`🔔 ${rows.length} Benachrichtigung(en) gespeichert`);if(typeof refreshBellBadge==='function')refreshBellBadge();}
       });
     }
   }
@@ -1455,10 +1456,24 @@
   function _btCheckFullscreen(){
     const onBt=document.getElementById('page-blindtimer')?.classList.contains('active');
     const isLandscape=window.matchMedia('(orientation: landscape)').matches;
-    document.body.classList.toggle('bt-fullscreen',!!onBt&&isLandscape);
+    const wasFullscreen=document.body.classList.contains('bt-fullscreen');
+    const isFullscreen=!!onBt&&isLandscape;
+    document.body.classList.toggle('bt-fullscreen',isFullscreen);
+    // Wake-Lock: im Vollbild immer aktiv (wie Netflix), sonst nur wenn Timer läuft
+    if(isFullscreen&&!wasFullscreen){
+      if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
+    } else if(wasFullscreen&&!isFullscreen){
+      if(typeof _btReleaseWakeLock==='function'&&!(_btState&&_btState.running))_btReleaseWakeLock();
+    }
   }
   window.addEventListener('orientationchange',_btCheckFullscreen);
   window.matchMedia('(orientation: landscape)').addEventListener?.('change',_btCheckFullscreen);
+  // Wake-Lock bei Tab-Rückkehr neu anfordern (Browser gibt ihn bei Hidden frei)
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&document.body.classList.contains('bt-fullscreen')){
+      if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
+    }
+  });
 
   function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1582,9 +1597,10 @@
   // ── BENACHRICHTIGUNGEN ─────────────────────────────────
   async function refreshBellBadge(){
     if(!currentSpieler)return;
-    const{count}=await db.from('benachrichtigungen').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
+    const{count,error}=await db.from('benachrichtigungen').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
     const badge=document.getElementById('bell-badge');
     if(!badge)return;
+    if(error){console.warn('Benachrichtigung Badge-Refresh Fehler:',error.message||error);badge.hidden=true;return;}
     if(count&&count>0){badge.textContent=count>99?'99+':String(count);badge.hidden=false;}
     else{badge.hidden=true;}
   }
