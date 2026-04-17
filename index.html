@@ -935,6 +935,45 @@
       reader.readAsDataURL(file);
     });
   }
+
+  // ── STORAGE HELPERS (Fotos in Supabase Storage, nicht mehr Base64 in DB) ───
+  // Base64 data URL → Binary → Upload → Public URL (mit Cache-Buster).
+  // Dateiname deterministisch via id, upsert=true → altes Bild wird überschrieben.
+  async function uploadFotoToStorage(dataUrl, bucket, id){
+    const match=dataUrl.match(/^data:(image\/(jpeg|jpg|png|webp));base64,(.+)$/i);
+    if(!match)throw new Error('Kein gültiges Base64-Bild');
+    const mime=match[1].toLowerCase();
+    const ext=mime==='image/jpeg'?'jpg':match[2].toLowerCase().replace('jpeg','jpg');
+    const bin=atob(match[3]);
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    const path=`${id}.${ext}`;
+    const{error}=await db.storage.from(bucket).upload(path,bytes,{upsert:true,contentType:mime});
+    if(error)throw error;
+    const{data}=db.storage.from(bucket).getPublicUrl(path);
+    // Cache-Buster, damit Browser bei Überschreiben das neue Bild lädt
+    return `${data.publicUrl}?t=${Date.now()}`;
+  }
+
+  // Storage-Foto löschen. Akzeptiert Public-URL oder Pfad, ignoriert externe URLs
+  // und Base64-Reste (für Fälle wo noch alte Daten existieren).
+  async function deleteFotoFromStorage(urlOrPath, bucket){
+    if(!urlOrPath||urlOrPath.startsWith('data:'))return;
+    try{
+      let path=urlOrPath;
+      // Public URL → Pfad extrahieren
+      const marker=`/storage/v1/object/public/${bucket}/`;
+      const idx=urlOrPath.indexOf(marker);
+      if(idx>=0){
+        path=urlOrPath.substring(idx+marker.length).split('?')[0];
+      } else if(urlOrPath.startsWith('http')){
+        // Fremde URL (z.B. Google) → kein Storage-File, nichts zu tun
+        return;
+      }
+      await db.storage.from(bucket).remove([path]);
+    }catch(e){console.warn(`Foto-Delete ${bucket} fehlgeschlagen:`,e);}
+  }
+
   // ── LIGHTBOX ───────────────────────────────────────────
   function openLightbox(src, isRound=true){
     if(!src)return;
@@ -1402,22 +1441,23 @@
         console.log('🔗 auth_user_id verknüpft:',currentUser.id);
       });
     }
-    // Profilbild: DB-Wert bevorzugen (kann Base64 sein); Google-URL nur beim allerersten Login
+    // Profilbild: DB-Wert bevorzugen; Google-URL nur beim allerersten Login
     const av=currentUser?.user_metadata?.avatar_url;
     if(!sp.profilbild&&av){
-      // Sofort Google-URL verwenden, Base64-Konvertierung im Hintergrund
+      // Sofort Google-URL verwenden, Storage-Upload im Hintergrund
       currentSpieler={...currentSpieler,profilbild:av};
       (async()=>{
         try{
           const b64=await fetchUrlAsBase64(av);
-          await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
-          currentSpieler={...currentSpieler,profilbild:b64};
+          const storageUrl=await uploadFotoToStorage(b64,'profilbilder',sp.id);
+          await db.from('spieler').update({profilbild:storageUrl}).eq('id',sp.id);
+          currentSpieler={...currentSpieler,profilbild:storageUrl};
           _invalidateSpielerMap();
           const btn=document.getElementById('user-avatar-btn');
-          if(btn)btn.innerHTML=`<img src="${b64}" alt="Avatar">`;
-          console.log('✅ Google-Profilbild als Base64 gespeichert');
+          if(btn)btn.innerHTML=`<img src="${storageUrl}" alt="Avatar">`;
+          console.log('✅ Google-Profilbild in Storage gespeichert');
         }catch(e){
-          console.warn('⚠️ Base64-Konvertierung fehlgeschlagen, speichere URL als Fallback',e);
+          console.warn('⚠️ Storage-Upload fehlgeschlagen, speichere URL als Fallback',e);
           await db.from('spieler').update({profilbild:av}).eq('id',sp.id).catch(()=>{});
           _invalidateSpielerMap();
         }
@@ -2154,23 +2194,24 @@
         const b64=await openCropModal(file);
         if(!b64)return;
         const sizeKB=Math.round(b64.length*0.75/1024);
-        uploadStatus.textContent=`Speichern… (${sizeKB} KB)`;
+        uploadStatus.textContent=`Hochladen… (${sizeKB} KB)`;
+        const storageUrl=await uploadFotoToStorage(b64,'profilbilder',sp.id);
         await save(async()=>{
-          await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
-          currentSpieler={...currentSpieler,profilbild:b64};
-          sp.profilbild=b64;
+          await db.from('spieler').update({profilbild:storageUrl}).eq('id',sp.id);
+          currentSpieler={...currentSpieler,profilbild:storageUrl};
+          sp.profilbild=storageUrl;
           _invalidateSpielerMap();
         },'Profilbild gespeichert');
         // Avatar im Header aktualisieren
-        document.getElementById('user-avatar-btn').innerHTML=`<img src="${b64}" alt="Avatar">`;
+        document.getElementById('user-avatar-btn').innerHTML=`<img src="${storageUrl}" alt="Avatar">`;
         // Vorschau aktualisieren
         const imgEl=document.getElementById('profil-avatar-img');
         const fbEl=document.getElementById('profil-avatar-fallback');
-        if(imgEl){imgEl.src=b64;imgEl.style.display='block';}
+        if(imgEl){imgEl.src=storageUrl;imgEl.style.display='block';}
         else{
           // img nicht vorhanden → neu erstellen
           const newImg=document.createElement('img');
-          newImg.src=b64;newImg.className='profil-img-preview';newImg.alt=sp.name;newImg.id='profil-avatar-img';
+          newImg.src=storageUrl;newImg.className='profil-img-preview';newImg.alt=sp.name;newImg.id='profil-avatar-img';
           const wrap=document.querySelector('.profil-avatar-wrap');
           if(wrap)wrap.insertBefore(newImg,wrap.firstChild);
         }
@@ -2563,7 +2604,11 @@
     });
     document.getElementById('detail-delete').addEventListener('click',async()=>{
       if(!await confirmDelete(`Spieler "${s.name}" wird unwiderruflich gelöscht.`))return;
-      await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
+      const fotoToDelete=s.profilbild;
+      await save(async()=>{
+        await db.from('spieler').delete().eq('id',s.id);
+        if(fotoToDelete)await deleteFotoFromStorage(fotoToDelete,'profilbilder');
+      },`${s.name} gelöscht`);
       _invalidateSpielerMap();
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
@@ -2578,19 +2623,20 @@
           const b64=await openCropModal(file);
           if(!b64)return;
           const sizeKB=Math.round(b64.length*0.75/1024);
-          status.textContent=`Speichern… (${sizeKB} KB)`;
+          status.textContent=`Hochladen… (${sizeKB} KB)`;
+          const storageUrl=await uploadFotoToStorage(b64,'profilbilder',s.id);
           await save(async()=>{
-            await db.from('spieler').update({profilbild:b64}).eq('id',s.id);
-            s.profilbild=b64;
+            await db.from('spieler').update({profilbild:storageUrl}).eq('id',s.id);
+            s.profilbild=storageUrl;
             _invalidateSpielerMap();
           },`Profilbild von ${s.name} gespeichert`);
           // Vorschau aktualisieren
           const img=document.getElementById('detail-avatar-img');
           const fb=document.getElementById('detail-avatar-fallback');
-          if(img){img.src=b64;img.style.display='block';}
+          if(img){img.src=storageUrl;img.style.display='block';}
           else{
             const newImg=document.createElement('img');
-            newImg.src=b64;newImg.id='detail-avatar-img';
+            newImg.src=storageUrl;newImg.id='detail-avatar-img';
             newImg.style.cssText='width:100%;height:100%;object-fit:cover';
             const wrap=document.querySelector('.profile-avatar-lg');
             if(wrap)wrap.insertBefore(newImg,wrap.firstChild);
@@ -2598,8 +2644,8 @@
           if(fb)fb.style.display='none';
           // Falls eigenes Profil: Header-Avatar auch aktualisieren
           if(s.id===currentSpieler?.id){
-            currentSpieler={...currentSpieler,profilbild:b64};
-            document.getElementById('user-avatar-btn').innerHTML=`<img src="${b64}" alt="Avatar">`;
+            currentSpieler={...currentSpieler,profilbild:storageUrl};
+            document.getElementById('user-avatar-btn').innerHTML=`<img src="${storageUrl}" alt="Avatar">`;
           }
           status.textContent=`Gespeichert (${sizeKB} KB)`;
           setTimeout(()=>{status.textContent='';},2500);
@@ -3192,6 +3238,10 @@
         const d=new Date(spiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
         if(!await confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
         await save(async()=>{
+          // Beweisfotos der Hände aus Storage löschen (parallel, Fehler ignorieren)
+          if(haende&&haende.length>0){
+            await Promise.all(haende.filter(h=>h.beweisfoto).map(h=>deleteFotoFromStorage(h.beweisfoto,'beweisfotos')));
+          }
           await db.from('spiel_teilnehmer').delete().eq('spiel_id',spiel.id);
           await db.from('hand_statistik').delete().eq('spiel_id',spiel.id);
           await db.from('spiele').delete().eq('id',spiel.id);
@@ -4024,7 +4074,7 @@
   // ── HÄNDE ──────────────────────────────────────────────
   const HAND_TYPEN=['7-2','Poker','Straight Flush','Royal Flush'];
   const HAND_SHORT={'7-2':'7-2','Poker':'Poker','Straight Flush':'Straight F.','Royal Flush':'Royal F.'};
-  let editHandID=null, selectedHandType=null, _handFotoBase64=null, _editHandGewinnerId=null;
+  let editHandID=null, selectedHandType=null, _handFotoBase64=null, _editHandGewinnerId=null, _handFotoOriginal=null;
   let _haendeData=null;
   let _haendeExpanded=new Set(); // keys: `${hand}||${spielerId}`
   let _haendeFilter=new Set(); // empty = alle Spieler
@@ -4205,6 +4255,7 @@
     editHandID=h?.id||null;
     selectedHandType=h?.hand||null;
     _handFotoBase64=h?.beweisfoto||null;
+    _handFotoOriginal=h?.beweisfoto||null;
     _editHandGewinnerId=h?.gewinner_id||null;
     // Löschen-Button aus vorherigem Aufruf entfernen
     document.getElementById('hand-loeschen')?.remove();
@@ -4300,7 +4351,12 @@
       btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Hand löschen`;
       btn.addEventListener('click',async()=>{
         if(!await confirmDelete(`Hand "${selectedHandType}" löschen?`))return;
-        await save(()=>db.from('hand_statistik').delete().eq('id',editHandID),'Hand gelöscht');
+        const handIdToDelete=editHandID;
+        const fotoToDelete=_handFotoOriginal;
+        await save(async()=>{
+          await db.from('hand_statistik').delete().eq('id',handIdToDelete);
+          if(fotoToDelete)await deleteFotoFromStorage(fotoToDelete,'beweisfotos');
+        },'Hand gelöscht');
         document.getElementById('modal-hand').classList.remove('open');
         loadHaende();
       });
@@ -4381,16 +4437,35 @@
     const gewinnerID=document.getElementById('hand-gewinner').value;
     if(!gewinnerID){await showAlert('Bitte einen Gewinner auswählen.');return;}
     const kommentar=document.getElementById('hand-kommentar').value.trim()||null;
-    const fotoUrl=_handFotoBase64||null;
+
+    // Foto-Logik:
+    //  - null  → nichts; falls vorher Storage-URL existierte, altes File löschen
+    //  - data: → neuer Upload nach Storage, URL in DB speichern
+    //  - http  → unverändert (bereits Storage- oder externe URL)
+    const foto=_handFotoBase64;
+    const fotoRemoved=_handFotoOriginal&&!foto;
+    const fotoIsNewUpload=foto&&foto.startsWith('data:');
 
     // Aktuelles Spiel-ID (falls vorhanden)
     const spielID=aktuellesSpiel?.id||null;
 
     await save(async()=>{
       if(editHandID){
-        await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).eq('id',editHandID);
+        // Bei neuem Upload: erst Storage, dann DB
+        let beweisfoto=foto;
+        if(fotoIsNewUpload){
+          beweisfoto=await uploadFotoToStorage(foto,'beweisfotos',editHandID);
+        }
+        await db.from('hand_statistik').update({hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:beweisfoto||null}).eq('id',editHandID);
+        // Altes Storage-File löschen, falls Foto entfernt wurde
+        if(fotoRemoved)await deleteFotoFromStorage(_handFotoOriginal,'beweisfotos');
       } else {
-        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:fotoUrl}).select('id').single();
+        // Neue Hand: Insert ohne Foto, um ID zu bekommen; danach Storage-Upload + Update
+        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:null}).select('id').single();
+        if(fotoIsNewUpload&&insertedHand?.id){
+          const beweisfoto=await uploadFotoToStorage(foto,'beweisfotos',insertedHand.id);
+          await db.from('hand_statistik').update({beweisfoto}).eq('id',insertedHand.id);
+        }
         // Push an Gewinner
         const gewinnerName=alleSpieler.find(s=>s.id===gewinnerID)?.name||'Dir';
         const handUrl=insertedHand?.id?`/#haende?id=${insertedHand.id}`:'/#haende';
