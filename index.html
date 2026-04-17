@@ -458,6 +458,43 @@
   .randomizer-slot{font-size:22px;font-weight:800;color:var(--accent-text);min-height:36px;transition:opacity .1s;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+  /* Sidepot-Rechner */
+  .sidepot-row{display:grid;grid-template-columns:1fr 100px auto auto;gap:var(--space-sm);align-items:center;margin-bottom:var(--space-sm);}
+  .sidepot-row input{padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:14px;font-family:var(--font-sans);width:100%;}
+  .sidepot-row input:focus{outline:2px solid var(--accent);border-color:transparent;}
+  .sidepot-fold-btn{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all var(--transition);}
+  .sidepot-fold-btn.folded{background:var(--bg-secondary);color:var(--text-tertiary);text-decoration:line-through;}
+  .sidepot-remove{width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--text-tertiary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;}
+  .sidepot-remove:hover{color:var(--danger);}
+  .sidepot-pot{padding:var(--space-sm) var(--space-md);border-radius:var(--radius-sm);background:var(--bg-secondary);margin-bottom:var(--space-sm);}
+  .sidepot-pot-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:2px;}
+  .sidepot-pot-amount{font-size:22px;font-weight:800;color:var(--text-primary);font-family:var(--font-mono);}
+  .sidepot-pot-players{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+  .sidepot-total{display:flex;justify-content:space-between;align-items:center;padding:var(--space-sm) var(--space-md);border-top:1px solid var(--border);margin-top:var(--space-sm);font-weight:700;}
+
+  /* Blind-Timer */
+  .blind-timer-wrap{display:flex;flex-direction:column;align-items:center;gap:var(--space-md);padding:var(--space-md) 0;}
+  .blind-level-badge{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);}
+  .blind-level-next{font-size:11px;color:var(--text-tertiary);}
+  .blind-countdown{font-size:72px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary);letter-spacing:-.02em;line-height:1;}
+  .blind-countdown.warning{color:var(--danger);}
+  .blind-blinds{display:flex;gap:var(--space-lg);text-align:center;}
+  .blind-blinds-item label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);display:block;}
+  .blind-blinds-item span{font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary);}
+  .blind-progress-bar{width:100%;height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;}
+  .blind-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
+  .blind-controls{display:flex;gap:var(--space-sm);align-items:center;}
+  .blind-ctrl-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .blind-ctrl-btn:hover{background:var(--bg-secondary);}
+  .blind-ctrl-btn.primary{width:64px;height:64px;background:var(--accent);border-color:var(--accent);color:#fff;}
+  .blind-ctrl-btn.primary:hover{opacity:.9;}
+  .blind-levels-editor{width:100%;}
+  .blind-levels-editor table{width:100%;border-collapse:collapse;font-size:13px;}
+  .blind-levels-editor th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+  .blind-levels-editor td{padding:4px 4px;}
+  .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:var(--font-mono);text-align:right;}
+  .blind-level-row.active-level td{background:var(--accent-soft);}
+
   </style>
 </head>
 <body>
@@ -3821,30 +3858,291 @@
     render();
   }
 
-  // ── Sidepot-Rechner (Stub) ──────────────────────────────
+  // ── Sidepot-Rechner ─────────────────────────────────────
   function loadSidepot(){
-    document.getElementById('sidepot-content').innerHTML=`
-      <button class="back-btn" id="sidepot-back">${backIcon} Zurück</button>
-      <div class="tool-coming-soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <div class="tool-title">Sidepot-Rechner</div>
-        <div class="tool-desc">Berechnet Main-Pot und Side-Pots bei All-In-Situationen mit unterschiedlichen Stack-Größen.</div>
-        <span class="badge-soon">Coming in Sprint 3</span>
-      </div>`;
-    document.getElementById('sidepot-back').addEventListener('click',()=>history.back());
+    const el=document.getElementById('sidepot-content');
+    let players=[{name:'',chips:'',fold:false},{name:'',chips:'',fold:false},{name:'',chips:'',fold:false}];
+
+    function calcPots(){
+      const ps=players.map((p,i)=>({name:p.name||`Spieler ${i+1}`,chips:parseFloat(p.chips)||0,fold:p.fold}));
+      const active=ps.filter(p=>p.chips>0);
+      if(active.length<2)return[];
+      let work=active.map(p=>({...p,rem:p.chips}));
+      const pots=[];
+      while(work.some(c=>c.rem>0)){
+        const nz=work.filter(c=>c.rem>0);
+        const level=Math.min(...nz.map(c=>c.rem));
+        let total=0;
+        work.forEach(c=>{const v=Math.min(c.rem,level);total+=v;c.rem-=v;});
+        const eligible=nz.filter(c=>!c.fold);
+        pots.push({amount:total,eligible:eligible.map(c=>c.name),all:nz.length});
+      }
+      return pots;
+    }
+
+    function render(){
+      const pots=calcPots();
+      const totalIn=players.reduce((s,p)=>s+(parseFloat(p.chips)||0),0);
+
+      let rows='';
+      players.forEach((p,i)=>{
+        rows+=`<div class="sidepot-row">
+          <input type="text" placeholder="Name (optional)" value="${escHtml(p.name)}" data-idx="${i}" data-field="name">
+          <input type="number" inputmode="decimal" placeholder="Chips" value="${p.chips}" data-idx="${i}" data-field="chips" min="0">
+          <button class="sidepot-fold-btn${p.fold?' folded':''}" data-idx="${i}" data-action="fold">${p.fold?'Fold':'Im Spiel'}</button>
+          <button class="sidepot-remove" data-idx="${i}" data-action="remove" title="Entfernen">×</button>
+        </div>`;
+      });
+
+      let potHtml='';
+      if(pots.length>0){
+        pots.forEach((pot,i)=>{
+          const label=i===0?'Main Pot':`Side Pot ${i}`;
+          potHtml+=`<div class="sidepot-pot">
+            <div class="sidepot-pot-label">${label}</div>
+            <div class="sidepot-pot-amount">€ ${pot.amount.toFixed(2)}</div>
+            <div class="sidepot-pot-players">${pot.eligible.length>0?pot.eligible.join(', ')+'&nbsp;können gewinnen':'Niemand (alle gefoldet)'}</div>
+          </div>`;
+        });
+        if(pots.length>1){
+          potHtml+=`<div class="sidepot-total"><span>Gesamt</span><span>€ ${totalIn.toFixed(2)}</span></div>`;
+        }
+      }
+
+      el.innerHTML=`
+        <button class="back-btn" id="sp-back">${backIcon} Zurück</button>
+        <div class="section-title" style="margin-top:0">Spieler & Einsätze</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Chips im Pot pro Spieler eingeben. Wer gefoldet hat, auf "Fold" tippen.</p>
+        <div id="sp-rows">${rows}</div>
+        <button class="btn btn-secondary" id="sp-add" style="margin-bottom:var(--space-lg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Spieler hinzufügen
+        </button>
+        ${pots.length>0?`<div class="section-title">Pot-Aufteilung</div>${potHtml}`:''}`;
+
+      el.querySelector('#sp-back').addEventListener('click',()=>history.back());
+      el.querySelector('#sp-add').addEventListener('click',()=>{
+        players.push({name:'',chips:'',fold:false});render();
+      });
+      el.querySelectorAll('[data-field]').forEach(inp=>{
+        inp.addEventListener('input',e=>{
+          const i=parseInt(e.target.dataset.idx);
+          players[i][e.target.dataset.field]=e.target.value;
+          // Pots neu berechnen ohne render (um Fokus nicht zu verlieren)
+          const pots2=calcPots();
+          const potSection=el.querySelector('.section-title:last-of-type');
+          // Einfache Live-Aktualisierung: re-render wenn Pot-Anzahl sich ändert
+          render();
+        });
+      });
+      el.querySelectorAll('[data-action="fold"]').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          players[parseInt(e.target.dataset.idx)].fold=!players[parseInt(e.target.dataset.idx)].fold;
+          render();
+        });
+      });
+      el.querySelectorAll('[data-action="remove"]').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          if(players.length<=2)return;
+          players.splice(parseInt(e.target.dataset.idx),1);render();
+        });
+      });
+    }
+    render();
   }
 
-  // ── Blind-Timer (Stub) ──────────────────────────────────
+  // ── Blind-Timer ─────────────────────────────────────────
+  const _BT_KEY='dtks_blind_timer';
+  const _BT_LEVELS_KEY='dtks_blind_levels';
+  const _BT_DEFAULT_LEVELS=[
+    {sb:25,bb:50,ante:0,min:15},{sb:50,bb:100,ante:0,min:15},
+    {sb:75,bb:150,ante:0,min:15},{sb:100,bb:200,ante:0,min:15},
+    {sb:150,bb:300,ante:0,min:15},{sb:200,bb:400,ante:0,min:15},
+    {sb:300,bb:600,ante:0,min:15},{sb:400,bb:800,ante:0,min:15},
+    {sb:500,bb:1000,ante:0,min:20},{sb:750,bb:1500,ante:0,min:20},
+    {sb:1000,bb:2000,ante:200,min:20},{sb:1500,bb:3000,ante:300,min:20},
+  ];
+  let _btInterval=null;
+  let _btState=null; // {level, secsLeft, running, totalSecs}
+  let _btLevels=null;
+  let _wakeLock=null;
+
+  function _btLoad(){
+    try{_btLevels=JSON.parse(localStorage.getItem(_BT_LEVELS_KEY))||[..._BT_DEFAULT_LEVELS];}
+    catch{_btLevels=[..._BT_DEFAULT_LEVELS];}
+    try{_btState=JSON.parse(localStorage.getItem(_BT_KEY));}
+    catch{_btState=null;}
+    if(!_btState||_btState.level>=_btLevels.length){
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+    }
+  }
+  function _btSave(){localStorage.setItem(_BT_KEY,JSON.stringify(_btState));localStorage.setItem(_BT_LEVELS_KEY,JSON.stringify(_btLevels));}
+  function _btFmt(s){const m=Math.floor(s/60);return`${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function _btBeep(freq=880,type='sine'){
+    try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type=type;o.frequency.value=freq;
+      g.gain.setValueAtTime(0.4,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start();o.stop(ctx.currentTime+0.5);}catch{}
+  }
+  function _btTick(){
+    if(!_btState.running)return;
+    _btState.secsLeft--;
+    if(_btState.secsLeft<=0){
+      const next=_btState.level+1;
+      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;}
+      else{_btState.level=next;_btState.secsLeft=_btLevels[next].min*60;_btState.totalSecs=_btLevels[next].min*60;_btBeep(660,'sine');}
+    } else if(_btState.secsLeft===30){_btBeep(440,'sine');}
+    _btSave();
+    _btUpdateUI();
+  }
+  function _btUpdateUI(){
+    const s=_btState,lvl=_btLevels[s.level];
+    const cd=document.getElementById('bt-countdown');
+    const prog=document.getElementById('bt-progress');
+    const levelBadge=document.getElementById('bt-level-badge');
+    const sbEl=document.getElementById('bt-sb');
+    const bbEl=document.getElementById('bt-bb');
+    const anteEl=document.getElementById('bt-ante-wrap');
+    const nextEl=document.getElementById('bt-next');
+    const playIcon=document.getElementById('bt-play-icon');
+    if(!cd)return;
+    cd.textContent=_btFmt(s.secsLeft);
+    cd.className='blind-countdown'+(s.secsLeft<=30?' warning':'');
+    if(prog)prog.style.width=`${Math.round((s.secsLeft/s.totalSecs)*100)}%`;
+    if(levelBadge)levelBadge.textContent=`Level ${s.level+1} von ${_btLevels.length}`;
+    if(sbEl)sbEl.textContent=lvl.sb;
+    if(bbEl)bbEl.textContent=lvl.bb;
+    if(anteEl)anteEl.style.display=lvl.ante>0?'flex':'none';
+    document.getElementById('bt-ante')&&(document.getElementById('bt-ante').textContent=lvl.ante);
+    if(nextEl){const nx=_btLevels[s.level+1];nextEl.textContent=nx?`Nächstes Level: ${nx.sb}/${nx.bb}`:'Letztes Level';}
+    if(playIcon)playIcon.innerHTML=s.running
+      ?`<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+      :`<polygon points="5 3 19 12 5 21 5 3"/>`;
+  }
+
+  async function _btRequestWakeLock(){
+    try{if('wakeLock' in navigator){_wakeLock=await navigator.wakeLock.request('screen');}}catch{}
+  }
+  function _btReleaseWakeLock(){try{_wakeLock?.release();_wakeLock=null;}catch{}}
+
   function loadBlindtimer(){
-    document.getElementById('blindtimer-content').innerHTML=`
-      <button class="back-btn" id="blindtimer-back">${backIcon} Zurück</button>
-      <div class="tool-coming-soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div class="tool-title">Blind-Timer</div>
-        <div class="tool-desc">Konfigurierbarer Blind-Timer mit Levels, Pausen und akustischem Signal bei Level-Wechsel.</div>
-        <span class="badge-soon">Coming in Sprint 3</span>
-      </div>`;
-    document.getElementById('blindtimer-back').addEventListener('click',()=>history.back());
+    if(!_btState)_btLoad();
+    if(!_btInterval)_btInterval=setInterval(_btTick,1000);
+
+    const el=document.getElementById('blindtimer-content');
+    const lvl=_btLevels[_btState.level];
+    const nextLvl=_btLevels[_btState.level+1];
+
+    el.innerHTML=`
+      <button class="back-btn" id="bt-back">${backIcon} Zurück</button>
+
+      <div class="blind-timer-wrap">
+        <div class="blind-level-badge" id="bt-level-badge">Level ${_btState.level+1} von ${_btLevels.length}</div>
+
+        <div class="blind-progress-bar"><div class="blind-progress-fill" id="bt-progress" style="width:${Math.round((_btState.secsLeft/_btState.totalSecs)*100)}%"></div></div>
+
+        <div class="blind-countdown${_btState.secsLeft<=30?' warning':''}" id="bt-countdown">${_btFmt(_btState.secsLeft)}</div>
+
+        <div class="blind-blinds">
+          <div class="blind-blinds-item"><label>Small Blind</label><span id="bt-sb">${lvl.sb}</span></div>
+          <div class="blind-blinds-item"><label>Big Blind</label><span id="bt-bb">${lvl.bb}</span></div>
+          <div class="blind-blinds-item" id="bt-ante-wrap" style="display:${lvl.ante>0?'flex':'none'};flex-direction:column;align-items:center"><label>Ante</label><span id="bt-ante">${lvl.ante}</span></div>
+        </div>
+
+        <div class="blind-level-next" id="bt-next">${nextLvl?`Nächstes Level: ${nextLvl.sb}/${nextLvl.bb}`:'Letztes Level'}</div>
+
+        <div class="blind-controls">
+          <button class="blind-ctrl-btn" id="bt-prev" title="Vorheriges Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="blind-ctrl-btn primary" id="bt-play" title="Start/Pause">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="28" height="28" id="bt-play-icon">
+              ${_btState.running
+                ?`<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+                :`<polygon points="5 3 19 12 5 21 5 3"/>`}
+            </svg>
+          </button>
+          <button class="blind-ctrl-btn" id="bt-next-btn" title="Nächstes Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <div style="display:flex;gap:var(--space-sm)">
+          <button class="btn btn-secondary btn-sm" id="bt-reset">Neustart</button>
+          <button class="btn btn-secondary btn-sm" id="bt-fullscreen">Vollbild</button>
+        </div>
+      </div>
+
+      <details style="margin-top:var(--space-lg)">
+        <summary style="font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);user-select:none;padding:var(--space-sm) 0">Blind-Struktur bearbeiten</summary>
+        <div class="blind-levels-editor" id="bt-editor"></div>
+        <button class="btn btn-secondary btn-sm" id="bt-add-level" style="margin-top:var(--space-sm)">+ Level hinzufügen</button>
+        <button class="btn btn-secondary btn-sm" id="bt-reset-levels" style="margin-top:var(--space-sm)">Zurücksetzen</button>
+      </details>`;
+
+    function renderEditor(){
+      const ed=document.getElementById('bt-editor');if(!ed)return;
+      let rows=_btLevels.map((l,i)=>`
+        <tr class="blind-level-row${i===_btState.level?' active-level':''}" data-idx="${i}">
+          <td style="padding:4px 8px;font-size:12px;color:var(--text-tertiary);font-family:var(--font-mono)">${i+1}</td>
+          <td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.ante}" data-field="ante" data-idx="${i}" inputmode="numeric"></td>
+          <td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" style="width:48px"></td>
+          <td><button class="sidepot-remove" data-action="del" data-idx="${i}">×</button></td>
+        </tr>`).join('');
+      ed.innerHTML=`<table><thead><tr><th>#</th><th>SB</th><th>BB</th><th>Ante</th><th>Min</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+      ed.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',e=>{
+        const i=parseInt(e.target.dataset.idx),f=e.target.dataset.field;
+        _btLevels[i][f]=parseInt(e.target.value)||0;
+        _btSave();_btUpdateUI();
+      }));
+      ed.querySelectorAll('[data-action="del"]').forEach(btn=>btn.addEventListener('click',e=>{
+        const i=parseInt(e.target.dataset.idx);
+        if(_btLevels.length<=2)return;
+        _btLevels.splice(i,1);
+        if(_btState.level>=_btLevels.length)_btState.level=_btLevels.length-1;
+        _btSave();renderEditor();_btUpdateUI();
+      }));
+    }
+    renderEditor();
+
+    el.querySelector('#bt-back').addEventListener('click',()=>{_btReleaseWakeLock();history.back();});
+    el.querySelector('#bt-play').addEventListener('click',()=>{
+      _btState.running=!_btState.running;
+      if(_btState.running)_btRequestWakeLock();
+      else _btReleaseWakeLock();
+      _btSave();_btUpdateUI();
+    });
+    el.querySelector('#bt-prev').addEventListener('click',()=>{
+      if(_btState.level>0){_btState.level--;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
+    });
+    el.querySelector('#bt-next-btn').addEventListener('click',()=>{
+      if(_btState.level<_btLevels.length-1){_btState.level++;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
+    });
+    el.querySelector('#bt-reset').addEventListener('click',()=>{
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+      _btReleaseWakeLock();_btSave();renderEditor();_btUpdateUI();
+    });
+    el.querySelector('#bt-fullscreen').addEventListener('click',()=>{
+      const target=document.documentElement;
+      if(!document.fullscreenElement){target.requestFullscreen?.();}
+      else{document.exitFullscreen?.();}
+    });
+    el.querySelector('#bt-add-level').addEventListener('click',()=>{
+      const last=_btLevels[_btLevels.length-1];
+      _btLevels.push({sb:last.sb*2,bb:last.bb*2,ante:last.ante,min:last.min});
+      _btSave();renderEditor();
+    });
+    el.querySelector('#bt-reset-levels').addEventListener('click',async()=>{
+      if(!await confirmAction('Blind-Struktur auf Standard zurücksetzen?'))return;
+      _btLevels=[..._BT_DEFAULT_LEVELS];
+      _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
+      _btSave();renderEditor();_btUpdateUI();
+    });
   }
 
   // ── Head-to-Head (Stub) ─────────────────────────────────
