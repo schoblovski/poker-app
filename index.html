@@ -4439,12 +4439,14 @@
 
   // ── Head-to-Head ────────────────────────────────────────
   let _h2hData=null; // {spieler, teilnehmer, haende}
+  let _h2hYearFilter=new Set();
 
   async function loadH2H(){
     const el=document.getElementById('h2h-content');
     el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>
       <div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;">Lade Head-to-Head…</div>`;
     document.getElementById('h2h-back').addEventListener('click',()=>history.back());
+    _h2hYearFilter=new Set();
 
     await _ensureSpielerMap();
     const spieler=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank).sort((a,b)=>{
@@ -4495,12 +4497,16 @@
     const tBMap=new Map(teilnehmer.filter(t=>t.spieler_id===bId).map(t=>[t.spiel_id,t]));
     const commonIds=[...tAMap.keys()].filter(id=>tBMap.has(id));
 
-    const games=commonIds.map(sid=>{
+    const allGames=commonIds.map(sid=>{
       const ta=tAMap.get(sid),tb=tBMap.get(sid);
       const reinA=_h2hReingewinn(ta);
       const reinB=_h2hReingewinn(tb);
       return{spielId:sid,datum:ta.spiele.datum,reinA,reinB,diff:reinA-reinB};
     }).sort((a,b)=>a.datum.localeCompare(b.datum));
+
+    const allYears=[...new Set(allGames.map(g=>g.datum?.slice(0,4)).filter(Boolean))].sort().reverse();
+    [..._h2hYearFilter].forEach(yr=>{if(!allYears.includes(yr))_h2hYearFilter.delete(yr);});
+    const games=_h2hYearFilter.size===0?allGames:allGames.filter(g=>_h2hYearFilter.has(g.datum?.slice(0,4)));
 
     const saldo=games.reduce((s,g)=>s+g.diff,0);
     const winsA=games.filter(g=>g.diff>0).length;
@@ -4591,10 +4597,30 @@
           </div>
         </div>`;
 
-    el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>${selectorsHtml}${body}`;
+    const yearFilterHtml=allYears.length>1?`
+      <div class="stat-filter-box" style="margin-top:var(--space-md)">
+        <div class="stat-filter-label">Zeitraum</div>
+        <div class="stat-filter-chips">
+          <button class="stat-filter-chip${_h2hYearFilter.size===0?' active':''}" data-h2h-yr="">Alle</button>
+          ${allYears.map(yr=>`<button class="stat-filter-chip${_h2hYearFilter.has(yr)?' active':''}" data-h2h-yr="${yr}">${yr}</button>`).join('')}
+        </div>
+      </div>`:'';
+
+    el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>${selectorsHtml}${yearFilterHtml}${body}`;
     document.getElementById('h2h-back').addEventListener('click',()=>history.back());
     document.getElementById('h2h-a').addEventListener('change',e=>renderH2H(e.target.value,bId));
     document.getElementById('h2h-b').addEventListener('change',e=>renderH2H(aId,e.target.value));
+    el.querySelectorAll('[data-h2h-yr]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const yr=btn.dataset.h2hYr;
+        if(yr===''){_h2hYearFilter.clear();}
+        else{
+          if(_h2hYearFilter.has(yr))_h2hYearFilter.delete(yr);
+          else _h2hYearFilter.add(yr);
+        }
+        renderH2H(aId,bId);
+      });
+    });
     el.querySelectorAll('[data-spiel-id]').forEach(row=>{
       row.addEventListener('click',async()=>{
         const id=row.dataset.spielId;
