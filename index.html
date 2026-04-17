@@ -129,6 +129,7 @@
     .section-title:first-child{margin-top:0;}
     .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
     .card+.card{margin-top:var(--space-sm);}
+    .verlauf-block+.verlauf-block{margin-top:var(--space-xl);}
     .list-item{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);transition:background var(--transition);}
     .list-item:last-child{border-bottom:none;}
     .list-item.clickable{cursor:pointer;}
@@ -2972,6 +2973,7 @@
         return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
       });
       const wrap=document.createElement('div');
+      wrap.className='verlauf-block';
       wrap.innerHTML=`<div class="section-title">${datum}</div><div class="card" style="cursor:pointer">
         <div class="list-item clickable" data-spiel-id="${spiel.id}" style="padding:var(--space-md)">
           <div style="flex:1;display:flex;gap:var(--space-md)">
