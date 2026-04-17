@@ -4474,6 +4474,7 @@
   function renderH2H(aId,bId){
     const el=document.getElementById('h2h-content');
     const{spieler,teilnehmer,haende}=_h2hData;
+    const fmtD=d=>{if(!d)return'';const p=d.split('-');return`${p[2]}.${p[1]}.${p[0].slice(2)}`;};
 
     const selectOpts=(selId,otherId)=>spieler.map(s=>{
       const label=s.aktiv===false?`${s.name} (inaktiv)`:s.name;
