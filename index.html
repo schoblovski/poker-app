@@ -1537,15 +1537,12 @@
       if(!batch.length)return;
       clearTimeout(timer);
       timer=setTimeout(()=>{
-        const activePage=document.querySelector('.page.active');
-        const topBtns=activePage?[...activePage.querySelectorAll(':scope>.btn-primary')]:[];
         // Duplikate entfernen: wenn Vorfahre und Kind beide im Batch, nur Vorfahren behalten
         const deduped=batch.filter(el=>!batch.some(o=>o!==el&&o.contains(el)));
-        const all=[...topBtns,...deduped];
         // Einzelner Reflow statt N Reflows – blockiert Main Thread nicht
-        all.forEach(el=>{el.style.animation='none';});
-        void all[0]?.offsetWidth;
-        all.forEach((el,i)=>{
+        deduped.forEach(el=>{el.style.animation='none';});
+        void deduped[0]?.offsetWidth;
+        deduped.forEach((el,i)=>{
           el.style.animation=`item-enter 400ms cubic-bezier(0.22,1,0.36,1) ${i*85}ms both`;
         });
         batch=[];
