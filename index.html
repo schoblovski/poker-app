@@ -4548,7 +4548,7 @@
         ${renderH2HChart(games,A,B,saldo)}
 
         ${orderedHandTypes.length>0?`
-          <div class="section-title">Besondere Hände an gemeinsamen Abenden</div>
+          <div class="section-title">Besondere Hände an gemeinsamen Spielen</div>
           ${orderedHandTypes.map((typ,idx)=>{
             const items=handsByType[typ].slice().sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
             const cntA=items.filter(h=>h.gewinner_id===aId).length;
