@@ -43,33 +43,34 @@ DROP POLICY IF EXISTS "poker_beweisfotos_insert"  ON storage.objects;
 DROP POLICY IF EXISTS "poker_beweisfotos_update"  ON storage.objects;
 DROP POLICY IF EXISTS "poker_beweisfotos_delete"  ON storage.objects;
 
--- profilbilder: authenticated dürfen alles
+-- profilbilder: authenticated darf alles
+-- (auth.role() im CHECK ist zuverlässiger als TO authenticated-Klausel)
 CREATE POLICY "poker_profilbilder_insert" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'profilbilder');
+  FOR INSERT
+  WITH CHECK (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
 
 CREATE POLICY "poker_profilbilder_update" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (bucket_id = 'profilbilder')
-  WITH CHECK (bucket_id = 'profilbilder');
+  FOR UPDATE
+  USING (bucket_id = 'profilbilder' AND auth.role() = 'authenticated')
+  WITH CHECK (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
 
 CREATE POLICY "poker_profilbilder_delete" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (bucket_id = 'profilbilder');
+  FOR DELETE
+  USING (bucket_id = 'profilbilder' AND auth.role() = 'authenticated');
 
--- beweisfotos: authenticated dürfen alles
+-- beweisfotos: authenticated darf alles
 CREATE POLICY "poker_beweisfotos_insert" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'beweisfotos');
+  FOR INSERT
+  WITH CHECK (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
 
 CREATE POLICY "poker_beweisfotos_update" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (bucket_id = 'beweisfotos')
-  WITH CHECK (bucket_id = 'beweisfotos');
+  FOR UPDATE
+  USING (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated')
+  WITH CHECK (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
 
 CREATE POLICY "poker_beweisfotos_delete" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (bucket_id = 'beweisfotos');
+  FOR DELETE
+  USING (bucket_id = 'beweisfotos' AND auth.role() = 'authenticated');
 
 -- Kontrolle (optional):
 -- SELECT id, name, public FROM storage.buckets WHERE id IN ('profilbilder','beweisfotos');
