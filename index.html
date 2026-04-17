@@ -269,11 +269,11 @@
     .kommentar-chip{background:var(--bg-secondary);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);white-space:nowrap;}
     .kommentar-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
     #kommentar-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-sm);}
-    @keyframes page-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
-    @keyframes item-enter{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+    @keyframes page-enter{from{opacity:0;transform:translateY(36px);}to{opacity:1;transform:none;}}
+    @keyframes item-enter{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:none;}}
     .page{display:none;}
-    .page.active{display:block;animation:page-enter 280ms cubic-bezier(0.22,1,0.36,1) both;}
-    .page .card{animation:item-enter 320ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page.active{display:block;animation:page-enter 380ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page .card{animation:item-enter 420ms cubic-bezier(0.22,1,0.36,1) both;}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -1520,7 +1520,7 @@
       }
       if(!batch.length)return;
       clearTimeout(timer);
-      timer=setTimeout(()=>{batch.forEach((c,i)=>{c.style.animationDelay=(i*65)+'ms';});batch=[];},0);
+      timer=setTimeout(()=>{batch.forEach((c,i)=>{c.style.animationDelay=(i*90)+'ms';});batch=[];},0);
     }).observe(document.body,{childList:true,subtree:true});
   })();
 
