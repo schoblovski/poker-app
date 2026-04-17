@@ -3779,14 +3779,10 @@
       // ── Spieler × Gegner Matrix ──
       function buildH2HMatrix(){
         const playersInScope=new Set(filtVerlaufAll.map(t=>t.spieler_id));
-        const allNonBank=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank);
-        let mxSpieler=allNonBank.filter(s=>playersInScope.has(s.id));
+        const allActive=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank&&s.aktiv!==false);
+        let mxSpieler=allActive.filter(s=>playersInScope.has(s.id));
         if(_statSpielerFilter.size>0)mxSpieler=mxSpieler.filter(s=>_statSpielerFilter.has(s.id));
-        mxSpieler.sort((a,b)=>{
-          const aAktiv=a.aktiv!==false, bAktiv=b.aktiv!==false;
-          if(aAktiv!==bAktiv)return aAktiv?-1:1;
-          return a.name.localeCompare(b.name);
-        });
+        mxSpieler.sort((a,b)=>a.name.localeCompare(b.name));
         if(mxSpieler.length<2)return '';
 
         // Gruppiere Teilnehmer nach Spiel, berechne Reingewinn pro Spieler pro Spiel
