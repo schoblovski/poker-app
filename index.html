@@ -3461,7 +3461,11 @@
           return x+(t.buyins||0)*(bPot+bKassa);
         },0);
         return{...s,abg:abg.length,gRein,gEinz,gBuyinK};
-      }).sort((a,b)=>b.gRein-a.gRein);
+      }).sort((a,b)=>{
+        const avgA=a.abg>0?a.gRein/a.abg:-Infinity;
+        const avgB=b.abg>0?b.gRein/b.abg:-Infinity;
+        return avgB-avgA;
+      });
 
       const totalSpiele=filtSpielIds.size;
       const total7_2=filtHaende.filter(h=>h.hand==='7-2').length;
@@ -3531,8 +3535,8 @@
         html+=`<div class="list-item clickable" data-stats-id="${s.id}">
           <div style="width:26px;font-size:${i<3?'17':'13'}px;font-weight:700;text-align:center;flex-shrink:0">${medal}</div>
           ${avatarHtml(s,36)}
-          <div class="item-body"><div class="item-title">${escHtml(s.name)}</div><div class="item-subtitle">${s.abg} Spiele · Ø ${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</div></div>
-          <div class="item-trailing"><span class="item-amount ${ksClass(s.gRein)}">${fmtSigned(s.gRein)}</span>${chevron}</div>
+          <div class="item-body"><div class="item-title">${escHtml(s.name)}</div><div class="item-subtitle">${s.abg} Spiele</div></div>
+          <div class="item-trailing"><span class="item-amount ${s.abg>0?ksClass(s.gRein/s.abg):''}">${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</span>${chevron}</div>
         </div>`;
       });
       html+=`</div>`;
