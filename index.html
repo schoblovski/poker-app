@@ -4447,7 +4447,11 @@
     document.getElementById('h2h-back').addEventListener('click',()=>history.back());
 
     await _ensureSpielerMap();
-    const spieler=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank).sort((a,b)=>a.name.localeCompare(b.name));
+    const spieler=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank).sort((a,b)=>{
+      const aAktiv=a.aktiv!==false, bAktiv=b.aktiv!==false;
+      if(aAktiv!==bAktiv)return aAktiv?-1:1;
+      return a.name.localeCompare(b.name);
+    });
 
     const[{data:teilnehmer},{data:haende}]=await Promise.all([
       db.from('spiel_teilnehmer')
@@ -4476,10 +4480,13 @@
     const{spieler,teilnehmer,haende}=_h2hData;
     const fmtD=d=>{if(!d)return'';const p=d.split('-');return`${p[2]}.${p[1]}.${p[0].slice(2)}`;};
 
-    const selectOpts=(selId,otherId)=>spieler.map(s=>{
-      const label=s.aktiv===false?`${s.name} (inaktiv)`:s.name;
-      return `<option value="${s.id}"${s.id===selId?' selected':''}${s.id===otherId?' disabled':''}>${escHtml(label)}</option>`;
-    }).join('');
+    const selectOpts=(selId,otherId)=>{
+      const optFor=s=>`<option value="${s.id}"${s.id===selId?' selected':''}${s.id===otherId?' disabled':''}>${escHtml(s.name)}</option>`;
+      const aktive=spieler.filter(s=>s.aktiv!==false).map(optFor).join('');
+      const inaktive=spieler.filter(s=>s.aktiv===false).map(optFor).join('');
+      return (aktive?`<optgroup label="Aktiv">${aktive}</optgroup>`:'')
+           + (inaktive?`<optgroup label="Inaktiv">${inaktive}</optgroup>`:'');
+    };
 
     const A=spieler.find(s=>s.id===aId);
     const B=spieler.find(s=>s.id===bId);
