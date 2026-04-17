@@ -522,11 +522,11 @@
   .blind-level-row.active-level td{background:var(--accent-soft);}
 
   /* Head-to-Head */
-  .h2h-selectors{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--space-sm);margin-top:var(--space-md);}
-  .h2h-sel{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;}
-  .h2h-sel .item-avatar{flex-shrink:0;}
-  .h2h-sel select{text-align:center;text-align-last:center;padding:8px;font-size:14px;font-weight:600;}
-  .h2h-vs{font-size:18px;font-weight:800;color:var(--text-tertiary);letter-spacing:.06em;padding:0 4px;}
+  .h2h-selectors{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-md);}
+  .h2h-sel{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;}
+  .h2h-sel .item-avatar{align-self:center;flex-shrink:0;}
+  .h2h-sel select{width:100%;text-align:center;text-align-last:center;padding:8px;font-size:14px;font-weight:600;}
+  .h2h-vs{position:absolute;top:28px;left:50%;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:var(--text-tertiary);letter-spacing:.1em;background:var(--surface);padding:4px 10px;border-radius:14px;box-shadow:var(--shadow);z-index:2;}
   .h2h-games-head{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);padding:8px var(--space-md);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);text-align:right;}
   .h2h-games-head>div:first-child{text-align:left;}
   .h2h-game-row{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);align-items:center;padding:10px var(--space-md);border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;font-variant-numeric:tabular-nums;text-align:right;}
@@ -4531,11 +4531,11 @@
           ${avatarHtml(A,56)}
           <select class="form-input" id="h2h-a">${selectOpts(aId,bId)}</select>
         </div>
-        <div class="h2h-vs">VS</div>
         <div class="h2h-sel">
           ${avatarHtml(B,56)}
           <select class="form-input" id="h2h-b">${selectOpts(bId,aId)}</select>
         </div>
+        <div class="h2h-vs">VS</div>
       </div>`;
 
     const body=games.length===0
