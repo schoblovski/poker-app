@@ -67,14 +67,14 @@
     /* OPTIMIERUNG DER HEADER-KLASSE */
     .header {
       /* Nutzt die Safe-Area plus deinen Standard-Abstand */
-      padding-top: calc(var(--safe-top) + 12px); 
+      padding-top: calc(var(--safe-top) + 12px);
       padding-right: calc(var(--safe-right) + var(--space-md));
       padding-bottom: 12px;
       padding-left: calc(var(--safe-left) + var(--space-md));
-      
-      display: flex;
+
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 50;
@@ -82,26 +82,26 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      
+
       /* WICHTIG: Verhindert, dass der Header unter die Statusleiste rutscht */
       width: 100%;
       box-sizing: border-box;
     }
 
 
-    .header-left{display:flex;flex-direction:column;}
+    .header-left{display:flex;flex-direction:column;justify-self:start;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
-    .header-right{display:flex;align-items:center;gap:10px;position:relative;}
+    .header-right{display:flex;align-items:center;gap:10px;position:relative;justify-self:end;}
     .sync-badge{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;transition:all var(--transition);}
     .sync-badge.synced{background:var(--accent-soft);color:var(--accent-text);}
     .sync-badge.pending{background:var(--warning-soft);color:var(--warning);}
     .sync-badge.error{background:var(--danger-soft);color:var(--danger);}
     .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
     .sync-dot.spin{animation:spin .8s linear infinite;}
-    .header-timer-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-text);border:none;border-radius:18px;padding:6px 12px 8px 10px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.3px;line-height:1;box-shadow:var(--shadow);transition:transform var(--transition);}
+    .header-timer-badge{position:relative;justify-self:center;display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-text);border:none;border-radius:18px;padding:6px 12px 8px 10px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.3px;line-height:1;box-shadow:var(--shadow);transition:transform var(--transition);}
     .header-timer-badge[hidden]{display:none;}
-    .header-timer-badge:active{transform:translate(-50%,-50%) scale(.95);}
+    .header-timer-badge:active{transform:scale(.95);}
     .header-timer-badge svg{width:14px;height:14px;stroke-width:2.2;}
     .header-timer-time{font-variant-numeric:tabular-nums;}
     .header-timer-progress{position:absolute;left:8px;right:8px;bottom:3px;height:2px;border-radius:2px;background:rgba(0,0,0,.12);overflow:hidden;}
@@ -4175,6 +4175,10 @@
     if(!_btState||_btState.level>=_btLevels.length){
       _btState={level:0,secsLeft:_btLevels[0].min*60,running:false,totalSecs:_btLevels[0].min*60};
     }
+    // Beim Laden: wenn running=true aber kein endTime gespeichert, nachziehen
+    if(_btState.running&&typeof _btState.endTime!=='number'){
+      _btState.endTime=Date.now()+_btState.secsLeft*1000;
+    }
   }
   function _btSave(){localStorage.setItem(_BT_KEY,JSON.stringify(_btState));localStorage.setItem(_BT_LEVELS_KEY,JSON.stringify(_btLevels));}
   function _btFmt(s){const m=Math.floor(s/60);return`${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
@@ -4187,14 +4191,39 @@
       g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
       o.start();o.stop(ctx.currentTime+0.5);}catch{}
   }
+  function _btStartAnchor(){
+    // Setzt endTime basierend auf aktueller secsLeft; Wall-Clock-Anker
+    _btState.endTime=Date.now()+_btState.secsLeft*1000;
+  }
+  function _btPauseAnchor(){
+    // Übernimmt die verbleibende Zeit zurück in secsLeft
+    if(typeof _btState.endTime==='number'){
+      _btState.secsLeft=Math.max(0,Math.ceil((_btState.endTime-Date.now())/1000));
+      delete _btState.endTime;
+    }
+  }
   function _btTick(){
     if(!_btState||!_btState.running){_btUpdateHeaderBadge();return;}
-    _btState.secsLeft--;
-    if(_btState.secsLeft<=0){
+    if(typeof _btState.endTime!=='number')_btStartAnchor();
+    const prevSecs=_btState.secsLeft;
+    let secs=Math.ceil((_btState.endTime-Date.now())/1000);
+    let leveledUp=false;
+    // Falls einer oder mehrere Level im Hintergrund durchgelaufen sind, nachziehen
+    while(secs<=0){
       const next=_btState.level+1;
-      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;}
-      else{_btState.level=next;_btState.secsLeft=_btLevels[next].min*60;_btState.totalSecs=_btLevels[next].min*60;_btBeep(660,'sine');}
-    } else if(_btState.secsLeft===30){_btBeep(440,'sine');}
+      if(next>=_btLevels.length){_btState.running=false;_btState.secsLeft=0;delete _btState.endTime;leveledUp=true;break;}
+      _btState.level=next;
+      _btState.totalSecs=_btLevels[next].min*60;
+      _btState.endTime+=_btState.totalSecs*1000;
+      secs=Math.ceil((_btState.endTime-Date.now())/1000);
+      leveledUp=true;
+    }
+    if(_btState.running){_btState.secsLeft=secs;}
+    // Beeps nur wenn Tab sichtbar ist, um Audio-Errors im Hintergrund zu vermeiden
+    if(!document.hidden){
+      if(leveledUp)_btBeep(660,'sine');
+      else if(prevSecs>30&&_btState.secsLeft<=30&&_btState.secsLeft>0)_btBeep(440,'sine');
+    }
     _btSave();
     _btUpdateUI();
     _btUpdateHeaderBadge();
@@ -4220,6 +4249,10 @@
     if(badge&&!badge._wired){
       badge._wired=true;
       badge.addEventListener('click',()=>{showPage('blindtimer');loadBlindtimer();});
+    }
+    if(!window._btVisWired){
+      window._btVisWired=true;
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)_btTick();});
     }
     _btUpdateHeaderBadge();
   }
@@ -4347,15 +4380,27 @@
     el.querySelector('#bt-back').addEventListener('click',()=>{history.back();});
     el.querySelector('#bt-play').addEventListener('click',()=>{
       _btState.running=!_btState.running;
-      if(_btState.running)_btRequestWakeLock();
-      else _btReleaseWakeLock();
+      if(_btState.running){_btRequestWakeLock();_btStartAnchor();}
+      else{_btReleaseWakeLock();_btPauseAnchor();}
       _btSave();_btUpdateUI();
     });
     el.querySelector('#bt-prev').addEventListener('click',()=>{
-      if(_btState.level>0){_btState.level--;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
+      if(_btState.level>0){
+        _btState.level--;
+        _btState.secsLeft=_btLevels[_btState.level].min*60;
+        _btState.totalSecs=_btLevels[_btState.level].min*60;
+        if(_btState.running)_btStartAnchor();
+        _btSave();renderEditor();_btUpdateUI();
+      }
     });
     el.querySelector('#bt-next-btn').addEventListener('click',()=>{
-      if(_btState.level<_btLevels.length-1){_btState.level++;_btState.secsLeft=_btLevels[_btState.level].min*60;_btState.totalSecs=_btLevels[_btState.level].min*60;_btSave();renderEditor();_btUpdateUI();}
+      if(_btState.level<_btLevels.length-1){
+        _btState.level++;
+        _btState.secsLeft=_btLevels[_btState.level].min*60;
+        _btState.totalSecs=_btLevels[_btState.level].min*60;
+        if(_btState.running)_btStartAnchor();
+        _btSave();renderEditor();_btUpdateUI();
+      }
     });
     el.querySelector('#bt-reset').addEventListener('click',async()=>{
       if(!await confirmAction('Timer wirklich neu starten? Der aktuelle Level und die verbleibende Zeit gehen verloren.'))return;
