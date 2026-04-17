@@ -1550,11 +1550,12 @@
   new MutationObserver(muts=>{
     for(const m of muts){
       const el=m.target;
-      if(!el.classList?.contains('modal-overlay'))continue;
+      if(!el.classList?.contains('modal-overlay')||el._animClosing)continue;
       const hadOpen=m.oldValue?.split(' ').includes('open');
-      if(hadOpen&&!el.classList.contains('open')&&!el.classList.contains('closing')){
+      if(hadOpen&&!el.classList.contains('open')){
+        el._animClosing=true;
         el.classList.add('open','closing');
-        setTimeout(()=>el.classList.remove('open','closing'),320);
+        setTimeout(()=>{el.classList.remove('open','closing');el._animClosing=false;},320);
       }
     }
   }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class'],attributeOldValue:true});
