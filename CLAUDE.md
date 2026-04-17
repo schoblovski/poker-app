@@ -357,16 +357,41 @@ Sonder-Eintrag: Bank (ist_bank=true)
 
 Wenn der Modus fertig ist und für alle freigeschaltet werden soll:
 
-**Versteckter Einstieg (Easter Egg):**
-- Der Button/Einstieg soll unscheinbar und nicht offensichtlich sein
-- Ideen: 7× auf das App-Logo tippen (Referenz zur 7-2-Regel!), oder Langdruck auf die Versionsnummer in der Info-Seite
-- Beim ersten Entdecken: feierliche Animations-Meldung «Du hast den Pandemie-Modus entdeckt!» mit Konfetti/Celebration-Effekt
-- Danach: Info-Modal mit FAQ über den Modus (was ist er, wie funktioniert er, Varianten, Pause, Pre-Action etc.)
-- Diese FAQ-Seite soll jederzeit wieder aufrufbar sein (z.B. via Avatar-Menü → «Pandemie-Modus Info»)
-- State ob bereits «entdeckt» → `localStorage: 'dtks_pandemie_entdeckt'` (true/false)
-- Erst nach Entdecken wird der Modus dauerhaft im Avatar-Menü sichtbar
+**Versteckter Einstieg:**
+- Trigger: 7× auf das App-Logo/Titel tippen (Referenz zur 7-2-Regel) – oder Langdruck auf Versionsnummer in der Info-Seite
+- Erst NACH Entdecken ist der Modus dauerhaft im Avatar-Menü sichtbar
+- State: `localStorage: 'dtks_pandemie_entdeckt'` (true/false)
 
-**Implementierungs-Hinweis:** Separat angehen nach Fertigstellung und Test des Kernmodus.
+**Das Rätsel (vor Freischaltung):**
+Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…". Das Rätsel nimmt sich humorvoll daran:
+
+- Dramatische Titel-Seite: «🔐 Sicherheitsüberprüfung – Schritt 1 von 1»
+- Intro-Text (ernst formuliert, aber augenzwinkernd):
+  *„Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat."*
+- Frage (gross, fett):
+  *„Wer ist der IT-Experte, den ihr angeblich gar nicht habt?"*
+- Freitext-Eingabefeld (case-insensitive)
+- Bei falscher Antwort: *„Falsch. Typisch. Und trotzdem läuft eure App."*
+- Bei richtiger Antwort (chris / Chris / CHRIS):
+  Celebration-Animation + Meldung: *«Richtig! Er existiert. Und er hat Grossartiges geleistet.»*
+  → Direkt danach: **«Version 4.0 freigeschaltet!»** Modal mit:
+    - Konfetti / Celebration-Effekt
+    - Changelog für v4.0 (Pandemie-Modus)
+    - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texahma), Pause, Pre-Action, Runout, Video-Call etc.
+    - Diese Infos jederzeit wieder abrufbar via Avatar-Menü → «Pandemie-Modus»
+
+**Version-Bump beim Freischalten:**
+- Version springt auf 4.0 (nicht vorher)
+- Changelog-Eintrag für v4.0 beschreibt den Pandemie-Modus komplett
+
+**UI-Design-Anforderungen für den Pandemie-Modus:**
+- Funktioniert auf iPhone und iPad in Portrait UND Landscape
+- Professionelles, durchdachtes Layout für alle Orientierungen
+- Landscape auf iPad: Tisch links, Feed/Chat rechts (Side-by-Side)
+- Portrait auf iPhone: Tisch oben, eigene Karten + Aktionen unten, Feed scrollbar
+- Kein abgeschnittener Content bei jeder Bildschirmgrösse
+
+**Implementierungs-Hinweis:** Separat angehen nach Fertigstellung und Test des Kernmodus. Rätsel erst einbauen wenn Modus vollständig funktioniert.
 
 ---
 
