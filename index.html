@@ -4505,7 +4505,8 @@
     const bestB=games.length?games.reduce((m,g)=>-g.diff>m?-g.diff:m,-Infinity):0;
 
     const commonSet=new Set(commonIds);
-    const commonHaende=haende.filter(h=>commonSet.has(h.spiel_id)&&(h.gewinner_id===aId||h.gewinner_id===bId));
+    const commonDateSet=new Set(games.map(g=>g.datum));
+    const commonHaende=haende.filter(h=>(h.gewinner_id===aId||h.gewinner_id===bId)&&(commonSet.has(h.spiel_id)||commonDateSet.has(h.datum)));
     const handsByType={};
     commonHaende.forEach(h=>{if(!handsByType[h.hand])handsByType[h.hand]=[];handsByType[h.hand].push(h);});
     const extraTypes=Object.keys(handsByType).filter(t=>!(typeof HAND_TYPEN!=='undefined'&&HAND_TYPEN.includes(t)));
