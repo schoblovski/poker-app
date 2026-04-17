@@ -4484,8 +4484,8 @@
       const optFor=s=>`<option value="${s.id}"${s.id===selId?' selected':''}${s.id===otherId?' disabled':''}>${escHtml(s.name)}</option>`;
       const aktive=spieler.filter(s=>s.aktiv!==false).map(optFor).join('');
       const inaktive=spieler.filter(s=>s.aktiv===false).map(optFor).join('');
-      return (aktive?`<optgroup label="Aktiv">${aktive}</optgroup>`:'')
-           + (inaktive?`<optgroup label="Inaktiv">${inaktive}</optgroup>`:'');
+      const sep=(aktive&&inaktive)?`<option disabled>──────── inaktiv ────────</option>`:'';
+      return aktive+sep+inaktive;
     };
 
     const A=spieler.find(s=>s.id===aId);
