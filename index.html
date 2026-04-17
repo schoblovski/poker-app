@@ -551,7 +551,6 @@
   .eq-card:active{transform:scale(.94);}
   .eq-card.eq-empty{color:var(--text-tertiary);background:var(--bg-secondary);border-style:dashed;}
   .eq-card.eq-empty .eq-card-rank{font-weight:400;color:var(--text-tertiary);}
-  .eq-card.eq-empty .eq-card-suit{visibility:hidden;}
   .eq-card.filled{background:var(--surface);border-color:var(--border);color:var(--text-primary);font-weight:800;}
   .eq-card.filled.s-red{color:#dc2626;}
   .eq-card .eq-card-rank{font-size:20px;line-height:1;letter-spacing:-.5px;font-weight:800;}
@@ -4959,7 +4958,7 @@
     }
 
     function cardDisplay(c){
-      if(c===null)return `<div class="eq-card eq-empty"><span class="eq-card-rank">?</span><span class="eq-card-suit">·</span></div>`;
+      if(c===null)return `<div class="eq-card eq-empty"><span class="eq-card-rank">?</span></div>`;
       const r=c>>2, s=c&3;
       return `<div class="eq-card filled${EQ_SUIT_RED[s]?' s-red':''}"><span class="eq-card-rank">${EQ_RANK_LABEL[r]}</span><span class="eq-card-suit">${EQ_SUIT_CHAR[s]}</span></div>`;
     }
