@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.2**
+- **Aktuelle Version: 3.3**
 
 ## Login-Provider
 
@@ -280,6 +280,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Admin Push-Übersicht + Home-Kontostand Fix + Statistik/Verlauf Polish**~~ ✅ v3.3 – Admin sieht in der Spielerverwaltung die registrierten Geräte und Kategorie-Einstellungen pro Spieler (schreibgeschützt); Home-Kontostand aktualisiert sich zuverlässig nach Spielabschluss/Transaktion (Inner-Join auf abgeschlossene Spiele); Verlauf-Kopfzeile SPIELER|BUY-INS|POT + grösserer Block-Abstand; Statistik-Rangliste nach Ø Reingewinn/Spiel, Jahres-Chips absteigend sortiert
 - ~~**push_subscriptions in Rohdaten + CLAUDE.md aktualisiert**~~ ✅ v3.2 – Debug: Rohdaten zeigt jetzt auch die push_subscriptions-Tabelle; CLAUDE.md mit Tabellen-Schema ergänzt
 - ~~**Admin-Dropdown Sektionen**~~ ✅ v3.1 – Avatar-Menü: Einheitliche Reihenfolge und Sektionen für Admin-Funktionen und Debug-Tools
 - ~~**Bankkonto & Pokerkasse Detail-Seiten**~~ ✅ v3.0 – Kacheln auf Home anklickbar; Bankkonto-Detail zeigt alle Buchungsgruppen mit Subtotals; Pokerkasse-Detail zeigt Formel-Aufschlüsselung mit Spielerliste; LinkedIn Login hinzugefügt; Facebook Login aktiviert; Apple & Microsoft Login entfernt
