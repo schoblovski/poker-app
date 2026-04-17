@@ -537,25 +537,32 @@
   .h2h-empty{text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;}
 
   /* Equity-Rechner */
+  .eq-mode-switch{display:flex;background:var(--bg-secondary);border-radius:var(--radius-md);padding:3px;margin-bottom:var(--space-md);}
+  .eq-mode-switch button{flex:1;padding:8px 10px;border:none;background:transparent;color:var(--text-secondary);font-weight:600;font-size:13px;border-radius:calc(var(--radius-md) - 3px);cursor:pointer;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:background var(--transition),color var(--transition);}
+  .eq-mode-switch button.active{background:var(--surface);color:var(--text-primary);box-shadow:var(--shadow);}
   .eq-hand{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-sm);}
-  .eq-hand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);min-width:52px;}
-  .eq-cards{display:flex;gap:6px;flex:1;}
+  .eq-hand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);min-width:52px;flex-shrink:0;}
+  .eq-cards{display:flex;gap:6px;}
   .eq-board-wrap{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);}
-  .eq-board{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
-  .eq-board-sep{width:1px;background:var(--border);margin:0 4px;}
-  .eq-card{width:44px;height:62px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s,border-color var(--transition);user-select:none;font-family:var(--font-sans);}
+  .eq-board{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .eq-board-sep{width:1px;height:40px;background:var(--border);margin:0 4px;flex-shrink:0;}
+  .eq-card-slot{width:44px;height:62px;flex-shrink:0;display:flex;}
+  .eq-card{width:100%;height:100%;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s,border-color var(--transition);user-select:none;font-family:var(--font-sans);}
   .eq-card:active{transform:scale(.94);}
-  .eq-card.empty{color:var(--text-tertiary);font-size:22px;font-weight:400;background:var(--bg-secondary);border-style:dashed;}
+  .eq-card.empty{color:var(--text-tertiary);background:var(--bg-secondary);border-style:dashed;}
+  .eq-card.empty .eq-card-rank{font-weight:400;color:var(--text-tertiary);}
+  .eq-card.empty .eq-card-suit{visibility:hidden;}
   .eq-card.filled{background:var(--surface);border-color:var(--border);color:var(--text-primary);font-weight:800;}
   .eq-card.filled.s-red{color:#dc2626;}
-  .eq-card.filled .eq-card-rank{font-size:20px;line-height:1;letter-spacing:-.5px;}
-  .eq-card.filled .eq-card-suit{font-size:16px;line-height:1;margin-top:2px;}
+  .eq-card .eq-card-rank{font-size:20px;line-height:1;letter-spacing:-.5px;font-weight:800;}
+  .eq-card .eq-card-suit{font-size:16px;line-height:1;margin-top:2px;}
   .eq-remove{margin-left:auto;width:36px;height:36px;flex-shrink:0;border-radius:var(--radius-md);border:none;background:var(--danger-soft);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .eq-remove:active{transform:scale(.92);}
   .eq-remove svg{width:14px;height:14px;}
-  .eq-result-pct{font-size:22px;font-weight:800;color:var(--accent-text);font-variant-numeric:tabular-nums;min-width:68px;text-align:right;letter-spacing:-.5px;}
+  .eq-result-pct{font-size:22px;font-weight:800;color:var(--accent-text);font-variant-numeric:tabular-nums;min-width:72px;text-align:right;letter-spacing:-.5px;}
   .eq-result-pct.loser{color:var(--text-tertiary);}
-  .eq-result-pct.tie{font-size:11px;font-weight:600;color:var(--text-tertiary);display:block;margin-top:2px;text-align:right;}
+  .eq-result-pct.calc{color:var(--text-tertiary);font-size:13px;font-weight:600;}
+  .eq-result-split{font-size:11px;font-weight:600;color:var(--text-tertiary);margin-top:2px;text-align:right;}
   .eq-picker-modal{background:var(--surface);width:100%;max-width:420px;border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg);padding-bottom:max(var(--space-lg),var(--safe-bottom));box-shadow:var(--shadow);animation:slideUp 250ms cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
   .eq-picker-suits{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:var(--space-md);}
   .eq-picker-suit{padding:10px;border-radius:var(--radius-md);border:2px solid var(--border);background:var(--bg-secondary);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
@@ -920,7 +927,7 @@
   function setTheme(p){localStorage.setItem('dtks-theme',p);applyTheme(p);}
   const st=localStorage.getItem('dtks-theme')||'auto'; applyTheme(st);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if((localStorage.getItem('dtks-theme')||'auto')==='auto')applyTheme('auto');});
-  document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===st);b.addEventListener('click',()=>setTheme(b.dataset.theme));});
+  document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===st);b.addEventListener('click',e=>{e.stopPropagation();setTheme(b.dataset.theme);});});
 
   // ── SYNC ───────────────────────────────────────────────
   function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
@@ -4836,13 +4843,14 @@
     return -1;
   }
 
-  function _eqEval7(cards){
-    // Beste 5-Karten-Hand aus 7 Karten; gibt einen vergleichbaren Score zurück
+  function _eqEvalN(cards){
+    // Beste 5-Karten-Hand aus N Karten (N >= 5); gibt einen vergleichbaren Score zurück
     const rc=[0,0,0,0,0,0,0,0,0,0,0,0,0];
     const sc=[0,0,0,0];
     const sr=[0,0,0,0]; // per suit rank-mask
     let ranksMask=0;
-    for(let i=0;i<7;i++){
+    const n=cards.length;
+    for(let i=0;i<n;i++){
       const c=cards[i], r=c>>2, s=c&3;
       rc[r]++; sc[s]++;
       ranksMask|=(1<<r);
@@ -4908,13 +4916,36 @@
     return k[0]*50625+k[1]*3375+k[2]*225+k[3]*15+k[4];
   }
 
+  // Omaha: genau 2 aus 4 Holecards + 3 aus 5 Board = 60 Kombinationen
+  const _eqOmahaHoleCombos=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+  const _eqOmahaBoardCombos=[[0,1,2],[0,1,3],[0,1,4],[0,2,3],[0,2,4],[0,3,4],[1,2,3],[1,2,4],[1,3,4],[2,3,4]];
+  function _eqEvalOmaha(hole,board){
+    let best=-Infinity;
+    const tmp=[0,0,0,0,0];
+    for(let hi=0;hi<6;hi++){
+      const hc=_eqOmahaHoleCombos[hi];
+      tmp[0]=hole[hc[0]]; tmp[1]=hole[hc[1]];
+      for(let bi=0;bi<10;bi++){
+        const bc=_eqOmahaBoardCombos[bi];
+        tmp[2]=board[bc[0]]; tmp[3]=board[bc[1]]; tmp[4]=board[bc[2]];
+        const sc=_eqEvalN(tmp);
+        if(sc>best)best=sc;
+      }
+    }
+    return best;
+  }
+
   function loadEquity(){
     const el=document.getElementById('equity-content');
-    // State: bis zu 6 Hände (je 2 Karten), Board (5 Karten)
+    // State: Modus (omaha=4 Karten, holdem=2 Karten), Hände, Board (5 Karten)
     // null = leer, sonst 0..51
-    let hands=[[null,null],[null,null]];
+    let mode='omaha';
+    const handSize=()=>mode==='omaha'?4:2;
+    let hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];
     let board=[null,null,null,null,null];
     let results=null; // {wins:[],ties:[],iters:N} oder null
+    let _mcToken=0;   // Cancellation für laufende Simulation
+    let _calcInFlight=false;
 
     const MAX_HANDS=6;
     const MIN_HANDS=2;
@@ -4928,7 +4959,7 @@
     }
 
     function cardDisplay(c){
-      if(c===null)return `<div class="eq-card empty">?</div>`;
+      if(c===null)return `<div class="eq-card empty"><span class="eq-card-rank">?</span><span class="eq-card-suit">·</span></div>`;
       const r=c>>2, s=c&3;
       return `<div class="eq-card filled${EQ_SUIT_RED[s]?' s-red':''}"><span class="eq-card-rank">${EQ_RANK_LABEL[r]}</span><span class="eq-card-suit">${EQ_SUIT_CHAR[s]}</span></div>`;
     }
@@ -4986,14 +5017,34 @@
       renderRanks();
     }
 
-    function addHand(){if(hands.length<MAX_HANDS){hands.push([null,null]);results=null;render();}}
-    function removeHand(i){if(hands.length>MIN_HANDS){hands.splice(i,1);results=null;render();}}
-    function resetAll(){hands=[[null,null],[null,null]];board=[null,null,null,null,null];results=null;render();}
+    function onChange(){
+      // Nach jeder Änderung: laufende Simulation verwerfen, neu rendern, ggf. neu berechnen
+      _mcToken++;
+      results=null;
+      render();
+      if(canCalc())runSimulation();
+    }
 
-    function canCalc(){return hands.every(h=>h[0]!==null&&h[1]!==null);}
+    function addHand(){if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange();}}
+    function removeHand(i){if(hands.length>MIN_HANDS){hands.splice(i,1);onChange();}}
+    function resetAll(){hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];board=[null,null,null,null,null];onChange();}
+    function switchMode(newMode){
+      if(newMode===mode)return;
+      const newSize=newMode==='omaha'?4:2;
+      hands=hands.map(h=>{
+        const nh=new Array(newSize).fill(null);
+        for(let i=0;i<Math.min(h.length,newSize);i++)nh[i]=h[i];
+        return nh;
+      });
+      mode=newMode;
+      onChange();
+    }
+
+    function canCalc(){return hands.every(h=>h.every(c=>c!==null));}
 
     function runSimulation(){
       if(!canCalc())return;
+      const myToken=++_mcToken;
       const n=hands.length;
       const wins=new Array(n).fill(0);
       const ties=new Array(n).fill(0);
@@ -5002,18 +5053,22 @@
       const deck=[];
       for(let c=0;c<52;c++)if(!knownSet.has(c))deck.push(c);
       const boardNeed=5-fixedBoard.length;
+      const isOmaha=mode==='omaha';
 
-      // Progress
-      const btn=el.querySelector('#eq-calc');
+      // Snapshot der Hände (Referenzen einfrieren für den Lauf)
+      const handsSnap=hands.map(h=>h.slice());
+
+      _calcInFlight=true;
       const progress=el.querySelector('#eq-progress');
       const fill=el.querySelector('#eq-progress-fill');
-      btn.disabled=true;btn.textContent='Berechne…';
-      progress.style.display='block';
+      if(progress)progress.style.display='block';
+      if(fill)fill.style.width='0%';
 
       const batchSize=1000;
       let done=0;
 
       function runBatch(){
+        if(myToken!==_mcToken)return; // verworfen
         const batchEnd=Math.min(done+batchSize,MC_ITERS);
         for(let it=done;it<batchEnd;it++){
           // Fisher-Yates partial shuffle für boardNeed Karten
@@ -5028,8 +5083,13 @@
           // Hände bewerten
           let best=-1, bestIdx=[];
           for(let h=0;h<n;h++){
-            const seven=[hands[h][0],hands[h][1],fullBoard[0],fullBoard[1],fullBoard[2],fullBoard[3],fullBoard[4]];
-            const sc=_eqEval7(seven);
+            let sc;
+            if(isOmaha){
+              sc=_eqEvalOmaha(handsSnap[h],fullBoard);
+            } else {
+              const seven=[handsSnap[h][0],handsSnap[h][1],fullBoard[0],fullBoard[1],fullBoard[2],fullBoard[3],fullBoard[4]];
+              sc=_eqEvalN(seven);
+            }
             if(sc>best){best=sc;bestIdx=[h];}
             else if(sc===best)bestIdx.push(h);
           }
@@ -5037,20 +5097,29 @@
           else bestIdx.forEach(i=>ties[i]++);
         }
         done=batchEnd;
-        fill.style.width=(done/MC_ITERS*100)+'%';
+        if(myToken!==_mcToken)return;
+        if(fill)fill.style.width=(done/MC_ITERS*100)+'%';
         if(done<MC_ITERS){
           setTimeout(runBatch,0);
         } else {
+          if(myToken!==_mcToken)return;
           results={wins,ties,iters:MC_ITERS};
+          _calcInFlight=false;
           render();
         }
       }
-      runBatch();
+      setTimeout(runBatch,0);
     }
 
     function render(){
+      const totals=results?results.wins.map((w,j)=>(w+results.ties[j])/results.iters*100):null;
+      const maxTotal=totals?Math.max(...totals):null;
       el.innerHTML=`
         <button class="back-btn" id="eq-back">${backIcon} Zurück</button>
+        <div class="eq-mode-switch" role="tablist">
+          <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
+          <button data-mode="holdem" class="${mode==='holdem'?'active':''}">Texas Hold'em</button>
+        </div>
         <div class="section-title" style="margin-top:0">Hände</div>
         <div id="eq-hands-wrap"></div>
         ${hands.length<MAX_HANDS?`<button class="btn btn-secondary" id="eq-add-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand hinzufügen</button>`:''}
@@ -5059,10 +5128,9 @@
           <div class="eq-board" id="eq-board"></div>
           <div class="eq-hint">Tippen um Karte zu wählen · Flop · Turn · River</div>
         </div>
-        <div class="eq-progress" id="eq-progress" style="display:none"><div class="eq-progress-fill" id="eq-progress-fill"></div></div>
+        <div class="eq-progress" id="eq-progress" style="display:${_calcInFlight?'block':'none'}"><div class="eq-progress-fill" id="eq-progress-fill"></div></div>
         <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md)">
-          <button class="btn btn-secondary" id="eq-reset" style="flex:0 0 auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset</button>
-          <button class="btn btn-primary" id="eq-calc" style="flex:1" ${!canCalc()?'disabled':''}>Equity berechnen</button>
+          <button class="btn btn-secondary" id="eq-reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset</button>
         </div>
         ${results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:''}
       `;
@@ -5072,22 +5140,20 @@
       hands.forEach((h,i)=>{
         const row=document.createElement('div');
         row.className='eq-hand';
-        const n=hands.length;
         let pctHtml='';
         if(results){
-          const w=results.wins[i], t=results.ties[i];
-          const winPct=(w/results.iters*100);
+          const t=results.ties[i];
           const tiePct=(t/results.iters*100);
-          const total=winPct+tiePct;
-          const cls=total>=Math.max(...results.wins.map((w2,j)=>w2/results.iters*100+results.ties[j]/results.iters*100))?'':' loser';
-          pctHtml=`<div style="text-align:right;min-width:68px"><div class="eq-result-pct${cls}">${total.toFixed(1)}%</div>${t>0?`<div class="eq-result-pct tie">${tiePct.toFixed(1)}% tie</div>`:''}</div>`;
+          const total=totals[i];
+          const cls=total>=maxTotal-0.0001?'':' loser';
+          pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct${cls}">${total.toFixed(1)}%</div>${t>0?`<div class="eq-result-split">${tiePct.toFixed(1)}% Split</div>`:''}</div>`;
+        } else if(_calcInFlight){
+          pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct calc">…</div></div>`;
         }
+        const cardsHtml=h.map((c,si)=>`<div class="eq-card-slot" data-slot="${si}">${cardDisplay(c)}</div>`).join('');
         row.innerHTML=`
           <div class="eq-hand-label">Hand ${i+1}</div>
-          <div class="eq-cards">
-            <div data-slot="0">${cardDisplay(h[0])}</div>
-            <div data-slot="1">${cardDisplay(h[1])}</div>
-          </div>
+          <div class="eq-cards">${cardsHtml}</div>
           ${pctHtml}
           ${hands.length>MIN_HANDS?`<button class="eq-remove" data-rm="${i}" title="Hand entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>`:''}
         `;
@@ -5096,8 +5162,7 @@
             const si=+slot.dataset.slot;
             openPicker(newCard=>{
               hands[i][si]=newCard;
-              results=null;
-              render();
+              onChange();
             }, h[si]);
           });
         });
@@ -5110,13 +5175,13 @@
       const bw=el.querySelector('#eq-board');
       const makeSlot=(bi)=>{
         const d=document.createElement('div');
+        d.className='eq-card-slot';
         d.dataset.board=bi;
         d.innerHTML=cardDisplay(board[bi]);
         d.addEventListener('click',()=>{
           openPicker(newCard=>{
             board[bi]=newCard;
-            results=null;
-            render();
+            onChange();
           }, board[bi]);
         });
         return d;
@@ -5132,7 +5197,9 @@
       const addBtn=el.querySelector('#eq-add-hand');
       if(addBtn)addBtn.addEventListener('click',addHand);
       el.querySelector('#eq-reset').addEventListener('click',resetAll);
-      el.querySelector('#eq-calc').addEventListener('click',runSimulation);
+      el.querySelectorAll('.eq-mode-switch button').forEach(btn=>{
+        btn.addEventListener('click',()=>switchMode(btn.dataset.mode));
+      });
     }
 
     render();
