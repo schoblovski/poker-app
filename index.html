@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.14">
+  <meta name="version" content="3.15">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -254,7 +254,18 @@
     .theme-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
     .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
-    .modal-overlay.open{display:flex;animation:fadeIn 150ms ease;}
+    .modal-overlay.open{display:flex;}
+    .modal-overlay.closing{pointer-events:none;}
+    .modal-overlay.open:not(.closing):not(#modal-crop) .modal{animation:modal-slide-in 300ms cubic-bezier(0.22,1,0.36,1) both;}
+    .modal-overlay.closing:not(#modal-crop) .modal{animation:modal-slide-out 220ms ease-in both;}
+    #modal-crop.open:not(.closing) .modal{animation:modal-scale-in 320ms cubic-bezier(0.22,1,0.36,1) both;}
+    #modal-crop.closing .modal{animation:modal-scale-out 260ms ease-in both;}
+    @keyframes modal-backdrop-in{from{opacity:0}to{opacity:1}}
+    @keyframes modal-backdrop-out{from{opacity:1}to{opacity:0}}
+    @keyframes modal-slide-in{from{transform:translateY(100%)}to{transform:none}}
+    @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
+    @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
+    @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
     .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
@@ -269,7 +280,10 @@
     .kommentar-chip{background:var(--bg-secondary);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);white-space:nowrap;}
     .kommentar-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
     #kommentar-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-sm);}
-    .page{display:none;}.page.active{display:block;}
+    @keyframes page-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+    @keyframes item-enter{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+    .page{display:none;}
+    .page.active{display:block;animation:page-enter 200ms cubic-bezier(0.22,1,0.36,1) both;}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -912,7 +926,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
 
-  const VERSION='3.14';
+  const VERSION='3.15';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1506,6 +1520,46 @@
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
+  // Stagger-Animation: direkte Kinder aller *-content Container erhalten --stagger-delay (synchron,
+  // vor dem nächsten Paint, kein Reflow) → funktioniert auf allen Seiten automatisch
+  (function(){
+    new MutationObserver(muts=>{
+      const batch=[];
+      for(const m of muts)for(const n of m.addedNodes){
+        if(n.nodeType!==1||!n.closest?.('.page.active'))continue;
+        if((n.parentElement?.id||'').endsWith('-content')&&!n.classList?.contains('loading'))
+          batch.push(n);
+      }
+      if(!batch.length)return;
+      batch.forEach((el,i)=>{
+        const delay=Math.min(i,5)*50;
+        el.style.animation='item-enter 240ms cubic-bezier(0.22,1,0.36,1) both';
+        el.style.animationDelay=delay+'ms';
+        el.style.pointerEvents='none';
+        el.addEventListener('animationend',()=>{el.style.pointerEvents='';},{once:true});
+      });
+    }).observe(document.body,{childList:true,subtree:true});
+  })();
+
+  // Modal-Schliessen-Animation: fängt classList.remove('open') ab und spielt slide-out bevor display:none
+  new MutationObserver(muts=>{
+    for(const m of muts){
+      const el=m.target;
+      if(!el.classList?.contains('modal-overlay'))continue;
+      if(el._animClosing){
+        // Unsere eigene Cleanup-Entfernung – Guard zurücksetzen und ignorieren
+        if(!el.classList.contains('open')&&!el.classList.contains('closing'))el._animClosing=false;
+        continue;
+      }
+      const hadOpen=m.oldValue?.split(' ').includes('open');
+      if(hadOpen&&!el.classList.contains('open')){
+        el._animClosing=true;
+        el.classList.add('open','closing');
+        setTimeout(()=>el.classList.remove('open','closing'),220);
+      }
+    }
+  }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class'],attributeOldValue:true});
+
   // Lightbox: delegierter Klick auf .avatar-lightbox und .hand-foto-thumb Elemente
   document.querySelector('.content').addEventListener('click',e=>{
     const el=e.target.closest('[data-lightbox-src]');
@@ -1714,10 +1768,10 @@
         showPage('spiel');
         break;
       case 'transaktionen':
-        showPage('transaktionen');loadTransaktionen();
+        showPage('transaktionen');
         break;
       case 'haende':
-        showPage('haende');loadHaende();
+        showPage('haende');
         if(id){
           const{data:h}=await db.from('hand_statistik').select('*').eq('id',id).single();
           if(h)setTimeout(()=>openHandModal(h),400);
@@ -4132,7 +4186,8 @@
             }
             const intensity=maxAbs>0?Math.abs(v)/maxAbs:0;
             const alpha=(0.15+intensity*0.55).toFixed(2);
-            const bg=v>0?`rgba(34,197,94,${alpha})`:`rgba(220,38,38,${alpha})`;
+            const _cb=document.documentElement.getAttribute('data-colorblind')==='true';
+            const bg=v>0?`rgba(${_cb?'37,99,235':'34,197,94'},${alpha})`:`rgba(220,38,38,${alpha})`;
             const fg=v>0?'var(--accent-text)':'var(--danger)';
             html+=`<td class="matrix-cell" data-row-id="${rowP.id}" data-col-id="${colP.id}" title="${escHtml(rowP.name)} vs ${escHtml(colP.name)}: ${fmtSigned(v)}" style="cursor:pointer;text-align:center;padding:7px 4px;background:${bg};color:${fg};font-family:var(--font-mono);font-size:11px;font-weight:600;border-bottom:1px solid var(--border)">${fmtSigned(v)}</td>`;
           });
@@ -5451,6 +5506,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.15',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
+      {typ:'neu',text:'Modals schieben sich vom unteren Bildschirmrand hoch und beim Schliessen wieder herunter (kein Fade)'},
+      {typ:'fix',text:'Konto-Seite: erste Transaktionen haben beim Seitenwechsel nicht mehr geflackert'},
+      {typ:'fix',text:'Navigation: Bottom-Nav war nach Seitenanimation kurzzeitig nicht tappbar'},
+      {typ:'fix',text:'Heatmap (Spieler×Gegner-Matrix): Farbe im Colorblind-Modus korrigiert (grün → blau für positive Werte)'},
+    ]},
     {version:'3.14',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Farbenblind-Modus: neuer Toggle im Profil unter «Darstellung» – ersetzt alle Grüntöne durch Blau, damit positive Beträge und Akzentfarben klar von Rot unterscheidbar sind (hilft bei Rot-Grün-Schwäche / Deuteranopie)'},
     ]},
