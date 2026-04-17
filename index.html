@@ -633,6 +633,93 @@
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
 
+  /* ── PANDEMIE-MODUS ───────────────────────────────────── */
+  .pm-session-card{background:var(--surface);border-radius:var(--radius-md);padding:var(--space-md);border:1.5px solid var(--border);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s}
+  .pm-session-card:active{border-color:var(--accent)}
+  .pm-session-card .pm-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent-text)}
+  .pm-session-card .pm-badge.running{background:var(--accent-soft);color:var(--accent-text)}
+  .pm-session-card .pm-badge.waiting{background:var(--bg-secondary);color:var(--text-secondary)}
+  .pm-session-meta{font-size:13px;color:var(--text-secondary);display:flex;gap:12px;flex-wrap:wrap}
+
+  /* Pokertisch SVG */
+  .pm-table-wrap{width:100%;max-width:480px;margin:0 auto;position:relative}
+  .pm-table-svg{width:100%;height:auto;display:block}
+  .pm-seat-group{cursor:pointer}
+  .pm-seat-group.empty .pm-seat-circle{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.2);stroke-width:1.5}
+  .pm-seat-group.occupied .pm-seat-circle{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.35);stroke-width:1.5}
+  .pm-seat-group.me .pm-seat-circle{fill:rgba(34,197,94,.25);stroke:var(--accent);stroke-width:2}
+  .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:2.5;animation:pm-pulse 1.2s infinite}
+  .pm-seat-group.folded{opacity:.45}
+  .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
+  @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
+  .pm-dealer-btn{fill:#f59e0b;font-size:8px;font-weight:700;font-family:'DM Mono',monospace}
+  .pm-community{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:var(--space-sm) 0}
+  .pm-pot-label{text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:2px}
+  .pm-pot-value{text-align:center;font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-primary)}
+
+  /* Spielkarten */
+  .pt-card{width:46px;height:64px;border-radius:7px;background:var(--surface);border:1.5px solid var(--border);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 2px 6px rgba(0,0,0,.15);flex-shrink:0}
+  .pt-card.red .pt-rank,.pt-card.red .pt-suit{color:var(--danger)}
+  .pt-card.back{background:var(--accent);border-color:transparent}
+  .pt-card.community{width:40px;height:56px}
+  .pt-card.big{width:58px;height:80px}
+  .pt-card.big .pt-rank{font-size:24px}
+  .pt-card.big .pt-suit{font-size:18px}
+  .pt-rank{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;line-height:1;color:var(--text-primary)}
+  .pt-suit{font-size:14px;line-height:1;color:var(--text-primary)}
+  .pm-hole-wrap{display:flex;gap:10px;justify-content:center;padding:var(--space-sm) 0}
+
+  /* Aktions-Buttons */
+  .pm-action-area{display:flex;flex-direction:column;gap:var(--space-sm)}
+  .pm-action-row{display:flex;gap:8px}
+  .pm-action-row .btn{flex:1;font-size:14px;min-width:0}
+  .pm-raise-wrap{background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);display:flex;flex-direction:column;gap:var(--space-sm)}
+  .pm-raise-row{display:flex;align-items:center;gap:var(--space-sm)}
+  .pm-raise-label{font-size:13px;color:var(--text-secondary);white-space:nowrap}
+  .pm-raise-input{flex:1;padding:8px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);font-family:'DM Mono',monospace;font-size:16px;color:var(--text-primary);min-width:0;-webkit-appearance:none}
+  .pm-quick-bets{display:flex;gap:6px;flex-wrap:wrap}
+  .pm-quick-bets .btn{font-size:12px;padding:4px 10px;flex:none}
+  .pm-pre-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .pm-pre-actions .btn{font-size:12px;padding:5px 10px;flex:none;opacity:.8}
+  .pm-pre-actions .btn.selected{opacity:1;border-color:var(--accent);color:var(--accent-text)}
+
+  /* Feed + Chat */
+  .pm-tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:var(--space-sm)}
+  .pm-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+  .pm-tab.active{color:var(--accent-text);border-color:var(--accent)}
+  .pm-feed{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
+  .pm-feed-item{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary)}
+  .pm-feed-item.win{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
+  .pm-feed-item.fold{opacity:.6}
+  .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
+  .pm-chat-msg{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px}
+  .pm-chat-msg .pm-chat-name{font-weight:700;color:var(--text-primary);margin-right:6px}
+  .pm-chat-msg .pm-chat-text{color:var(--text-secondary)}
+  .pm-chat-input-row{display:flex;gap:8px;margin-top:var(--space-sm)}
+  .pm-chat-input{flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary)}
+
+  /* Info-Streifen */
+  .pm-street-bar{display:flex;align-items:center;justify-content:space-between;padding:6px var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;font-weight:600}
+  .pm-street-pill{padding:2px 10px;border-radius:20px;background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+  /* Pause / Was-habe-ich-verpasst Sheets */
+  .pm-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+  .pm-sheet{background:var(--surface);border-radius:var(--radius-md) var(--radius-md) 0 0;padding:var(--space-lg) var(--space-md);max-width:480px;width:100%;max-height:80vh;overflow-y:auto}
+  .pm-sheet-title{font-size:17px;font-weight:700;margin-bottom:var(--space-md)}
+  .pm-auto-options{display:flex;flex-direction:column;gap:8px}
+  .pm-auto-option{display:flex;align-items:center;gap:12px;padding:10px var(--space-md);border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s}
+  .pm-auto-option.selected{border-color:var(--accent);background:var(--accent-soft)}
+  .pm-auto-option-label{font-size:14px;font-weight:600}
+  .pm-auto-option-desc{font-size:12px;color:var(--text-secondary)}
+  .pm-call-limit-row{display:flex;align-items:center;gap:8px;padding:var(--space-sm) 0}
+  .pm-miss-entry{padding:8px var(--space-md);border-radius:var(--radius-md);background:var(--bg-secondary);font-size:13px;margin-bottom:6px}
+  .pm-miss-entry .pm-miss-winner{font-weight:700;color:var(--accent-text)}
+  .pm-miss-entry .pm-miss-hand{color:var(--text-secondary)}
+
+  /* Video-Link Button */
+  .pm-video-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg-secondary);font-size:14px;font-weight:600;color:var(--text-secondary);cursor:pointer;text-decoration:none}
+  .pm-video-btn:hover{border-color:var(--accent);color:var(--accent-text)}
+
   </style>
 </head>
 <body>
@@ -732,6 +819,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/><path d="M6 8h2M6 11h2"/><path d="M16 8h2M16 11h2"/></svg>
           Equity-Rechner
         </button>
+        <button class="dropdown-item" id="btn-online-poker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
+          Pandemie-Modus
+        </button>
         <div class="dropdown-divider" id="dropdown-admin-divider" style="display:none"></div>
         <div id="dropdown-admin-label" style="display:none;padding:6px var(--space-md) 2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)">Administration</div>
         <button class="dropdown-item" id="btn-verwaltung" style="display:none">
@@ -788,6 +879,8 @@
     <div class="page" id="page-blindtimer"><div id="blindtimer-content"></div></div>
     <div class="page" id="page-h2h"><div id="h2h-content"></div></div>
     <div class="page" id="page-equity"><div id="equity-content"></div></div>
+    <div class="page" id="page-online-lobby"><div id="online-lobby-content"></div></div>
+    <div class="page" id="page-online-tisch"><div id="online-tisch-content"></div></div>
     <div class="page" id="page-haende">
       <button class="btn btn-primary" id="btn-neue-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand erfassen</button>
       <div id="haende-content"><div class="loading"><div class="spinner"></div>Wird geladen…</div></div>
@@ -1469,7 +1562,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner',benachrichtigungen:'Benachrichtigungen'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner',benachrichtigungen:'Benachrichtigungen','online-lobby':'Pandemie-Modus','online-tisch':'Pokertisch'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
   // Blind-Timer Vollbild-Modus: bei Landscape-Rotation auf der Timer-Seite
   // wird Header/Nav ausgeblendet und nur der Countdown gross angezeigt.
@@ -1516,6 +1609,8 @@
     if(page==='transaktionen'){loadTransaktionen();document.getElementById('btn-neue-transaktion').onclick=()=>openTransaktionModal(null);}
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
     if(page==='benachrichtigungen')loadBenachrichtigungen();
+    if(page==='online-lobby')loadOnlineLobby();
+    if(page==='online-tisch')renderOnlineTisch();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
@@ -1671,6 +1766,7 @@
   document.getElementById('btn-blindtimer').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('blindtimer');loadBlindtimer();});
   document.getElementById('btn-h2h').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('h2h');loadH2H();});
   document.getElementById('btn-equity').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('equity');loadEquity();});
+  document.getElementById('btn-online-poker').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('online-lobby');});
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
   document.getElementById('bell-btn').addEventListener('click',()=>{showPage('benachrichtigungen');});
