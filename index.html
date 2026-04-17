@@ -284,7 +284,7 @@
     @keyframes item-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
     .page{display:none;}
     .page.active{display:block;animation:page-enter 340ms cubic-bezier(0.22,1,0.36,1) both;}
-    .page .card,.page .kasse-tile,.page .stat-card{animation:item-enter 400ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page .card,.page .kasse-tile,.page .stat-card{animation:item-enter 400ms cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--stagger-delay,0ms);}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -1497,10 +1497,6 @@
   });
 
   function showPage(page){
-    // overflow:hidden während der Page-Transition verhindert dass translateY ins Nav-Gebiet überlappt
-    const _contentEl=document.querySelector('.content');
-    _contentEl.style.overflow='hidden';
-    setTimeout(()=>{_contentEl.style.overflow='';},340);
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
@@ -1525,28 +1521,19 @@
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
 
-  // Stagger-Animation für Cards die dynamisch ins DOM geladen werden
+  // Stagger-Animation: --stagger-delay wird synchron im MutationObserver gesetzt (vor dem nächsten Paint,
+  // kein Reflow nötig → blockiert Main Thread nicht)
   (function(){
-    const ANIM_SEL='.card,.kasse-tile,.stat-card';
-    let batch=[],timer;
+    const SEL='.card,.kasse-tile,.stat-card';
     new MutationObserver(muts=>{
+      const batch=[];
       for(const m of muts)for(const n of m.addedNodes){
         if(n.nodeType!==1||!n.closest?.('.page.active'))continue;
-        n.matches?.(ANIM_SEL)?batch.push(n):batch.push(...n.querySelectorAll(ANIM_SEL));
+        n.matches?.(SEL)?batch.push(n):batch.push(...n.querySelectorAll(SEL));
       }
       if(!batch.length)return;
-      clearTimeout(timer);
-      timer=setTimeout(()=>{
-        // Duplikate entfernen: wenn Vorfahre und Kind beide im Batch, nur Vorfahren behalten
-        const deduped=batch.filter(el=>!batch.some(o=>o!==el&&o.contains(el)));
-        // Einzelner Reflow statt N Reflows – blockiert Main Thread nicht
-        deduped.forEach(el=>{el.style.animation='none';});
-        void deduped[0]?.offsetWidth;
-        deduped.forEach((el,i)=>{
-          el.style.animation=`item-enter 400ms cubic-bezier(0.22,1,0.36,1) ${i*85}ms both`;
-        });
-        batch=[];
-      },0);
+      const deduped=batch.filter(el=>!batch.some(o=>o!==el&&o.contains(el)));
+      deduped.forEach((el,i)=>el.style.setProperty('--stagger-delay',(i*85)+'ms'));
     }).observe(document.body,{childList:true,subtree:true});
   })();
 
