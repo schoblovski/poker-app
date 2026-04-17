@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.8">
+  <meta name="version" content="3.9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -802,7 +802,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.8';
+  const VERSION='3.9';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -4693,6 +4693,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.9',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Head-to-Head: zwei Spieler direkt vergleichen – Dropdowns mit aktiv/inaktiv getrennt, große Profilbilder (mit Klick auf Lightbox), KPI-Kacheln (gemeinsame Spiele, Saldo, Abende vorn, bester Abend) und Linien-Chart zum kumulierten Saldo-Verlauf'},
+      {typ:'neu',text:'Head-to-Head zeigt besondere Hände aus gemeinsamen Spielen, gruppiert pro Hand-Typ mit Zähler je Spieler; antippen öffnet die Hand im gewohnten Hand-Modal'},
+      {typ:'neu',text:'Head-to-Head listet alle gemeinsamen Spiele (scrollbar) mit Reingewinn pro Spieler und Differenz; antippen öffnet das Spiel-Detail'},
+      {typ:'neu',text:'Head-to-Head Zeitraum-Filter (Jahres-Chips) analog zur Statistik-Seite'},
+      {typ:'fix',text:'Head-to-Head findet jetzt auch Altdaten-Hände ohne spiel_id über das Spieldatum'},
+      {typ:'fix',text:'Sidepot-Rechner: Entfernen-Button bleibt auch bei nur zwei Spielern stabil sichtbar (deaktiviert statt ausgeblendet)'},
+    ]},
     {version:'3.8',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Sidepot-Rechner: Spieler aus dem aktiven Spiel oder aus allen aktiven Spielern auswählen, Einsätze eintragen, Fold/Im-Spiel umschalten – Main-Pot und Side-Pots werden live berechnet'},
       {typ:'neu',text:'Blind-Timer: Countdown mit Level-Anzeige, Prev/Next/Pause/Neu-Starten, automatischer Wechsel zum nächsten Level, Warn-Beep bei 30 Sekunden, Wake-Lock hält den Bildschirm an'},
