@@ -280,11 +280,11 @@
     .kommentar-chip{background:var(--bg-secondary);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);white-space:nowrap;}
     .kommentar-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
     #kommentar-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-sm);}
-    @keyframes page-enter{from{opacity:0;transform:translateY(44px);}to{opacity:1;transform:none;}}
-    @keyframes item-enter{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:none;}}
+    @keyframes page-enter{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:none;}}
+    @keyframes item-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
     .page{display:none;}
-    .page.active{display:block;animation:page-enter 480ms cubic-bezier(0.22,1,0.36,1) both;}
-    .page .card{animation:item-enter 520ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page.active{display:block;animation:page-enter 340ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page .card,.page .kasse-tile,.page .stat-card{animation:item-enter 400ms cubic-bezier(0.22,1,0.36,1) both;}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -1497,6 +1497,10 @@
   });
 
   function showPage(page){
+    // overflow:hidden während der Page-Transition verhindert dass translateY ins Nav-Gebiet überlappt
+    const _contentEl=document.querySelector('.content');
+    _contentEl.style.overflow='hidden';
+    setTimeout(()=>{_contentEl.style.overflow='';},340);
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
@@ -1523,24 +1527,26 @@
 
   // Stagger-Animation für Cards die dynamisch ins DOM geladen werden
   (function(){
+    const ANIM_SEL='.card,.kasse-tile,.stat-card';
     let batch=[],timer;
     new MutationObserver(muts=>{
       for(const m of muts)for(const n of m.addedNodes){
         if(n.nodeType!==1||!n.closest?.('.page.active'))continue;
-        const _isAnim=el=>el.classList?.contains('card')||el.classList?.contains('kasse-tile');
-        _isAnim(n)?batch.push(n):batch.push(...n.querySelectorAll('.card,.kasse-tile'));
+        n.matches?.(ANIM_SEL)?batch.push(n):batch.push(...n.querySelectorAll(ANIM_SEL));
       }
       if(!batch.length)return;
       clearTimeout(timer);
       timer=setTimeout(()=>{
-        // Statische Top-Buttons (z.B. "Neue Transaktion") in den Stagger einbeziehen → top-to-bottom Reihenfolge
         const activePage=document.querySelector('.page.active');
         const topBtns=activePage?[...activePage.querySelectorAll(':scope>.btn-primary')]:[];
-        const all=[...topBtns,...batch];
+        // Duplikate entfernen: wenn Vorfahre und Kind beide im Batch, nur Vorfahren behalten
+        const deduped=batch.filter(el=>!batch.some(o=>o!==el&&o.contains(el)));
+        const all=[...topBtns,...deduped];
+        // Einzelner Reflow statt N Reflows – blockiert Main Thread nicht
+        all.forEach(el=>{el.style.animation='none';});
+        void all[0]?.offsetWidth;
         all.forEach((el,i)=>{
-          el.style.animation='none';
-          void el.offsetWidth;
-          el.style.animation=`item-enter 520ms cubic-bezier(0.22,1,0.36,1) ${i*110}ms both`;
+          el.style.animation=`item-enter 400ms cubic-bezier(0.22,1,0.36,1) ${i*85}ms both`;
         });
         batch=[];
       },0);
