@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.10">
+  <meta name="version" content="3.11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -846,7 +846,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.10';
+  const VERSION='3.11';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -5206,6 +5206,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.11',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Equity-Rechner unter Poker Tools: bis zu 6 Hände gegeneinander rechnen mit optionalem Flop/Turn/River; Monte-Carlo Simulation mit 20.000 Iterationen; Karten-Picker mit Farb- und Rang-Auswahl, bereits verwendete Karten werden ausgegraut'},
+      {typ:'neu',text:'Equity-Rechner: Modus-Schalter zwischen Omaha (Standard, 4 Holecards) und Texas Hold\'em (2 Holecards); Ergebnisse werden automatisch neu berechnet bei jeder Änderung'},
+      {typ:'verbessert',text:'Avatar-Menü: Theme-Umschalter (Hell/Auto/Dunkel) schliesst das Menü nicht mehr – direktes Hin- und Herwechseln möglich'},
+    ]},
     {version:'3.10',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Statistik: neue Sektion "Spieler × Gegner" – Matrix aller aktiven Spieler mit Netto-Saldo pro Paar; grün wenn Zeilen-Spieler vorn, rot wenn hinten, Farbintensität skaliert mit Betrag; Klick auf eine Zelle springt direkt in Head-to-Head mit den beiden Spielern vorbelegt'},
       {typ:'verbessert',text:'Head-to-Head akzeptiert Vorauswahl aus anderen Screens (z.B. aus der Matrix) – Dropdowns starten direkt auf dem gewählten Paar'},
