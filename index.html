@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.14">
+  <meta name="version" content="3.15">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -926,7 +926,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
 
-  const VERSION='3.14';
+  const VERSION='3.15';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -5506,6 +5506,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.15',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
+      {typ:'neu',text:'Modals schieben sich vom unteren Bildschirmrand hoch und beim Schliessen wieder herunter (kein Fade)'},
+      {typ:'fix',text:'Konto-Seite: erste Transaktionen haben beim Seitenwechsel nicht mehr geflackert'},
+      {typ:'fix',text:'Navigation: Bottom-Nav war nach Seitenanimation kurzzeitig nicht tappbar'},
+      {typ:'fix',text:'Heatmap (Spieler×Gegner-Matrix): Farbe im Colorblind-Modus korrigiert (grün → blau für positive Werte)'},
+    ]},
     {version:'3.14',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Farbenblind-Modus: neuer Toggle im Profil unter «Darstellung» – ersetzt alle Grüntöne durch Blau, damit positive Beträge und Akzentfarben klar von Rot unterscheidbar sind (hilft bei Rot-Grün-Schwäche / Deuteranopie)'},
     ]},
