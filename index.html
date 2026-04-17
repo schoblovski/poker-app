@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.6">
+  <meta name="version" content="3.7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -719,7 +719,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.6';
+  const VERSION='3.7';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -3862,6 +3862,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.7',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Poker Tools: neue Sektion im Avatar-Menü für alle Spieler – Asse legen, Sidepot-Rechner, Blind-Timer und Head-to-Head direkt erreichbar'},
+      {typ:'neu',text:'Asse legen: Randomizer bestimmt per Slot-Maschinen-Animation wer mit Dealen beginnt – mit Vorauswahl aus dem aktiven Spiel'},
+    ]},
     {version:'3.6',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Profilbilder und Beweisfotos liegen jetzt in Supabase Storage statt als Base64 direkt in der Datenbank – deutlich schnellere Ladezeiten und kleinere DB-Größe'},
       {typ:'verbessert',text:'Neue Uploads (Profilbild, Beweisfoto) landen direkt in Storage mit Browser-Caching via CDN'},
