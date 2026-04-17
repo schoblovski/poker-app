@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.3">
+  <meta name="version" content="3.4">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -677,7 +677,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.3';
+  const VERSION='3.4';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -713,6 +713,19 @@
 
   let currentUser=null, currentSpieler=null, alleSpieler=[], aktuellesSpiel=null, spielTeilnehmer=[], editSpielerID=null, editTransaktionID=null;
   let einstellungen={buyin_pot:5, buyin_kassa:2};
+
+  // Spieler-Cache: id → {id,name,profilbild,ist_bank,aktiv,ist_admin}
+  // Spart redundante Profilbild-Transfers in Verlauf/Hände/Statistik (Base64 ist gross).
+  // Wird von loadHome populiert; bei Mutationen via _invalidateSpielerMap() geleert.
+  let _spielerMap=null;
+  async function _ensureSpielerMap(){
+    if(_spielerMap) return _spielerMap;
+    const{data}=await db.from('spieler').select('id,name,profilbild,ist_bank,aktiv,ist_admin');
+    const m={};(data||[]).forEach(s=>{m[s.id]=s;});
+    _spielerMap=m;
+    return _spielerMap;
+  }
+  function _invalidateSpielerMap(){_spielerMap=null;}
   // Deep Link aus Notification (Hash beim Öffnen, oder SW NAVIGATE-Message)
   let _pendingDeepLink=location.hash||null;
   if('serviceWorker' in navigator){
@@ -1281,7 +1294,7 @@
       case 'spiel-detail':
         if(id){
           showPage('verlauf');loadVerlauf();
-          const{data:spiel}=await db.from('spiele').select('*').eq('id',id).single();
+          const{data:spiel}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',id).single();
           if(spiel)setTimeout(()=>showSpielDetail(spiel),400);
         }
         break;
@@ -1399,12 +1412,14 @@
           const b64=await fetchUrlAsBase64(av);
           await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
           currentSpieler={...currentSpieler,profilbild:b64};
+          _invalidateSpielerMap();
           const btn=document.getElementById('user-avatar-btn');
           if(btn)btn.innerHTML=`<img src="${b64}" alt="Avatar">`;
           console.log('✅ Google-Profilbild als Base64 gespeichert');
         }catch(e){
           console.warn('⚠️ Base64-Konvertierung fehlgeschlagen, speichere URL als Fallback',e);
           await db.from('spieler').update({profilbild:av}).eq('id',sp.id).catch(()=>{});
+          _invalidateSpielerMap();
         }
       })();
     }
@@ -1446,14 +1461,18 @@
   // ── HOME ───────────────────────────────────────────────
   async function loadHome(){
     const el=document.getElementById('home-content');
-    const[{data:alleSpielerDB},{data:aktiveSpieler},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
-      db.from('spieler').select('*'),                                          // alle (für Pokerkasse-Berechnung)
-      db.from('spieler').select('*').eq('aktiv',true).order('name'),           // nur aktive (für Anzeige)
+    // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
+    const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
+      db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin'),
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
-    if(!aktiveSpieler)return;
+    if(!alleSpielerDB)return;
+    // Spieler-Cache populieren (id → {id,name,profilbild,...})
+    const cacheMap={};(alleSpielerDB||[]).forEach(s=>{cacheMap[s.id]=s;});
+    _spielerMap=cacheMap;
+    const aktiveSpieler=alleSpielerDB.filter(s=>s.aktiv).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     alleSpieler=aktiveSpieler; // globale Variable = nur aktive (für Dropdowns, Spiel-UI etc.)
     const spieleMap={};
     (spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -1825,7 +1844,7 @@
       // Re-attach click handlers inside scroll container
       listEl.querySelectorAll('[data-spiel-id]').forEach(row=>{
         row.addEventListener('click',async()=>{
-          const{data:spiel}=await db.from('spiele').select('*,spiel_teilnehmer(*,spieler:spieler_id(id,name,profilbild))').eq('id',row.dataset.spielId).single();
+          const{data:spiel}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',row.dataset.spielId).single();
           if(spiel)showSpielDetail(spiel);
         });
       });
@@ -2113,6 +2132,7 @@
         await db.from('spieler').update({name:newName}).eq('id',sp.id);
         currentSpieler={...currentSpieler,name:newName};
         sp.name=newName;
+        _invalidateSpielerMap();
       },`Name geändert: ${newName}`);
       // Anzeigename unter dem Avatar sofort aktualisieren
       const displayNameEl=el.querySelector('.profile-name');
@@ -2139,6 +2159,7 @@
           await db.from('spieler').update({profilbild:b64}).eq('id',sp.id);
           currentSpieler={...currentSpieler,profilbild:b64};
           sp.profilbild=b64;
+          _invalidateSpielerMap();
         },'Profilbild gespeichert');
         // Avatar im Header aktualisieren
         document.getElementById('user-avatar-btn').innerHTML=`<img src="${b64}" alt="Avatar">`;
@@ -2530,17 +2551,20 @@
     document.getElementById('detail-toggle').addEventListener('click',async()=>{
       if(!await confirmAction(`${s.name} wirklich ${s.aktiv?'deaktivieren':'aktivieren'}?`))return;
       await save(()=>db.from('spieler').update({aktiv:!s.aktiv}).eq('id',s.id),`${s.name} ${!s.aktiv?'aktiviert':'deaktiviert'}`);
+      _invalidateSpielerMap();
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-admin-toggle')?.addEventListener('click',async()=>{
       const neu=!s.ist_admin;
       if(!await confirmAction(`${s.name} ${neu?'Admin-Rolle vergeben':'Admin-Rolle entziehen'}?`))return;
       await save(()=>db.from('spieler').update({ist_admin:neu}).eq('id',s.id),`${s.name} ${neu?'ist jetzt Admin':'ist kein Admin mehr'}`);
+      _invalidateSpielerMap();
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     document.getElementById('detail-delete').addEventListener('click',async()=>{
       if(!await confirmDelete(`Spieler "${s.name}" wird unwiderruflich gelöscht.`))return;
       await save(()=>db.from('spieler').delete().eq('id',s.id),`${s.name} gelöscht`);
+      _invalidateSpielerMap();
       showPage('verwaltung');loadVerwaltung();loadHome();
     });
     // Admin: Profilbild Upload
@@ -2558,6 +2582,7 @@
           await save(async()=>{
             await db.from('spieler').update({profilbild:b64}).eq('id',s.id);
             s.profilbild=b64;
+            _invalidateSpielerMap();
           },`Profilbild von ${s.name} gespeichert`);
           // Vorschau aktualisieren
           const img=document.getElementById('detail-avatar-img');
@@ -2626,6 +2651,7 @@
     if(!name){await showAlert('Name ist erforderlich.');return;}
     if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
     else{await save(()=>db.from('spieler').insert({name,email,aktiv:true,eintrittsdatum:new Date().toISOString().split('T')[0]}),`Neuer Spieler: ${name}`);}
+    _invalidateSpielerMap();
     document.getElementById('modal-spieler-form').classList.remove('open');
     await loadVerwaltung();await loadHome();
     if(editSpielerID)showPage('verwaltung');
@@ -2752,8 +2778,10 @@
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Eröffne eine neue Spielrunde.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
       document.getElementById('btn-neues-spiel').addEventListener('click',zeigeSpielAuswahl);return;
     }
-    const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('*,spieler(*)').eq('spiel_id',aktuellesSpiel.id);
-    spielTeilnehmer=teilnehmer||[];
+    await _ensureSpielerMap();
+    const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('id,spiel_id,spieler_id,buyins,payout,leihgabe,in_statistik').eq('spiel_id',aktuellesSpiel.id);
+    const _smap=_spielerMap||{};
+    spielTeilnehmer=(teilnehmer||[]).map(t=>({...t,spieler:_smap[t.spieler_id]||{name:'?'}}));
     renderSpiel();
   }
 
@@ -2962,9 +2990,11 @@
   }
 
   function _verlaufRenderBatch(el,spiele){
+    const smap=_spielerMap||{};
     spiele.forEach(spiel=>{
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
-      const teilnehmer=spiel.spiel_teilnehmer||[];
+      // Spieler-Objekt aus Cache an die Teilnehmer hängen (statt nested DB-Join).
+      const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||smap[t.spieler_id]||{name:'?'}}));
       const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtBuyIns=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
@@ -3012,8 +3042,9 @@
     _verlaufLoading=true;
     const loader=document.getElementById('verlauf-loader');
     if(loader)loader.style.display='flex';
+    await _ensureSpielerMap();
     const{data:spiele}=await db.from('spiele')
-      .select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))')
+      .select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)')
       .eq('abgeschlossen',true)
       .order('datum',{ascending:false})
       .range(_verlaufOffset,_verlaufOffset+_VERLAUF_PAGE-1);
@@ -3041,8 +3072,9 @@
     _verlaufOffset=0;_verlaufLoading=false;_verlaufDone=false;_verlaufSpiele=[];
     const el=document.getElementById('verlauf-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    await _ensureSpielerMap();
     const{data:first}=await db.from('spiele')
-      .select('*,buyin_pot,spiel_teilnehmer(*,spieler(*))')
+      .select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)')
       .eq('abgeschlossen',true)
       .order('datum',{ascending:false})
       .range(0,_VERLAUF_PAGE-1);
@@ -3083,7 +3115,10 @@
     const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
     const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
     const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
-    const teilnehmer=spiel.spiel_teilnehmer||[];
+    // Teilnehmer aus Cache anreichern (Queries in Verlauf liefern nur spieler_id).
+    await _ensureSpielerMap();
+    const _smap=_spielerMap||{};
+    const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||_smap[t.spieler_id]||{name:'?'}}));
     const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
     const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
     const gesamtBuyins=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
@@ -3171,7 +3206,8 @@
   // ── SPIEL DETAIL EDIT ──────────────────────────────────
   function showSpielDetailEdit(spiel){
     const el=document.getElementById('spiel-detail-content');
-    const teilnehmer=spiel.spiel_teilnehmer||[];
+    const _smap=_spielerMap||{};
+    const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||_smap[t.spieler_id]||{name:'?'}}));
     const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
     const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
 
@@ -3249,7 +3285,7 @@
         }
       },'Spiel aktualisiert');
       // Spiel neu laden und Detail-Ansicht refreshen
-      const{data:updated}=await db.from('spiele').select('*,spiel_teilnehmer(*,spieler(*))').eq('id',spiel.id).single();
+      const{data:updated}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',spiel.id).single();
       if(updated)showSpielDetail(updated);
       else{showPage('verlauf');loadVerlauf();}
       loadHome();
@@ -3409,10 +3445,10 @@
     const el=document.getElementById('statistik-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
-      db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
-      db.from('transaktionen').select('*'),
-      db.from('hand_statistik').select('*'),
+      db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).order('name'),
+      db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
+      db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
+      db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,datum').eq('abgeschlossen',true).order('datum'),
     ]);
     if(!spieler||spieler.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Keine Daten</div></div>`;return;}
@@ -3593,6 +3629,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.4',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Statistik-Screen lädt deutlich schneller: Base64-Beweisfotos und Profilbilder werden nicht mehr unnötig mitgeladen'},
+      {typ:'verbessert',text:'Hände-Screen lädt deutlich schneller: redundante Profilbild-Transfers (ca. 9 MB) entfernt – Fotos werden erst beim Öffnen einer Hand geladen'},
+      {typ:'verbessert',text:'Verlauf-Screen lädt schneller: Profilbilder kommen aus einem einmaligen Spieler-Cache statt bei jedem Spiel neu übertragen zu werden'},
+      {typ:'verbessert',text:'Home-Screen: eine statt zwei Spieler-Abfragen beim Laden'},
+    ]},
     {version:'3.3',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Admin: Push-Benachrichtigungen pro Spieler einsehen – Spieler-Detail in der Verwaltung zeigt alle registrierten Geräte und deren Kategorie-Einstellungen (schreibgeschützt)'},
       {typ:'fix',text:'Home-Kontostand: nach Spielabschluss oder Transaktion wird der Kontostand sofort korrekt angezeigt, ohne die App neu zu öffnen'},
@@ -3986,8 +4028,17 @@
   async function loadHaende(){
     const el=document.getElementById('haende-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:haende}=await db.from('hand_statistik').select('*,gewinner:gewinner_id(id,name,profilbild),spiel:spiel_id(datum)').order('datum',{ascending:false}).limit(500);
-    _haendeData=haende||[];
+    // Performance: beweisfoto (Base64) NICHT in Liste laden – nur beim Öffnen des Modals.
+    // Gewinner-Daten kommen aus dem Spieler-Cache (spart ~9 MB redundantes Profilbild-Payload).
+    // Parallel dazu eine Mini-Query, welche Hände ein Foto haben (für das Kamera-Icon).
+    const[,{data:haende},{data:fotoIds}]=await Promise.all([
+      _ensureSpielerMap(),
+      db.from('hand_statistik').select('id,datum,hand,gewinner_id,kommentar,spiel_id,spiel:spiel_id(datum)').order('datum',{ascending:false}).limit(500),
+      db.from('hand_statistik').select('id').not('beweisfoto','is',null),
+    ]);
+    const fotoSet=new Set((fotoIds||[]).map(r=>r.id));
+    const smap=_spielerMap||{};
+    _haendeData=(haende||[]).map(h=>({...h,gewinner:smap[h.gewinner_id]||null,has_foto:fotoSet.has(h.id)}));
     _haendeExpanded=new Set();
     _haendeFilter=new Set();
     renderHaende();
@@ -4101,7 +4152,7 @@
             html+=`<div class="drilldown-item clickable" data-hand-id="${h.id}">
               <span class="drilldown-date">${d}</span>
               <span class="drilldown-comment">${escHtml(h.kommentar||'–')}</span>
-              ${h.beweisfoto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--accent);flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
+              ${h.has_foto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--accent);flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
             </div>`;
           });
           html+=`</div>`;
@@ -4370,7 +4421,7 @@
     document.getElementById('modal-hand').classList.remove('open');
     loadHaende();
     loadHome();
-    loadStatistik();
+    // Statistik wird beim nächsten Öffnen des Tabs ohnehin neu geladen – kein Hintergrund-Reload nötig.
   });
 
   // ── DEBUG: CONSOLE ─────────────────────────────────────
