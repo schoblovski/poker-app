@@ -1091,8 +1091,9 @@
     (spielVerlauf||[]).forEach(t=>{
       if(ks[t.spieler_id]===undefined) return;
       const spiel=spieleMap?.[t.spiel_id];
-      const bPot=spiel?.buyin_pot ?? einstellungen.buyin_pot;
-      const bKassa=(bPot < 5) ? 0 : (spiel?.buyin_kassa ?? einstellungen.buyin_kassa);
+      if(!spiel) return; // nur abgeschlossene Spiele zählen (schützt vor Leak offener Spiele)
+      const bPot=spiel.buyin_pot;
+      const bKassa=(bPot < 5) ? 0 : spiel.buyin_kassa;
       ks[t.spieler_id]+=(t.payout||0);
       ks[t.spieler_id]-=(t.buyins||0)*(bPot+bKassa);
     });
@@ -1448,7 +1449,7 @@
       db.from('spieler').select('*'),                                          // alle (für Pokerkasse-Berechnung)
       db.from('spieler').select('*').eq('aktiv',true).order('name'),           // nur aktive (für Anzeige)
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
     if(!aktiveSpieler)return;
@@ -1584,7 +1585,7 @@
     const [{data:allSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('*').order('name'),
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -2420,7 +2421,7 @@
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
         db.from('spieler').select('*').eq('aktiv',true),
         db.from('transaktionen').select('*'),
-        db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+        db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
         db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
       ]);
       const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -2965,7 +2966,7 @@
       const teilnehmer=spiel.spiel_teilnehmer||[];
       const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
-      const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
+      const gesamtBuyIns=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
       const sorted=[...teilnehmer].sort((a,b)=>{
         const bK=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
         return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
@@ -2976,9 +2977,9 @@
           <div style="flex:1;display:flex;gap:var(--space-md)">
             <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
             <div style="width:1px;background:var(--border)"></div>
-            <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Buy-Ins</div><div style="font-size:15px;font-weight:700;margin-top:4px">${gesamtBuyIns}</div></div>
             <div style="width:1px;background:var(--border)"></div>
-            <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
           </div>
           <div style="margin-left:var(--space-sm)">${chevron}</div>
         </div>
@@ -3407,7 +3408,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('*'),
       db.from('hand_statistik').select('*'),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,datum').eq('abgeschlossen',true).order('datum'),
