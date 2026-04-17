@@ -1518,13 +1518,24 @@
     const bar=document.getElementById('ptr-bar');
     const pill=document.getElementById('ptr-pill');
     const THRESHOLD=72; // px Zugabstand bis Refresh ausgelöst wird
-    let _startY=0,_deltaY=0,_active=false,_refreshing=false,_scrolledInGesture=false;
+    let _startY=0,_deltaY=0,_active=false,_refreshing=false;
+    // PTR darf erst nach kurzer Ruhezeit oben ausgelöst werden –
+    // verhindert Fehlauslösung wenn der Nutzer zurück nach oben scrollt und
+    // die natürliche Fingerbewegung noch weitergeht.
+    let _atTopSettled=true,_settleTimer=null;
 
-    // Track scroll via event to catch cases where scrollTop read is stale in touch handlers
     content.addEventListener('scroll',()=>{
-      if(content.scrollTop>0){
-        _scrolledInGesture=true;
+      const st=content.scrollTop;
+      if(st>0){
+        // Seite wurde nach unten gescrollt: PTR sperren und laufenden Zug abbrechen
+        _atTopSettled=false;
+        clearTimeout(_settleTimer);
+        _settleTimer=null;
         if(_active)_active=false;
+      } else if(!_atTopSettled){
+        // Seite ist wieder ganz oben: erst nach 300 ms PTR freigeben
+        clearTimeout(_settleTimer);
+        _settleTimer=setTimeout(()=>{_atTopSettled=true;},300);
       }
     },{passive:true});
 
@@ -1538,10 +1549,8 @@
     };
 
     content.addEventListener('touchstart',e=>{
-      // Always reset state on new touch to avoid stale _active from previous gestures
       _active=false;
-      _scrolledInGesture=false;
-      if(_refreshing||content.scrollTop>0)return;
+      if(_refreshing||content.scrollTop>0||!_atTopSettled)return;
       _startY=e.touches[0].clientY;
       _active=true;
       _deltaY=0;
@@ -1549,10 +1558,9 @@
 
     content.addEventListener('touchmove',e=>{
       if(!_active||_refreshing)return;
-      // Abort if page scrolled away from top at any point during this gesture
-      if(_scrolledInGesture){_active=false;return;}
+      if(content.scrollTop>0||!_atTopSettled){_active=false;return;}
       const dy=e.touches[0].clientY-_startY;
-      if(dy<=0||content.scrollTop>0){_active=false;return;}
+      if(dy<=0){_active=false;return;}
       _deltaY=dy;
       const pull=Math.min(Math.sqrt(dy*28),52);
       bar.style.height=pull+'px';
