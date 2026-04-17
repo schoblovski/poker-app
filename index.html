@@ -523,10 +523,10 @@
 
   /* Head-to-Head */
   .h2h-selectors{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-md);}
-  .h2h-sel{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;}
+  .h2h-sel{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;}
   .h2h-sel .item-avatar{align-self:center;flex-shrink:0;}
   .h2h-sel select{width:100%;text-align:center;text-align-last:center;padding:8px;font-size:14px;font-weight:600;}
-  .h2h-vs{position:absolute;top:28px;left:50%;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:var(--text-tertiary);letter-spacing:.1em;background:var(--surface);padding:4px 10px;border-radius:14px;box-shadow:var(--shadow);z-index:2;}
+  .h2h-vs{position:absolute;top:48px;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:800;color:var(--text-tertiary);letter-spacing:.1em;background:var(--surface);padding:4px 12px;border-radius:16px;box-shadow:var(--shadow);z-index:2;}
   .h2h-games-head{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);padding:8px var(--space-md);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);text-align:right;}
   .h2h-games-head>div:first-child{text-align:left;}
   .h2h-game-row{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);align-items:center;padding:10px var(--space-md);border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;font-variant-numeric:tabular-nums;text-align:right;}
@@ -4493,6 +4493,14 @@
     const A=spieler.find(s=>s.id===aId);
     const B=spieler.find(s=>s.id===bId);
 
+    const h2hAvatarHtml=s=>{
+      const src=getAvatar(s);
+      const size=96;
+      if(src)return `<div class="item-avatar avatar-lightbox" data-lightbox-src="${escHtml(src)}" style="width:${size}px;height:${size}px;cursor:zoom-in"><img src="${escHtml(src)}" alt="${escHtml(s?.name||'')}"></div>`;
+      const initial=s?.name?s.name[0].toUpperCase():'?';
+      return `<div class="item-avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;font-weight:700;color:var(--text-secondary)">${initial}</div>`;
+    };
+
     const tAMap=new Map(teilnehmer.filter(t=>t.spieler_id===aId).map(t=>[t.spiel_id,t]));
     const tBMap=new Map(teilnehmer.filter(t=>t.spieler_id===bId).map(t=>[t.spiel_id,t]));
     const commonIds=[...tAMap.keys()].filter(id=>tBMap.has(id));
@@ -4528,11 +4536,11 @@
     const selectorsHtml=`
       <div class="h2h-selectors">
         <div class="h2h-sel">
-          ${avatarHtml(A,56)}
+          ${h2hAvatarHtml(A)}
           <select class="form-input" id="h2h-a">${selectOpts(aId,bId)}</select>
         </div>
         <div class="h2h-sel">
-          ${avatarHtml(B,56)}
+          ${h2hAvatarHtml(B)}
           <select class="form-input" id="h2h-b">${selectOpts(bId,aId)}</select>
         </div>
         <div class="h2h-vs">VS</div>
