@@ -115,6 +115,7 @@
     .bell-btn:hover{background:var(--border);}
     .bell-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;}
     .bell-badge[hidden]{display:none!important;}
+    .bell-btn[hidden]{display:none!important;}
     .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
     .content::-webkit-scrollbar{width:4px;}
     .content::-webkit-scrollbar-track{background:transparent;}
@@ -663,7 +664,7 @@
     </button>
     <div class="header-right">
       <div class="sync-badge synced" id="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sync</span></div>
-      <button class="bell-btn" id="bell-btn" aria-label="Benachrichtigungen">
+      <button class="bell-btn" id="bell-btn" hidden aria-label="Benachrichtigungen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
         <span class="bell-badge" id="bell-badge" hidden>0</span>
       </button>
@@ -1597,9 +1598,14 @@
   // ── BENACHRICHTIGUNGEN ─────────────────────────────────
   async function refreshBellBadge(){
     if(!currentSpieler)return;
-    const{count,error}=await db.from('benachrichtigungen').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
+    const bellBtn=document.getElementById('bell-btn');
     const badge=document.getElementById('bell-badge');
-    if(!badge)return;
+    if(!bellBtn||!badge)return;
+    // Glocke nur anzeigen wenn Push-Notifications aktiviert (≥1 Subscription)
+    const{count:subCount}=await db.from('push_subscriptions').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id);
+    if(!subCount){bellBtn.hidden=true;return;}
+    bellBtn.hidden=false;
+    const{count,error}=await db.from('benachrichtigungen').select('id',{count:'exact',head:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
     if(error){console.warn('Benachrichtigung Badge-Refresh Fehler:',error.message||error);badge.hidden=true;return;}
     if(count&&count>0){badge.textContent=count>99?'99+':String(count);badge.hidden=false;}
     else{badge.hidden=true;}
@@ -1623,8 +1629,7 @@
     const list=data||[];
     const ungelesen=list.filter(n=>!n.gelesen).map(n=>n.id);
     const head=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)">
-        <div style="font-size:13px;color:var(--text-secondary)">${list.length} Benachrichtigung${list.length===1?'':'en'}${ungelesen.length?` · ${ungelesen.length} ungelesen`:''}</div>
-        ${ungelesen.length?`<button class="btn btn-ghost" id="bn-mark-all" style="padding:6px 10px;font-size:12px">Alle als gelesen</button>`:''}
+        <div style="font-size:13px;color:var(--text-secondary)">${list.length} Benachrichtigung${list.length===1?'':'en'}</div>
       </div>`;
     if(!list.length){el.innerHTML=head+`<div class="empty">Noch keine Benachrichtigungen.</div>`;return;}
     const items=list.map(n=>{
@@ -1646,21 +1651,20 @@
       </div>`;
     }).join('');
     el.innerHTML=head+`<div class="benachr-list">${items}</div>`;
-    el.querySelectorAll('.benachr-item').forEach(it=>it.addEventListener('click',async()=>{
-      const id=it.dataset.id, url=it.dataset.url;
-      if(it.classList.contains('unread')){
-        it.classList.remove('unread');
-        const dot=it.querySelector('.benachr-dot');if(dot){dot.classList.remove('benachr-dot');dot.classList.add('benachr-dot-spacer');}
-        db.from('benachrichtigungen').update({gelesen:true}).eq('id',id).then(()=>refreshBellBadge());
-      }
+    el.querySelectorAll('.benachr-item').forEach(it=>it.addEventListener('click',()=>{
+      const url=it.dataset.url;
       if(url)handleDeepLink(url);
     }));
-    document.getElementById('bn-mark-all')?.addEventListener('click',async()=>{
-      await db.from('benachrichtigungen').update({gelesen:true}).eq('spieler_id',currentSpieler.id).eq('gelesen',false);
-      loadBenachrichtigungen();refreshBellBadge();
-    });
-    // Beim Öffnen NICHT automatisch alle als gelesen markieren – User entscheidet pro Eintrag
-    refreshBellBadge();
+    // Auto-Mark-as-Read: alle ungelesenen sofort als gelesen markieren,
+    // visuelles "Neu"-Styling bleibt bis zum nächsten Seitenaufruf erhalten
+    if(ungelesen.length){
+      db.from('benachrichtigungen').update({gelesen:true}).in('id',ungelesen).then(({error})=>{
+        if(error)console.warn('Auto-Mark-as-Read Fehler:',error.message||error);
+        refreshBellBadge();
+      });
+    } else {
+      refreshBellBadge();
+    }
   }
 
   // ── AUTH ───────────────────────────────────────────────
