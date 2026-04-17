@@ -305,7 +305,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 
 ## Aktueller Backlog / TODOs
-1. **Push Notifications** ✅ vollständig implementiert:
+1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
+2. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
