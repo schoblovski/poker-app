@@ -353,6 +353,23 @@ Sonder-Eintrag: Bank (ist_bank=true)
   - `https://poker-app-*-schoblovskis-projects.vercel.app/**`
   - `https://poker-app-git-*-schoblovskis-projects.vercel.app/**`
 
+## Pandemie-Modus – Easter Egg Rollout (noch nicht implementiert)
+
+Wenn der Modus fertig ist und für alle freigeschaltet werden soll:
+
+**Versteckter Einstieg (Easter Egg):**
+- Der Button/Einstieg soll unscheinbar und nicht offensichtlich sein
+- Ideen: 7× auf das App-Logo tippen (Referenz zur 7-2-Regel!), oder Langdruck auf die Versionsnummer in der Info-Seite
+- Beim ersten Entdecken: feierliche Animations-Meldung «Du hast den Pandemie-Modus entdeckt!» mit Konfetti/Celebration-Effekt
+- Danach: Info-Modal mit FAQ über den Modus (was ist er, wie funktioniert er, Varianten, Pause, Pre-Action etc.)
+- Diese FAQ-Seite soll jederzeit wieder aufrufbar sein (z.B. via Avatar-Menü → «Pandemie-Modus Info»)
+- State ob bereits «entdeckt» → `localStorage: 'dtks_pandemie_entdeckt'` (true/false)
+- Erst nach Entdecken wird der Modus dauerhaft im Avatar-Menü sichtbar
+
+**Implementierungs-Hinweis:** Separat angehen nach Fertigstellung und Test des Kernmodus.
+
+---
+
 ## Pandemie-Modus – Vollständiges Konzept
 
 Online-Poker via Supabase Realtime. Ermöglicht das Spielen ohne physisches Treffen (Urlaub, Pandemie etc.). Ergebnisse fliessen direkt in die bestehende Statistik.
