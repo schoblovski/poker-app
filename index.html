@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.8">
+  <meta name="version" content="3.9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -478,6 +478,8 @@
   .sp-remove-btn{width:48px;height:48px;flex-shrink:0;border-radius:var(--radius-md);border:none;background:var(--danger-soft);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--transition);}
   .sp-remove-btn:active{transform:scale(.92);}
   .sp-remove-btn svg{width:16px;height:16px;}
+  .sp-remove-btn:disabled{background:var(--bg-secondary);color:var(--text-tertiary);cursor:not-allowed;opacity:.5;}
+  .sp-remove-btn:disabled:active{transform:none;}
   .sp-fold-toggle{width:100%;min-height:48px;padding:0 var(--space-md);border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all var(--transition);font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:6px;}
   .sp-fold-toggle svg{width:16px;height:16px;}
   .sp-fold-toggle.in{background:var(--accent-soft);color:var(--accent-text);border-color:transparent;}
@@ -518,6 +520,21 @@
   .blind-levels-editor td{padding:4px 4px;}
   .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:var(--font-mono);text-align:right;}
   .blind-level-row.active-level td{background:var(--accent-soft);}
+
+  /* Head-to-Head */
+  .h2h-selectors{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-md);}
+  .h2h-sel{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;}
+  .h2h-sel .item-avatar{align-self:center;flex-shrink:0;}
+  .h2h-sel select{width:100%;text-align:center;text-align-last:center;padding:8px;font-size:14px;font-weight:600;}
+  .h2h-vs{position:absolute;top:70px;left:50%;transform:translate(-50%,-50%);font-size:15px;font-weight:800;color:var(--text-tertiary);letter-spacing:.1em;background:var(--surface);padding:5px 14px;border-radius:18px;box-shadow:var(--shadow);z-index:2;}
+  .h2h-games-head{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);padding:8px var(--space-md);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);text-align:right;}
+  .h2h-games-head>div:first-child{text-align:left;}
+  .h2h-game-row{display:grid;grid-template-columns:1fr repeat(3,minmax(70px,1fr));gap:var(--space-sm);align-items:center;padding:10px var(--space-md);border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;font-variant-numeric:tabular-nums;text-align:right;}
+  .h2h-game-row:last-child{border-bottom:none;}
+  .h2h-game-row:active{background:var(--bg-secondary);}
+  .h2h-game-row .h2h-date{text-align:left;font-family:var(--font-mono);color:var(--text-primary);}
+  .h2h-game-row .h2h-diff{font-weight:700;}
+  .h2h-empty{text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;}
 
   </style>
 </head>
@@ -785,7 +802,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.8';
+  const VERSION='3.9';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -4068,7 +4085,7 @@
         rows+=`<div class="sp-player-card">
           <div class="sp-row-top">
             <select class="form-input" data-idx="${i}" data-field="spielerId">${buildSelect(i,p.spielerId)}</select>
-            ${canRemove?`<button class="sp-remove-btn" data-idx="${i}" data-action="remove" title="Entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+            <button class="sp-remove-btn" data-idx="${i}" data-action="remove" title="${canRemove?'Entfernen':'Mindestens 2 Spieler erforderlich'}"${canRemove?'':' disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
           <div class="sp-row-bottom">
             <input class="form-input" type="number" inputmode="decimal" placeholder="Einsatz" value="${p.einsatz}" data-idx="${i}" data-field="einsatz" min="0" step="0.01">
@@ -4420,23 +4437,272 @@
     });
   }
 
-  // ── Head-to-Head (Stub) ─────────────────────────────────
-  function loadH2H(){
-    document.getElementById('h2h-content').innerHTML=`
-      <button class="back-btn" id="h2h-back">${backIcon} Zurück</button>
-      <div class="tool-coming-soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <div class="tool-title">Head-to-Head</div>
-        <div class="tool-desc">Direktvergleich zwischen zwei Spielern: gemeinsame Spiele, Saldo, Gewinnquote und Verlaufschart.</div>
-        <span class="badge-soon">Coming in Sprint 4</span>
-      </div>`;
+  // ── Head-to-Head ────────────────────────────────────────
+  let _h2hData=null; // {spieler, teilnehmer, haende}
+  let _h2hYearFilter=new Set();
+
+  async function loadH2H(){
+    const el=document.getElementById('h2h-content');
+    el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>
+      <div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;">Lade Head-to-Head…</div>`;
     document.getElementById('h2h-back').addEventListener('click',()=>history.back());
+    _h2hYearFilter=new Set();
+
+    await _ensureSpielerMap();
+    const spieler=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank).sort((a,b)=>{
+      const aAktiv=a.aktiv!==false, bAktiv=b.aktiv!==false;
+      if(aAktiv!==bAktiv)return aAktiv?-1:1;
+      return a.name.localeCompare(b.name);
+    });
+
+    const[{data:teilnehmer},{data:haende}]=await Promise.all([
+      db.from('spiel_teilnehmer')
+        .select('spieler_id,buyins,payout,spiel_id,spiele!inner(id,datum,abgeschlossen,buyin_pot,buyin_kassa)')
+        .eq('spiele.abgeschlossen',true),
+      db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
+    ]);
+
+    _h2hData={spieler,teilnehmer:teilnehmer||[],haende:haende||[]};
+
+    const aId=currentSpieler?.id&&spieler.some(s=>s.id===currentSpieler.id)
+      ? currentSpieler.id
+      : spieler[0]?.id;
+    const bId=spieler.find(s=>s.id!==aId)?.id;
+    renderH2H(aId,bId);
+  }
+
+  function _h2hReingewinn(t){
+    const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
+    const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+    return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
+  }
+
+  function renderH2H(aId,bId){
+    const el=document.getElementById('h2h-content');
+    const{spieler,teilnehmer,haende}=_h2hData;
+    const fmtD=d=>{if(!d)return'';const p=d.split('-');return`${p[2]}.${p[1]}.${p[0].slice(2)}`;};
+
+    const selectOpts=(selId,otherId)=>{
+      const optFor=s=>`<option value="${s.id}"${s.id===selId?' selected':''}${s.id===otherId?' disabled':''}>${escHtml(s.name)}</option>`;
+      const aktive=spieler.filter(s=>s.aktiv!==false).map(optFor).join('');
+      const inaktive=spieler.filter(s=>s.aktiv===false).map(optFor).join('');
+      const sep=(aktive&&inaktive)?`<option disabled>──────── inaktiv ────────</option>`:'';
+      return aktive+sep+inaktive;
+    };
+
+    const A=spieler.find(s=>s.id===aId);
+    const B=spieler.find(s=>s.id===bId);
+
+    const h2hAvatarHtml=s=>{
+      const src=getAvatar(s);
+      const size=140;
+      if(src)return `<div class="item-avatar avatar-lightbox" data-lightbox-src="${escHtml(src)}" style="width:${size}px;height:${size}px;cursor:zoom-in"><img src="${escHtml(src)}" alt="${escHtml(s?.name||'')}"></div>`;
+      const initial=s?.name?s.name[0].toUpperCase():'?';
+      return `<div class="item-avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;font-weight:700;color:var(--text-secondary)">${initial}</div>`;
+    };
+
+    const tAMap=new Map(teilnehmer.filter(t=>t.spieler_id===aId).map(t=>[t.spiel_id,t]));
+    const tBMap=new Map(teilnehmer.filter(t=>t.spieler_id===bId).map(t=>[t.spiel_id,t]));
+    const commonIds=[...tAMap.keys()].filter(id=>tBMap.has(id));
+
+    const allGames=commonIds.map(sid=>{
+      const ta=tAMap.get(sid),tb=tBMap.get(sid);
+      const reinA=_h2hReingewinn(ta);
+      const reinB=_h2hReingewinn(tb);
+      return{spielId:sid,datum:ta.spiele.datum,reinA,reinB,diff:reinA-reinB};
+    }).sort((a,b)=>a.datum.localeCompare(b.datum));
+
+    const allYears=[...new Set(allGames.map(g=>g.datum?.slice(0,4)).filter(Boolean))].sort().reverse();
+    [..._h2hYearFilter].forEach(yr=>{if(!allYears.includes(yr))_h2hYearFilter.delete(yr);});
+    const games=_h2hYearFilter.size===0?allGames:allGames.filter(g=>_h2hYearFilter.has(g.datum?.slice(0,4)));
+
+    const saldo=games.reduce((s,g)=>s+g.diff,0);
+    const winsA=games.filter(g=>g.diff>0).length;
+    const winsB=games.filter(g=>g.diff<0).length;
+    const ties=games.filter(g=>g.diff===0).length;
+    const quoteA=games.length>0?Math.round((winsA/games.length)*100):0;
+    const quoteB=games.length>0?Math.round((winsB/games.length)*100):0;
+    const bestA=games.length?games.reduce((m,g)=>g.diff>m?g.diff:m,-Infinity):0;
+    const bestB=games.length?games.reduce((m,g)=>-g.diff>m?-g.diff:m,-Infinity):0;
+
+    const commonSet=new Set(commonIds);
+    const commonDateSet=new Set(games.map(g=>g.datum));
+    const commonHaende=haende.filter(h=>(h.gewinner_id===aId||h.gewinner_id===bId)&&(commonSet.has(h.spiel_id)||commonDateSet.has(h.datum)));
+    const handsByType={};
+    commonHaende.forEach(h=>{if(!handsByType[h.hand])handsByType[h.hand]=[];handsByType[h.hand].push(h);});
+    const extraTypes=Object.keys(handsByType).filter(t=>!(typeof HAND_TYPEN!=='undefined'&&HAND_TYPEN.includes(t)));
+    const orderedHandTypes=[...(typeof HAND_TYPEN!=='undefined'?HAND_TYPEN.filter(t=>handsByType[t]):[]),...extraTypes];
+
+    const selectorsHtml=`
+      <div class="h2h-selectors">
+        <div class="h2h-sel">
+          ${h2hAvatarHtml(A)}
+          <select class="form-input" id="h2h-a">${selectOpts(aId,bId)}</select>
+        </div>
+        <div class="h2h-sel">
+          ${h2hAvatarHtml(B)}
+          <select class="form-input" id="h2h-b">${selectOpts(bId,aId)}</select>
+        </div>
+        <div class="h2h-vs">VS</div>
+      </div>`;
+
+    const body=games.length===0
+      ? `<div class="h2h-empty">Keine gemeinsamen abgeschlossenen Spiele zwischen ${escHtml(A.name)} und ${escHtml(B.name)}.</div>`
+      : `
+        <div class="stats-grid" style="margin-top:var(--space-md)">
+          <div class="stat-card"><div class="stat-label">Gemeinsame Spiele</div><div class="stat-value sm">${games.length}</div></div>
+          <div class="stat-card ${saldo>0?'accent':saldo<0?'danger-card':''}"><div class="stat-label">Saldo ${escHtml(A.name)} – ${escHtml(B.name)}</div><div class="stat-value sm">${fmtSigned(saldo)}</div></div>
+          <div class="stat-card"><div class="stat-label">${escHtml(A.name)} vorn</div><div class="stat-value sm">${winsA}× · ${quoteA}%</div></div>
+          <div class="stat-card"><div class="stat-label">${escHtml(B.name)} vorn</div><div class="stat-value sm">${winsB}× · ${quoteB}%</div></div>
+          <div class="stat-card"><div class="stat-label">Bester Abend ${escHtml(A.name)}</div><div class="stat-value sm">${bestA>-Infinity?fmtSigned(bestA):'–'}</div></div>
+          <div class="stat-card"><div class="stat-label">Bester Abend ${escHtml(B.name)}</div><div class="stat-value sm">${bestB>-Infinity?fmtSigned(bestB):'–'}</div></div>
+          ${ties>0?`<div class="stat-card wide"><div class="stat-label">Unentschieden</div><div class="stat-value sm">${ties}×</div></div>`:''}
+        </div>
+
+        ${renderH2HChart(games,A,B,saldo)}
+
+        ${orderedHandTypes.length>0?`
+          <div class="section-title">Besondere Hände an gemeinsamen Spielen</div>
+          ${orderedHandTypes.map((typ,idx)=>{
+            const items=handsByType[typ].slice().sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+            const cntA=items.filter(h=>h.gewinner_id===aId).length;
+            const cntB=items.filter(h=>h.gewinner_id===bId).length;
+            const bodyId=`h2h-hand-body-${idx}`;
+            return `<div class="card" style="margin-bottom:var(--space-xs);overflow:hidden">
+              <div class="hand-collapse-header" data-body="${bodyId}" style="display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);cursor:pointer;user-select:none;">
+                <span style="font-size:13px;font-weight:700;color:var(--accent-text)">${escHtml(typ)}</span>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-variant-numeric:tabular-nums">
+                  <span style="font-weight:600;color:var(--text-secondary)">${escHtml(A.name)} ${cntA}× · ${escHtml(B.name)} ${cntB}×</span>
+                  <svg class="hand-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);transition:transform 200ms ease;transform:rotate(-90deg)"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+              <div id="${bodyId}" style="display:none">
+                <div class="history-scroll" style="max-height:200px;overflow-y:auto;">
+                  ${items.map((h,i)=>{
+                    const winner=h.gewinner_id===aId?A.name:B.name;
+                    return `<div class="clickable" data-hand-id="${h.id}" style="display:flex;align-items:center;gap:10px;padding:8px var(--space-md)${i<items.length-1?';border-bottom:1px solid var(--border)':''};font-size:13px;cursor:pointer">
+                      <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);min-width:56px">${fmtD(h.datum)}</span>
+                      <span style="font-weight:600;color:var(--text-primary);min-width:0;flex-shrink:0">${escHtml(winner)}</span>
+                      <span style="color:var(--text-secondary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(h.kommentar||'')}</span>
+                    </div>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}`:''}
+
+        <div class="section-title">Gemeinsame Spiele <span style="font-weight:500;color:var(--text-tertiary);text-transform:none;letter-spacing:0">· ${games.length}</span></div>
+        <div class="card">
+          <div class="h2h-games-head"><div>Datum</div><div>${escHtml(A.name)}</div><div>${escHtml(B.name)}</div><div>Differenz</div></div>
+          <div class="history-scroll" style="max-height:340px">
+            ${games.slice().reverse().map(g=>`
+              <div class="h2h-game-row" data-spiel-id="${g.spielId}">
+                <span class="h2h-date">${fmtD(g.datum)}</span>
+                <span class="${g.reinA>=0?'amount-pos':'amount-neg'}">${fmtSigned(g.reinA)}</span>
+                <span class="${g.reinB>=0?'amount-pos':'amount-neg'}">${fmtSigned(g.reinB)}</span>
+                <span class="h2h-diff ${g.diff>0?'amount-pos':g.diff<0?'amount-neg':'amount-zero'}">${fmtSigned(g.diff)}</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+
+    const yearFilterHtml=allYears.length>1?`
+      <div class="stat-filter-box" style="margin-top:var(--space-md)">
+        <div class="stat-filter-label">Zeitraum</div>
+        <div class="stat-filter-chips">
+          <button class="stat-filter-chip${_h2hYearFilter.size===0?' active':''}" data-h2h-yr="">Alle</button>
+          ${allYears.map(yr=>`<button class="stat-filter-chip${_h2hYearFilter.has(yr)?' active':''}" data-h2h-yr="${yr}">${yr}</button>`).join('')}
+        </div>
+      </div>`:'';
+
+    el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>${selectorsHtml}${yearFilterHtml}${body}`;
+    document.getElementById('h2h-back').addEventListener('click',()=>history.back());
+    document.getElementById('h2h-a').addEventListener('change',e=>renderH2H(e.target.value,bId));
+    document.getElementById('h2h-b').addEventListener('change',e=>renderH2H(aId,e.target.value));
+    el.querySelectorAll('[data-h2h-yr]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const yr=btn.dataset.h2hYr;
+        if(yr===''){_h2hYearFilter.clear();}
+        else{
+          if(_h2hYearFilter.has(yr))_h2hYearFilter.delete(yr);
+          else _h2hYearFilter.add(yr);
+        }
+        renderH2H(aId,bId);
+      });
+    });
+    el.querySelectorAll('[data-spiel-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const id=row.dataset.spielId;
+        const{data:spiel}=await db.from('spiele')
+          .select('*,spiel_teilnehmer(id,spieler_id,buyins,payout,leihgabe,in_statistik,spieler:spieler_id(id,name,profilbild))')
+          .eq('id',id).single();
+        if(spiel)showSpielDetail(spiel);
+      });
+    });
+    el.querySelectorAll('[data-hand-id]').forEach(row=>{
+      row.addEventListener('click',async()=>{
+        const{data:h}=await db.from('hand_statistik').select('*').eq('id',row.dataset.handId).single();
+        if(h)openHandModal(h);
+      });
+    });
+    el.querySelectorAll('.hand-collapse-header').forEach(header=>{
+      header.addEventListener('click',()=>{
+        const body=document.getElementById(header.dataset.body);
+        const chevron=header.querySelector('.hand-chevron');
+        const open=body.style.display==='none';
+        body.style.display=open?'block':'none';
+        chevron.style.transform=open?'rotate(0deg)':'rotate(-90deg)';
+        header.style.borderBottom=open?'1px solid var(--border)':'none';
+      });
+    });
+  }
+
+  function renderH2HChart(games,A,B,saldoTotal){
+    if(games.length<2)return'';
+    const W=320,H=160;
+    const pl=46,pr=8,pt=12,pb=24;
+    const iW=W-pl-pr,iH=H-pt-pb;
+    let cum=0;
+    const pts=[{datum:games[0].datum,val:0}].concat(games.map(g=>{cum+=g.diff;return{datum:g.datum,val:cum};}));
+    const n=pts.length;
+    const vals=pts.map(p=>p.val);
+    const maxV=Math.max(...vals,0);
+    const minV=Math.min(...vals,0);
+    const range=Math.max(1,maxV-minV);
+    const toX=i=>pl+(i/(n-1))*iW;
+    const toY=v=>pt+iH-((v-minV)/range)*iH;
+    const zY=toY(0);
+    const path=pts.map((p,i)=>`${i===0?'M':'L'}${toX(i).toFixed(1)},${toY(p.val).toFixed(1)}`).join(' ');
+    const xIdx=[0,Math.floor(n/2),n-1];
+    const yLabels=[{y:toY(maxV),txt:fmtSigned(maxV)},{y:zY,txt:'0'},{y:toY(minV),txt:fmtSigned(minV)}];
+    const fmtXShort=d=>{if(!d)return'';const p=d.split('-');return`${p[2]}.${p[1]}.`;};
+
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">`;
+    svg+=`<line x1="${pl}" y1="${zY}" x2="${W-pr}" y2="${zY}" stroke="var(--border)" stroke-width="1"/>`;
+    yLabels.forEach(l=>{svg+=`<text x="${pl-4}" y="${l.y+3}" text-anchor="end" font-size="9" fill="var(--text-tertiary)" font-family="var(--font-mono)">${escHtml(l.txt)}</text>`;});
+    xIdx.forEach(i=>{svg+=`<text x="${toX(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--text-tertiary)" font-family="var(--font-mono)">${fmtXShort(pts[i].datum)}</text>`;});
+    svg+=`<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    svg+=`</svg>`;
+
+    const legend=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px var(--space-md) var(--space-sm);font-size:11px;color:var(--text-secondary);gap:var(--space-sm);">
+      <span>Kumulierter Saldo ${escHtml(A.name)} – ${escHtml(B.name)}</span>
+      <span class="${saldoTotal>0?'amount-pos':saldoTotal<0?'amount-neg':'amount-zero'}" style="font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;">${fmtSigned(saldoTotal)}</span>
+    </div>`;
+
+    return `<div class="section-title">Saldo-Verlauf</div><div class="chart-bleed" style="padding:var(--space-sm) 0 0">${svg}${legend}</div>`;
   }
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.9',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Head-to-Head: zwei Spieler direkt vergleichen – Dropdowns mit aktiv/inaktiv getrennt, große Profilbilder (mit Klick auf Lightbox), KPI-Kacheln (gemeinsame Spiele, Saldo, Abende vorn, bester Abend) und Linien-Chart zum kumulierten Saldo-Verlauf'},
+      {typ:'neu',text:'Head-to-Head zeigt besondere Hände aus gemeinsamen Spielen, gruppiert pro Hand-Typ mit Zähler je Spieler; antippen öffnet die Hand im gewohnten Hand-Modal'},
+      {typ:'neu',text:'Head-to-Head listet alle gemeinsamen Spiele (scrollbar) mit Reingewinn pro Spieler und Differenz; antippen öffnet das Spiel-Detail'},
+      {typ:'neu',text:'Head-to-Head Zeitraum-Filter (Jahres-Chips) analog zur Statistik-Seite'},
+      {typ:'fix',text:'Head-to-Head findet jetzt auch Altdaten-Hände ohne spiel_id über das Spieldatum'},
+      {typ:'fix',text:'Sidepot-Rechner: Entfernen-Button bleibt auch bei nur zwei Spielern stabil sichtbar (deaktiviert statt ausgeblendet)'},
+    ]},
     {version:'3.8',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Sidepot-Rechner: Spieler aus dem aktiven Spiel oder aus allen aktiven Spielern auswählen, Einsätze eintragen, All-Ins markieren – Pots und Haupt-Pot werden live berechnet'},
+      {typ:'neu',text:'Sidepot-Rechner: Spieler aus dem aktiven Spiel oder aus allen aktiven Spielern auswählen, Einsätze eintragen, Fold/Im-Spiel umschalten – Main-Pot und Side-Pots werden live berechnet'},
       {typ:'neu',text:'Blind-Timer: Countdown mit Level-Anzeige, Prev/Next/Pause/Neu-Starten, automatischer Wechsel zum nächsten Level, Warn-Beep bei 30 Sekunden, Wake-Lock hält den Bildschirm an'},
       {typ:'neu',text:'Blind-Timer läuft mit Wallclock-Anker auch weiter, wenn die App minimiert, der Browser-Tab im Hintergrund oder das Gerät im Standby ist; beim Öffnen wird die verstrichene Zeit exakt nachgezogen'},
       {typ:'neu',text:'Timer-Badge in der Kopfzeile: sobald der Blind-Timer läuft, erscheint mittig im Header die Restzeit mit Mini-Progress-Balken – antippen springt direkt zur Timer-Seite'},

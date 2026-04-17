@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.8**
+- **Aktuelle Version: 3.9**
 
 ## Login-Provider
 
@@ -280,7 +280,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
-- ~~**Sidepot-Rechner + Blind-Timer**~~ ✅ v3.8 – Sidepot-Rechner mit Spieler-Dropdown aus aktivem Spiel, Einsatz-Feld mit Live-Pot-Berechnung, All-In-Toggle; Blind-Timer mit Countdown, Level-Wechsel, Wake-Lock und wallclock-basierter Zeitmessung (läuft korrekt weiter bei minimierter App/Standby/Background-Tab); Timer-Badge mittig in der Kopfzeile mit Restzeit + Mini-Progress-Balken solange der Timer läuft (Klick öffnet Timer-Seite); Admin-konfigurierbare Standard-Blind-Struktur via neuer Tabelle `blind_struktur`
+- ~~**Head-to-Head in den Poker Tools**~~ ✅ v3.9 – Zwei-Spieler-Vergleich mit großen Profilbildern (140px, Klick → Lightbox), Dropdown mit aktiv/inaktiv-Trennung, Zeitraum-Filter als Jahres-Chips (wie Statistik), KPI-Kacheln, Linien-Chart zum kumulierten Saldo, Besondere-Hände-Sektion für alle Hand-Typen gruppiert (Hände auch via Datum gematcht für Altdaten ohne spiel_id), scrollbare Liste aller gemeinsamen Spiele mit Drilldown in Hand-Modal bzw. Spiel-Detail; Fix im Sidepot-Rechner: × bleibt bei 2 Spielern stabil sichtbar (disabled statt hidden)
+- ~~**Sidepot-Rechner + Blind-Timer**~~ ✅ v3.8 – Sidepot-Rechner mit Spieler-Dropdown aus aktivem Spiel, Einsatz-Feld mit Live-Pot-Berechnung, Fold/Im-Spiel-Toggle pro Spieler; Blind-Timer mit Countdown, Level-Wechsel, Wake-Lock und wallclock-basierter Zeitmessung (läuft korrekt weiter bei minimierter App/Standby/Background-Tab); Timer-Badge mittig in der Kopfzeile mit Restzeit + Mini-Progress-Balken solange der Timer läuft (Klick öffnet Timer-Seite); Admin-konfigurierbare Standard-Blind-Struktur via neuer Tabelle `blind_struktur`
 - ~~**Poker Tools Menü + Asse-Randomizer**~~ ✅ v3.7 – Neue Sektion "Poker Tools" im Avatar-Menü (alle Nutzer); Asse-legen-Randomizer mit Slot-Maschinen-Animation und Spieler-Vorauswahl aus aktivem Spiel; Stubs für Sidepot-Rechner, Blind-Timer, Head-to-Head
 - ~~**Fotos nach Supabase Storage**~~ ✅ v3.6 – Profilbilder (Bucket: profilbilder) und Beweisfotos (Bucket: beweisfotos) werden nicht mehr als Base64 in DB gespeichert; Upload-Flows + Delete-Handler angepasst; Edge Function migrate-fotos für Einmal-Migration bestehender Daten; RLS-Policy FOR ALL auf Bucket-ID
 - ~~**DB-Indizes + wöchentliches Backup**~~ ✅ v3.5 – 13 Performance-Indizes auf spiel_teilnehmer, transaktionen, hand_statistik, spiele, spieler und push_subscriptions; neue Supabase Edge Function `weekly-backup` sichert jeden Sonntag 03:00 UTC alle Tabellen als CSV in Storage-Bucket `backups` (Retention 12 Wochen); pg_cron Job im Scheduler
