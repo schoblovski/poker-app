@@ -236,12 +236,12 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 - Bei kleineren Änderungen die Nebenversion hochzählen
 - Immer das Changelog aktuell halten NACH meiner Freigabe. 
   - Ablauf:
-    1. comitten (immer auf Main)
-    2. Zusammenfassung der Anpassungen und was zu testen ist ausgeben
+    1. auf einem Feature-Branch committen und pushen (NICHT direkt auf main)
+    2. Zusammenfassung der Anpassungen und was zu testen ist ausgeben (inkl. Vercel Preview-URL falls bekannt)
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
-    5. erst nach ausdrücklichem Einverständnis, das Changelog entsprechend aktualisieren im Code und auf main committen
-- **Aktuelle Version: 3.2**
+    5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
+- **Aktuelle Version: 3.3**
 
 ## Login-Provider
 
@@ -280,6 +280,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Admin Push-Übersicht + Home-Kontostand Fix + Statistik/Verlauf Polish**~~ ✅ v3.3 – Admin sieht in der Spielerverwaltung die registrierten Geräte und Kategorie-Einstellungen pro Spieler (schreibgeschützt); Home-Kontostand aktualisiert sich zuverlässig nach Spielabschluss/Transaktion (Inner-Join auf abgeschlossene Spiele); Verlauf-Kopfzeile SPIELER|BUY-INS|POT + grösserer Block-Abstand; Statistik-Rangliste nach Ø Reingewinn/Spiel, Jahres-Chips absteigend sortiert
 - ~~**push_subscriptions in Rohdaten + CLAUDE.md aktualisiert**~~ ✅ v3.2 – Debug: Rohdaten zeigt jetzt auch die push_subscriptions-Tabelle; CLAUDE.md mit Tabellen-Schema ergänzt
 - ~~**Admin-Dropdown Sektionen**~~ ✅ v3.1 – Avatar-Menü: Einheitliche Reihenfolge und Sektionen für Admin-Funktionen und Debug-Tools
 - ~~**Bankkonto & Pokerkasse Detail-Seiten**~~ ✅ v3.0 – Kacheln auf Home anklickbar; Bankkonto-Detail zeigt alle Buchungsgruppen mit Subtotals; Pokerkasse-Detail zeigt Formel-Aufschlüsselung mit Spielerliste; LinkedIn Login hinzugefügt; Facebook Login aktiviert; Apple & Microsoft Login entfernt
@@ -332,9 +333,16 @@ Sonder-Eintrag: Bank (ist_bank=true)
 
 ## Git-Workflow
 
-- **Direkt auf `main` entwickeln und pushen** – Vercel deployed automatisch
-- Kein Feature-Branch nötig (Chris ist alleiniger Entwickler)
-- Push: `git push origin main`
+- **Entwicklung IMMER auf einem Feature-Branch**, nicht direkt auf `main`
+- Branch-Naming: `claude/<kurze-beschreibung>` (z.B. `claude/admin-push-notification-view`)
+- Ablauf:
+  1. Branch anlegen/auschecken, Änderungen committen, auf Remote pushen (`git push -u origin <branch>`)
+  2. Vercel erzeugt automatisch einen Preview-Deploy unter `https://poker-app-git-<branch>-schoblovskis-projects.vercel.app`
+  3. Chris testet auf der Preview-URL (Google-Login über Supabase Redirect-URL-Whitelist freigegeben)
+  4. Erst nach Freigabe: Version & Changelog bumpen, auf Feature-Branch committen, in `main` mergen und `main` pushen
+- Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
+  - `https://poker-app-*-schoblovskis-projects.vercel.app/**`
+  - `https://poker-app-git-*-schoblovskis-projects.vercel.app/**`
 
 ## Kommentar-Vorlagen (Transaktionen)
 

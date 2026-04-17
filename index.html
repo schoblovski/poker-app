@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.2">
+  <meta name="version" content="3.3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -129,6 +129,7 @@
     .section-title:first-child{margin-top:0;}
     .card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
     .card+.card{margin-top:var(--space-sm);}
+    .verlauf-block+.verlauf-block{margin-top:var(--space-xl);}
     .list-item{display:flex;align-items:center;gap:var(--space-md);padding:14px var(--space-md);border-bottom:1px solid var(--border);transition:background var(--transition);}
     .list-item:last-child{border-bottom:none;}
     .list-item.clickable{cursor:pointer;}
@@ -676,7 +677,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.2';
+  const VERSION='3.3';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1091,8 +1092,9 @@
     (spielVerlauf||[]).forEach(t=>{
       if(ks[t.spieler_id]===undefined) return;
       const spiel=spieleMap?.[t.spiel_id];
-      const bPot=spiel?.buyin_pot ?? einstellungen.buyin_pot;
-      const bKassa=(bPot < 5) ? 0 : (spiel?.buyin_kassa ?? einstellungen.buyin_kassa);
+      if(!spiel) return; // nur abgeschlossene Spiele zählen (schützt vor Leak offener Spiele)
+      const bPot=spiel.buyin_pot;
+      const bKassa=(bPot < 5) ? 0 : spiel.buyin_kassa;
       ks[t.spieler_id]+=(t.payout||0);
       ks[t.spieler_id]-=(t.buyins||0)*(bPot+bKassa);
     });
@@ -1448,7 +1450,7 @@
       db.from('spieler').select('*'),                                          // alle (für Pokerkasse-Berechnung)
       db.from('spieler').select('*').eq('aktiv',true).order('name'),           // nur aktive (für Anzeige)
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
     ]);
     if(!aktiveSpieler)return;
@@ -1584,7 +1586,7 @@
     const [{data:allSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('*').order('name'),
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -2420,7 +2422,7 @@
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
         db.from('spieler').select('*').eq('aktiv',true),
         db.from('transaktionen').select('*'),
-        db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
+        db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
         db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
       ]);
       const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
@@ -2519,7 +2521,9 @@
       <button class="btn btn-secondary" id="detail-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bearbeiten</button>
       <button class="btn btn-secondary" id="detail-toggle">${s.aktiv?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Deaktivieren`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Aktivieren`}</button>
       ${s.id!==currentSpieler?.id?`<button class="btn ${s.ist_admin?'btn-ghost':'btn-secondary'}" id="detail-admin-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>${s.ist_admin?'Admin-Rolle entziehen':'Admin-Rolle vergeben'}</button>`:''}
-      <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spieler löschen</button>`;
+      <button class="btn btn-danger" id="detail-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spieler löschen</button>
+      <div class="section-title" style="margin-top:var(--space-lg)">Push-Benachrichtigungen</div>
+      <div class="card" id="detail-push-card" style="padding:var(--space-md);color:var(--text-tertiary);font-size:14px">Lade…</div>`;
     showPage('spieler-detail');
     document.getElementById('detail-back').addEventListener('click',()=>{showPage('verwaltung');loadVerwaltung();});
     document.getElementById('detail-edit').addEventListener('click',()=>openSpielerForm(s));
@@ -2581,6 +2585,32 @@
         }
       });
     }
+    // Push-Benachrichtigungen des Spielers laden (nur Anzeige)
+    (async()=>{
+      const card=document.getElementById('detail-push-card');
+      const{data:subs}=await db.from('push_subscriptions').select('einstellungen,aktualisiert_am,endpoint').eq('spieler_id',s.id).order('aktualisiert_am',{ascending:false});
+      if(!subs||subs.length===0){card.innerHTML=`<span style="color:var(--text-tertiary)">Keine Geräte registriert</span>`;return;}
+      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates'};
+      const catActive=(e,k)=>k==='buyins'||k==='neue_hand'?e[k]!==false:!!e[k];
+      function deviceName(ep){
+        if(ep.includes('fcm.googleapis.com'))return'Chrome / Android';
+        if(ep.includes('mozilla.com'))return'Firefox';
+        if(ep.includes('windows.com'))return'Edge';
+        if(ep.includes('apple.com'))return'Safari';
+        return'Browser';
+      }
+      card.style.padding='0';
+      card.innerHTML=`<div style="padding:var(--space-sm) var(--space-md);color:var(--text-secondary);font-size:13px;border-bottom:1px solid var(--border)">${subs.length} Gerät${subs.length>1?'e':''} registriert</div>`
+        +subs.map((sub,i)=>{
+          const e=sub.einstellungen||{};
+          const date=sub.aktualisiert_am?new Date(sub.aktualisiert_am).toLocaleDateString('de-CH'):'';
+          const cats=Object.entries(catLabels).map(([k,v])=>`<span class="badge ${catActive(e,k)?'badge-green':'badge-red'}" style="font-size:11px">${v}</span>`).join('');
+          return`<div style="padding:var(--space-sm) var(--space-md);${i<subs.length-1?'border-bottom:1px solid var(--border)':''}">
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${deviceName(sub.endpoint)}<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:8px">${date}</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${cats}</div>
+          </div>`;
+        }).join('');
+    })();
   }
 
   function openSpielerForm(s){
@@ -2937,20 +2967,21 @@
       const teilnehmer=spiel.spiel_teilnehmer||[];
       const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
-      const gesamtPayout=teilnehmer.reduce((s,t)=>s+(t.payout||0),0);
+      const gesamtBuyIns=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
       const sorted=[...teilnehmer].sort((a,b)=>{
         const bK=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
         return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
       });
       const wrap=document.createElement('div');
+      wrap.className='verlauf-block';
       wrap.innerHTML=`<div class="section-title">${datum}</div><div class="card" style="cursor:pointer">
         <div class="list-item clickable" data-spiel-id="${spiel.id}" style="padding:var(--space-md)">
           <div style="flex:1;display:flex;gap:var(--space-md)">
             <div style="flex:1;text-align:center"><div class="stat-label">Spieler</div><div style="font-size:15px;font-weight:700;margin-top:4px">${teilnehmer.length}</div></div>
             <div style="width:1px;background:var(--border)"></div>
-            <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Buy-Ins</div><div style="font-size:15px;font-weight:700;margin-top:4px">${gesamtBuyIns}</div></div>
             <div style="width:1px;background:var(--border)"></div>
-            <div style="flex:1;text-align:center"><div class="stat-label">Ausgespielt</div><div style="font-size:15px;font-weight:700;margin-top:4px">€${gesamtPayout.toFixed(2)}</div></div>
+            <div style="flex:1;text-align:center"><div class="stat-label">Pot</div><div style="font-size:15px;font-weight:700;margin-top:4px;color:var(--accent-text)">€${gesamtPot.toFixed(2)}</div></div>
           </div>
           <div style="margin-left:var(--space-sm)">${chevron}</div>
         </div>
@@ -3379,7 +3410,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('*').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('*,spiele(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('*'),
       db.from('hand_statistik').select('*'),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,datum').eq('abgeschlossen',true).order('datum'),
@@ -3391,8 +3422,8 @@
     const allSpiele=spieleData||[];
     const allHaende=haende||[];
 
-    // Jahres-Liste einmalig aus Daten berechnen (aufsteigend)
-    const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort();
+    // Jahres-Liste einmalig aus Daten berechnen (absteigend: neuestes Jahr zuerst)
+    const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort().reverse();
 
     // Filter zurücksetzen
     _statSpielerFilter=new Set();
@@ -3430,7 +3461,11 @@
           return x+(t.buyins||0)*(bPot+bKassa);
         },0);
         return{...s,abg:abg.length,gRein,gEinz,gBuyinK};
-      }).sort((a,b)=>b.gRein-a.gRein);
+      }).sort((a,b)=>{
+        const avgA=a.abg>0?a.gRein/a.abg:-Infinity;
+        const avgB=b.abg>0?b.gRein/b.abg:-Infinity;
+        return avgB-avgA;
+      });
 
       const totalSpiele=filtSpielIds.size;
       const total7_2=filtHaende.filter(h=>h.hand==='7-2').length;
@@ -3493,15 +3528,15 @@
         <div class="card">${renderBarChart(einzChartData,v=>fmt(v),true)}</div>`:''}
         ${buyinKChartData.length>0?`<div class="section-title">BuyIn-Kosten (gesamt)</div>
         <div class="card">${renderBarChart(buyinKChartData,v=>fmt(v),true)}</div>`:''}
-        <div class="section-title">Spieler</div>
+        <div class="section-title">Spieler <span style="font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">· Ø Reingewinn pro Spiel</span></div>
         <div class="card">`;
       ranking.forEach((s,i)=>{
         const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
         html+=`<div class="list-item clickable" data-stats-id="${s.id}">
           <div style="width:26px;font-size:${i<3?'17':'13'}px;font-weight:700;text-align:center;flex-shrink:0">${medal}</div>
           ${avatarHtml(s,36)}
-          <div class="item-body"><div class="item-title">${escHtml(s.name)}</div><div class="item-subtitle">${s.abg} Spiele · Ø ${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</div></div>
-          <div class="item-trailing"><span class="item-amount ${ksClass(s.gRein)}">${fmtSigned(s.gRein)}</span>${chevron}</div>
+          <div class="item-body"><div class="item-title">${escHtml(s.name)}</div><div class="item-subtitle">${s.abg} Spiele</div></div>
+          <div class="item-trailing"><span class="item-amount ${s.abg>0?ksClass(s.gRein/s.abg):''}">${s.abg>0?fmtSigned(s.gRein/s.abg):'–'}</span>${chevron}</div>
         </div>`;
       });
       html+=`</div>`;
@@ -3558,6 +3593,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.3',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Admin: Push-Benachrichtigungen pro Spieler einsehen – Spieler-Detail in der Verwaltung zeigt alle registrierten Geräte und deren Kategorie-Einstellungen (schreibgeschützt)'},
+      {typ:'fix',text:'Home-Kontostand: nach Spielabschluss oder Transaktion wird der Kontostand sofort korrekt angezeigt, ohne die App neu zu öffnen'},
+      {typ:'verbessert',text:'Verlauf: neue Kopfzeile pro Spiel mit SPIELER | BUY-INS | POT ("Ausgespielt" entfernt); grösserer Abstand zwischen den Spiel-Blöcken'},
+      {typ:'verbessert',text:'Statistik: Rangliste sortiert nach Ø Reingewinn pro Spiel (Haupt-KPI rechts); Jahres-Chips in absteigender Reihenfolge (neuestes Jahr direkt nach "Alle")'},
+    ]},
     {version:'3.2',datum:'April 2026',eintraege:[
       {typ:'verbessert',text:'Debug: Rohdaten zeigt jetzt auch die push_subscriptions-Tabelle (Push-Benachrichtigungen der Spieler)'},
     ]},
