@@ -309,6 +309,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Aktueller Backlog / TODOs
 1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
+2. **Pandemie-Modus** – Online-Poker via Supabase Realtime (siehe vollständiges Konzept unten)
 2. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
@@ -351,6 +352,185 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
   - `https://poker-app-*-schoblovskis-projects.vercel.app/**`
   - `https://poker-app-git-*-schoblovskis-projects.vercel.app/**`
+
+## Pandemie-Modus – Vollständiges Konzept
+
+Online-Poker via Supabase Realtime. Ermöglicht das Spielen ohne physisches Treffen (Urlaub, Pandemie etc.). Ergebnisse fliessen direkt in die bestehende Statistik.
+
+### Kernprinzip
+Server (Supabase) ist einzige Wahrheit. Karten werden serverseitig gemischt und ausgeteilt – kein Client sieht fremde Karten, kein Client kann schummeln.
+
+### Spielvarianten
+| Variante | Hole Cards | Pflicht eigene Karten | Kombinationen |
+|---|---|---|---|
+| Texas Hold'em | 2 | 0, 1 oder 2 | Standard 7-Karten best-of-5 |
+| Omaha | 4 | exakt 2 + exakt 3 Board | 60 Kombinationen |
+| Texahma | 4 | 0, 1, 2, 3 oder 4 (beliebig!) | 126 Kombinationen |
+
+**Texahma-Detail:** Eigene Erfindung der Runde. 4 Hole Cards wie Omaha, aber man kann 0–4 eigene Karten verwenden (wie Hold'em, nur freier). Vierling in der Hand + 1 Community Card → gültig. Evaluator prüft alle 126 Kombinationen (k=0..4 eigene × passende Board-Karten).
+
+### DB-Tabellen (neu)
+
+```sql
+online_spiele
+  id, spiel_id (FK→spiele), status (waiting|running|finished),
+  variante ('holdem'|'omaha'|'texahma'),
+  dealer_seat, current_player_id, pot,
+  community_cards (jsonb), deck (jsonb, verschlüsselt),
+  runout_cards (jsonb),  -- "was wäre noch gekommen"
+  created_at
+
+online_seats
+  id, online_spiel_id, spieler_id, seat (1-9), stack,
+  hole_cards (jsonb),          -- RLS: nur lesbar durch owner!
+  status (active|folded|allin|paused|sitting_out),
+  bet_current_round,
+  auto_folded (boolean),
+  pause_auto_action ('fold'|'check'|'call_limit'|'call_any'),
+  pause_call_limit (numeric),  -- €-Betrag bei call_limit
+  pre_action ('fold'|'check_fold'|'check'|'call'|'call_any'|null),
+  pre_action_limit (numeric),  -- optionales €-Limit für call
+  paused_at (timestamp)        -- für "was habe ich verpasst"
+
+online_actions
+  id, online_spiel_id, spieler_id,
+  action (fold|call|raise|check|allin|pause|resume|reveal_runout),
+  amount, street (preflop|flop|turn|river), hand_nr (integer),
+  created_at
+
+online_chat
+  id, online_spiel_id, spieler_id, message, created_at
+```
+
+**RLS:** `hole_cards` nur lesbar wenn `spieler_id = auth.uid()`
+
+### Supabase Edge Functions
+
+| Function | Aufgabe |
+|---|---|
+| `poker-start-game` | Deck mischen, Karten austeilen (2 oder 4 je nach Variante), Dealer/Blinds setzen |
+| `poker-action` | Fold/Call/Raise validieren, Pot berechnen, nächsten Spieler setzen; prüft pre_action + pause_auto_action |
+| `poker-next-street` | Flop/Turn/River aufdecken, Betting-Round resetten |
+| `poker-showdown` | Varianten-spezifische Hand-Evaluierung, Gewinner bestimmen, Pot auszahlen |
+| `poker-new-hand` | Nächste Hand starten (NUR auf Knopfdruck – kein Auto-Start!), Dealer-Button weitersetzen |
+| `poker-reveal-runout` | Rest-Board aufdecken nach Hand-Ende (deterministisch aus gespeichertem Deck) |
+| `poker-notify-turn` | Push Notification senden wenn Spieler dran ist (neue Push-Kategorie: online_spiel) |
+
+### Spielfluss
+
+1. Admin erstellt Online-Session → wählt Variante + Startstack + Buy-In-Betrag
+2. Lobby: Spieler nehmen Plätze ein (ovaler Tisch, 9 Sitze, SVG)
+3. Admin startet erste Hand
+4. Jede folgende Hand: Dealer-Button-Spieler drückt «Nächste Hand» (kein Auto-Advance!)
+5. Spielabschluss: normaler Payout-Flow → spiel_teilnehmer, Kontostände, Statistik
+
+### Realtime-Architektur
+
+```
+Channel: "online_spiel:{id}"
+
+DB Changes (Zustandsänderungen):
+  → online_spiele UPDATE  → alle sehen neuen Spielstand
+  → online_seats  UPDATE  → Stacks, Status
+  → online_actions INSERT → Action-Feed
+  → online_chat   INSERT  → Chat
+
+Broadcasts (kein DB-Overhead):
+  → "thinking": "Macs überlegt..."
+```
+
+### «Was wäre noch gekommen»
+
+Nach Hand-Ende durch Fold (nicht Showdown):
+- Button «Was wäre noch gekommen?» erscheint
+- Berechtigt: Dealer-Button-Spieler (falls pausiert → jeder aktive Spieler)
+- Edge Function `poker-reveal-runout` deckt Rest-Board auf (bereits determiniert)
+- Alle sehen aufgedeckte Karten + optional eigene Hole Cards
+- Kein Einfluss auf Ergebnis – rein informell
+- Danach: warten auf «Nächste Hand»-Knopfdruck
+
+### Pause / AFK
+
+**Beim Pausieren (während aktiver Hand):**
+Sheet erscheint mit Auto-Aktion-Auswahl:
+- Sofort folden (Standard)
+- Nur checken (Auto-Check solange kein Einsatz, sonst Fold)
+- Bis Betrag X callen (Schnellauswahl 1BB / 3BB befüllt das €-Feld, manuell überschreibbar)
+- Alles callen
+
+Gilt nur für aktuelle Hand → danach Sit-Out bis Rückkehr.
+Im Action-Feed: «Macs pausiert – callt bis €12»
+
+**Rückkehr → «Was habe ich verpasst?»:**
+Sheet zeigt alle Events seit `paused_at`:
+- Anzahl gespielte Hände
+- Pro Hand: Gewinner, Pot, Hand-Typ
+- Eigene Auto-Aktionen («Du wurdest in Hand 3 automatisch gefoldet»)
+- Stack-Veränderung aller Spieler
+- Verpasste Chat-Nachrichten
+
+Datenquelle: `online_actions` + `online_chat` seit `paused_at` – kein Extra-Query nötig.
+
+### Pre-Action
+
+Während ein anderer Spieler am Zug ist, kann man vorab wählen:
+| Pre-Action | Verhalten |
+|---|---|
+| Fold | Sofort folden |
+| Check / Fold | Checken falls möglich, sonst Fold |
+| Check | Nur wenn kein Einsatz – wird annulliert bei Bet |
+| Call | Aktuellen Einsatz callen (opt. mit €-Limit) |
+| Call Any | Jeden Einsatz callen inkl. Re-Raises |
+
+Falls Situation sich ändert (z.B. Re-Raise) → Pre-Action wird annulliert.
+Für andere Spieler unsichtbar.
+
+### Kein Timer – Push-Reminder
+
+Kein Auto-Fold, keine Sanduhr. Stattdessen:
+- Push Notification wenn man dran ist: «Du bist dran! Fold / Call / Raise»
+- Deep Link öffnet direkt den Spieltisch
+- Visuelles «Dein Zug» Banner in der App
+- Neue Push-Kategorie: `online_spiel`
+
+### Tisch-UI
+
+- Ovaler Tisch (SVG), 9 Plätze
+- Community Cards in der Mitte, Pot-Anzeige
+- Eigene Hole Cards unten (gross)
+- Fremde Spieler: Avatar + Stack + Einsatz (Karten verdeckt)
+- Dealer-Button, Small/Big Blind Marker
+- Action-Buttons: Fold / Check / Call / Raise (nur aktiv wenn man dran ist)
+- Raise: Slider + Schnellbeträge (½ Pot, Pot, All-In)
+- Action-Feed: «Gutsch foldet», «Chris raises €12»
+- Chat
+- Video-Call: externer Link (WhatsApp/Meet/FaceTime) einbettbar
+
+### Showdown-Anzeige
+
+- Alle Hole Cards aufdecken
+- Winning Hand highlighten + Beschriftung («Straight, Dame hoch»)
+- Texahma: zeigen welche eigene Karten verwendet wurden (0–4)
+- Omaha: zeigen welche exakt 2+3 Kombination gewann
+
+### Integration bestehend
+
+- Online-Spiel erstellt Eintrag in `spiele` (modus = 'online' neu)
+- Buy-Ins als `spiel_teilnehmer` Einträge (Stack-Reloads = neue Buy-Ins)
+- Spielende → normaler Payout-Flow → Kontostände, Statistik, Verlauf
+
+### Implementierungs-Phasen
+
+| Phase | Was | Aufwand |
+|---|---|---|
+| 1 | DB-Schema + RLS | Klein |
+| 2 | Hand-Evaluatoren (Hold'em / Omaha / Texahma) | Gross |
+| 3 | Edge Functions (Game-Flow) | Gross |
+| 4 | Realtime-Subscriptions + Push | Mittel |
+| 5 | Tisch-UI | Mittel |
+| 6 | Integration bestehend | Klein |
+
+---
 
 ## Kommentar-Vorlagen (Transaktionen)
 
