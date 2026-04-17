@@ -254,7 +254,18 @@
     .theme-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--transition);}
     .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
-    .modal-overlay.open{display:flex;animation:fadeIn 150ms ease;}
+    .modal-overlay.open{display:flex;animation:modal-backdrop-in 280ms ease both;}
+    .modal-overlay.closing{animation:modal-backdrop-out 320ms ease both;}
+    .modal-overlay.open:not(.closing):not(#modal-crop) .modal{animation:modal-slide-in 480ms cubic-bezier(0.22,1,0.36,1) both;}
+    .modal-overlay.closing:not(#modal-crop) .modal{animation:modal-slide-out 320ms ease-in both;}
+    #modal-crop.open:not(.closing) .modal{animation:modal-scale-in 320ms cubic-bezier(0.22,1,0.36,1) both;}
+    #modal-crop.closing .modal{animation:modal-scale-out 260ms ease-in both;}
+    @keyframes modal-backdrop-in{from{opacity:0}to{opacity:1}}
+    @keyframes modal-backdrop-out{from{opacity:1}to{opacity:0}}
+    @keyframes modal-slide-in{from{transform:translateY(100%)}to{transform:none}}
+    @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
+    @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
+    @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
     .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
@@ -269,11 +280,11 @@
     .kommentar-chip{background:var(--bg-secondary);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font-sans);text-align:center;transition:all var(--transition);white-space:nowrap;}
     .kommentar-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
     #kommentar-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--space-sm);}
-    @keyframes page-enter{from{opacity:0;transform:translateY(36px);}to{opacity:1;transform:none;}}
-    @keyframes item-enter{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:none;}}
+    @keyframes page-enter{from{opacity:0;transform:translateY(44px);}to{opacity:1;transform:none;}}
+    @keyframes item-enter{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:none;}}
     .page{display:none;}
-    .page.active{display:block;animation:page-enter 380ms cubic-bezier(0.22,1,0.36,1) both;}
-    .page .card{animation:item-enter 420ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page.active{display:block;animation:page-enter 480ms cubic-bezier(0.22,1,0.36,1) both;}
+    .page .card{animation:item-enter 520ms cubic-bezier(0.22,1,0.36,1) both;}
     .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:15px;font-weight:500;padding:0;font-family:var(--font-sans);margin-bottom:var(--space-lg);}
     .back-btn svg{width:20px;height:20px;}
     .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--text-tertiary);gap:var(--space-sm);font-size:14px;}
@@ -1520,9 +1531,33 @@
       }
       if(!batch.length)return;
       clearTimeout(timer);
-      timer=setTimeout(()=>{batch.forEach((c,i)=>{c.style.animationDelay=(i*90)+'ms';});batch=[];},0);
+      timer=setTimeout(()=>{
+        // Statische Top-Buttons (z.B. "Neue Transaktion") in den Stagger einbeziehen → top-to-bottom Reihenfolge
+        const activePage=document.querySelector('.page.active');
+        const topBtns=activePage?[...activePage.querySelectorAll(':scope>.btn-primary')]:[];
+        const all=[...topBtns,...batch];
+        all.forEach((el,i)=>{
+          el.style.animation='none';
+          void el.offsetWidth;
+          el.style.animation=`item-enter 520ms cubic-bezier(0.22,1,0.36,1) ${i*110}ms both`;
+        });
+        batch=[];
+      },0);
     }).observe(document.body,{childList:true,subtree:true});
   })();
+
+  // Modal-Schliessen-Animation: fängt classList.remove('open') ab und spielt slide-out bevor display:none
+  new MutationObserver(muts=>{
+    for(const m of muts){
+      const el=m.target;
+      if(!el.classList?.contains('modal-overlay'))continue;
+      const hadOpen=m.oldValue?.split(' ').includes('open');
+      if(hadOpen&&!el.classList.contains('open')&&!el.classList.contains('closing')){
+        el.classList.add('open','closing');
+        setTimeout(()=>el.classList.remove('open','closing'),320);
+      }
+    }
+  }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class'],attributeOldValue:true});
 
   // Lightbox: delegierter Klick auf .avatar-lightbox und .hand-foto-thumb Elemente
   document.querySelector('.content').addEventListener('click',e=>{
