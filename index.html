@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.9">
+  <meta name="version" content="3.10">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -802,7 +802,7 @@
     }).catch(e => console.warn('⚠️ SW-Registrierung fehlgeschlagen:', e));
   }
 
-  const VERSION='3.9';
+  const VERSION='3.10';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -3712,6 +3712,7 @@
   async function loadStatistik(){
     const el=document.getElementById('statistik-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    await _ensureSpielerMap();
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).order('name'),
       db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
@@ -3740,6 +3741,7 @@
       // Datum-Filter aus Jahr-Chips
       const filtSpiele=allSpiele.filter(s=>_statYearFilter.size===0||_statYearFilter.has(s.datum?.slice(0,4)));
       const filtSpielIds=new Set(filtSpiele.map(s=>s.id));
+      const filtVerlaufAll=allVerlauf.filter(t=>filtSpielIds.has(t.spiel_id));
       const filtVerlauf=allVerlauf.filter(t=>filtSpielIds.has(t.spiel_id)&&(_statSpielerFilter.size===0||_statSpielerFilter.has(t.spieler_id)));
       const filtHaende=allHaende.filter(h=>{
         const yr=h.datum?.slice(0,4);
@@ -3773,6 +3775,82 @@
 
       const totalSpiele=filtSpielIds.size;
       const total7_2=filtHaende.filter(h=>h.hand==='7-2').length;
+
+      // ── Spieler × Gegner Matrix ──
+      function buildH2HMatrix(){
+        const playersInScope=new Set(filtVerlaufAll.map(t=>t.spieler_id));
+        const allActive=Object.values(_spielerMap||{}).filter(s=>!s.ist_bank&&s.aktiv!==false);
+        let mxSpieler=allActive.filter(s=>playersInScope.has(s.id));
+        if(_statSpielerFilter.size>0)mxSpieler=mxSpieler.filter(s=>_statSpielerFilter.has(s.id));
+        mxSpieler.sort((a,b)=>a.name.localeCompare(b.name));
+        if(mxSpieler.length<2)return '';
+
+        // Gruppiere Teilnehmer nach Spiel, berechne Reingewinn pro Spieler pro Spiel
+        const gameMap={};
+        filtVerlaufAll.forEach(t=>{
+          if(!gameMap[t.spiel_id])gameMap[t.spiel_id]=[];
+          gameMap[t.spiel_id].push(t);
+        });
+        const saldoM={};
+        mxSpieler.forEach(s=>{saldoM[s.id]={};});
+        Object.values(gameMap).forEach(tList=>{
+          const bPot=tList[0].spiele?.buyin_pot??einstellungen.buyin_pot;
+          const bKassa=(bPot<5)?0:(tList[0].spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          const kb=bPot+bKassa;
+          const rein={};
+          tList.forEach(t=>{rein[t.spieler_id]=(t.payout||0)-(t.buyins||0)*kb;});
+          const ids=Object.keys(rein).filter(id=>saldoM[id]);
+          for(let i=0;i<ids.length;i++){
+            for(let j=0;j<ids.length;j++){
+              if(i===j)continue;
+              const a=ids[i],b=ids[j];
+              saldoM[a][b]=(saldoM[a][b]||0)+rein[a]-rein[b];
+            }
+          }
+        });
+
+        let maxAbs=0;
+        Object.values(saldoM).forEach(row=>Object.values(row).forEach(v=>{if(Math.abs(v)>maxAbs)maxAbs=Math.abs(v);}));
+
+        const avatarMini=s=>{
+          const src=getAvatar(s);
+          if(src)return `<img src="${escHtml(src)}" alt="${escHtml(s.name)}" title="${escHtml(s.name)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;margin:0 auto">`;
+          return `<div title="${escHtml(s.name)}" style="width:28px;height:28px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin:0 auto;color:var(--text-secondary)">${escHtml(s.name[0]?.toUpperCase()||'?')}</div>`;
+        };
+
+        let html=`<div class="section-title">Spieler × Gegner <span style="font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">· Netto-Saldo pro Paar</span></div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+            <table class="matrix-table" style="min-width:100%">
+              <thead><tr>
+                <th style="text-align:left;padding:8px;background:var(--bg-secondary);border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);position:sticky;left:0;z-index:2">Spieler</th>
+                ${mxSpieler.map(s=>`<th style="padding:6px 4px;background:var(--bg-secondary);border-bottom:2px solid var(--border);min-width:42px">${avatarMini(s)}</th>`).join('')}
+              </tr></thead>
+              <tbody>`;
+        mxSpieler.forEach((rowP,ri)=>{
+          html+=`<tr>
+            <td style="text-align:left;padding:7px 8px;font-weight:600;font-size:13px;white-space:nowrap;background:${ri%2===0?'var(--surface)':'var(--bg-secondary)'};border-bottom:1px solid var(--border);position:sticky;left:0;z-index:1">${escHtml(rowP.name)}</td>`;
+          mxSpieler.forEach(colP=>{
+            if(rowP.id===colP.id){
+              html+=`<td style="text-align:center;padding:7px 4px;background:var(--bg-secondary);color:var(--text-tertiary);border-bottom:1px solid var(--border)">—</td>`;
+              return;
+            }
+            const v=(saldoM[rowP.id]||{})[colP.id];
+            if(v===undefined||v===null||v===0){
+              html+=`<td style="text-align:center;padding:7px 4px;color:var(--text-tertiary);font-family:var(--font-mono);font-size:11px;border-bottom:1px solid var(--border)">${v===0?'0':'–'}</td>`;
+              return;
+            }
+            const intensity=maxAbs>0?Math.abs(v)/maxAbs:0;
+            const alpha=(0.15+intensity*0.55).toFixed(2);
+            const bg=v>0?`rgba(34,197,94,${alpha})`:`rgba(220,38,38,${alpha})`;
+            const fg=v>0?'var(--accent-text)':'var(--danger)';
+            html+=`<td class="matrix-cell" data-row-id="${rowP.id}" data-col-id="${colP.id}" title="${escHtml(rowP.name)} vs ${escHtml(colP.name)}: ${fmtSigned(v)}" style="cursor:pointer;text-align:center;padding:7px 4px;background:${bg};color:${fg};font-family:var(--font-mono);font-size:11px;font-weight:600;border-bottom:1px solid var(--border)">${fmtSigned(v)}</td>`;
+          });
+          html+=`</tr>`;
+        });
+        html+=`</tbody></table></div></div>`;
+        return html;
+      }
 
       // Filter-Zusammenfassung
       const spSummary=_statSpielerFilter.size===0?'Alle Spieler'
@@ -3832,6 +3910,7 @@
         <div class="card">${renderBarChart(einzChartData,v=>fmt(v),true)}</div>`:''}
         ${buyinKChartData.length>0?`<div class="section-title">BuyIn-Kosten (gesamt)</div>
         <div class="card">${renderBarChart(buyinKChartData,v=>fmt(v),true)}</div>`:''}
+        ${buildH2HMatrix()}
         <div class="section-title">Spieler <span style="font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">· Ø Reingewinn pro Spiel</span></div>
         <div class="card">`;
       ranking.forEach((s,i)=>{
@@ -3889,6 +3968,14 @@
         row.addEventListener('click',()=>{
           const s=ranking.find(x=>x.id===row.dataset.statsId);
           if(s)showSpielerStats({...s,_ks:s.gRein},'statistik');
+        });
+      });
+
+      // Klick auf Matrix-Zelle → Head-to-Head mit Vorauswahl
+      el.querySelectorAll('.matrix-cell').forEach(cell=>{
+        cell.addEventListener('click',()=>{
+          showPage('h2h');
+          loadH2H(cell.dataset.rowId,cell.dataset.colId);
         });
       });
     }
@@ -4441,7 +4528,7 @@
   let _h2hData=null; // {spieler, teilnehmer, haende}
   let _h2hYearFilter=new Set();
 
-  async function loadH2H(){
+  async function loadH2H(preAId,preBId){
     const el=document.getElementById('h2h-content');
     el.innerHTML=`<button class="back-btn" id="h2h-back">${backIcon} Zurück</button>
       <div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-tertiary);font-size:13px;">Lade Head-to-Head…</div>`;
@@ -4464,10 +4551,10 @@
 
     _h2hData={spieler,teilnehmer:teilnehmer||[],haende:haende||[]};
 
-    const aId=currentSpieler?.id&&spieler.some(s=>s.id===currentSpieler.id)
-      ? currentSpieler.id
-      : spieler[0]?.id;
-    const bId=spieler.find(s=>s.id!==aId)?.id;
+    let aId=preAId&&spieler.some(s=>s.id===preAId)?preAId
+      :(currentSpieler?.id&&spieler.some(s=>s.id===currentSpieler.id)?currentSpieler.id:spieler[0]?.id);
+    let bId=preBId&&preBId!==aId&&spieler.some(s=>s.id===preBId)?preBId
+      :spieler.find(s=>s.id!==aId)?.id;
     renderH2H(aId,bId);
   }
 
@@ -4693,6 +4780,10 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.10',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Statistik: neue Sektion "Spieler × Gegner" – Matrix aller aktiven Spieler mit Netto-Saldo pro Paar; grün wenn Zeilen-Spieler vorn, rot wenn hinten, Farbintensität skaliert mit Betrag; Klick auf eine Zelle springt direkt in Head-to-Head mit den beiden Spielern vorbelegt'},
+      {typ:'verbessert',text:'Head-to-Head akzeptiert Vorauswahl aus anderen Screens (z.B. aus der Matrix) – Dropdowns starten direkt auf dem gewählten Paar'},
+    ]},
     {version:'3.9',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Head-to-Head: zwei Spieler direkt vergleichen – Dropdowns mit aktiv/inaktiv getrennt, große Profilbilder (mit Klick auf Lightbox), KPI-Kacheln (gemeinsame Spiele, Saldo, Abende vorn, bester Abend) und Linien-Chart zum kumulierten Saldo-Verlauf'},
       {typ:'neu',text:'Head-to-Head zeigt besondere Hände aus gemeinsamen Spielen, gruppiert pro Hand-Typ mit Zähler je Spieler; antippen öffnet die Hand im gewohnten Hand-Modal'},

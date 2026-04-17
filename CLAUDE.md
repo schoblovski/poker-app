@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.9**
+- **Aktuelle Version: 3.10**
 
 ## Login-Provider
 
@@ -280,6 +280,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Spieler×Gegner-Matrix in der Statistik**~~ ✅ v3.10 – Neue Sektion in der Statistik-Seite: Matrix aller aktiven Spieler mit Netto-Saldo pro Paar, Farbcodierung (grün/rot) mit Intensität proportional zum Betrag, Avatare als Spalten-Header mit sticky erster Spalte; Klick auf eine Zelle öffnet Head-to-Head mit dem Paar vorbelegt; respektiert Jahres- und Spieler-Filter; loadH2H akzeptiert jetzt optionale preAId/preBId
 - ~~**Head-to-Head in den Poker Tools**~~ ✅ v3.9 – Zwei-Spieler-Vergleich mit großen Profilbildern (140px, Klick → Lightbox), Dropdown mit aktiv/inaktiv-Trennung, Zeitraum-Filter als Jahres-Chips (wie Statistik), KPI-Kacheln, Linien-Chart zum kumulierten Saldo, Besondere-Hände-Sektion für alle Hand-Typen gruppiert (Hände auch via Datum gematcht für Altdaten ohne spiel_id), scrollbare Liste aller gemeinsamen Spiele mit Drilldown in Hand-Modal bzw. Spiel-Detail; Fix im Sidepot-Rechner: × bleibt bei 2 Spielern stabil sichtbar (disabled statt hidden)
 - ~~**Sidepot-Rechner + Blind-Timer**~~ ✅ v3.8 – Sidepot-Rechner mit Spieler-Dropdown aus aktivem Spiel, Einsatz-Feld mit Live-Pot-Berechnung, Fold/Im-Spiel-Toggle pro Spieler; Blind-Timer mit Countdown, Level-Wechsel, Wake-Lock und wallclock-basierter Zeitmessung (läuft korrekt weiter bei minimierter App/Standby/Background-Tab); Timer-Badge mittig in der Kopfzeile mit Restzeit + Mini-Progress-Balken solange der Timer läuft (Klick öffnet Timer-Seite); Admin-konfigurierbare Standard-Blind-Struktur via neuer Tabelle `blind_struktur`
 - ~~**Poker Tools Menü + Asse-Randomizer**~~ ✅ v3.7 – Neue Sektion "Poker Tools" im Avatar-Menü (alle Nutzer); Asse-legen-Randomizer mit Slot-Maschinen-Animation und Spieler-Vorauswahl aus aktivem Spiel; Stubs für Sidepot-Rechner, Blind-Timer, Head-to-Head
@@ -305,7 +306,8 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 
 ## Aktueller Backlog / TODOs
-1. **Push Notifications** ✅ vollständig implementiert:
+1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
+2. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
