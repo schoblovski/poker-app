@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.5**
+- **Aktuelle Version: 3.6**
 
 ## Login-Provider
 
@@ -280,6 +280,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Letzte Anpassungen
 
+- ~~**Fotos nach Supabase Storage**~~ ✅ v3.6 – Profilbilder (Bucket: profilbilder) und Beweisfotos (Bucket: beweisfotos) werden nicht mehr als Base64 in DB gespeichert; Upload-Flows + Delete-Handler angepasst; Edge Function migrate-fotos für Einmal-Migration bestehender Daten; RLS-Policy FOR ALL auf Bucket-ID
 - ~~**DB-Indizes + wöchentliches Backup**~~ ✅ v3.5 – 13 Performance-Indizes auf spiel_teilnehmer, transaktionen, hand_statistik, spiele, spieler und push_subscriptions; neue Supabase Edge Function `weekly-backup` sichert jeden Sonntag 03:00 UTC alle Tabellen als CSV in Storage-Bucket `backups` (Retention 12 Wochen); pg_cron Job im Scheduler
 - ~~**Performance-Optimierung Statistik / Hände / Verlauf**~~ ✅ v3.4 – Spieler-Cache eliminiert redundante Profilbild-Transfers (ca. 9 MB) bei Verlauf, Hände und Spiel; Statistik-Screen lädt ohne Base64-Beweisfotos (ca. 17 MB gespart); Hände-Screen lädt Fotos erst beim Öffnen einer Hand; Home-Screen mit einer statt zwei Spieler-Abfragen
 - ~~**Admin Push-Übersicht + Home-Kontostand Fix + Statistik/Verlauf Polish**~~ ✅ v3.3 – Admin sieht in der Spielerverwaltung die registrierten Geräte und Kategorie-Einstellungen pro Spieler (schreibgeschützt); Home-Kontostand aktualisiert sich zuverlässig nach Spielabschluss/Transaktion (Inner-Join auf abgeschlossene Spiele); Verlauf-Kopfzeile SPIELER|BUY-INS|POT + grösserer Block-Abstand; Statistik-Rangliste nach Ø Reingewinn/Spiel, Jahres-Chips absteigend sortiert
