@@ -3422,8 +3422,8 @@
     const allSpiele=spieleData||[];
     const allHaende=haende||[];
 
-    // Jahres-Liste einmalig aus Daten berechnen (aufsteigend)
-    const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort();
+    // Jahres-Liste einmalig aus Daten berechnen (absteigend: neuestes Jahr zuerst)
+    const allYears=[...new Set(allSpiele.map(s=>s.datum?.slice(0,4)).filter(Boolean))].sort().reverse();
 
     // Filter zurücksetzen
     _statSpielerFilter=new Set();
