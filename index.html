@@ -255,7 +255,7 @@
     .theme-btn.active{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
     .modal-overlay.open{display:flex;animation:modal-backdrop-in 280ms ease both;}
-    .modal-overlay.closing{animation:modal-backdrop-out 320ms ease both;}
+    .modal-overlay.closing{animation:modal-backdrop-out 320ms ease both;pointer-events:none;}
     .modal-overlay.open:not(.closing):not(#modal-crop) .modal{animation:modal-slide-in 480ms cubic-bezier(0.22,1,0.36,1) both;}
     .modal-overlay.closing:not(#modal-crop) .modal{animation:modal-slide-out 320ms ease-in both;}
     #modal-crop.open:not(.closing) .modal{animation:modal-scale-in 320ms cubic-bezier(0.22,1,0.36,1) both;}
@@ -1550,12 +1550,17 @@
   new MutationObserver(muts=>{
     for(const m of muts){
       const el=m.target;
-      if(!el.classList?.contains('modal-overlay')||el._animClosing)continue;
+      if(!el.classList?.contains('modal-overlay'))continue;
+      if(el._animClosing){
+        // Unsere eigene Cleanup-Entfernung – Guard zurücksetzen und ignorieren
+        if(!el.classList.contains('open')&&!el.classList.contains('closing'))el._animClosing=false;
+        continue;
+      }
       const hadOpen=m.oldValue?.split(' ').includes('open');
       if(hadOpen&&!el.classList.contains('open')){
         el._animClosing=true;
         el.classList.add('open','closing');
-        setTimeout(()=>{el.classList.remove('open','closing');el._animClosing=false;},320);
+        setTimeout(()=>el.classList.remove('open','closing'),320);
       }
     }
   }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class'],attributeOldValue:true});
