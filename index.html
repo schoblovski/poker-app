@@ -7359,7 +7359,7 @@
         </div>
         <div class="pm-tisch-right">
           ${handResultHtml}
-          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${infoBar||''}</div>`:''}
+          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:1px;background:var(--border);margin:4px 0 10px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
           ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection}
         </div>
