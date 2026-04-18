@@ -70,7 +70,7 @@
       .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:0}
       .pm-tisch-left{flex:1.1;padding-right:var(--space-lg)}
       .pm-tisch-left .pm-feed{max-height:42dvh;overflow-y:auto}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
+      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow-y:auto;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none}.pm-tisch-right::-webkit-scrollbar{display:none}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
@@ -85,6 +85,7 @@
     body.pm-fullscreen .content{padding:0!important;overflow-y:auto;height:100dvh;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
+    body.pm-tisch .content{overscroll-behavior-y:none;touch-action:pan-x pan-y;}
 
 
 
@@ -7395,7 +7396,7 @@
           ${handResultHtml}
           ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="display:flex;gap:8px;overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div>`:'';return isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>${_rStrip}`:feedSection+_rStrip;})()}
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="display:flex;gap:8px;overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
@@ -7733,7 +7734,7 @@
         if(!_pm._reactions)_pm._reactions={};
         _pm._reactions[currentSpieler.id]={emoji:_emoji,ts:Date.now()};
         _pm._lastFp='';renderOnlineTisch();
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{});
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{_pmScheduleLoad();});
         const _ts2=_pm._reactions[currentSpieler.id].ts;
         setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];_pm._lastFp='';renderOnlineTisch();}},4000);
       });
@@ -8231,7 +8232,7 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};_pm._reactions[_sid]={emoji:_em,ts:Date.now()};_pm._lastFp='';renderOnlineTisch();const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];_pm._lastFp='';renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};_pm._reactions[_sid]={emoji:_em,ts:Date.now()};_pm._lastFp='';renderOnlineTisch();_pmScheduleLoad();const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];_pm._lastFp='';renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
       .subscribe();
   }
 
