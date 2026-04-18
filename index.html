@@ -7321,8 +7321,15 @@
       const{error}=await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
       if(error){await showAlert('Fehler: '+error.message);return;}
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'finish',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
-      _pmUnsubscribe();
-      showPage('online-lobby');
+      // For non-test sessions: show payout modal immediately; otherwise go straight to lobby
+      if(!_pm.session?.is_test){
+        _pmUnsubscribe();
+        await _pmLoad(); // refresh so _pm.seats has final stacks
+        _pmPayoutModal();
+      } else {
+        _pmUnsubscribe();
+        showPage('online-lobby');
+      }
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',_pmPayoutModal);
     document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
