@@ -7104,8 +7104,9 @@
           const hand=a.meta?.hand;
           const bestCards=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];
           const hc=bestCards.map(c=>_pmCard(c)).join('');
-          const handLine=hand?`<div style="font-size:11px;margin-top:3px;opacity:.85">${hand}${hc?` · <span style="display:inline-flex;gap:2px;vertical-align:middle">${hc}</span>`:''}</div>`:'';
-          text=`${n} gewinnt${amt}${handLine}`;extra=' pm-feed-win';break;
+          const cardRow=hc?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="display:inline-flex;gap:2px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
+</div>`:'';
+          text=`${n} gewinnt${amt}${cardRow}`;extra=' pm-feed-win';break;
         }
         case'pause':text=`${n} pausiert`;break;
         case'resume':text=`${n} ist zurück`;break;
@@ -7116,8 +7117,9 @@
           const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
           const handName=a.meta?.hand_name;
-          const handLine=handName?`<div style="font-size:11px;color:var(--accent-text);font-weight:700;margin-top:3px">${handName}</div>`:'';
-          text=`${n} zeigt: <span style="display:inline-flex;gap:2px;vertical-align:middle">${cards}</span>${handLine}`;
+          const cardRow=`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="display:inline-flex;gap:2px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
+</div>`;
+          text=`${n} zeigt Karten${cardRow}`;
           break;
         }
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
