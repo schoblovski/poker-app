@@ -7488,7 +7488,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
         <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span></button>
         <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span></button>
-        <button id="pm-rs-allin" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
+        <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
         <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${+((maxBet+bb).toFixed(2))}" max="${allInTotal}" value="${Math.min(fullPot,allInTotal).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
@@ -7502,16 +7502,19 @@
     const close=()=>{overlay.classList.remove('open');setTimeout(()=>overlay.remove(),300);};
     document.getElementById('pm-rs-cancel').onclick=close;
     overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    let _allinSelected=false;
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-rs-input');if(i)i.value=+(parseFloat(b.dataset.amt||0).toFixed(2));
+      _allinSelected=!!b.dataset.allin;
+      document.getElementById('pm-rs-confirm').textContent=_allinSelected?'All-in bestätigen':'Raise bestätigen';
     }));
-    document.getElementById('pm-rs-allin').onclick=async()=>{close();await _pmAct('allin');};
     document.getElementById('pm-rs-confirm').onclick=async()=>{
       const v=parseFloat(document.getElementById('pm-rs-input')?.value||0);
       if(!v||v<=0){await showAlert('Bitte Betrag eingeben.');return;}
       document.getElementById('pm-rs-confirm').disabled=true;
       close();
-      await _pmAct('raise',v);
+      if(_allinSelected)await _pmAct('allin');
+      else await _pmAct('raise',v);
     };
   }
 
