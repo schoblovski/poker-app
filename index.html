@@ -6866,7 +6866,7 @@
     return pots.length>1?pots:null;
   }
 
-  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={}){
+  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={},revealedCards={}){
     const W=400,H=260,cx=200,cy=120,rx=148,ry=86;
     const isCB=document.documentElement.getAttribute('data-colorblind')==='true';
     const feltOuter=isCB?'#0a1a2e':'#0a2218';
@@ -6917,6 +6917,7 @@
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
           :`${avatarEl}${pauseOverlay}${namePill}`}
         ${betChip}${dealerMark}${reactEl}
+        ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=13,_cH=18,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _tot=_rc.length*_cW+(_rc.length-1)*_cG;const _cx0=sx-_tot/2;const _cy=sy>cy?sy-56:sy+38;return _rc.map((c,i)=>{const _x=Math.round(_cx0+i*(_cW+_cG));const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_cy}" width="${_cW}" height="${_cH}" rx="1.5" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+2}" y="${_cy+7}" font-size="6.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+2}" y="${_cy+15}" font-size="6.5" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
       </g>`;
     }
     const board=session?.community_cards||[];
@@ -7399,7 +7400,7 @@
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'4px 4px var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{});_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
+          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
           ${runoutDisplay}${runoutBtn}${isLandscape?'':actionArea}
           ${isLandscape?feedSection:''}
         </div>
