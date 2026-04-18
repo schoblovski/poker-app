@@ -69,8 +69,8 @@
     @media(min-width:600px),(orientation:landscape){
       .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:0}
       .pm-tisch-left{flex:1.1;padding-right:var(--space-lg)}
+      .pm-tisch-left .pm-feed{max-height:42dvh;overflow-y:auto}
       .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
-      .pm-tisch-right .pm-feed{flex:1;min-height:0;max-height:none;overflow-y:auto}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
@@ -7338,20 +7338,20 @@
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
+    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:var(--space-md) var(--space-md) var(--space-xl)">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div style="margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const _sv=s.stack||0;const stk=`€${Number.isInteger(_sv)?_sv:_sv.toFixed(2)}`;const bg=isFold?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:'';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${isFold?'0.5':'1'}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
           ${runoutDisplay}${runoutBtn}${isLandscape?'':actionArea}
+          ${isLandscape?feedSection:''}
         </div>
         <div class="pm-tisch-right">
           ${handResultHtml}
           ${(myCardsSection||infoBar||hasMenu)?`<div style="display:flex;gap:16px;align-items:stretch;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection?`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center">${myCardsSection}</div>`:''}${infoBar?`<div style="flex:1;min-width:0;${myCardsSection?'border-left:1px solid var(--border);padding-left:14px':''}">${infoBar}</div>`:''}${hasMenu?`<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;padding-top:2px">${menuBtn}</div>`:''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:2px;border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div>
-          <div class="pm-feed">${feedHtml}</div>
-          ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:''}
+          ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection}
         </div>
       </div>
     </div>`;
