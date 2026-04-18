@@ -7075,7 +7075,7 @@
     return`<div class="pm-action-area">
       <div style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Vorauswahl</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${[['fold','Fold'],['check_fold','Chk/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pre-btn" data-pre="${v}" style="flex:1 0 calc(33% - 4px);font-size:12px;padding:6px 8px;min-height:36px">${l}</button>`).join('')}
+        ${[['fold','Fold'],['check_fold','Chk/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pre-btn" data-pre="${v}" style="flex:1 0 calc(33% - 4px);font-size:12px;height:36px!important;padding:0 8px!important;max-width:none;margin:0">${l}</button>`).join('')}
       </div>
       <div id="pm-pre-limit-row" style="display:${pre==='call'?'flex':'none'};gap:6px;align-items:center;margin-top:6px">
         <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;flex-shrink:0">Max €</span>
@@ -7295,17 +7295,17 @@
     overlay.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Raise / All-in</div>
-      <div style="display:flex;gap:6px;margin-bottom:12px">
-        <button class="btn btn-ghost pm-rs-preset" data-amt="${halfPot}" style="flex:1;font-size:13px">½ Pot<br><span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span></button>
-        <button class="btn btn-ghost pm-rs-preset" data-amt="${fullPot}" style="flex:1;font-size:13px">Pot<br><span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span></button>
-        <button class="btn btn-ghost pm-rs-preset" data-amt="${myStack+(_pm.mySeat?.bet_current_round||0)}" style="flex:1;font-size:13px">All-in<br><span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        <button class="btn btn-ghost pm-rs-preset" data-amt="${halfPot}" style="height:52px!important;padding:0!important;font-size:13px;flex-direction:column;gap:1px;max-width:none">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span></button>
+        <button class="btn btn-ghost pm-rs-preset" data-amt="${fullPot}" style="height:52px!important;padding:0!important;font-size:13px;flex-direction:column;gap:1px;max-width:none">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span></button>
+        <button class="btn btn-ghost pm-rs-preset" data-amt="${myStack+(_pm.mySeat?.bet_current_round||0)}" style="height:52px!important;padding:0!important;font-size:13px;flex-direction:column;gap:1px;max-width:none">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:var(--space-lg)">
-        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="${bb}" min="${maxBet+bb}" max="${myStack+(_pm.mySeat?.bet_current_round||0)}" value="${Math.min(fullPot,myStack+(_pm.mySeat?.bet_current_round||0))}" style="flex:1;font-size:18px;font-weight:700;text-align:center">
+      <div style="margin-bottom:var(--space-lg)">
+        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="${bb}" min="${maxBet+bb}" max="${myStack+(_pm.mySeat?.bet_current_round||0)}" value="${Math.min(fullPot,myStack+(_pm.mySeat?.bet_current_round||0))}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
-      <div class="btn-row-2">
-        <button class="btn btn-secondary" id="pm-rs-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="pm-rs-confirm">Raise bestätigen</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+        <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
+        <button class="btn btn-primary" id="pm-rs-confirm" style="max-width:none;margin:0">Raise bestätigen</button>
       </div>
     </div>`;
     document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
