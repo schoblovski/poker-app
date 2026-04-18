@@ -99,8 +99,10 @@ Deno.serve(async (req) => {
 
   if (mySeat.status === 'folded' || mySeat.status === 'allin') return err('Du bist nicht mehr aktiv');
 
-  // Höchster aktueller Einsatz in der Runde
-  const maxBet = Math.max(...(seats ?? []).map((s: { bet_current_round: number }) => s.bet_current_round));
+  // Höchster aktueller Einsatz in der Runde (nur nicht-gefoldete Spieler)
+  const maxBet = Math.max(0, ...(seats ?? [])
+    .filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out')
+    .map((s: { bet_current_round: number }) => s.bet_current_round));
   const callAmount = maxBet - mySeat.bet_current_round;
 
   // ── Aktion verarbeiten ───────────────────────────────────
@@ -239,8 +241,8 @@ Deno.serve(async (req) => {
     s.status === 'active' || s.status === 'paused'
   );
 
-  // Sind alle Einsätze gleich hoch?
-  const maxBetAll = Math.max(...nonFolded.map((s: { bet_current_round: number }) => s.bet_current_round));
+  // Sind alle Einsätze gleich hoch? (exkl. All-in-Spieler die weniger gezahlt haben)
+  const maxBetAll = Math.max(0, ...nonFolded.map((s: { bet_current_round: number }) => s.bet_current_round));
   const allEqual = bettingActive.length === 0 ||
     bettingActive.every((s: { bet_current_round: number }) => s.bet_current_round === maxBetAll);
 
@@ -313,23 +315,34 @@ function findPrevActivePlayer(seats: { spieler_id: string; status: string }[], f
 async function executePreActionIfSet(
   db: ReturnType<typeof createClient>,
   session: { id: string; street: string; hand_nr: number },
-  seats: { id: string; spieler_id: string; status: string; bet_current_round: number; pre_action: string | null; pre_action_limit: number | null; stack: number }[],
-  seat: { id: string; spieler_id: string; pre_action: string | null; pre_action_limit: number | null }
+  seats: { id: string; spieler_id: string; status: string; bet_current_round: number; pre_action: string | null; pre_action_limit: number | null; pause_auto_action?: string | null; pause_call_limit?: number | null; stack: number }[],
+  seat: { id: string; spieler_id: string; status: string; pre_action: string | null; pre_action_limit: number | null; pause_auto_action?: string | null; pause_call_limit?: number | null }
 ) {
-  if (!seat.pre_action) return;
+  // Paused players use pause_auto_action; active players use pre_action
+  const effectiveAction = seat.status === 'paused'
+    ? (seat.pause_auto_action ?? null)
+    : seat.pre_action;
+  const effectiveLimit = seat.status === 'paused'
+    ? (seat.pause_call_limit ?? null)
+    : seat.pre_action_limit;
 
-  const maxBet = Math.max(...seats.map(s => s.bet_current_round));
+  if (!effectiveAction) return;
+
+  const maxBet = Math.max(0, ...seats
+    .filter(s => s.status !== 'folded' && s.status !== 'sitting_out')
+    .map(s => s.bet_current_round));
   const fullSeat = seats.find(s => s.id === seat.id)!;
   const callAmount = maxBet - fullSeat.bet_current_round;
 
   let autoAction: string | null = null;
 
-  switch (seat.pre_action) {
+  switch (effectiveAction) {
     case 'fold': autoAction = 'fold'; break;
     case 'check_fold': autoAction = callAmount > 0 ? 'fold' : 'check'; break;
     case 'check': autoAction = callAmount > 0 ? null : 'check'; break;
-    case 'call': {
-      if (seat.pre_action_limit !== null && callAmount > seat.pre_action_limit) {
+    case 'call':
+    case 'call_limit': {
+      if (effectiveLimit !== null && callAmount > effectiveLimit) {
         autoAction = 'fold';
       } else {
         autoAction = 'call';
@@ -363,7 +376,9 @@ async function handleAutoAction(
   autoAction: string,
   callLimit?: number
 ) {
-  const maxBet = Math.max(...seats.map((s: { bet_current_round: number }) => s.bet_current_round));
+  const maxBet = Math.max(0, ...seats
+    .filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out')
+    .map((s: { bet_current_round: number }) => s.bet_current_round));
   const callAmount = maxBet - mySeat.bet_current_round;
   let action = autoAction;
 
