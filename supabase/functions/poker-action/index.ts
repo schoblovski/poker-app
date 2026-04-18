@@ -162,9 +162,6 @@ Deno.serve(async (req) => {
     pre_action_limit: null,
   }).eq('id', mySeat.id);
 
-  // Pot aktualisieren
-  await db.from('online_spiele').update({ pot: newPot }).eq('id', online_spiel_id);
-
   // Action loggen
   await db.from('online_actions').insert({
     online_spiel_id, spieler_id,
@@ -172,26 +169,23 @@ Deno.serve(async (req) => {
     street: session.street, hand_nr: session.hand_nr,
   });
 
-  // Aktive Spieler (nicht gefoldet, nicht allin)
-  const updatedSeats = seats!.map((s: { id: string; status: string; bet_current_round: number }) =>
+  // Aktualisierte Sitze berechnen
+  const updatedSeats = (seats ?? []).map((s: { id: string; status: string; bet_current_round: number }) =>
     s.id === mySeat.id ? { ...s, status: newStatus, bet_current_round: newBet } : s
   );
-  const activePlayers = updatedSeats.filter((s: { status: string }) =>
+
+  // Nicht gefoldete, nicht sitting_out Spieler
+  const nonFolded = updatedSeats.filter((s: { status: string }) =>
     s.status !== 'folded' && s.status !== 'sitting_out'
   );
-  const nonFolded = updatedSeats.filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out');
 
-  // Nur noch einer übrig → Hand vorbei
+  // Nur noch einer übrig → Hand vorbei (alle anderen gefoldet)
   if (nonFolded.length === 1) {
-    await db.from('online_spiele').update({
-      current_player_id: null,
-      status: 'running', // bleibt running, wartet auf new_hand
-    }).eq('id', online_spiel_id);
-
-    // Gewinner bekommt Pot
     const winner = nonFolded[0];
-    await db.from('online_seats').update({ stack: winner.stack + newPot }).eq('id', winner.id);
-    await db.from('online_spiele').update({ pot: 0 }).eq('id', online_spiel_id);
+    await Promise.all([
+      db.from('online_seats').update({ stack: winner.stack + newPot }).eq('id', winner.id),
+      db.from('online_spiele').update({ pot: 0, current_player_id: null }).eq('id', online_spiel_id),
+    ]);
 
     await db.from('online_actions').insert({
       online_spiel_id,
@@ -205,40 +199,69 @@ Deno.serve(async (req) => {
     return json({ ok: true, hand_over: true, winner_id: winner.spieler_id });
   }
 
-  // Betting-Round vorbei? Alle aktiven (nicht allin) haben gleich viel gesetzt
-  const bettingActive = activePlayers.filter((s: { status: string }) => s.status === 'active');
-  const allEqual = bettingActive.every((s: { bet_current_round: number }) =>
-    s.bet_current_round === Math.max(...activePlayers.map((x: { bet_current_round: number }) => x.bet_current_round))
+  // Ist dies ein Raise (erhöht den Maximaleinsatz)?
+  const isRaise = action === 'raise' || (action === 'allin' && newBet > maxBet);
+
+  // street_last_actor_id aktualisieren bei Raise
+  const myIdx = updatedSeats.findIndex((s: { spieler_id: string }) => s.spieler_id === spieler_id);
+  let newStreetLastActorId: string | null = session.street_last_actor_id ?? null;
+
+  if (isRaise) {
+    // Nach einem Raise: letzter Akteur = Spieler direkt vor dem Raiser (im Uhrzeigersinn)
+    const newLastActor = findPrevActivePlayer(updatedSeats, myIdx);
+    if (newLastActor) newStreetLastActorId = newLastActor.spieler_id;
+  }
+
+  // Pot aktualisieren + ggf. street_last_actor_id
+  const sessionUpdate: Record<string, unknown> = { pot: newPot };
+  if (newStreetLastActorId !== session.street_last_actor_id) {
+    sessionUpdate.street_last_actor_id = newStreetLastActorId;
+  }
+  await db.from('online_spiele').update(sessionUpdate).eq('id', online_spiel_id);
+
+  // Aktive Spieler (können noch bieten: status = active oder paused)
+  const bettingActive = updatedSeats.filter((s: { status: string }) =>
+    s.status === 'active' || s.status === 'paused'
   );
 
-  if (allEqual && bettingActive.length > 0) {
-    // Nächsten Spieler nach dem aktuellen finden
-    const myIdx = updatedSeats.findIndex((s: { spieler_id: string }) => s.spieler_id === spieler_id);
-    const nextPlayer = findNextActivePlayer(updatedSeats, myIdx);
+  // Sind alle Einsätze gleich hoch?
+  const maxBetAll = Math.max(...nonFolded.map((s: { bet_current_round: number }) => s.bet_current_round));
+  const allEqual = bettingActive.length === 0 ||
+    bettingActive.every((s: { bet_current_round: number }) => s.bet_current_round === maxBetAll);
 
-    if (nextPlayer) {
-      // Es gibt noch einen Spieler der handeln muss (z.B. nach einem Raise)
-      await db.from('online_spiele').update({ current_player_id: nextPlayer.spieler_id }).eq('id', online_spiel_id);
-      await executePreActionIfSet(db, session, updatedSeats, nextPlayer);
-      await notifyPlayer(db, nextPlayer.spieler_id, online_spiel_id);
-      return json({ ok: true, next_player: nextPlayer.spieler_id });
-    }
+  // Ist der aktuelle Spieler der letzte Akteur dieser Runde?
+  const isLastActor = spieler_id === newStreetLastActorId;
 
-    // Betting-Round wirklich vorbei → next street via poker-next-street
+  // Runde vorbei wenn: letzter Akteur hat gehandelt (kein Raise) UND alle Einsätze gleich
+  const roundOver = !isRaise && allEqual && isLastActor;
+
+  // Alle all-in (kein weiteres Bieten möglich) bei mehr als 1 Spieler
+  const allAllin = bettingActive.length === 0 && nonFolded.length > 1;
+
+  if (roundOver || allAllin) {
+    // Nächste Straße aufdecken
     const nextStreetRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-next-street`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
       body: JSON.stringify({ online_spiel_id }),
     });
-    const nextStreetData = await nextStreetRes.json();
+    const nextStreetData = await nextStreetRes.json().catch(() => ({}));
     return json({ ok: true, street_over: true, ...nextStreetData });
   }
 
   // Nächsten Spieler bestimmen
-  const myIdx = updatedSeats.findIndex((s: { spieler_id: string }) => s.spieler_id === spieler_id);
   const nextPlayer = findNextActivePlayer(updatedSeats, myIdx);
 
-  if (!nextPlayer) return json({ ok: true, hand_over: true });
+  if (!nextPlayer) {
+    // Kein weiterer aktiver Spieler → Nächste Straße
+    const nextStreetRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-next-street`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
+      body: JSON.stringify({ online_spiel_id }),
+    });
+    const nextStreetData = await nextStreetRes.json().catch(() => ({}));
+    return json({ ok: true, street_over: true, ...nextStreetData });
+  }
 
   await db.from('online_spiele').update({ current_player_id: nextPlayer.spieler_id }).eq('id', online_spiel_id);
   await executePreActionIfSet(db, session, updatedSeats, nextPlayer);
@@ -247,11 +270,22 @@ Deno.serve(async (req) => {
   return json({ ok: true, next_player: nextPlayer.spieler_id });
 });
 
+// Nächster aktiver Spieler nach fromIdx (im Uhrzeigersinn)
 function findNextActivePlayer(seats: { spieler_id: string; status: string }[], fromIdx: number) {
   const n = seats.length;
   for (let i = 1; i < n; i++) {
     const s = seats[(fromIdx + i) % n];
-    if (s.status === 'active') return s;
+    if (s.status === 'active' || s.status === 'paused') return s;
+  }
+  return null;
+}
+
+// Vorheriger aktiver Spieler vor fromIdx (gegen Uhrzeigersinn)
+function findPrevActivePlayer(seats: { spieler_id: string; status: string }[], fromIdx: number) {
+  const n = seats.length;
+  for (let i = 1; i <= n; i++) {
+    const s = seats[(fromIdx - i + n) % n];
+    if (s.status === 'active' || s.status === 'paused') return s;
   }
   return null;
 }
@@ -285,13 +319,13 @@ async function executePreActionIfSet(
     case 'call_any': autoAction = 'call'; break;
   }
 
-  if (!autoAction) return; // Situation geändert → Pre-Action annullieren
+  if (!autoAction) return;
 
-  await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/poker-action`, {
+  await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
     },
     body: JSON.stringify({
       online_spiel_id: session.id,

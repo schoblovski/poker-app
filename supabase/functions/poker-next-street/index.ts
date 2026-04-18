@@ -59,14 +59,18 @@ Deno.serve(async (req) => {
   // Erster Spieler nach Dealer der noch aktiv ist
   const dealerIdx = (seats ?? []).findIndex((s: { seat: number }) => s.seat === session.dealer_seat);
   const firstToAct = findFirstActiveAfter(seats ?? [], dealerIdx);
+  const firstToActIdx = firstToAct ? (seats ?? []).findIndex((s: { id: string }) => s.id === firstToAct.id) : -1;
+  // Letzter Akteur der neuen Straße = aktiver Spieler direkt vor dem ersten Akteur
+  const lastToAct = firstToActIdx >= 0 ? findPrevActivePlayer(seats ?? [], firstToActIdx) : null;
+  const newStreetLastActorId = lastToAct?.spieler_id ?? null;
 
   // Alle allin-Spieler → falls alle anderen auch allin/fold → sofort alle Streets aufdecken
-  const stillActive = (seats ?? []).filter((s: { status: string }) => s.status === 'active');
+  const stillActive = (seats ?? []).filter((s: { status: string }) => s.status === 'active' || s.status === 'paused');
   const allAllin = stillActive.length === 0;
 
   if (allAllin) {
     // Alle restlichen Community Cards sofort aufdecken (runout)
-    const allNewCards = remainingDeck.slice(0, 5 - newCommunity.length + newCards.length);
+    const allNewCards = remainingDeck.slice(0, 5 - newCommunity.length);
     const fullBoard = [...newCommunity, ...allNewCards];
 
     await Promise.all([
@@ -93,6 +97,7 @@ Deno.serve(async (req) => {
       street: nextStreet,
       community_cards: newCommunity,
       current_player_id: firstToAct?.spieler_id ?? null,
+      street_last_actor_id: newStreetLastActorId,
     }).eq('id', online_spiel_id),
 
     // Deck aktualisieren
@@ -115,7 +120,16 @@ function findFirstActiveAfter(seats: { spieler_id: string; status: string }[], f
   const n = seats.length;
   for (let i = 1; i <= n; i++) {
     const s = seats[(fromIdx + i) % n];
-    if (s.status === 'active') return s;
+    if (s.status === 'active' || s.status === 'paused') return s;
+  }
+  return null;
+}
+
+function findPrevActivePlayer(seats: { spieler_id: string; status: string }[], fromIdx: number) {
+  const n = seats.length;
+  for (let i = 1; i <= n; i++) {
+    const s = seats[(fromIdx - i + n) % n];
+    if (s.status === 'active' || s.status === 'paused') return s;
   }
   return null;
 }

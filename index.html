@@ -6668,7 +6668,10 @@
         for(let cv=0;cv<nCards;cv++){const bx=sx-tot/2+cv*(cw+gap);cardBacks+=`<rect x="${bx}" y="${sy-28}" width="${cw}" height="${ch}" rx="2" fill="${isMe?'rgba(0,0,0,0)':'rgba(34,197,94,.8)'}" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>`;}
       }
       const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
-      const betChip=betAmt>0?`<circle cx="${sx}" cy="${sy+28}" r="11" fill="var(--accent)" opacity=".85"/><text x="${sx}" y="${sy+32}" text-anchor="middle" font-size="8" fill="white">€${betAmt.toFixed(0)}</text>`:'';
+      // Bet chip: position toward table center (between seat and oval)
+      const _bdx=cx-sx,_bdy=cy-sy,_bd=Math.sqrt(_bdx*_bdx+_bdy*_bdy)||1;
+      const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
+      const betChip=betAmt>0?`<circle cx="${bcx}" cy="${bcy}" r="10" fill="var(--accent)" opacity=".9"/><text x="${bcx}" y="${bcy+4}" text-anchor="middle" font-size="8" fill="white">€${betAmt.toFixed(0)}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.35:1}"/>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(52,name.length*6+12);
@@ -6756,7 +6759,9 @@
       html+=`<div class="section-title" style="margin-top:var(--space-lg)">Beendet</div><div class="card">`;
       done.slice(0,5).forEach(s=>{
         const cnt=(seatsMap[s.id]||[]).length;
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · Beendet</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler</div></div>${chevron}</div>`;
+        const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+        const hands=s.hand_nr>0?`· ${s.hand_nr} Hände`:'';
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · ${datum}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -6884,7 +6889,7 @@
     const dealerSeat=seats.find(s=>s.seat===session.dealer_seat);
     const isDealer=dealerSeat?.spieler_id===currentSpieler?.id;
     const dealerIsActive=dealerSeat&&dealerSeat.status!=='paused'&&dealerSeat.status!=='sitting_out';
-    const canRunout=session.runout_cards===null&&boardCount>0&&boardCount<5&&isRunning;
+    const canRunout=session.runout_cards===null&&boardCount>0&&boardCount<5&&isRunning&&!session.current_player_id;
     const mayReveal=canRunout&&(isDealer||(!dealerIsActive&&mySeat&&myStatus!=='paused'&&myStatus!=='sitting_out'));
     const runoutBtn=mayReveal?`<div style="text-align:center;margin-bottom:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-runout" style="font-size:12px;padding:5px 14px">Was wäre noch gekommen?</button></div>`:'';
     const runoutDisplay=(session.runout_cards?.length>0)?`<div style="margin:var(--space-sm) 0;padding:8px 12px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e"><span style="font-weight:700">Was wäre gekommen: </span><span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px">${session.runout_cards.map(c=>_pmCard(c)).join('')}</span></div>`:'';
@@ -6980,9 +6985,9 @@
   function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus){
     if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
     if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Hinsetzen</button></div>`;
-    if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><button class="btn btn-secondary" onclick="showPage('online-lobby')">Zur Übersicht</button></div>`;
+    if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
-    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" onclick="showPage('online-lobby')">Zur Übersicht</button></div></div>`;
+    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div></div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
     if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
@@ -6994,8 +6999,8 @@
       const myStack=mySeat.stack||0;
       const pot=session.pot||0;
       const bb=(session.small_blind||1)*2;
-      const halfPot=Math.min(myStack,Math.max(bb,+(pot*0.5).toFixed(2)));
-      const fullPot=Math.min(myStack,Math.max(bb,pot));
+      const halfPot=parseFloat(Math.min(myStack,Math.max(bb,pot*0.5)).toFixed(2));
+      const fullPot=parseFloat(Math.min(myStack,Math.max(bb,pot)).toFixed(2));
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
@@ -7116,6 +7121,7 @@
       showPage('online-lobby');
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
+    document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
   }
 
   async function _pmTakeSeatFlow(seatNr){

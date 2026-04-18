@@ -128,6 +128,7 @@ Deno.serve(async (req) => {
       pot: smallBlind + bigBlind,
       dealer_seat: dealerSeat,
       current_player_id: utgSeat.spieler_id,
+      street_last_actor_id: bbSeat.spieler_id, // BB schließt preflop die Runde (Option)
       hand_nr: (session.hand_nr ?? 0) + 1,
     }).eq('id', online_spiel_id),
   ]);
