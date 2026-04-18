@@ -347,8 +347,32 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 2. **Pandemie-Modus** – Kernmodus implementiert (auf Branch `claude/app-ideas-0j3gF`), wartet auf Freigabe/Version-Bump
 3. **Easter Egg für Pandemie-Modus** – Noch NICHT implementiert! Erst einbauen wenn Modus vollständig stabil und freigegeben ist. Konzept: 7× auf App-Logo/Titel tippen → Rätsel-Seite → Antwort „Chris" → Freischaltung + Version 4.0 Modal. State in `localStorage: 'dtks_pandemie_entdeckt'`. Vollständiges Konzept weiter unten im Dokument.
-4. **Besondere Hände aus Online-Spiel übernehmen** – Wenn im Pandemie-Modus eine besondere Hand auftaucht (z.B. 7-2 Sieg, Straight Flush, Royal Flush, Vierling), soll nach dem Showdown eine Option erscheinen: Screenshot als Beweisfoto machen + Eintrag direkt in `hand_statistik` erstellen (Gewinner vorbelegt, Hand-Typ erkannt aus Evaluator-Ergebnis, Spiel-Datum/ID vorbelegt). Beweisfoto = Screenshot des Tisches (nicht Upload – eher Hinweis: „Mach einen Screenshot und lade ihn hoch").
+4. **Besondere Hände aus Online-Spiel übernehmen** – Nach Showdown Option anzeigen wenn besondere Hand erkannt (7-2-Sieg, Straight Flush, Royal Flush, Vierling): Eintrag in `hand_statistik` erstellen mit vorbellegtem Gewinner/Hand-Typ/Datum/spiel_id; Beweisfoto = Hinweis „Mach einen Screenshot" + Upload-Möglichkeit. Hand-Typ wird vom Evaluator-Ergebnis abgeleitet.
 5. **Push Notifications** ✅ vollständig implementiert:
+   - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
+   - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
+   - ✅ Supabase Tabelle `push_subscriptions` angelegt
+   - ✅ Profil-Seite: Subscribe/Unsubscribe + Kategorie-Toggles (5 Kategorien)
+   - ✅ Supabase Edge Function `send-push` deployed (npm:web-push)
+   - ✅ App-Trigger: Spielabschluss, neue Transaktion, Buy-In, Besondere Hand
+   - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
+   - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
+
+### Pandemie-Modus – Offene Bugs & Verbesserungen (aus Tests)
+- **Doppel-Übernahme verhindern** – Nach Payout-Bestätigung prüfen ob für diese `online_spiel_id` bereits ein verknüpfter `spiel_id` existiert; Button „Payout & Abrechnung" deaktivieren/verstecken wenn `session.spiel_id` bereits gesetzt ist. Ohne vorherige Löschung aus dem Verlauf darf kein zweiter Eintrag entstehen.
+- **Home-Kontostände nach Payout** – `loadHome()` wird zwar aufgerufen, aber Seite zeigt alten Stand bis zur manuellen App-Neu-Laden. Problem: `showPage('home')` nutzt gecachtes DOM. Fix: nach Payout `loadHome()` awaiten oder Cache-Invalidierungslogik prüfen.
+- **Online-Spiel-Liste unabhängig vom Verlauf** – Abgeschlossene Online-Sessions (`online_spiele` Tabelle) sollen NICHT verschwinden wenn das verknüpfte `spiele`-Objekt im regulären Verlauf gelöscht wird. `online_spiele` ist eine eigene Tabelle – Lösch-Kaskade via FK prüfen/entfernen. Admin soll selbst entscheiden wann eine Online-Session aus der Lobby-Liste verschwindet.
+- **Session beenden ohne Spieler am Tisch – Crash** – Wenn keine Spieler am Tisch sitzen und Admin Session beendet, kommt `TypeError: Cannot read properties of null (reading 'id')` (Index ~7321). Guard einbauen: prüfen ob `_pm.session` noch existiert bevor auf `.id` zugegriffen wird.
+- **Verlauf-Container Höhe** – Im Portrait-Modus auf Handy: Verlauf-Container sollte ca. 50% höher sein damit mehr Feed-Einträge sichtbar sind.
+- **„Zurück am Tisch"-Meldung im Feed** – Wenn Spieler nach Pause/Abwesenheit wieder aktiv wird, soll im Verlauf eine Meldung erscheinen (analog zu „X verlässt den Tisch"). Action-Typ `resume` oder `rejoin` im Feed anzeigen.
+- **iPadOS Statusleiste überlappt Kebab-Menü** – Auf iPad im Landscape-Modus überlagert die iPadOS-Statusleiste den oberen Bereich; Kebab-Menü-Button schwer erreichbar. Header braucht `padding-top: env(safe-area-inset-top)` oder equivalente Anpassung für iPadOS Landscape.
+- **Fehlermeldung „zu wenig Spieler"** – Wenn man nächste Spielrunde startet ohne genug Buy-Ins, erscheint rohe JSON-Fehlermeldung. Fix: Server-Fehlertext parsen und sprechende Meldung ausgeben, inkl. Liste welche Spieler noch kein Buy-In haben.
+- **Vorauswahl „Fold"** – Soll nur folden wenn tatsächlich ein Einsatz zu callen ist. Wenn man noch checken könnte (kein offener Einsatz), soll automatisch gecheckt werden statt gefoldet. Analog zum „Check/Fold"-Verhalten.
+- **Vorauswahl „Chk/Fold"** – Ist redundant zu geplantem neuem Fold-Verhalten oben; kann entfernt werden.
+- **Wake-Lock auf Handy** – Screen-Sleep-Verhinderung funktioniert nicht mehr zuverlässig auf Handy (weder Portrait noch Landscape). Wake-Lock-Logik prüfen und ggf. `navigator.wakeLock.request('screen')` erneut bei `visibilitychange` und `focus`-Events anfordern.
+- **„Was wäre gekommen"-Karten im Verlauf** – Nach Runout-Reveal soll jeder Spieler der seine Karten offengelegt hat im Feed sehen was für ein Blatt er gehabt hätte (z.B. „Du hättest einen Flush gehabt"). Evaluator auf kombinierte Hole Cards + vollständiges Board anwenden.
+- **Landscape-Header-Position auf Handy** – Oberste Zeile (Spielmodus/Spielrunde/Kebab) soll im Landscape-Modus tiefer sein (bündig mit Oberkante der eigenen Karten), damit Aktions-Buttons besser sichtbar sind. Vorsicht: Layout nicht zerschiessen.
+- **Flackern bei UI-Updates** – Wenn der Screen bei neuen Feed-Einträgen vollständig neu gerendert wird, flackert er kurz. Lösung: nur den Feed-Container inkrementell updaten statt `el.innerHTML` komplett neu zu setzen; oder CSS `opacity`-Transition beim Re-Render verwenden.
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
