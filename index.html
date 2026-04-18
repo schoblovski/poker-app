@@ -7156,16 +7156,24 @@
     if(mySeatRow){
       const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
       _pm.myHoleCards=cardRow?.hole_cards||[];
-      // Auto-insert 'look' action for players NOT using facedown mode (so they aren't marked as blind)
       const _fd=localStorage.getItem('pm_facedown')==='true';
       const _hn=session?.hand_nr||0;
-      if(!_fd&&_pm.myHoleCards.length>0&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==_hn){
-        _pm._lookedHandNr=_hn;
-        // Optimistically add look to local actions so didLook check works immediately (before DB round-trip)
-        if(!_pm.actions.some(a=>a.action==='look'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_hn)){
-          _pm.actions.push({id:'_look_'+_hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:_hn,meta:null,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+      if(_pm.myHoleCards.length>0&&currentSpieler?.id){
+        if(!_fd&&(_pm._lookedHandNr??-1)!==_hn){
+          // Non-facedown: auto-look so player isn't marked as blind
+          _pm._lookedHandNr=_hn;
+          if(!_pm.actions.some(a=>a.action==='look'&&!a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===_hn)){
+            _pm.actions.push({id:'_look_'+_hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:_hn,meta:null,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+          }
+          db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:_hn}).then(()=>{});
+        } else if(_fd&&(_pm._dealtBlindHandNr??-1)!==_hn){
+          // Facedown: record that cards were dealt face-down
+          _pm._dealtBlindHandNr=_hn;
+          if(!_pm.actions.some(a=>a.action==='dealt_blind'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_hn)){
+            _pm.actions.push({id:'_dealt_blind_'+_hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'dealt_blind',amount:0,hand_nr:_hn,meta:null,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+          }
+          db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'dealt_blind',hand_nr:_hn}).then(()=>{});
         }
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:_hn}).then(()=>{});
       }
     }else{
       _pm.myHoleCards=[];
@@ -7513,7 +7521,7 @@
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
     const raw=actions.slice(-40).reverse();
     const newHandMap={};
-    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look')return false;return true;});
+    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look'&&!a.meta?.facedown)return false;return true;});
     const placed=new Set();
     const display=[];
     for(let i=0;i<others.length;i++){
@@ -7530,10 +7538,9 @@
     // Deduplicate: only first reveal_cards per spieler_id per hand_nr
     const revealSeen=new Set();
     const displayDeduped=display.filter(a=>{
-      if(a.action!=='reveal_cards')return true;
-      const key=`${a.spieler_id}|${a.hand_nr}`;
-      if(revealSeen.has(key))return false;
-      revealSeen.add(key);return true;
+      if(a.action==='reveal_cards'){const key=`${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
+      if(a.action==='dealt_blind'||a.action==='look'){const key=`${a.action}|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
+      return true;
     });
     const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
     return displayDeduped.map(a=>{
@@ -7571,6 +7578,8 @@
           text=`<b>${escHtml(n)}</b> zeigt Karten${cardRow}`;
           break;
         }
+        case'dealt_blind':text=`<b>${escHtml(n)}</b> hat seine Karten blind erhalten`;break;
+        case'look':text=`<b>${escHtml(n)}</b> hat seine Karten angesehen`;break;
         case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
@@ -7710,10 +7719,13 @@
       if(!_pm)return;
       const hn=_pm.session?.hand_nr||0;
       _pm._revealedHandNr=hn;
-      // Insert look action so others can see player has seen their cards
       if(currentSpieler?.id&&(_pm._lookedHandNr??-1)!==hn){
         _pm._lookedHandNr=hn;
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn}).then(()=>{});
+        // look with meta.facedown:true = player revealed face-down cards (shown in feed)
+        if(!_pm.actions.some(a=>a.action==='look'&&a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===hn)){
+          _pm.actions.push({id:'_look_fd_'+hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+        }
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true}}).then(()=>{_pmScheduleLoad();});
       }
       renderOnlineTisch();
     });
