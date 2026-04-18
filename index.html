@@ -7122,19 +7122,22 @@
 
   function _pmFeedHtml(actions){
     if(!actions?.length)return`<div style="padding:var(--space-md);color:var(--text-tertiary);font-size:13px;text-align:center">Noch keine Aktionen</div>`;
-    // Newest first, but new_hand always tops its hand_nr group
+    // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
     const raw=actions.slice(-40).reverse();
-    const placed=new Set();
     const newHandMap={};
-    raw.forEach(a=>{if(a.action==='new_hand')newHandMap[a.hand_nr]=a;});
+    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}return true;});
+    const placed=new Set();
     const display=[];
-    for(const a of raw){
-      if(a.action==='new_hand'){continue;}
-      const nh=newHandMap[a.hand_nr];
-      if(nh&&!placed.has(a.hand_nr)){placed.add(a.hand_nr);display.push(nh);}
-      display.push(a);
+    for(let i=0;i<others.length;i++){
+      display.push(others[i]);
+      // After the last action of a hand_nr group, append its new_hand divider
+      const nextNr=i+1<others.length?others[i+1].hand_nr:null;
+      if(others[i].hand_nr!==nextNr&&!placed.has(others[i].hand_nr)){
+        const nh=newHandMap[others[i].hand_nr];
+        if(nh){display.push(nh);placed.add(others[i].hand_nr);}
+      }
     }
-    // Add new_hand entries whose hand_nr had no other actions yet
+    // new_hand entries with no other actions in the window (e.g. very first action of a hand)
     Object.values(newHandMap).forEach(nh=>{if(!placed.has(nh.hand_nr))display.push(nh);});
     return display.map(a=>{
       const n=a.spieler?.name||'?';
