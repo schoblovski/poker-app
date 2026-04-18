@@ -6953,11 +6953,15 @@
 
     // Aktion-Bereich
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
-    if(isRunning&&handIsOver2&&mySeat){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
+    if(isRunning&&handIsOver2&&mySeat){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important">Nächste Hand</button>`;}
 
-    // Video-Call-Button (generischer Link)
+    // Video-Call-Button (generischer Link + Teilnehmerzähler)
     const waLink=_pm._waLink||session.video_link||'';
-    const waBtn=waLink?`<a href="${escHtml(waLink)}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;padding:5px 12px;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Video-Call</a>`:'';
+    const callPeers=Array.isArray(session.call_teilnehmer)?session.call_teilnehmer:[];
+    const imInCall=callPeers.includes(currentSpieler?.id);
+    const callCount=callPeers.length;
+    const callLabel=`Video-Call${callCount>0?` (${callCount})`:''}`
+    const waBtn=waLink?`<button class="btn btn-ghost${imInCall?' pm-call-active':''}" id="pm-call-btn" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important;${imInCall?'border-color:var(--accent);color:var(--accent)':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>${callLabel}</button>`:'';
 
     // Kebab-Menü (Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
@@ -7161,6 +7165,15 @@
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
     document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
+    document.getElementById('pm-call-btn')?.addEventListener('click',async()=>{
+      const link=_pm._waLink||_pm.session?.video_link||'';
+      if(link)window.open(link,'_blank','noopener,noreferrer');
+      const current=Array.isArray(_pm.session?.call_teilnehmer)?_pm.session.call_teilnehmer:[];
+      const myId=currentSpieler?.id;
+      if(!myId)return;
+      const updated=current.includes(myId)?current.filter(id=>id!==myId):[...current,myId];
+      await db.from('online_spiele').update({call_teilnehmer:updated}).eq('id',_pm.id);
+    });
   }
 
   async function _pmTakeSeatFlow(seatNr){
