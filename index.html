@@ -713,8 +713,8 @@
   .pm-tab.active{color:var(--accent-text);border-color:var(--accent)}
   .pm-feed{display:flex;flex-direction:column;gap:3px;max-height:280px;overflow-y:auto}
   .pm-feed-item{display:flex;align-items:flex-start;gap:7px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12.5px;color:var(--text-secondary);line-height:1.4}
-  .pm-feed-item .pf-av{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:1px}
-  .pm-feed-item .pf-ini{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px;background:var(--bg);color:var(--text-secondary)}
+  .pm-feed-item .pf-av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:1px}
+  .pm-feed-item .pf-ini{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px;background:var(--bg);color:var(--text-secondary)}
   .pm-feed-item.win{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
   .pm-feed-item.win .pf-ini{background:rgba(0,0,0,.08)}
   .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger)}
@@ -7112,7 +7112,7 @@
     const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einstRows}]=await Promise.all([
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,spieler(id,name,profilbild)').eq('online_spiel_id',_pm.id).order('seat'),
-      db.from('online_actions').select('*,spieler(name)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(60),
+      db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(60),
       db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe','pm_show_equity']),
     ]);
@@ -7295,7 +7295,7 @@
       ${session.street?`<div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
-      </div>`:''}</div>${_canBuyin?`<div style="margin-top:8px"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;padding:0;margin:0;width:100%;letter-spacing:-.01em">+ Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
+      </div>`:''}</div>${_canBuyin?`<div style="margin-top:8px"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;padding:0;margin:0;width:100%;letter-spacing:-.01em;text-align:center">Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
 
     // Best hand berechnen (wenn Board ≥3 Karten und eigene Karten vorhanden)
     const _boardCards=session.community_cards||[];
@@ -7332,7 +7332,8 @@
 
     const _holeAnim=myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-xs) 0 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
+    const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Spielrunde #${session.hand_nr||0}</div>
@@ -7342,14 +7343,15 @@
         <div class="pm-tisch-left">
           <div style="margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const _sv=s.stack||0;const stk=`€${Number.isInteger(_sv)?_sv:_sv.toFixed(2)}`;const bg=isFold?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:'';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${isFold?'0.5':'1'}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
-          ${runoutDisplay}${runoutBtn}${actionArea}
+          ${runoutDisplay}${runoutBtn}${isLandscape?'':actionArea}
         </div>
         <div class="pm-tisch-right">
           ${handResultHtml}
-          ${(myCardsSection||infoBar)?`<div style="display:flex;gap:var(--space-sm);align-items:flex-start;margin-bottom:var(--space-md)">${myCardsSection?`<div style="flex-shrink:0">${myCardsSection}</div>`:''}${infoBar?`<div style="flex:1;min-width:0">${infoBar}</div>`:''}</div>`:''}
+          ${(myCardsSection||infoBar)?`<div style="display:flex;gap:16px;align-items:stretch;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection?`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center">${myCardsSection}</div>`:''}${infoBar?`<div style="flex:1;min-width:0;${myCardsSection?'border-left:1px solid var(--border);padding-left:14px':''}">${infoBar}</div>`:''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:2px;border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span></div>
           <div class="pm-feed">${feedHtml}</div>
+          ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:''}
         </div>
       </div>
     </div>`;
@@ -7471,8 +7473,16 @@
     }
     // new_hand entries with no other actions in the window (e.g. very first action of a hand)
     Object.values(newHandMap).forEach(nh=>{if(!placed.has(nh.hand_nr))display.push(nh);});
+    // Deduplicate: only first reveal_cards per spieler_id per hand_nr
+    const revealSeen=new Set();
+    const displayDeduped=display.filter(a=>{
+      if(a.action!=='reveal_cards')return true;
+      const key=`${a.spieler_id}|${a.hand_nr}`;
+      if(revealSeen.has(key))return false;
+      revealSeen.add(key);return true;
+    });
     const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
-    return display.map(a=>{
+    return displayDeduped.map(a=>{
       const n=a.spieler?.name||'?';
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
       let text='';let extra='';
@@ -7719,9 +7729,11 @@
   }
 
   async function _pmRunout(){
+    const btn=document.getElementById('btn-pm-runout');
+    if(btn){btn.disabled=true;btn.style.opacity='.5';}
     if(!_pm)return;
     const resp=await _callFn('poker-reveal-runout',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
-    if(resp?.error)await showAlert(resp.error);
+    if(resp?.error){if(btn){btn.disabled=false;btn.style.opacity='';}await showAlert(resp.error);}
   }
 
   function _pmPreActionSheet(){
@@ -7773,9 +7785,14 @@
   }
 
   async function _pmRevealCards(){
+    const btn=document.getElementById('btn-pm-reveal');
+    if(btn)btn.disabled=true;
     if(!_pm?.session||!currentSpieler?.id)return;
     const myHC=_pm.myHoleCards||[];
     if(!myHC.length)return;
+    // Guard: prevent duplicate reveal inserts from rapid taps
+    const alreadyRevealed=(_pm.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_pm.session.hand_nr);
+    if(alreadyRevealed)return;
     const board=_pm.session.community_cards||[];
     const best=board.length>=3?_pmBestHandJS(myHC,board,_pm.session.variante):null;
     await db.from('online_actions').insert({
@@ -7820,12 +7837,19 @@
       <div style="font-size:20px;font-weight:800;margin-bottom:6px">Stack leer</div>
       <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--danger);margin-bottom:10px">€0.00</div>
       <div style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg)">Du hast keinen Stack mehr. Möchtest du mit einem neuen Buy-In weiterspielen?</div>
-      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">+ Buy-In · €${(+startStack).toFixed(2)}</button>
-      <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:14px">Nein, danke – aussteigen</button>
+      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${(+startStack).toFixed(2)}</button>
+      <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:14px">Tisch verlassen</button>
     </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('#pm-broke-buyin').addEventListener('click',async()=>{overlay.remove();await _pmBuyIn();});
-    overlay.querySelector('#pm-broke-dismiss').addEventListener('click',()=>overlay.remove());
+    overlay.querySelector('#pm-broke-dismiss').addEventListener('click',async()=>{
+      overlay.remove();
+      if(_pm?.mySeat&&currentSpieler){
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+        if(_pm.session?.status!=='running')await db.from('online_seats').delete().eq('id',_pm.mySeat.id);
+        showPage('online-lobby');
+      }
+    });
     overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   }
 
