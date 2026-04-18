@@ -6662,11 +6662,7 @@
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
       const avatarUrl=seat?.spieler?.profilbild||'';
       const nCards=session?.variante==='holdem'?2:4;
-      let cardBacks='';
-      if(seat&&!isEmpty&&!isFolded){
-        const cw=8,ch=12,gap=3,tot=nCards*(cw+gap)-gap;
-        for(let cv=0;cv<nCards;cv++){const bx=sx-tot/2+cv*(cw+gap);cardBacks+=`<rect x="${bx}" y="${sy-28}" width="${cw}" height="${ch}" rx="2" fill="${isMe?'rgba(0,0,0,0)':'rgba(34,197,94,.8)'}" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>`;}
-      }
+      // Keine Karten-Rückseiten auf dem Tisch – eigene Karten sind im rechten Panel sichtbar
       const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
       // Bet chip: position toward table center (between seat and oval)
       const _bdx=cx-sx,_bdy=cy-sy,_bd=Math.sqrt(_bdx*_bdx+_bdy*_bdy)||1;
@@ -6682,7 +6678,7 @@
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
           :`${avatarEl}${namePill}${stackPill}`}
-        ${cardBacks}${betChip}${dealerMark}
+        ${betChip}${dealerMark}
       </g>`;
     }
     const board=session?.community_cards||[];
@@ -6897,12 +6893,12 @@
     // Eigene Karten
     const myCardsHtml=!!(mySeat&&myHoleCards.length>0&&myStatus!=='folded');
 
-    // Aktion-Bereich
-    const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus);
-
     // Neue-Hand-Button
     let newHandBtn='';
     const handIsOver2=!session.current_player_id;
+
+    // Aktion-Bereich
+    const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
     if(isRunning&&handIsOver2&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
 
     // WhatsApp-Button
@@ -6982,12 +6978,14 @@
     }).join('');
   }
 
-  function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus){
+  function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver){
     if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
     if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Hinsetzen</button></div>`;
     if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
     if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div></div>`;
+    // Hand vorbei → keine Aktions-Buttons anzeigen
+    if(handIsOver&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Hand beendet – warte auf nächste Hand…</div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
     if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
