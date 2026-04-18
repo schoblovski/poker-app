@@ -6812,9 +6812,9 @@
         <input type="checkbox" id="pm-new-test" style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0">
         <div><div style="font-size:14px;font-weight:600">Test-Modus</div><div style="font-size:12px;color:var(--text-secondary)">Keine echten Kontostände – TEST-Banner sichtbar</div></div>
       </label>
-      <div class="btn-row-2">
-        <button class="btn btn-secondary" id="pm-new-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="pm-new-ok">Session erstellen</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+        <button class="btn btn-secondary" id="pm-new-cancel" style="max-width:none;margin:0">Abbrechen</button>
+        <button class="btn btn-primary" id="pm-new-ok" style="max-width:none;margin:0">Session erstellen</button>
       </div>
     </div>`;
     document.body.appendChild(overlay);
