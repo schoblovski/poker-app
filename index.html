@@ -68,8 +68,8 @@
     .pm-tisch-left,.pm-tisch-right{min-width:0}
     @media(min-width:600px),(orientation:landscape){
       .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:0}
-      .pm-tisch-left{flex:1.1;padding-right:var(--space-lg)}
-      .pm-tisch-left .pm-feed{max-height:42dvh;overflow-y:auto}
+      .pm-tisch-left{flex:1.1;padding-right:var(--space-lg);display:flex;flex-direction:column}
+      .pm-tisch-left .pm-feed{flex:1;min-height:0;overflow-y:auto;max-height:50dvh}
       .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow-y:auto;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none}.pm-tisch-right::-webkit-scrollbar{display:none}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
@@ -1444,6 +1444,8 @@
   document.addEventListener('touchend',e=>{
     const dx=e.changedTouches[0].clientX-_swipeX,dy=e.changedTouches[0].clientY-_swipeY;
     if(_swipeX<40&&dx>80&&Math.abs(dy)<80){
+      const _infoM=document.getElementById('pm-info-modal');
+      if(_infoM&&_infoM.style.display!=='none'){_infoM.style.display='none';return;}
       if(_pageHistory.length>1){
         _pageHistory.pop();const prev=_pageHistory[_pageHistory.length-1];
         _handlingPopstate=true;showPage(prev);_handlingPopstate=false;
@@ -7054,8 +7056,14 @@
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
       const avatarUrl=seat?.spieler?.profilbild||'';
       const nCards=session?.variante==='holdem'?2:4;
+      // Revealed cards for this seat (needed to compute dealer mark position)
+      const _rcDm=(!isEmpty&&revealedCards[seat?.spieler_id])||[];
+      const _isBotDm=sy>=cy;
+      // Dealer mark: avoid overlapping arc cards by moving it clear of the card cluster
+      const _dmX=_rcDm.length>0?(sx+(_isBotDm?30:-30)):sx+18;
+      const _dmY=_rcDm.length>0?(sy+(_isBotDm?10:-10)):sy-18;
+      const dealerMark=isDealer?`<circle cx="${_dmX}" cy="${_dmY}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${_dmX}" y="${_dmY+4}" text-anchor="middle" dominant-baseline="central" font-size="7" font-weight="700" fill="white">D</text>`:'';
       // Keine Karten-Rückseiten auf dem Tisch – eigene Karten sind im rechten Panel sichtbar
-      const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
       // Bet chip: position toward table center (between seat and oval)
       const _bdx=cx-sx,_bdy=cy-sy,_bd=Math.sqrt(_bdx*_bdx+_bdy*_bdy)||1;
       const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
@@ -7460,7 +7468,7 @@
     const dealerIsActive=dealerSeat&&dealerSeat.status!=='paused'&&dealerSeat.status!=='sitting_out';
     const canRunout=session.runout_cards===null&&boardCount>0&&boardCount<5&&isRunning&&!session.current_player_id;
     const mayReveal=canRunout&&(isDealer||(!dealerIsActive&&mySeat&&myStatus!=='paused'&&myStatus!=='sitting_out'));
-    const runoutBtn=mayReveal?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-runout" style="font-size:12px;padding:5px 14px">Was wäre noch gekommen?</button></div>`:'';
+    const runoutBtn=mayReveal?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button id="btn-pm-runout" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;border:none;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 14px rgba(22,163,74,.4);font-family:var(--font-sans)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Was wäre noch gekommen?</button></div>`:'';
     const runoutDisplay=(session.runout_cards?.length>0)?`<div style="margin:var(--space-sm) 0;padding:8px 12px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e"><span style="font-weight:700">Was wäre gekommen: </span><span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px">${session.runout_cards.map(c=>_pmCard(c)).join('')}</span></div>`:'';
 
     // Eigene Karten (auch nach Fold sichtbar)
@@ -7491,7 +7499,7 @@
 
     // Kebab-Menü (Video-Call + Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left"><div style="display:flex;align-items:center;gap:10px;flex:1;font-size:14px;color:var(--text-primary);margin-right:16px">${fdIcon}Karten verdeckt</div><div style="position:relative;width:42px;height:24px;background:${facedown?'var(--accent)':' var(--bg-secondary)'};border-radius:12px;transition:background .2s;flex-shrink:0"><div style="position:absolute;top:3px;left:${facedown?'21px':'3px'};width:18px;height:18px;background:white;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div></button><div style="height:1px;background:var(--border)"></div>`:''  }<button class="pm-menu-item" id="btn-pm-info" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Spielregeln &amp; Hilfe</button>${(mySeat&&!isFinished)||!isFinished?`<div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:220px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left"><div style="display:flex;align-items:center;gap:10px;flex:1;font-size:14px;color:var(--text-primary);margin-right:16px">${fdIcon}Karten verdeckt</div><div style="position:relative;width:42px;height:24px;background:${facedown?'var(--accent)':' var(--bg-secondary)'};border-radius:12px;transition:background .2s;flex-shrink:0"><div style="position:absolute;top:3px;left:${facedown?'21px':'3px'};width:18px;height:18px;background:white;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div></button><div style="height:1px;background:var(--border)"></div>`:''  }<button class="pm-menu-item" id="btn-pm-info" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Spielregeln &amp; Hilfe</button>${(mySeat&&!isFinished)||!isFinished?`<div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -7556,7 +7564,7 @@
     const _fdHint=`<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Antippen zum Aufdecken</div>`;
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div id="pm-cards-reveal" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none"><div style="display:flex;justify-content:center;gap:8px">${myHoleCards.map(()=>`<div class="pt-card back big"></div>`).join('')}</div>${_fdHint}</div>`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
-    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
+    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span><button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'4px 4px var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
@@ -7569,7 +7577,7 @@
           ${handResultHtml}
           ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px">${actionArea}</div>`:feedSection+_rStrip;})()}
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px">${actionArea}</div>`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
@@ -7713,7 +7721,12 @@
         case'check':text=`<b>${escHtml(n)}</b> checkt`;break;
         case'call':text=`<b>${escHtml(n)}</b> callt${amt}`;break;
         case'raise':text=`<b>${escHtml(n)}</b> raised auf${amt}`;break;
-        case'allin':{const _selfLooked=a.spieler_id===currentSpieler?.id&&(_pm?._lookedHandNr??-1)>=a.hand_nr&&localStorage.getItem('pm_facedown')!=='true';const didLook=_selfLooked||actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr);text=`<b>${escHtml(n)}</b> ${didLook?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
+        case'allin':{
+          // BLIND = player had NOT looked at their cards BEFORE the allin action
+          const _allinTs=a.created_at?new Date(a.created_at).getTime():Infinity;
+          const _lookedBefore=actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr&&new Date(b.created_at||0).getTime()<_allinTs);
+          const _selfLookedBefore=a.spieler_id===currentSpieler?.id&&(_pm?._lookedHandNr??-1)>=a.hand_nr&&localStorage.getItem('pm_facedown')!=='true'&&_allinTs===Infinity;
+          text=`<b>${escHtml(n)}</b> ${(_lookedBefore||_selfLookedBefore)?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
         case'blind':text=`<b>${escHtml(n)}</b> Blind${amt}`;break;
         case'post_sb':text=`<b>${escHtml(n)}</b> SB${amt}`;break;
         case'post_bb':text=`<b>${escHtml(n)}</b> BB${amt}`;break;
@@ -7744,6 +7757,7 @@
         case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
+        case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt nur`;extra=' facedown-action';break;
         case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
         case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
         case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:#fef3c7;color:#92400e;font-weight:700;font-size:12px">Split Pot – €${(+a.amount).toFixed(2)} aufgeteilt</div>`;
@@ -7758,8 +7772,8 @@
   }
 
   function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver){
-    if(!mySeat&&isWaiting)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 28px">Platz nehmen</button></div></div>`;
-    if(!mySeat&&isRunning)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 28px">Hinsetzen</button></div></div>`;
+    if(!mySeat&&isWaiting)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 24px">Mitspielen</button><button class="btn btn-ghost" id="btn-pm-sitdown-spectate" style="width:auto;max-width:none;padding:0 24px">Beobachten</button></div></div>`;
+    if(!mySeat&&isRunning)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist nicht am Tisch</p><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 24px">Mitspielen</button><button class="btn btn-ghost" id="btn-pm-sitdown-spectate" style="width:auto;max-width:none;padding:0 24px">Beobachten</button></div></div>`;
     if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="width:auto;padding:0 28px">Zur Übersicht</button></div></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px"${enoughPlayers?'':' disabled'}>Erste Spielrunde starten</button></div>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
     if(isFinished){const _showPayout=isAdmin&&!session.is_test&&!session.spiel_id;return`<div style="padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-md);text-align:center">Session beendet</div>${_showPayout?`<div class="btn-row-2"><button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`:`<div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="width:auto;padding:0 28px">Zur Übersicht</button></div>`}${isAdmin&&!session.is_test&&session.spiel_id?`<div style="font-size:12px;color:var(--accent-text);margin-top:8px;text-align:center">Ergebnis bereits übernommen</div>`:''}</div>`;}
@@ -7770,9 +7784,10 @@
       const revealBtn=myHC.length>0&&!alreadyRevealed?`<button class="btn btn-secondary" id="btn-pm-reveal" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px!important;padding:0 16px!important;font-weight:600;letter-spacing:-.01em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Karten zeigen</button>`:'';
       return`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)"><span>Spielrunde beendet – warte auf nächste Spielrunde…</span>${revealBtn}</div>`;
     }
+    if(myStatus==='sitting_out')return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(+(session?.start_stack||100)).toFixed(2)}</button></div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Spielrunde…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
-    if(myStatus==='paused')return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important">Zurück zum Spiel</button></div>`;
+    if(myStatus==='paused'){const _paa=mySeat?.pause_auto_action||'fold';const _pcl=mySeat?.pause_call_limit;const _paaLabels={fold:'Sofort folden',check:'Nur checken',call_limit:`Callen bis €${_pcl!=null?parseFloat(_pcl).toFixed(2):'?'}`,call_any:'Alles callen'};return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:6px"><div style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:14px;height:14px"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span style="font-size:13px;color:#f59e0b;font-weight:700">Pausiert</span></div><div style="font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:8px;padding:5px 12px">${_paaLabels[_paa]||_paa}</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important;margin-top:4px">Zurück zum Spiel</button></div>`;}
     if(isMyTurn){
       const maxBet=Math.max(0,...seats.filter(s=>s.status!=='folded'&&s.status!=='sitting_out').map(s=>s.bet_current_round||0));
       const myBet=mySeat.bet_current_round||0;
@@ -7804,8 +7819,8 @@
     const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span>`:`${_preIcon}<span>Vorauswahl</span>`;
     return`<div class="pm-action-area">
       <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction">${preBtnLabel}</button>
-        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause">${_pauseIcon}<span>Pause</span></button>
+        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="flex:1;max-width:180px">${preBtnLabel}</button>
+        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="flex:1;max-width:180px">${_pauseIcon}<span>Pause</span></button>
       </div>
     </div>`;
   }
@@ -7837,17 +7852,31 @@
       const btn=e.currentTarget;
       btn.disabled=true;btn.textContent='Suche Platz…';
       try{
-        // Fresh query to avoid stale local state (race condition)
         const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
         const taken=new Set((freshSeats||[]).map(s=>s.seat));
-        // Randomize starting point to reduce collision probability
         const start=Math.floor(Math.random()*9)+1;
         let free=-1;
         for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
-        if(free===-1){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Keine freien Plätze.');return;}
+        if(free===-1){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Keine freien Plätze.');return;}
         await _pmTakeSeatFlow(free);
-        btn.disabled=false;btn.textContent='Platz nehmen';
-      }catch(err){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Fehler: '+err.message);}
+        btn.disabled=false;btn.textContent='Mitspielen';
+      }catch(err){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Fehler: '+err.message);}
+    });
+    document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',async(e)=>{
+      const btn=e.currentTarget;btn.disabled=true;btn.textContent='…';
+      try{
+        const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
+        const taken=new Set((freshSeats||[]).map(s=>s.seat));
+        const start=Math.floor(Math.random()*9)+1;
+        let free=-1;
+        for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
+        if(free===-1){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Keine freien Plätze.');return;}
+        // Join as spectator: sitting_out, stack 0
+        const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0});
+        if(error){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+error.message);return;}
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+        await _pmLoad();
+      }catch(err){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+err.message);}
     });
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
@@ -7856,6 +7885,7 @@
     document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
+    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
     // Kebab-Menü Toggle
     document.getElementById('pm-kebab-btn')?.addEventListener('click',(e)=>{
       e.stopPropagation();
@@ -7910,6 +7940,19 @@
       document.body.appendChild(ov);
       ov.addEventListener('click',(e)=>{if(e.target===ov||e.target.id==='btn-pm-tisch-close')ov.remove();});
     });
+    document.getElementById('btn-pm-feed-expand')?.addEventListener('click',()=>{
+      if(!_pm)return;
+      const allFeedHtml=_pmFeedHtml(_pm.actions||[]);
+      const ov=document.createElement('div');
+      ov.id='pm-feed-modal';
+      ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) 0';
+      ov.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:14px;font-weight:700;color:var(--text-primary)">Verlauf</span><button id="btn-pm-feed-modal-close" style="margin-left:auto;background:none;border:none;padding:4px;cursor:pointer;color:var(--text-secondary);font-size:22px;line-height:1">×</button></div><div style="flex:1;overflow-y:auto;padding:12px 12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)">${allFeedHtml}</div>`;
+      document.body.appendChild(ov);
+      ov.querySelector('#btn-pm-feed-modal-close').addEventListener('click',()=>ov.remove());
+      ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+      // Scroll to bottom
+      requestAnimationFrame(()=>{const sc=ov.querySelector('[style*="overflow-y:auto"]');if(sc)sc.scrollTop=sc.scrollHeight;});
+    });
     document.querySelectorAll('.pm-react-btn').forEach(btn=>{
       btn.addEventListener('click',async()=>{
         if(!_pm||!currentSpieler?.id)return;
@@ -7917,7 +7960,7 @@
         if(!_pm._reactions)_pm._reactions={};
         _pm._reactions[currentSpieler.id]={emoji:_emoji,ts:Date.now()};
         _pm._lastFp='';renderOnlineTisch();
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{_pmScheduleLoad();});
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{});
         const _ts2=_pm._reactions[currentSpieler.id].ts;
         setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];_pm._lastFp='';renderOnlineTisch();}},4000);
       });
@@ -8153,10 +8196,19 @@
       <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--danger);margin-bottom:10px">€0.00</div>
       <div style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg)">Du hast keinen Stack mehr. Möchtest du mit einem neuen Buy-In weiterspielen?</div>
       <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${(+startStack).toFixed(2)}</button>
-      <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:14px">Tisch verlassen</button>
+      <button id="pm-broke-watch" class="btn btn-ghost" style="width:100%;height:42px!important;font-size:14px;margin-bottom:8px">Beobachten</button>
+      <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:13px">Tisch verlassen</button>
     </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('#pm-broke-buyin').addEventListener('click',async()=>{overlay.remove();await _pmBuyIn();});
+    overlay.querySelector('#pm-broke-watch').addEventListener('click',async()=>{
+      overlay.remove();
+      if(_pm?.mySeat&&currentSpieler){
+        await db.from('online_seats').update({status:'sitting_out'}).eq('id',_pm.mySeat.id);
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+        _pmScheduleLoad();
+      }
+    });
     overlay.querySelector('#pm-broke-dismiss').addEventListener('click',async()=>{
       overlay.remove();
       if(_pm?.mySeat&&currentSpieler){
@@ -8372,6 +8424,7 @@
     document.getElementById('pm-pl-1bb').onclick=()=>{document.getElementById('pm-pause-limit').value=Math.min(bb,myStack).toFixed(2);};
     document.getElementById('pm-pl-3bb').onclick=()=>{document.getElementById('pm-pause-limit').value=Math.min(bb*3,myStack).toFixed(2);};
     document.getElementById('pm-pl-max').onclick=()=>{document.getElementById('pm-pause-limit').value=myStack.toFixed(2);};
+    document.getElementById('pm-pause-limit')?.addEventListener('change',()=>{const el=document.getElementById('pm-pause-limit');const v=parseFloat(el.value)||0;const clamped=Math.max(0,Math.min(v,myStack));el.value=clamped.toFixed(2);});
     document.getElementById('pm-pause-confirm').onclick=async()=>{
       const auto=overlay.querySelector('[name="pm-auto"]:checked')?.value||'fold';
       const rawLim=auto==='call_limit'?(parseFloat(document.getElementById('pm-pause-limit').value)||null):null;
@@ -8438,7 +8491,7 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};_pm._reactions[_sid]={emoji:_em,ts:Date.now()};_pm._lastFp='';renderOnlineTisch();_pmScheduleLoad();const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];_pm._lastFp='';renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};_pm._lastFp='';renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];_pm._lastFp='';renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
       .subscribe();
   }
 
