@@ -7210,6 +7210,8 @@
       const myStack=mySeat.stack||0;
       const pot=session.pot||0;
       const bb=(session.small_blind||1)*2;
+      // Raise nur anzeigen wenn mindestens ein Gegner noch callen könnte (nicht allin/pleite)
+      const anyoneCanCall=seats.some(s=>s.spieler_id!==mySeat.spieler_id&&s.status!=='folded'&&s.status!=='sitting_out'&&s.status!=='allin'&&(s.stack||0)>0);
       // Store raise params on _pm for the sheet
       _pm._raiseParams={halfPot:parseFloat(Math.min(myStack,Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myStack,Math.max(bb,pot)).toFixed(2)),myStack,myBet,bb,maxBet};
       return`<div class="pm-action-area">
@@ -7217,7 +7219,7 @@
         <div class="pm-action-btns">
           <button class="btn btn-danger pm-act-btn" data-action="fold">Fold</button>
           ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
-          ${myStack>0?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>`:''}
+          ${myStack>0&&anyoneCanCall?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>`:''}
         </div>
       </div>`;
     }
