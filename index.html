@@ -63,6 +63,7 @@
 
     /* APP */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
+    @media(min-width:600px){#app-screen.pm-wide{max-width:none;max-width:800px;}}
 
 
 
@@ -711,7 +712,7 @@
   .pm-auto-option{display:flex;align-items:center;gap:12px;padding:10px var(--space-md);border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s}
   .pm-auto-option.selected{border-color:var(--accent);background:var(--accent-soft)}
   .pm-action-btns{display:flex;gap:8px;justify-content:center}
-  .pm-action-btns .btn{flex:1;min-width:0}
+  .pm-action-btns .btn{flex:1;min-width:0;min-height:44px}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pm-pulse 1.4s infinite}
@@ -778,9 +779,8 @@
       <div class="header-timer-progress"><div id="header-timer-progress-fill"></div></div>
     </button>
     <div class="header-right">
-      <div class="sync-badge synced" id="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sync</span></div>
       <button class="pm-live-btn" id="pm-live-btn" hidden title="Online-Session aktiv" aria-label="Online-Session">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><path d="M2 12h4M18 12h4M12 2v4M12 18v4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
       </button>
       <button class="bell-btn" id="bell-btn" hidden aria-label="Benachrichtigungen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
@@ -1615,7 +1615,10 @@
       history.pushState({},'',' ');
     }
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
-    if(page!=='online-tisch'&&page!=='online-lobby'){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
+    const isOnlinePage=page==='online-tisch'||page==='online-lobby';
+    document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
+    if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}}
+    if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -1715,6 +1718,8 @@
       statistik:()=>loadStatistik(),
       transaktionen:()=>loadTransaktionen(),
       haende:()=>loadHaende(),
+      'online-lobby':()=>loadOnlineLobby(),
+      'online-tisch':()=>_pmLoad(),
     };
 
     content.addEventListener('touchstart',e=>{
@@ -6590,6 +6595,7 @@
   }
 
   // ── PANDEMIE-MODUS ─────────────────────────────────────
+  let _pmLobbyChannel=null;
   const _pmSuitSymbol={s:'♠',h:'♥',d:'♦',c:'♣'};
   const _pmRankStr={14:'A',13:'K',12:'Q',11:'J',10:'T'};
   let _pm=null; // aktiver Session-State
@@ -6725,6 +6731,11 @@
     _pmUpdateLiveIndicator();
     document.getElementById('btn-pm-new')?.addEventListener('click',_pmNewSessionSheet);
     el.querySelectorAll('.pm-session-row').forEach(row=>row.addEventListener('click',()=>enterOnlineSession(row.dataset.id)));
+    // Realtime für Lobby
+    if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
+    _pmLobbyChannel=db.channel('pm-lobby')
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>loadOnlineLobby())
+      .subscribe();
   }
 
   function _pmNewSessionSheet(){
@@ -6783,9 +6794,12 @@
     _pmUnsubscribe();
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:''};
     showPage('online-tisch');
+    if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
     await _pmLoad();
     _pmSubscribe();
   }
+
+  function _pmReleaseWakeLock(){if(typeof _btReleaseWakeLock==='function')_btReleaseWakeLock();}
 
   async function _pmLoad(){
     if(!_pm)return;
@@ -6843,15 +6857,17 @@
 
     // Neue-Hand-Button
     let newHandBtn='';
-    if(isRunning&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
+    if(isRunning&&handIsOver&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
 
     // WhatsApp-Button
     const waLink=_pm._waLink||session.video_link||'';
     const waBtn=waLink?`<a href="${escHtml(waLink)}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;padding:5px 12px;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3-8.63A2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>Call</a>`:'';
 
-    // Session-Ende
-    const finishBtn=isAdmin&&!isFinished?`<button class="btn btn-ghost" id="btn-pm-finish" style="font-size:12px;padding:5px 12px;color:var(--danger)">Beenden</button>`:'';
-    const leaveBtn=mySeat&&!isFinished?`<button class="btn btn-ghost" id="btn-pm-leave" style="font-size:12px;padding:5px 12px">Tisch verlassen</button>`:'';
+    // Kebab-Menü (Tisch verlassen + Beenden)
+    const hasMenu=(mySeat&&!isFinished)||( isAdmin&&!isFinished);
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${isAdmin&&!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}  </div></div>`:'';
+    // "Nächste Hand" nur wenn keine Hand läuft (current_player_id ist null)
+    const handIsOver=!session.current_player_id;
 
     // Feed
     const feedHtml=_pmFeedHtml(actions);
@@ -6859,7 +6875,7 @@
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
-        <div style="display:flex;gap:6px;align-items:center">${waBtn}${leaveBtn}${newHandBtn}${finishBtn}</div>
+        <div style="display:flex;gap:6px;align-items:center;position:relative">${waBtn}${newHandBtn}${menuBtn}</div>
       </div>
       <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id)}</div>
       ${runoutDisplay}${runoutBtn}${myCardsHtml}${actionArea}
@@ -6886,6 +6902,8 @@
         case'pause':text=`${n} pausiert`;break;
         case'resume':text=`${n} ist zurück`;break;
         case'reveal_runout':text=`${n} deckt Runout auf`;break;
+        case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
+        case'leave':text=`${n} hat den Tisch verlassen`;break;
         default:text=`${n}: ${a.action}`;
       }
       const isWin=a.action==='win';
@@ -6897,7 +6915,7 @@
     if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
     if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Beobachter-Modus</div>`;
     if(!mySeat&&isFinished)return'';
-    if(mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start">Erste Hand starten</button></div>`;
+    if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
     if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}</div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
@@ -6919,15 +6937,15 @@
           ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
           <button class="btn btn-primary" id="pm-raise-toggle">Raise</button>
         </div>
-        <div id="pm-raise-area" style="display:none;margin-top:var(--space-sm)">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-            <button class="btn btn-ghost pm-preset" data-amt="${halfPot}" style="font-size:12px;padding:4px 10px">½ Pot</button>
-            <button class="btn btn-ghost pm-preset" data-amt="${fullPot}" style="font-size:12px;padding:4px 10px">Pot</button>
-            <button class="btn btn-ghost pm-preset" data-amt="${myStack}" style="font-size:12px;padding:4px 10px">All-in</button>
+        <div id="pm-raise-area" style="display:none;margin-top:var(--space-sm);background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-sm)">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button class="btn btn-ghost pm-preset" data-amt="${halfPot}" style="font-size:12px;padding:5px 10px;flex:1">½ Pot</button>
+            <button class="btn btn-ghost pm-preset" data-amt="${fullPot}" style="font-size:12px;padding:5px 10px;flex:1">Pot</button>
+            <button class="btn btn-ghost pm-preset" data-amt="${myStack}" style="font-size:12px;padding:5px 10px;flex:1">All-in</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="number" id="pm-raise-input" class="form-input" inputmode="decimal" step="0.5" min="${bb}" max="${myStack}" value="${Math.min(fullPot,myStack)}" style="flex:1">
-            <button class="btn btn-primary" id="pm-raise-confirm">Raise</button>
+            <input type="number" id="pm-raise-input" class="form-input" inputmode="decimal" step="0.05" min="${bb}" max="${myStack}" value="${Math.min(fullPot,myStack)}" style="flex:1;font-size:16px;min-width:0">
+            <button class="btn btn-primary" id="pm-raise-confirm" style="flex-shrink:0;min-height:44px;padding:0 16px">Raise</button>
           </div>
         </div>
       </div>`;
@@ -6936,15 +6954,15 @@
     const pre=mySeat?.pre_action||'';
     const bb=(session.small_blind||1)*2;
     return`<div class="pm-action-area">
-      <div style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:var(--space-sm)">Vorauswahl (Pre-Action)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
-        ${[['fold','Fold'],['check_fold','Check/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pre-btn" data-pre="${v}" style="font-size:12px;padding:5px 12px">${l}</button>`).join('')}
+      <div style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Vorauswahl</div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+        ${[['fold','Fold'],['check_fold','Chk/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pre-btn" data-pre="${v}" style="font-size:12px;padding:6px 14px;white-space:nowrap;flex-shrink:0;min-height:36px">${l}</button>`).join('')}
       </div>
-      <div id="pm-pre-limit-row" style="display:${pre==='call'?'flex':'none'};gap:8px;align-items:center;margin-top:8px">
-        <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap">Max €</span>
-        <input type="number" id="pm-pre-limit-input" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="unbegrenzt" style="flex:1">
-        <button class="btn btn-ghost pm-preset-pre" data-bb="${bb.toFixed(2)}" style="font-size:12px;padding:4px 8px">1BB</button>
-        <button class="btn btn-ghost pm-preset-pre" data-bb="${(bb*3).toFixed(2)}" style="font-size:12px;padding:4px 8px">3BB</button>
+      <div id="pm-pre-limit-row" style="display:${pre==='call'?'flex':'none'};gap:6px;align-items:center;margin-top:6px">
+        <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;flex-shrink:0">Max €</span>
+        <input type="number" id="pm-pre-limit-input" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="flex:1;min-width:0;font-size:16px">
+        <button class="btn btn-ghost pm-preset-pre" data-bb="${bb.toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">1BB</button>
+        <button class="btn btn-ghost pm-preset-pre" data-bb="${(bb*3).toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">3BB</button>
       </div>
       <div style="text-align:center;margin-top:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-pause" style="font-size:12px">Pause</button></div>
     </div>`;
@@ -7003,14 +7021,19 @@
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
+    // Kebab-Menü Toggle
+    document.getElementById('pm-kebab-btn')?.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const m=document.getElementById('pm-kebab-menu');if(m)m.style.display=m.style.display==='none'?'block':'none';
+    });
+    document.addEventListener('click',()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='none';},{once:false,capture:false});
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
       const isRunning=_pm.session?.status==='running';
-      const msg=isRunning?'Tisch verlassen?\n\nDein Platz bleibt reserviert, dein Stack bleibt. Du kannst jederzeit zurückkehren.':'Platz freigeben und Tisch verlassen?';
+      const msg=isRunning?'Tisch verlassen?\n\nDein Platz bleibt reserviert. Du kannst jederzeit zurückkehren.':'Platz freigeben und Tisch verlassen?';
       if(!await confirmAction(msg))return;
-      if(!isRunning){
-        await db.from('online_seats').delete().eq('id',_pm.mySeat.id);
-      }
+      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      if(!isRunning)await db.from('online_seats').delete().eq('id',_pm.mySeat.id);
       showPage('online-lobby');
     });
     document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
@@ -7034,6 +7057,8 @@
         seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
       });
       if(error){await showAlert('Fehler beim Platz nehmen: '+error.message);return;}
+      // Join-Eintrag im Feed
+      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await _pmLoad();
     }catch(e){await showAlert('Unbekannter Fehler: '+e.message);}
   }
@@ -7077,14 +7102,9 @@
   }
 
   async function _callFn(name,body){
-    try{
-      const r=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
-        body:JSON.stringify(body),
-      });
-      return await r.json();
-    }catch(e){return{error:e.message};}
+    const{data,error}=await db.functions.invoke(name,{body});
+    if(error)return{error:error.message||String(error)};
+    return data||{};
   }
 
   async function _pmUpdateLiveIndicator(){
@@ -7152,6 +7172,7 @@
 
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+    _pmReleaseWakeLock();
     _pm=null;
   }
 

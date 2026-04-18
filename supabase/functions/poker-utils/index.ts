@@ -1,4 +1,4 @@
-// DTKS Poker – Shared Utilities v1.1
+// DTKS Poker – Shared Utilities v1.2
 // Deck management + Hand evaluators for Hold'em, Omaha, Texahma
 //
 // Card format: { rank: number, suit: string }
