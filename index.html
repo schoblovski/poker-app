@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.15">
+  <meta name="version" content="4.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1059,7 +1059,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
 
-  const VERSION='3.15';
+  const VERSION='4.0';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1831,6 +1831,7 @@
     let _taps=0,_tapTimer=null;
     function _unlockPandemie(){
       localStorage.setItem('dtks_pandemie_entdeckt','true');
+      if(currentSpieler?.id)db.from('spieler').update({pandemie_entdeckt_am:new Date().toISOString()}).eq('id',currentSpieler.id).then(()=>{});
       document.getElementById('btn-online-poker').style.display='flex';
       document.getElementById('pm-live-btn').style.removeProperty('display');
     }
@@ -1889,16 +1890,68 @@
       document.body.appendChild(ov);
       document.getElementById('ee-v4-close').onclick=()=>{ov.remove();showPage('online-lobby');};
     }
-    // Long press on header app name (1.5s)
+    // 5× tippen auf App-Titel (touchstart+preventDefault verhindert OS-Textmarkierung)
     const appNameEl=document.querySelector('.header-app-name');
     if(appNameEl){
-      appNameEl.style.cursor='default';
-      appNameEl.style.userSelect='none';
-      let _pressTimer=null;
-      appNameEl.addEventListener('pointerdown',()=>{_pressTimer=setTimeout(()=>{_pressTimer=null;_showEasterEgg();},1500);});
-      appNameEl.addEventListener('pointerup',()=>{clearTimeout(_pressTimer);_pressTimer=null;});
-      appNameEl.addEventListener('pointerleave',()=>{clearTimeout(_pressTimer);_pressTimer=null;});
+      appNameEl.style.cssText+=(appNameEl.style.cssText?';':'')+'user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:default';
+      let _taps=0,_tapTimer=null;
+      const _eeTap=()=>{_taps++;clearTimeout(_tapTimer);if(_taps>=5){_taps=0;_showEasterEgg();}else{_tapTimer=setTimeout(()=>{_taps=0;},1500);}};
+      appNameEl.addEventListener('touchstart',e=>{e.preventDefault();_eeTap();},{passive:false});
+      appNameEl.addEventListener('click',_eeTap); // desktop fallback (click doesn't fire on mobile after touchstart preventDefault)
     }
+  })();
+
+  // ── PM NUMPAD ──────────────────────────────────────────
+  (function(){
+    let _t=null,_el=null;
+    function _build(){
+      if(_el)return;
+      _el=document.createElement('div');
+      _el.id='pm-numpad';
+      _el.style.cssText='display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);align-items:flex-end';
+      _el.innerHTML=`<div id="pm-np-panel" style="background:var(--surface);border-radius:16px 16px 0 0;width:100%;max-width:480px;margin:0 auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform 220ms cubic-bezier(0.32,0.72,0,1)"><div id="pm-np-label" style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:4px;min-height:16px"></div><div id="pm-np-disp" style="font-family:var(--font-mono,monospace);font-size:30px;font-weight:700;text-align:right;padding:8px 4px 12px;color:var(--text-primary);border-bottom:1px solid var(--border);margin-bottom:12px">0</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">${['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k=>`<button class="pm-nk" data-k="${k}" style="height:52px;font-size:20px;font-weight:600;background:var(--bg-secondary);border:none;border-radius:10px;color:var(--text-primary);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">${k}</button>`).join('')}</div><button id="pm-np-ok" style="width:100%;height:52px;font-size:16px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">OK</button></div>`;
+      document.body.appendChild(_el);
+      _el.addEventListener('click',e=>{if(e.target===_el)_hide();});
+      _el.addEventListener('touchstart',e=>{if(e.target===_el){e.preventDefault();_hide();}},{passive:false});
+      _el.querySelector('#pm-np-ok').addEventListener('click',_confirm);
+      _el.querySelectorAll('.pm-nk').forEach(b=>b.addEventListener('click',()=>_tap(b.dataset.k)));
+    }
+    function _tap(k){
+      const d=_el.querySelector('#pm-np-disp');let v=d.textContent.trim();
+      if(k==='⌫'){v=v.length>1?v.slice(0,-1):'0';}
+      else if(k==='.'){if(!v.includes('.'))v+='.';}
+      else{v=v==='0'?k:v+k;if(v.includes('.')){const p=v.split('.');if(p[1].length>2)return;}}
+      d.textContent=v;
+    }
+    function _confirm(){
+      if(!_t)return;
+      const num=parseFloat(_el.querySelector('#pm-np-disp').textContent)||0;
+      _t.value=num.toFixed(2);
+      _t.dispatchEvent(new Event('input',{bubbles:true}));
+      _t.dispatchEvent(new Event('change',{bubbles:true}));
+      _hide();
+    }
+    function _show(inp){
+      _build();_t=inp;
+      _el.querySelector('#pm-np-label').textContent=inp.dataset.label||inp.placeholder||inp.closest('[data-pm-label]')?.dataset.pmLabel||'';
+      _el.querySelector('#pm-np-disp').textContent=inp.value||'0';
+      _el.style.display='flex';
+      requestAnimationFrame(()=>{requestAnimationFrame(()=>{_el.querySelector('#pm-np-panel').style.transform='translateY(0)';});});
+    }
+    function _hide(){
+      if(!_el)return;
+      _el.querySelector('#pm-np-panel').style.transform='translateY(100%)';
+      setTimeout(()=>{if(_el)_el.style.display='none';},230);
+      _t=null;
+    }
+    function _intercept(e){
+      const inp=e.target.closest?.('input.pm-num');
+      if(!inp)return;
+      e.preventDefault();e.stopPropagation();
+      _show(inp);
+    }
+    document.addEventListener('touchstart',_intercept,{passive:false,capture:true});
+    document.addEventListener('mousedown',_intercept,{capture:true});
   })();
 
   // ── BENACHRICHTIGUNGEN ─────────────────────────────────
@@ -2190,14 +2243,16 @@
       }
     });
   }
+  let _appInitialized=false;
   db.auth.onAuthStateChange((ev,session)=>{
-    if(session){currentUser=session.user;showApp();}
-    else{currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+    if(session){currentUser=session.user;if(!_appInitialized){_appInitialized=true;showApp();}}
+    else{_appInitialized=false;currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
   });
 
   // ── HOME ───────────────────────────────────────────────
   async function loadHome(){
     const el=document.getElementById('home-content');
+    el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
     // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
     const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin'),
@@ -3376,7 +3431,8 @@
     const{data:spieler}=await db.from('spieler').select('*').order('name');if(!spieler)return;
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
     const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
-    const loginSub=s=>s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'';
+    const loginSub=s=>(s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'')+
+      (s.pandemie_entdeckt_am?`<div class="item-subtitle" style="color:var(--accent-text)">🎴 Easter Egg: ${fmtLogin(s.pandemie_entdeckt_am)}</div>`:'');
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
     html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
     aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>${loginSub(s)}</div><div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
@@ -3542,6 +3598,7 @@
   // ── TRANSAKTIONEN ──────────────────────────────────────
   async function loadTransaktionen(){
     const el=document.getElementById('transaktionen-content');
+    el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
     const{data:trans}=await db.from('transaktionen').select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)').order('datum',{ascending:false}).order('created_at',{ascending:false}).limit(100);
     if(!trans||trans.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
     const gruppen={};
@@ -5780,6 +5837,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.0',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
+      {typ:'neu',text:'Easter Egg: Pandemie-Modus via verstecktem Rätsel freischaltbar (7× auf DTKS POKER tippen → Sicherheitsüberprüfung → richtiger IT-Experte eingeben)'},
+      {typ:'fix',text:'Hand-Evaluator: Kategorie-Vergleich korrigiert (Pärchen schlug fälschlicherweise Ass-hoch nicht)'},
+      {typ:'verbessert',text:'Pandemie-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
+      {typ:'verbessert',text:'Nummernblock: eigener Overlay für Betragsfelder im Pandemie-Modus (kein System-Keyboard)'},
+    ]},
     {version:'3.15',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
       {typ:'neu',text:'Modals schieben sich vom unteren Bildschirmrand hoch und beim Schliessen wieder herunter (kein Fade)'},
@@ -6941,11 +7005,11 @@
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="text" id="pm-new-sb" value="0.05" inputmode="decimal" class="form-input"></div>
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Big Blind</div><input type="text" id="pm-new-bb" value="0.10" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="text" id="pm-new-sb" value="0.05" inputmode="none" class="form-input pm-num" data-label="Small Blind"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Big Blind</div><input type="text" id="pm-new-bb" value="0.10" inputmode="none" class="form-input pm-num" data-label="Big Blind"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
-        <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="decimal" class="form-input"></div>
+        <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="none" class="form-input pm-num" data-label="Buy-In Wert"></div>
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin:-var(--space-sm) 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
       <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);margin-bottom:var(--space-lg)">
@@ -7520,7 +7584,7 @@
       </div>
       <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
-        <input type="text" id="pm-pas-limit" class="form-input" inputmode="decimal" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
+        <input type="text" id="pm-pas-limit" class="form-input pm-num" inputmode="none" value="${mySeat.pre_action_limit||''}" placeholder="∞" data-label="Maximalbetrag" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
           <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
@@ -7683,7 +7747,7 @@
       showPage('online-lobby');
     }
 
-    document.getElementById('btn-payout-confirm').addEventListener('click',()=>doFinish(true));
+    document.getElementById('btn-payout-confirm')?.addEventListener('click',()=>doFinish(true));
     document.getElementById('btn-payout-skip').addEventListener('click',()=>doFinish(false));
     document.getElementById('btn-payout-cancel').addEventListener('click',()=>overlay.remove());
   }
@@ -7772,7 +7836,7 @@
       <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Max. Betrag</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="pm-pause-limit" class="form-input" inputmode="decimal" value="${(bb*2).toFixed(2)}" style="flex:1">
+          <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${(bb*2).toFixed(2)}" data-label="Maximalbetrag" style="flex:1">
           <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:12px;padding:5px 10px">1BB (€${bb.toFixed(0)})</button>
           <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:12px;padding:5px 10px">3BB (€${(bb*3).toFixed(0)})</button>
         </div>
@@ -7819,7 +7883,7 @@
         <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
-        <input type="text" id="pm-rs-input" class="form-input" inputmode="decimal" value="${Math.min(fullPot,myStack).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
+        <input type="text" id="pm-rs-input" class="form-input pm-num" inputmode="none" value="${Math.min(fullPot,myStack).toFixed(2)}" data-label="Raise-Betrag" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
