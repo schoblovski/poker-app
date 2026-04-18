@@ -6972,7 +6972,7 @@
     const isF=suits.every(s=>s===suits[0]);const rs=[...new Set(ranks)];
     let isSt=false,stH=0;
     if(rs.length===5){if(ranks[0]-ranks[4]===4){isSt=true;stH=ranks[0];}else if(ranks[0]===14&&ranks[1]===5){isSt=true;stH=5;}}
-    const e=(cat,...rs2)=>{let v=cat;for(const r of rs2)v=(v<<4)|r;return v;};
+    const e=(cat,...rs2)=>{const slots=[...rs2,0,0,0,0,0].slice(0,5);let v=cat;for(const r of slots)v=(v<<4)|r;return v;};
     if(isSt&&isF)return e(8,stH);
     const cnt={};for(const r of ranks)cnt[r]=(cnt[r]||0)+1;
     const g=Object.entries(cnt).map(([r,n])=>({r:+r,n:+n})).sort((a,b)=>b.n-a.n||b.r-a.r);
