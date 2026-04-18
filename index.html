@@ -667,6 +667,7 @@
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
+  @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   .pm-dealer-btn{fill:#f59e0b;font-size:8px;font-weight:700;font-family:'DM Mono',monospace}
   .pm-community{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:var(--space-sm) 0}
   .pm-pot-label{text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:2px}
@@ -706,7 +707,9 @@
   .pm-feed{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
   .pm-feed-item{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary)}
   .pm-feed-item.win{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
-  .pm-feed-item.fold{opacity:.6}
+  .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger);font-weight:600}
+  .pm-feed-item.allin-action{background:#fff7ed;color:#c2410c;font-weight:700}
+  [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
   .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
   .pm-chat-msg{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px}
   .pm-chat-msg .pm-chat-name{font-weight:700;color:var(--text-primary);margin-right:6px}
@@ -6654,7 +6657,7 @@
     return`<div class="pt-card ${red?'red':''} ${sz}" style="${hl}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
   }
 
-  function _pmSVG(seats,session,myId,usedBoardKeys){
+  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0){
     const W=400,H=260,cx=200,cy=120,rx=148,ry=86;
     const isCB=document.documentElement.getAttribute('data-colorblind')==='true';
     const feltOuter=isCB?'#0a1a2e':'#0a2218';
@@ -6723,9 +6726,12 @@
         const strokeW=isUsed?2.5:isR?1.5:0.5;
         const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
-        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
+        const isNew=!isR&&i>=prevBoardCount;
+        const delay=isNew?(i-prevBoardCount)*0.12:0;
+        const anim=isNew?`style="animation:pm-card-reveal .28s ${delay}s ease both"`:'';
+        communityHtml+=`<g ${anim}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
-          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text>`;
+          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text></g>`;
       }else{
         communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
       }
@@ -6887,6 +6893,7 @@
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe','pm_show_equity']),
     ]);
     const einstMap={};(einstRows||[]).forEach(e=>{einstMap[e.key]=e.wert;});
+    _pm._prevBoardCount=_pm.session?.community_cards?.length??0;
     _pm.session=session;
     _pm.seats=seats||[];
     _pm.actions=(actions||[]).reverse();
@@ -7078,7 +7085,7 @@
       </div>
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys)}</div>
+          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,_pm._prevBoardCount??0)}</div>
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
@@ -7099,11 +7106,11 @@
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
       let text='';let extra='';
       switch(a.action){
-        case'fold':text=`${n} foldet`;break;
+        case'fold':text=`${n} foldet`;extra=' fold-action';break;
         case'check':text=`${n} checkt`;break;
         case'call':text=`${n} callt${amt}`;break;
         case'raise':text=`${n} raised auf${amt}`;break;
-        case'allin':text=`${n} All-in${amt}`;break;
+        case'allin':text=`${n} All-in${amt}`;extra=' allin-action';break;
         case'blind':text=`${n} Blind${amt}`;break;
         case'post_sb':text=`${n} SB${amt}`;break;
         case'post_bb':text=`${n} BB${amt}`;break;
