@@ -6752,7 +6752,11 @@
       const small_blind=parseFloat(document.getElementById('pm-new-sb').value)||1;
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
       const is_test=document.getElementById('pm-new-test').checked;
-      const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
+      const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Prüfe…';
+      // Prüfen ob bereits eine aktive Session existiert
+      const{data:existing}=await db.from('online_spiele').select('id').in('status',['waiting','running']).limit(1);
+      if(existing?.length>0){btn.disabled=false;btn.textContent='Session erstellen';close();await showAlert('Es gibt bereits eine aktive Session. Bitte diese zuerst beenden.');return;}
+      btn.textContent='Erstelle…';
       let spiel_id=null;
       if(!is_test){
         const{data:ns}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa,modus:'online'}).select().single();
@@ -6971,9 +6975,9 @@
       const i=document.getElementById('pm-pre-limit-input');if(i)i.value=b.dataset.bb;
     }));
     // Buttons
-    document.getElementById('btn-pm-sitdown')?.addEventListener('click',()=>{
+    document.getElementById('btn-pm-sitdown')?.addEventListener('click',async()=>{
       const taken=new Set((_pm.seats||[]).map(s=>s.seat));
-      for(let i=1;i<=9;i++){if(!taken.has(i)){_pmTakeSeatFlow(i);return;}}
+      for(let i=1;i<=9;i++){if(!taken.has(i)){await _pmTakeSeatFlow(i);return;}}
       showAlert('Keine freien Plätze.');
     });
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
@@ -6983,22 +6987,27 @@
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
       if(!await confirmAction('Session wirklich beenden?'))return;
-      await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
+      const{error}=await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
+      if(error)await showAlert('Fehler: '+error.message);
+      else await _pmLoad();
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
   }
 
   async function _pmTakeSeatFlow(seatNr){
     if(_pm?.mySeat){await showAlert('Du bist bereits am Tisch.');return;}
-    if(!_pm?.session)return;
+    if(!_pm?.session){await showAlert('Session nicht geladen.');return;}
     if(_pm.session.status!=='waiting'){await showAlert('Session läuft bereits.');return;}
     if((_pm.seats||[]).some(s=>s.seat===seatNr)){await showAlert('Platz bereits besetzt.');return;}
-    const{error}=await db.from('online_seats').insert({
-      online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
-      seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
-    });
-    if(error){await showAlert('Fehler: '+error.message);return;}
-    await _pmLoad();
+    if(!currentSpieler?.id){await showAlert('Spieler nicht geladen – bitte neu einloggen.');return;}
+    try{
+      const{error}=await db.from('online_seats').insert({
+        online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
+        seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
+      });
+      if(error){await showAlert('Fehler beim Platz nehmen: '+error.message);return;}
+      await _pmLoad();
+    }catch(e){await showAlert('Unbekannter Fehler: '+e.message);}
   }
 
   async function _pmStartHand(){
