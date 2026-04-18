@@ -7773,8 +7773,11 @@
       await _pmSetPreAction(v,lim);
       if(_pm?.mySeat)_pm.mySeat.pre_action=v;
       const labels={fold:'Fold',check:'Check',call:'Call',call_any:'Call Any'};
+      let lbl=v?(labels[v]||v):'';
+      if(v==='call'&&lim)lbl+=` bis €${parseFloat(lim).toFixed(2)}`;
+      if(_pm?.mySeat){_pm.mySeat.pre_action=v;_pm.mySeat.pre_action_limit=lim||null;}
       const vBtn=document.getElementById('btn-pm-preaction');
-      if(vBtn){vBtn.textContent=v?'Vorauswahl: '+(labels[v]||v):'Vorauswahl';vBtn.className='btn '+(v?'btn-primary':'btn-ghost');vBtn.style.cssText='font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0';}
+      if(vBtn){vBtn.textContent=v?'Vorauswahl: '+lbl:'Vorauswahl';vBtn.className='btn '+(v?'btn-primary':'btn-ghost');vBtn.style.cssText='font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0';}
     };
     document.getElementById('pm-pas-close').onclick=async()=>{
       const curPre=overlay.querySelector('.pm-pas-btn.btn-primary')?.dataset.pre||'';
