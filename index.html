@@ -709,6 +709,14 @@
   .pm-auto-options{display:flex;flex-direction:column;gap:8px}
   .pm-auto-option{display:flex;align-items:center;gap:12px;padding:10px var(--space-md);border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s}
   .pm-auto-option.selected{border-color:var(--accent);background:var(--accent-soft)}
+  .pm-action-btns{display:flex;gap:8px;justify-content:center}
+  .pm-action-btns .btn{flex:1;min-width:0}
+  .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
+  .pm-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)}
+  .pm-sheet-overlay{opacity:0;pointer-events:none;transition:opacity .25s}
+  .pm-sheet-overlay.open{opacity:1;pointer-events:auto}
+  .pm-sheet-overlay .pm-sheet{transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+  .pm-sheet-overlay.open .pm-sheet{transform:translateY(0)}
   .pm-auto-option-label{font-size:14px;font-weight:600}
   .pm-auto-option-desc{font-size:12px;color:var(--text-secondary)}
   .pm-call-limit-row{display:flex;align-items:center;gap:8px;padding:var(--space-sm) 0}
@@ -1601,6 +1609,7 @@
       history.pushState({},'',' ');
     }
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
+    if(page!=='online-tisch'&&page!=='online-lobby'){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -3054,6 +3063,18 @@
       <button class="btn btn-secondary" id="btn-push-update" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
         App-Update Push senden (v${VERSION})
+      </button>
+
+      <div class="section-title" style="margin-top:var(--space-xl)">Pandemie-Modus</div>
+      <div class="card">
+        <div class="setting-row" style="align-items:flex-start;flex-direction:column;gap:var(--space-sm)">
+          <div class="setting-info"><div class="setting-label">WhatsApp-Gruppen-Link</div><div class="setting-sub">Globaler Link zur Poker-WhatsApp-Gruppe (für Video-Calls während Online-Sessions). Wird allen Spielern beim Pokertisch angezeigt.</div></div>
+          <input type="url" inputmode="url" class="setting-input" id="set-whatsapp" placeholder="https://chat.whatsapp.com/…" value="${vals['whatsapp_gruppe']||''}" style="width:100%;max-width:100%;font-size:13px">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-whatsapp-speichern" style="margin-top:var(--space-md)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Speichern
       </button>`;
 
     // Preview aktualisieren
@@ -3174,6 +3195,14 @@
         _btServerDefaults=adminLevels.map(l=>({...l}));
       },'Blind-Struktur gespeichert');
       await showAlert('Standard-Blind-Struktur gespeichert.');
+    });
+
+    document.getElementById('btn-whatsapp-speichern').addEventListener('click',async()=>{
+      const link=(document.getElementById('set-whatsapp').value||'').trim();
+      await save(async()=>{
+        await db.from('einstellungen').upsert({key:'whatsapp_gruppe',wert:link,beschreibung:'WhatsApp-Gruppen-Link für Pandemie-Modus Video-Calls'});
+      },'WhatsApp-Link gespeichert');
+      await showAlert('WhatsApp-Link gespeichert.');
     });
 
     // App-Update Push Button
@@ -6551,6 +6580,533 @@
     html+=`</tbody></table></div>`;
     wrap.innerHTML=html;
     document.getElementById('btn-roh-alles')?.addEventListener('click',()=>loadRohdaten(undefined,true));
+  }
+
+  // ── PANDEMIE-MODUS ─────────────────────────────────────
+  const _pmSuitSymbol={s:'♠',h:'♥',d:'♦',c:'♣'};
+  const _pmRankStr={14:'A',13:'K',12:'Q',11:'J',10:'T'};
+  let _pm=null; // aktiver Session-State
+  let _pmChannel=null;
+
+  function _pmCard(card,opts={}){
+    if(!card){const sz=opts.big?'big':opts.community?'community':'';return`<div class="pt-card back ${sz}"></div>`;}
+    const r=_pmRankStr[card.rank]||String(card.rank);
+    const s=_pmSuitSymbol[card.suit]||card.suit;
+    const red=card.suit==='h'||card.suit==='d';
+    const sz=opts.big?'big':opts.community?'community':'';
+    return`<div class="pt-card ${red?'red':''} ${sz}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
+  }
+
+  function _pmSVG(seats,session,myId){
+    const W=400,H=220,cx=200,cy=108,rx=148,ry=86;
+    const angles=[90,50,10,330,290,250,210,170,130];
+    const seatMap={};(seats||[]).forEach(s=>{seatMap[s.seat]=s;});
+    let svgSeats='';
+    for(let i=0;i<9;i++){
+      const nr=i+1;
+      const a=angles[i]*Math.PI/180;
+      const sx=Math.round(cx+rx*Math.cos(a));
+      const sy=Math.round(cy-ry*Math.sin(a));
+      const seat=seatMap[nr];
+      const isEmpty=!seat;
+      const isMe=seat&&seat.spieler_id===myId;
+      const isFolded=seat&&seat.status==='folded';
+      const isPaused=seat&&seat.status==='paused';
+      const isActive=seat&&session&&seat.spieler_id===session.current_player_id&&session.status==='running';
+      const isDealer=seat&&session&&seat.seat===session.dealer_seat;
+      let cls='pm-seat-group';
+      if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
+      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isActive&&!isFolded)cls+=' active-turn';
+      const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,8);
+      const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
+      const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
+      const nCards=session?.variante==='holdem'?2:4;
+      let cardBacks='';
+      if(seat&&!isEmpty&&!isFolded){
+        const cw=8,ch=12,gap=3,tot=nCards*(cw+gap)-gap;
+        for(let c=0;c<nCards;c++){const bx=sx-tot/2+c*(cw+gap);cardBacks+=`<rect x="${bx}" y="${sy-28}" width="${cw}" height="${ch}" rx="2" fill="${isMe?'rgba(0,0,0,0)':'rgba(34,197,94,.8)'}" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>`;}
+      }
+      const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
+      const betChip=betAmt>0?`<circle cx="${sx}" cy="${sy+28}" r="11" fill="var(--accent)" opacity=".85"/><text x="${sx}" y="${sy+32}" text-anchor="middle" font-size="8" fill="white">€${betAmt.toFixed(0)}</text>`:'';
+      svgSeats+=`<g class="${cls}" data-seat="${nr}">
+        <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
+        ${isEmpty
+          ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
+          :`<text x="${sx}" y="${sy-5}" text-anchor="middle" font-size="9" font-weight="600" fill="white" opacity=".9">${escHtml(name)}</text><text x="${sx}" y="${sy+7}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">${stackTxt}</text>`}
+        ${cardBacks}${betChip}${dealerMark}
+      </g>`;
+    }
+    const board=session?.community_cards||[];
+    const runout=session?.runout_cards||[];
+    let communityHtml='';
+    const bx0=cx-92,by=cy-20,cw=30,ch=42,cg=6;
+    for(let i=0;i<5;i++){
+      const bx=bx0+i*(cw+cg);
+      const card=board[i]||null;
+      const rc=(!card&&runout[i-board.length]!==undefined)?runout[i-board.length]:null;
+      const c=card||rc;
+      if(c){
+        const red=c.suit==='h'||c.suit==='d';
+        const r=_pmRankStr[c.rank]||String(c.rank);
+        const s=_pmSuitSymbol[c.suit]||'';
+        const isR=!!rc;
+        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${red?'#fee2e2':'white'}" stroke="${isR?'#f59e0b':'rgba(255,255,255,.3)'}" stroke-width="${isR?1.5:0.5}"/>
+          <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${red?'#dc2626':'#1c1c1e'}">${r}</text>
+          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${red?'#dc2626':'#1c1c1e'}">${s}</text>`;
+      }else{
+        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
+      }
+    }
+    const pot=session?.pot||0;
+    const potTxt=pot>0?`Pot: €${pot.toFixed(2)}`:'';
+    return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+20}" ry="${ry+20}" fill="#0a2218"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+15}" ry="${ry+15}" fill="none" stroke="#1e5c35" stroke-width="4"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+11}" ry="${ry+11}" fill="#133d24"/>
+      ${communityHtml}
+      ${potTxt?`<text x="${cx}" y="${by-8}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">${potTxt}</text>`:''}
+      ${svgSeats}
+    </svg>`;
+  }
+
+  async function loadOnlineLobby(){
+    const el=document.getElementById('online-lobby-content');
+    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    const[{data:sessions},{data:allSeats},{data:einst}]=await Promise.all([
+      db.from('online_spiele').select('*').order('created_at',{ascending:false}).limit(20),
+      db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status'),
+      db.from('einstellungen').select('key,wert'),
+    ]);
+    const waLink=((einst||[]).find(e=>e.key==='whatsapp_gruppe')||{}).wert||'';
+    if(_pm)_pm._waLink=waLink;
+    const seatsMap={};(allSeats||[]).forEach(s=>{if(!seatsMap[s.online_spiel_id])seatsMap[s.online_spiel_id]=[];seatsMap[s.online_spiel_id].push(s);});
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+    const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
+    let html='';
+    if(currentSpieler?.ist_admin)html+=`<button class="btn btn-primary" id="btn-pm-new" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neue Session</button>`;
+    const active=(sessions||[]).filter(s=>s.status!=='finished');
+    const done=(sessions||[]).filter(s=>s.status==='finished');
+    if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
+    if(active.length){
+      html+=`<div class="section-title">Aktiv</div><div class="card">`;
+      active.forEach(s=>{
+        const cnt=(seatsMap[s.id]||[]).length;
+        const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
+              <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+          </div>${chevron}
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    if(done.length){
+      html+=`<div class="section-title" style="margin-top:var(--space-lg)">Beendet</div><div class="card">`;
+      done.slice(0,5).forEach(s=>{
+        const cnt=(seatsMap[s.id]||[]).length;
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · Beendet</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler</div></div>${chevron}</div>`;
+      });
+      html+=`</div>`;
+    }
+    el.innerHTML=html;
+    document.getElementById('btn-pm-new')?.addEventListener('click',_pmNewSessionSheet);
+    el.querySelectorAll('.pm-session-row').forEach(row=>row.addEventListener('click',()=>enterOnlineSession(row.dataset.id)));
+  }
+
+  function _pmNewSessionSheet(){
+    const sid='pm-new-sheet';document.getElementById(sid)?.remove();
+    const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
+    overlay.innerHTML=`<div class="pm-sheet">
+      <div class="pm-sheet-handle"></div>
+      <div class="pm-sheet-title">Neue Online-Session</div>
+      <div style="margin-bottom:var(--space-md)">
+        <div class="section-title" style="margin:0 0 var(--space-sm)">Spielvariante</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${[['holdem',"Texas Hold'em",'2 Karten, best of 7'],['omaha','Omaha','4 Karten, exakt 2+3 Pflicht'],['texahma','Texahma','4 Karten, 0–4 eigene (126 Kombis)']].map(([v,l,s],i)=>`<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface)"><input type="radio" name="pm-variante" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="number" id="pm-new-sb" value="1" min="0.5" step="0.5" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Start-Stack</div><input type="number" id="pm-new-stack" value="100" min="10" step="10" inputmode="decimal" class="form-input"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);margin-bottom:var(--space-lg)">
+        <input type="checkbox" id="pm-new-test" style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0">
+        <div><div style="font-size:14px;font-weight:600">Test-Modus</div><div style="font-size:12px;color:var(--text-secondary)">Keine echten Kontostände – TEST-Banner sichtbar</div></div>
+      </label>
+      <div class="btn-row-2">
+        <button class="btn btn-secondary" id="pm-new-cancel">Abbrechen</button>
+        <button class="btn btn-primary" id="pm-new-ok">Session erstellen</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(()=>overlay.classList.add('open'));
+    const close=()=>{overlay.classList.remove('open');setTimeout(()=>overlay.remove(),300);};
+    document.getElementById('pm-new-cancel').onclick=close;
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    document.getElementById('pm-new-ok').onclick=async()=>{
+      const variante=overlay.querySelector('[name="pm-variante"]:checked')?.value||'holdem';
+      const small_blind=parseFloat(document.getElementById('pm-new-sb').value)||1;
+      const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
+      const is_test=document.getElementById('pm-new-test').checked;
+      const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
+      let spiel_id=null;
+      if(!is_test){
+        const{data:ns}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa,modus:'online'}).select().single();
+        spiel_id=ns?.id||null;
+      }
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
+      if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
+      close();enterOnlineSession(sess.id);
+    };
+  }
+
+  async function enterOnlineSession(sessionId){
+    _pmUnsubscribe();
+    _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:''};
+    showPage('online-tisch');
+    await _pmLoad();
+    _pmSubscribe();
+  }
+
+  async function _pmLoad(){
+    if(!_pm)return;
+    const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einst}]=await Promise.all([
+      db.from('online_spiele').select('*').eq('id',_pm.id).single(),
+      db.from('online_seats').select('*,spieler(id,name,profilbild)').eq('online_spiel_id',_pm.id).order('seat'),
+      db.from('online_actions').select('*,spieler(name)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(60),
+      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
+      db.from('einstellungen').select('key,wert').eq('key','whatsapp_gruppe').maybeSingle(),
+    ]);
+    _pm.session=session;
+    _pm.seats=seats||[];
+    _pm.actions=(actions||[]).reverse();
+    _pm.mySeat=mySeatRow||null;
+    _pm._waLink=(einst?.wert)||'';
+    if(mySeatRow){
+      const{data:cardRow}=await db.from('online_seat_cards').select('cards').eq('online_seat_id',mySeatRow.id).maybeSingle();
+      _pm.myHoleCards=cardRow?.cards||[];
+    }else{
+      _pm.myHoleCards=[];
+    }
+    renderOnlineTisch();
+  }
+
+  function renderOnlineTisch(){
+    const el=document.getElementById('online-tisch-content');if(!el)return;
+    if(!_pm?.session){el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;return;}
+    const{session,seats,actions,mySeat,myHoleCards}=_pm;
+    const isAdmin=currentSpieler?.ist_admin;
+    const isMyTurn=session.current_player_id===currentSpieler?.id&&session.status==='running';
+    const myStatus=mySeat?.status;
+    const isRunning=session.status==='running';
+    const isWaiting=session.status==='waiting';
+    const isFinished=session.status==='finished';
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+
+    // Test-Modus Banner
+    const testBanner=session.is_test?`<div style="background:#fef3c7;color:#92400e;text-align:center;padding:6px;font-size:12px;font-weight:700;letter-spacing:.5px">TEST-MODUS – Keine echten Kontostände</div>`:'';
+
+    // Runout
+    const boardCount=(session.community_cards||[]).length;
+    const dealerSeat=seats.find(s=>s.seat===session.dealer_seat);
+    const isDealer=dealerSeat?.spieler_id===currentSpieler?.id;
+    const dealerIsActive=dealerSeat&&dealerSeat.status!=='paused'&&dealerSeat.status!=='sitting_out';
+    const canRunout=session.runout_cards===null&&boardCount>0&&boardCount<5&&isRunning;
+    const mayReveal=canRunout&&(isDealer||(!dealerIsActive&&mySeat&&myStatus!=='paused'&&myStatus!=='sitting_out'));
+    const runoutBtn=mayReveal?`<div style="text-align:center;margin-bottom:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-runout" style="font-size:12px;padding:5px 14px">Was wäre noch gekommen?</button></div>`:'';
+    const runoutDisplay=(session.runout_cards?.length>0)?`<div style="margin:var(--space-sm) 0;padding:8px 12px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e"><span style="font-weight:700">Was wäre gekommen: </span><span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px">${session.runout_cards.map(c=>_pmCard(c)).join('')}</span></div>`:'';
+
+    // Eigene Karten
+    const myCardsHtml=(mySeat&&myHoleCards.length>0&&myStatus!=='folded')?`<div style="display:flex;justify-content:center;gap:8px;margin:var(--space-sm) 0">${myHoleCards.map(c=>_pmCard(c,{big:true})).join('')}</div>`:'';
+
+    // Aktion-Bereich
+    const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus);
+
+    // Neue-Hand-Button
+    let newHandBtn='';
+    if(isRunning&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
+
+    // WhatsApp-Button
+    const waLink=_pm._waLink||session.video_link||'';
+    const waBtn=waLink?`<a href="${escHtml(waLink)}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;padding:5px 12px;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3-8.63A2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>Call</a>`:'';
+
+    // Session-Ende
+    const finishBtn=isAdmin&&!isFinished?`<button class="btn btn-ghost" id="btn-pm-finish" style="font-size:12px;padding:5px 12px;color:var(--danger)">Beenden</button>`:'';
+
+    // Feed
+    const feedHtml=_pmFeedHtml(actions);
+
+    el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
+        <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
+        <div style="display:flex;gap:6px;align-items:center">${waBtn}${newHandBtn}${finishBtn}</div>
+      </div>
+      <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id)}</div>
+      ${runoutDisplay}${runoutBtn}${myCardsHtml}${actionArea}
+      <div style="margin-top:var(--space-lg)"><div class="section-title">Verlauf</div><div class="pm-feed">${feedHtml}</div></div>
+    </div>`;
+    _pmBindEvents();
+  }
+
+  function _pmFeedHtml(actions){
+    if(!actions?.length)return`<div style="padding:var(--space-md);color:var(--text-tertiary);font-size:13px;text-align:center">Noch keine Aktionen</div>`;
+    return actions.slice(-40).reverse().map(a=>{
+      const n=a.spieler?.name||'?';
+      const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
+      let text='';
+      switch(a.action){
+        case'fold':text=`${n} foldet`;break;
+        case'check':text=`${n} checkt`;break;
+        case'call':text=`${n} callt${amt}`;break;
+        case'raise':text=`${n} raised auf${amt}`;break;
+        case'allin':text=`${n} All-in${amt}`;break;
+        case'post_sb':text=`${n} SB${amt}`;break;
+        case'post_bb':text=`${n} BB${amt}`;break;
+        case'win':text=`${n} gewinnt${amt}`;break;
+        case'pause':text=`${n} pausiert`;break;
+        case'resume':text=`${n} ist zurück`;break;
+        case'reveal_runout':text=`${n} deckt Runout auf`;break;
+        default:text=`${n}: ${a.action}`;
+      }
+      const isWin=a.action==='win';
+      return`<div class="pm-feed-item${isWin?' pm-feed-win':''}">${text}</div>`;
+    }).join('');
+  }
+
+  function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus){
+    if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
+    if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Beobachter-Modus</div>`;
+    if(!mySeat&&isFinished)return'';
+    if(mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div>${isAdmin?`<button class="btn btn-primary" id="btn-pm-start">Erste Hand starten</button>`:`<div style="font-size:13px;color:var(--text-secondary)">Warte auf Admin…</div>`}</div>`;
+    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}</div>`;
+    if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
+    if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
+    if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
+    if(isMyTurn){
+      const maxBet=Math.max(0,...seats.map(s=>s.bet_current_round||0));
+      const myBet=mySeat.bet_current_round||0;
+      const toCall=Math.max(0,Math.min(maxBet-myBet,mySeat.stack||0));
+      const canCheck=toCall<=0;
+      const myStack=mySeat.stack||0;
+      const pot=session.pot||0;
+      const bb=(session.small_blind||1)*2;
+      const halfPot=Math.min(myStack,Math.max(bb,+(pot*0.5).toFixed(2)));
+      const fullPot=Math.min(myStack,Math.max(bb,pot));
+      return`<div class="pm-action-area">
+        <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
+        <div class="pm-action-btns">
+          <button class="btn btn-danger pm-act-btn" data-action="fold">Fold</button>
+          ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
+          <button class="btn btn-primary" id="pm-raise-toggle">Raise</button>
+        </div>
+        <div id="pm-raise-area" style="display:none;margin-top:var(--space-sm)">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn btn-ghost pm-preset" data-amt="${halfPot}" style="font-size:12px;padding:4px 10px">½ Pot</button>
+            <button class="btn btn-ghost pm-preset" data-amt="${fullPot}" style="font-size:12px;padding:4px 10px">Pot</button>
+            <button class="btn btn-ghost pm-preset" data-amt="${myStack}" style="font-size:12px;padding:4px 10px">All-in</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="pm-raise-input" class="form-input" inputmode="decimal" step="0.5" min="${bb}" max="${myStack}" value="${Math.min(fullPot,myStack)}" style="flex:1">
+            <button class="btn btn-primary" id="pm-raise-confirm">Raise</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    // Waiting → Pre-Action
+    const pre=mySeat?.pre_action||'';
+    const bb=(session.small_blind||1)*2;
+    return`<div class="pm-action-area">
+      <div style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:var(--space-sm)">Vorauswahl (Pre-Action)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+        ${[['fold','Fold'],['check_fold','Check/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pre-btn" data-pre="${v}" style="font-size:12px;padding:5px 12px">${l}</button>`).join('')}
+      </div>
+      <div id="pm-pre-limit-row" style="display:${pre==='call'?'flex':'none'};gap:8px;align-items:center;margin-top:8px">
+        <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap">Max €</span>
+        <input type="number" id="pm-pre-limit-input" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="unbegrenzt" style="flex:1">
+        <button class="btn btn-ghost pm-preset-pre" data-bb="${bb.toFixed(2)}" style="font-size:12px;padding:4px 8px">1BB</button>
+        <button class="btn btn-ghost pm-preset-pre" data-bb="${(bb*3).toFixed(2)}" style="font-size:12px;padding:4px 8px">3BB</button>
+      </div>
+      <div style="text-align:center;margin-top:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-pause" style="font-size:12px">Pause</button></div>
+    </div>`;
+  }
+
+  function _pmBindEvents(){
+    // Leerer Platz → Platz nehmen
+    document.querySelectorAll('.pm-seat-group.empty').forEach(g=>{
+      g.addEventListener('click',()=>_pmTakeSeatFlow(parseInt(g.dataset.seat)));
+    });
+    // Raise toggle
+    document.getElementById('pm-raise-toggle')?.addEventListener('click',()=>{
+      const a=document.getElementById('pm-raise-area');if(a)a.style.display=a.style.display==='none'?'block':'none';
+    });
+    // Raise presets
+    document.querySelectorAll('.pm-preset').forEach(b=>b.addEventListener('click',()=>{
+      const i=document.getElementById('pm-raise-input');if(i)i.value=b.dataset.amt;
+    }));
+    // Raise confirm
+    document.getElementById('pm-raise-confirm')?.addEventListener('click',()=>{
+      const v=parseFloat(document.getElementById('pm-raise-input')?.value||0);if(v>0)_pmAct('raise',v);
+    });
+    // Aktions-Buttons (fold/check/call)
+    document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
+      b.addEventListener('click',()=>_pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined));
+    });
+    // Pre-Action Buttons
+    document.querySelectorAll('.pm-pre-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const pre=b.dataset.pre;
+        document.querySelectorAll('.pm-pre-btn').forEach(x=>{x.classList.remove('btn-primary');x.classList.add('btn-ghost');});
+        b.classList.remove('btn-ghost');b.classList.add('btn-primary');
+        const row=document.getElementById('pm-pre-limit-row');if(row)row.style.display=pre==='call'?'flex':'none';
+        const lim=pre==='call'?(parseFloat(document.getElementById('pm-pre-limit-input')?.value)||null):null;
+        _pmSetPreAction(pre,lim);
+      });
+    });
+    // Pre-Action BB-Presets
+    document.querySelectorAll('.pm-preset-pre').forEach(b=>b.addEventListener('click',()=>{
+      const i=document.getElementById('pm-pre-limit-input');if(i)i.value=b.dataset.bb;
+    }));
+    // Buttons
+    document.getElementById('btn-pm-sitdown')?.addEventListener('click',()=>{
+      const taken=new Set((_pm.seats||[]).map(s=>s.seat));
+      for(let i=1;i<=9;i++){if(!taken.has(i)){_pmTakeSeatFlow(i);return;}}
+      showAlert('Keine freien Plätze.');
+    });
+    document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
+    document.getElementById('btn-pm-newhand')?.addEventListener('click',_pmNewHand);
+    document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
+    document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
+    document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
+    document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
+      if(!await confirmAction('Session wirklich beenden?'))return;
+      await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
+    });
+    document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
+  }
+
+  async function _pmTakeSeatFlow(seatNr){
+    if(_pm?.mySeat){await showAlert('Du bist bereits am Tisch.');return;}
+    if(!_pm?.session)return;
+    if(_pm.session.status!=='waiting'){await showAlert('Session läuft bereits.');return;}
+    if((_pm.seats||[]).some(s=>s.seat===seatNr)){await showAlert('Platz bereits besetzt.');return;}
+    const{error}=await db.from('online_seats').insert({
+      online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
+      seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
+    });
+    if(error)await showAlert('Fehler: '+error.message);
+  }
+
+  async function _pmStartHand(){
+    if(!_pm)return;
+    if((_pm.seats||[]).length<2){await showAlert('Mindestens 2 Spieler nötig.');return;}
+    const btn=document.getElementById('btn-pm-start');if(btn){btn.disabled=true;btn.textContent='Starte…';}
+    const resp=await _callFn('poker-start-game',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
+    if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Erste Hand starten';}}
+  }
+
+  async function _pmNewHand(){
+    if(!_pm)return;
+    const btn=document.getElementById('btn-pm-newhand');if(btn){btn.disabled=true;btn.textContent='…';}
+    const resp=await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
+    if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Nächste Hand';}}
+  }
+
+  async function _pmRunout(){
+    if(!_pm)return;
+    const resp=await _callFn('poker-reveal-runout',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
+    if(resp?.error)await showAlert(resp.error);
+  }
+
+  async function _pmAct(action,amount){
+    if(!_pm)return;
+    document.querySelectorAll('.pm-act-btn').forEach(b=>b.disabled=true);
+    const body={online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action};
+    if(amount!==undefined&&amount>0)body.amount=amount;
+    const resp=await _callFn('poker-action',body);
+    if(resp?.error){await showAlert('Fehler: '+resp.error);document.querySelectorAll('.pm-act-btn').forEach(b=>b.disabled=false);}
+  }
+
+  async function _pmSetPreAction(pre,limit){
+    if(!_pm?.mySeat)return;
+    await db.from('online_seats').update({pre_action:pre,pre_action_limit:limit||null}).eq('id',_pm.mySeat.id);
+  }
+
+  async function _callFn(name,body){
+    const{data:{session:s}}=await db.auth.getSession();
+    const token=s?.access_token||'';
+    try{
+      const r=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify(body),
+      });
+      return await r.json();
+    }catch(e){return{error:e.message};}
+  }
+
+  function _pmPauseSheet(){
+    const sid='pm-pause-sheet';document.getElementById(sid)?.remove();
+    const sb=_pm?.session?.small_blind||1;const bb=sb*2;
+    const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
+    overlay.innerHTML=`<div class="pm-sheet">
+      <div class="pm-sheet-handle"></div>
+      <div class="pm-sheet-title">Pause – Auto-Aktion</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Was passiert automatisch wenn du dran bist?</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-lg)">
+        ${[['fold','Sofort folden','Wird sofort gefoldet'],['check','Nur checken','Checkt wenn möglich, sonst Fold'],['call_limit','Bis Betrag callen','Callt bis zu einem Betrag'],['call_any','Alles callen','Callt jeden Einsatz']].map(([v,l,s],i)=>`<label class="pm-auto-option"><input type="radio" name="pm-auto" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
+      </div>
+      <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Max. Betrag</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="pm-pause-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${(bb*2).toFixed(2)}" style="flex:1">
+          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:12px;padding:5px 10px">1BB (€${bb.toFixed(0)})</button>
+          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:12px;padding:5px 10px">3BB (€${(bb*3).toFixed(0)})</button>
+        </div>
+      </div>
+      <div class="btn-row-2">
+        <button class="btn btn-secondary" id="pm-pause-cancel">Abbrechen</button>
+        <button class="btn btn-primary" id="pm-pause-confirm">Pause starten</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
+    const close=()=>{overlay.classList.remove('open');setTimeout(()=>overlay.remove(),300);};
+    document.getElementById('pm-pause-cancel').onclick=close;
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    overlay.querySelectorAll('[name="pm-auto"]').forEach(r=>r.addEventListener('change',()=>{
+      document.getElementById('pm-pause-limit-row').style.display=r.value==='call_limit'&&r.checked?'block':'none';
+    }));
+    document.getElementById('pm-pl-1bb').onclick=()=>{document.getElementById('pm-pause-limit').value=bb.toFixed(2);};
+    document.getElementById('pm-pl-3bb').onclick=()=>{document.getElementById('pm-pause-limit').value=(bb*3).toFixed(2);};
+    document.getElementById('pm-pause-confirm').onclick=async()=>{
+      const auto=overlay.querySelector('[name="pm-auto"]:checked')?.value||'fold';
+      const lim=auto==='call_limit'?(parseFloat(document.getElementById('pm-pause-limit').value)||null):null;
+      document.getElementById('pm-pause-confirm').disabled=true;
+      const resp=await _callFn('poker-action',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'pause'});
+      if(resp?.error){await showAlert('Fehler: '+resp.error);document.getElementById('pm-pause-confirm').disabled=false;return;}
+      if(_pm?.mySeat)await db.from('online_seats').update({pause_auto_action:auto,pause_call_limit:lim,paused_at:new Date().toISOString()}).eq('id',_pm.mySeat.id);
+      close();
+    };
+  }
+
+  function _pmSubscribe(){
+    if(!_pm?.id)return;
+    _pmUnsubscribe();
+    _pmChannel=db.channel(`online_spiel:${_pm.id}`)
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},()=>_pmLoad())
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},()=>_pmLoad())
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},payload=>{
+        if(_pm){_pm.actions.push(payload.new);renderOnlineTisch();}
+      })
+      .subscribe();
+  }
+
+  function _pmUnsubscribe(){
+    if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+    if(_pm)_pm=null;
   }
 
   // ── INIT ───────────────────────────────────────────────
