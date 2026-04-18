@@ -67,10 +67,10 @@
     .pm-tisch-layout{display:flex;flex-direction:column;gap:var(--space-md)}
     .pm-tisch-left,.pm-tisch-right{min-width:0}
     @media(min-width:600px),(orientation:landscape){
-      .pm-tisch-layout{flex-direction:row;align-items:stretch;gap:var(--space-lg)}
+      .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:var(--space-lg)}
       .pm-tisch-left{flex:1.1}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column}
-      .pm-tisch-right .pm-feed{flex:1;max-height:350px;min-height:150px}
+      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;max-height:100dvh;overflow:hidden}
+      .pm-tisch-right .pm-feed{flex:1;min-height:0;max-height:none;overflow-y:auto}
     }
     body.pm-fullscreen .header,
     body.pm-fullscreen .bottom-nav{display:none!important;}
@@ -6957,8 +6957,8 @@
 
     // Aktion-Bereich
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
-    const activeSeats=seats.filter(s=>s.status!=='folded'&&s.status!=='sitting_out'&&s.status!=='paused');
-    if(isRunning&&handIsOver2&&mySeat&&activeSeats.length>1){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important">Nächste Hand</button>`;}
+    const playableSeats=seats.filter(s=>s.status!=='sitting_out'&&(s.stack>0||s.status==='allin'));
+    if(isRunning&&handIsOver2&&mySeat&&playableSeats.length>1){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important">Nächste Hand</button>`;}
 
     // Video-Call-Button (generischer Link + Teilnehmerzähler)
     const waLink=_pm._waLink||session.video_link||'';
