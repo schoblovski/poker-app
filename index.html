@@ -1052,6 +1052,156 @@
   </div>
 </div>
 
+<!-- Pandemie-Modus Info-Modal -->
+<div id="pm-info-modal" style="display:none;position:fixed;inset:0;z-index:400;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:600px;margin:0 auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)">
+    <div style="position:sticky;top:0;background:var(--bg);z-index:1;padding:16px 20px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
+      <button id="btn-pm-info-close" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--text-primary)">Pandemie-Modus</div>
+        <div style="font-size:12px;color:var(--text-tertiary);margin-top:1px">Spielregeln & Hilfe</div>
+      </div>
+    </div>
+    <div style="padding:20px">
+
+      <div style="background:var(--accent-soft);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="font-size:13px;color:var(--accent-text);line-height:1.5">Online-Poker direkt in der App — ihr könnt von überall aus gegeneinander spielen. Die Karten werden automatisch gemischt und fair ausgeteilt. Niemand kann schummeln.</div>
+      </div>
+
+      <!-- Spielvarianten -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Spielvarianten</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:3px">Texas Hold'em</div>
+            <div style="font-size:13px;color:var(--text-secondary)">Du bekommst 2 eigene Karten. Zusammen mit den 5 Gemeinschaftskarten bildest du die beste 5-Karten-Hand.</div>
+          </div>
+          <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:3px">Omaha</div>
+            <div style="font-size:13px;color:var(--text-secondary)">Du bekommst 4 eigene Karten — musst aber genau 2 davon + genau 3 vom Tisch verwenden.</div>
+          </div>
+          <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:3px">Texama <span style="font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px;margin-left:4px">Eigene Erfindung</span></div>
+            <div style="font-size:13px;color:var(--text-secondary)">4 eigene Karten wie Omaha — du kannst aber frei wählen wie viele du davon verwendest: 0 bis 4. Vierling in der Hand + 1 Tischkarte? Gültig!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spielablauf -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Spielablauf</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text-secondary)">Admin startet die erste Spielrunde</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text-secondary)">Du siehst deine Karten und wählst deine Aktion (Fold / Call / Raise / All-in)</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text-secondary)">Nach jeder Setzrunde kommen neue Gemeinschaftskarten: Flop (3), Turn (1), River (1)</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div style="font-size:13px;color:var(--text-secondary)">Showdown — die beste Hand gewinnt den Pot</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">5</div><div style="font-size:13px;color:var(--text-secondary)">Nächste Runde startet erst wenn der Dealer-Spieler auf <b>„Nächste Spielrunde"</b> drückt</div></div>
+        </div>
+      </div>
+
+      <!-- Aktionen -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Aktionen am Tisch</div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden">
+          <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px;color:var(--danger)">Fold</span><span style="font-size:13px;color:var(--text-secondary)">Karten weglegen — du bist raus aus dieser Runde</span></div>
+          <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px;color:var(--text-primary)">Check</span><span style="font-size:13px;color:var(--text-secondary)">Nichts setzen (nur wenn niemand vor dir gesetzt hat)</span></div>
+          <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px;color:var(--text-primary)">Call</span><span style="font-size:13px;color:var(--text-secondary)">Den aktuellen Einsatz mitgehen</span></div>
+          <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px;color:var(--accent-text)">Raise</span><span style="font-size:13px;color:var(--text-secondary)">Erhöhen — mindestens das Doppelte des letzten Einsatzes</span></div>
+          <div style="padding:11px 14px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px;color:#c2410c">All-in</span><span style="font-size:13px;color:var(--text-secondary)">Alles setzen was du hast</span></div>
+        </div>
+      </div>
+
+      <!-- Vorauswahl -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Vorauswahl</div>
+          <div style="font-size:10px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px">Profi-Tipp</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Während ein anderer Spieler am Zug ist, kannst du schon vorab entscheiden was du machen möchtest — die Aktion wird dann automatisch ausgeführt wenn du dran bist:</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Fold</div><div style="font-size:13px;color:var(--text-secondary)">Sofort folden wenn du dran bist</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Check/Fold</div><div style="font-size:13px;color:var(--text-secondary)">Checken wenn möglich, sonst folden</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Check</div><div style="font-size:13px;color:var(--text-secondary)">Nur checken — wird abgebrochen wenn jemand setzt</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Call</div><div style="font-size:13px;color:var(--text-secondary)">Mitgehen, optional bis zu einem selbst gewählten Betrag</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Call Any</div><div style="font-size:13px;color:var(--text-secondary)">Jeden Einsatz mitgehen egal wie hoch</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verdeckte Karten -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Verdeckte Karten</div>
+          <div style="font-size:10px;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 7px;border-radius:20px">Spezial</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.55">Im Menü <b>(⋮)</b> findest du den Schalter <b>„Karten verdeckt"</b>. Wenn du ihn aktivierst, bekommst du bei der nächsten Runde deine Karten zugeteilt ohne sie sofort zu sehen — du spielst buchstäblich blind!</div>
+          <div style="margin-top:10px;font-size:13px;color:var(--text-secondary);line-height:1.55">Mit <b>„Meine Karten aufdecken"</b> kannst du sie jederzeit ansehen. Im Verlauf wird für alle sichtbar festgehalten wann du sie erhalten und wann du sie angesehen hast.</div>
+        </div>
+      </div>
+
+      <!-- Pause -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Pause</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Musst du kurz weg? Drück auf <b>„Pause"</b> und lege fest was automatisch passieren soll während du weg bist:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Sofort folden</div><div style="font-size:13px;color:var(--text-secondary)">Standard — du foldest jede Hand automatisch</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Nur checken</div><div style="font-size:13px;color:var(--text-secondary)">Checken solange kein Einsatz da ist, sonst folden</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Bis €X callen</div><div style="font-size:13px;color:var(--text-secondary)">Einsätze bis zu einem gewählten Betrag mitgehen</div></div>
+            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Alles callen</div><div style="font-size:13px;color:var(--text-secondary)">Jeden Einsatz mitgehen egal wie hoch</div></div>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary)">Wenn du zurückkommst siehst du was du verpasst hast. Dein Platz bleibt gehalten.</div>
+        </div>
+      </div>
+
+      <!-- Tisch verlassen -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tisch verlassen</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Im Menü <b>(⋮)</b> kannst du den Tisch verlassen. Dein Stack bleibt erhalten. Wenn du wieder beitrittst, musst du einen freien Platz einnehmen.</div>
+      </div>
+
+      <!-- Was wäre noch gekommen -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Was wäre noch gekommen?</div>
+          <div style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:20px">Highlight</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn eine Hand endet weil alle ausser einem gefoldet haben, erscheint der Button <b>„Was wäre noch gekommen?"</b>. Der Dealer-Button-Spieler kann ihn drücken — dann werden die restlichen Gemeinschaftskarten aufgedeckt. Rein informell, ohne Einfluss auf das Ergebnis. Gut zum Lachen oder Ärgern!</div>
+      </div>
+
+      <!-- Reaktionen -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Reaktionen</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Drücke jederzeit auf ein Emoji unter dem Stacks-Balken. Deine Reaktion erscheint kurz über deinem Avatar auf dem Tisch und wird im Verlauf für alle sichtbar.</div>
+      </div>
+
+      <!-- Abrechnung -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Abrechnung</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein.</div>
+      </div>
+
+      <!-- Tipps -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tipps</div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Drücke auf den Tisch-Button <b>⤢</b> um den Tisch vergrössert anzuzeigen</div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Push-Benachrichtigungen erinnern dich wenn du dran bist — aktivierbar im Profil</div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Im Menü <b>(⋮)</b> kannst du den Video-Call starten und Karten verdeckt aktivieren</div>
+          <div style="padding:10px 14px;font-size:13px;color:var(--text-secondary)">Alle Aktionen werden im Verlauf chronologisch aufgezeichnet</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -7334,7 +7484,7 @@
 
     // Kebab-Menü (Video-Call + Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left"><div style="display:flex;align-items:center;gap:10px;flex:1;font-size:14px;color:var(--text-primary);margin-right:16px">${fdIcon}Karten verdeckt</div><div style="position:relative;width:42px;height:24px;background:${facedown?'var(--accent)':' var(--bg-secondary)'};border-radius:12px;transition:background .2s;flex-shrink:0"><div style="position:absolute;top:3px;left:${facedown?'21px':'3px'};width:18px;height:18px;background:white;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div></button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left"><div style="display:flex;align-items:center;gap:10px;flex:1;font-size:14px;color:var(--text-primary);margin-right:16px">${fdIcon}Karten verdeckt</div><div style="position:relative;width:42px;height:24px;background:${facedown?'var(--accent)':' var(--bg-secondary)'};border-radius:12px;transition:background .2s;flex-shrink:0"><div style="position:absolute;top:3px;left:${facedown?'21px':'3px'};width:18px;height:18px;background:white;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div></button><div style="height:1px;background:var(--border)"></div>`:''  }<button class="pm-menu-item" id="btn-pm-info" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Spielregeln &amp; Hilfe</button>${(mySeat&&!isFinished)||!isFinished?`<div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -7764,6 +7914,13 @@
         const _ts2=_pm._reactions[currentSpieler.id].ts;
         setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];_pm._lastFp='';renderOnlineTisch();}},4000);
       });
+    });
+    document.getElementById('btn-pm-info')?.addEventListener('click',()=>{
+      document.getElementById('pm-kebab-menu').style.display='none';
+      document.getElementById('pm-info-modal').style.display='block';
+    });
+    document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
+      document.getElementById('pm-info-modal').style.display='none';
     });
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;

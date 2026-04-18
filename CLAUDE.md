@@ -393,6 +393,22 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 | `poker-new-hand` | ✅ | Nächste Hand auf Knopfdruck, Dealer-Button weiter |
 | `poker-reveal-runout` | ✅ | Rest-Board aufdecken (deterministisch aus gespeichertem Deck) |
 
+### In-App Hilfe / FAQ (PFLICHT: immer aktuell halten!)
+
+Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script type="module">`) enthält die komplette Spielanleitung für Endanwender. Sie ist über das Kebab-Menü (⋮) → „Spielregeln & Hilfe" erreichbar.
+
+**WICHTIG:** Wann immer eine Funktion des Pandemie-Modus geändert oder ergänzt wird, MUSS der entsprechende Abschnitt in diesem Modal ebenfalls aktualisiert werden. Abschnitte:
+- `Spielvarianten` — bei neuer Variante Karte hinzufügen
+- `Spielablauf` — bei Änderung am Hand-Flow
+- `Aktionen am Tisch` — bei neuer/geänderter Aktion
+- `Vorauswahl` — bei Änderung der Pre-Action-Optionen
+- `Verdeckte Karten` — bei Änderung des Facedown-Modus
+- `Pause` — bei Änderung der Pause-Auto-Aktionen
+- `Was wäre noch gekommen?` — bei Änderung des Runout-Flows
+- `Reaktionen` — bei Änderung des Emoji-Systems
+- `Abrechnung` — bei Änderung des Payout-Flows
+- `Tipps` — bei neuen Features die Spieler kennen sollten
+
 ### Wichtige Implementierungs-Gotchas
 - **`bet_current_round` wird nach jeder Strasse auf 0 gesetzt** – kann NICHT für Sidepot-Berechnung beim Showdown verwendet werden. Stattdessen: `online_actions` als Source of Truth (Summe aller `call/raise/allin/post_sb/post_bb/blind/bet` Beträge pro Spieler pro Hand)
 - **Sidepot-Remainder** gehört in `pots[0]` (Hauptpot), nicht `pots[pots.length-1]` (da frühere Strassen-Beiträge zum Hauptpot gehören)
