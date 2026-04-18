@@ -4867,6 +4867,10 @@
 
   // ── Asse legen (Dealer-Randomizer) ─────────────────────
   function loadRandomizer(){
+    // iOS 13+: request DeviceMotion permission to enable shake easter egg
+    if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
+      DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
+    }
     const el=document.getElementById('randomizer-content');
     // Alle aktiven Nicht-Bank-Spieler als Pool
     const pool=(alleSpieler||[]).filter(s=>!s.ist_bank);
@@ -7313,6 +7317,15 @@
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:''};
     showPage('online-tisch');
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
+    // Request device motion/orientation permission (iOS 13+) and set up easter eggs
+    if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
+      DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
+    }
+    if(typeof DeviceOrientationEvent?.requestPermission==='function'){
+      DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')_pmSetupCardPeek();}).catch(()=>{});
+    } else if(typeof DeviceOrientationEvent!=='undefined'){
+      _pmSetupCardPeek();
+    }
     await _pmLoad();
     // Insert join action if player is returning to an existing seat after a leave
     // Use a direct targeted query instead of _pm.actions (which is capped at 60 rows)
@@ -7621,6 +7634,11 @@
       </div>
     </div>`;
     _pmBindEvents();
+    // Vibrate once when it becomes the player's turn (Android/supported devices)
+    if(isMyTurn&&navigator.vibrate){
+      const _vk=`${session.hand_nr}_${session.current_player_id}`;
+      if((_pm._lastVibTurn??'')!==_vk){_pm._lastVibTurn=_vk;navigator.vibrate([80,40,120]);}
+    }
     // Show broke modal once per hand when player hits €0
     if(_canBuyin&&myStatus!=='sitting_out'&&(_pm._buyinPromptedHand??-1)!==session.hand_nr){
       _pm._buyinPromptedHand=session.hand_nr;
@@ -8577,11 +8595,63 @@
       .subscribe((status)=>{_pmUpdateRtBadge(status);});
   }
 
+  // ── DEVICE ORIENTATION EASTER EGG: Karten-Peek beim Kippen ──
+  let _pmOrientHandler=null,_pmPeekActive=false;
+  function _pmShowCardPeek(){
+    document.getElementById('pm-card-peek-overlay')?.remove();
+    const cards=_pm?.myHoleCards||[];if(!cards.length)return;
+    const ov=document.createElement('div');
+    ov.id='pm-card-peek-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9990;display:flex;align-items:center;justify-content:center;gap:12px;pointer-events:none;animation:pm-fadein .15s ease-out';
+    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2)">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
+    document.body.appendChild(ov);
+  }
+  function _pmSetupCardPeek(){
+    if(_pmOrientHandler)return;
+    _pmOrientHandler=e=>{
+      if(!_pm?.myHoleCards?.length)return;
+      const beta=e.beta??90;
+      if(beta<65&&!_pmPeekActive){_pmPeekActive=true;_pmShowCardPeek();}
+      else if(beta>75&&_pmPeekActive){_pmPeekActive=false;document.getElementById('pm-card-peek-overlay')?.remove();}
+    };
+    window.addEventListener('deviceorientation',_pmOrientHandler,{passive:true});
+  }
+  function _pmRemoveCardPeek(){
+    if(_pmOrientHandler){window.removeEventListener('deviceorientation',_pmOrientHandler);_pmOrientHandler=null;}
+    _pmPeekActive=false;document.getElementById('pm-card-peek-overlay')?.remove();
+  }
+
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
+    _pmRemoveCardPeek();
     _pm=null;
+  }
+
+  // ── SHAKE EASTER EGG: Schütteln → Asse-Randomizer ──
+  let _shakeSetup=false,_shakeLastMag=0,_shakeCd=false;
+  function _shakeHandler(e){
+    const a=e.accelerationIncludingGravity;if(!a)return;
+    const m=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
+    const d=Math.abs(m-_shakeLastMag);_shakeLastMag=m;
+    if(d>18&&!_shakeCd){
+      _shakeCd=true;setTimeout(()=>_shakeCd=false,4000);
+      if(typeof showPage!=='function'||typeof loadRandomizer!=='function')return;
+      const t=document.createElement('div');
+      t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--accent);color:var(--accent-text);border-radius:24px;padding:10px 20px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.25)';
+      t.textContent='🎲 Asse-Randomizer!';
+      document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
+      setTimeout(()=>{showPage('randomizer');loadRandomizer();setTimeout(()=>document.getElementById('rnd-go')?.click(),350);},700);
+    }
+  }
+  function _shakeEnable(){
+    if(_shakeSetup)return;_shakeSetup=true;
+    window.addEventListener('devicemotion',_shakeHandler,{passive:true});
+  }
+  // Non-iOS: enable immediately; iOS: will request permission in loadRandomizer / enterOnlineSession
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission!=='function'){
+    _shakeEnable();
   }
 
   // ── INIT ───────────────────────────────────────────────
