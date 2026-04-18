@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         amount: w.amount,
         street: 'showdown',
         hand_nr: session.hand_nr,
-        meta: res ? { hand: res.handDesc, hole_cards: holeMap[res.seatId] ?? [] } : null,
+        meta: res ? { hand: res.handDesc, best: res.best ?? [], hole_cards: holeMap[res.seatId] ?? [] } : null,
       };
     })
   );

@@ -6647,10 +6647,11 @@
     const s=_pmSuitSymbol[card.suit]||card.suit;
     const red=card.suit==='h'||card.suit==='d';
     const sz=opts.big?'big':opts.community?'community':'';
-    return`<div class="pt-card ${red?'red':''} ${sz}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
+    const hl=opts.highlight?'box-shadow:0 0 0 2.5px var(--accent),0 2px 10px rgba(34,197,94,.4);':'';
+    return`<div class="pt-card ${red?'red':''} ${sz}" style="${hl}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
   }
 
-  function _pmSVG(seats,session,myId){
+  function _pmSVG(seats,session,myId,usedBoardKeys){
     const W=400,H=220,cx=200,cy=108,rx=148,ry=86;
     const angles=[90,50,10,330,290,250,210,170,130];
     const seatMap={};(seats||[]).forEach(s=>{seatMap[s.seat]=s;});
@@ -6670,7 +6671,7 @@
       let cls='pm-seat-group';
       if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
       if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isActive&&!isFolded)cls+=' active-turn';
-      const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,8);
+      const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,10);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
       const avatarUrl=seat?.spieler?.profilbild||'';
@@ -6684,7 +6685,7 @@
       const betChip=betAmt>0?`<circle cx="${bcx}" cy="${bcy}" r="10" fill="var(--accent)" opacity=".9"/><text x="${bcx}" y="${bcy+4}" text-anchor="middle" font-size="8" fill="white">€${betFmt}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.35:1}"/>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
-      const namePillY=sy+28;const namePillW=Math.min(52,name.length*6+12);
+      const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
       const stackPill=seat?`<text x="${sx}" y="${namePillY+14}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)">${stackTxt}</text>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}">
@@ -6709,7 +6710,10 @@
         const r=_pmRankStr[c.rank]||String(c.rank);
         const s=_pmSuitSymbol[c.suit]||'';
         const isR=!!rc;
-        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${red?'#fee2e2':'white'}" stroke="${isR?'#f59e0b':'rgba(255,255,255,.3)'}" stroke-width="${isR?1.5:0.5}"/>
+        const isUsed=usedBoardKeys?.has(`${c.rank}${c.suit}`);
+        const stroke=isR?'#f59e0b':isUsed?'#22c55e':'rgba(255,255,255,.3)';
+        const strokeW=isUsed?2.5:isR?1.5:0.5;
+        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${red?'#fee2e2':'white'}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${red?'#dc2626':'#1c1c1e'}">${r}</text>
           <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${red?'#dc2626':'#1c1c1e'}">${s}</text>`;
       }else{
@@ -6918,6 +6922,48 @@
     return Math.round((wins+ties*0.5)/ITERS*100);
   }
 
+  function _pmChooseJS(arr,k){if(k===0)return[[]];if(k>arr.length)return[];const[f,...r]=arr;return[..._pmChooseJS(r,k-1).map(c=>[f,...c]),..._pmChooseJS(r,k)];}
+  function _pmEval5JS(cards){
+    const ranks=cards.map(c=>c.rank).sort((a,b)=>b-a);const suits=cards.map(c=>c.suit);
+    const isF=suits.every(s=>s===suits[0]);const rs=[...new Set(ranks)];
+    let isSt=false,stH=0;
+    if(rs.length===5){if(ranks[0]-ranks[4]===4){isSt=true;stH=ranks[0];}else if(ranks[0]===14&&ranks[1]===5){isSt=true;stH=5;}}
+    const e=(cat,...rs2)=>{let v=cat;for(const r of rs2)v=(v<<4)|r;return v;};
+    if(isSt&&isF)return e(8,stH);
+    const cnt={};for(const r of ranks)cnt[r]=(cnt[r]||0)+1;
+    const g=Object.entries(cnt).map(([r,n])=>({r:+r,n:+n})).sort((a,b)=>b.n-a.n||b.r-a.r);
+    if(g[0].n===4)return e(7,g[0].r,g[1].r);if(g[0].n===3&&g[1]?.n===2)return e(6,g[0].r,g[1].r);
+    if(isF)return e(5,...ranks);if(isSt)return e(4,stH);if(g[0].n===3)return e(3,g[0].r,g[1].r,g[2].r);
+    if(g[0].n===2&&g[1]?.n===2)return e(2,g[0].r,g[1].r,g[2].r);if(g[0].n===2)return e(1,g[0].r,g[1].r,g[2].r,g[3].r);
+    return e(0,...ranks);
+  }
+  function _pmHandNameJS(score){
+    const cat=score>>20,r1=(score>>16)&0xf,r2=(score>>12)&0xf;
+    const rn=r=>({14:'Ass',13:'König',12:'Dame',11:'Bube',10:'Zehn'}[r]??String(r));
+    const rp=r=>({14:'Asse',13:'Könige',12:'Damen',11:'Buben',10:'Zehnen',9:'Neuner',8:'Achter',7:'Siebener',6:'Sechser',5:'Fünfer',4:'Vierer',3:'Dreier',2:'Zweier'}[r]??`${r}er`);
+    const h={8:r1===14?'Royal Flush':r1===5?'Straight Flush, Rad':`Straight Flush, ${rn(r1)} hoch`,7:`Vierling, ${rp(r1)}`,6:`Full House, ${rp(r1)} über ${rp(r2)}`,5:`Flush, ${rn(r1)} hoch`,4:r1===5?'Straight, Rad':`Straight, ${rn(r1)} hoch`,3:`Drilling, ${rp(r1)}`,2:`Zwei Paare, ${rp(r1)} und ${rp(r2)}`,1:`Ein Paar ${rp(r1)}`};
+    return h[cat]??`${rn(r1)} hoch`;
+  }
+  function _pmBestHandJS(hole,board,variante){
+    if(!hole?.length||!board?.length)return null;
+    const isO=variante==='omaha',isT=variante==='texahma';
+    let best={score:-1,usedHole:[],usedBoard:[]};
+    if(isO){
+      if(board.length<3)return null;
+      for(const h2 of _pmChooseJS(hole,2))for(const b3 of _pmChooseJS(board,3)){const sc=_pmEval5JS([...h2,...b3]);if(sc>best.score)best={score:sc,usedHole:h2,usedBoard:b3};}
+    }else if(isT){
+      if(board.length<1)return null;
+      for(let k=0;k<=4;k++){const need=5-k;if(need>board.length)continue;for(const hk of _pmChooseJS(hole,k))for(const bk of _pmChooseJS(board,need)){const sc=_pmEval5JS([...hk,...bk]);if(sc>best.score)best={score:sc,usedHole:hk,usedBoard:bk};}}
+    }else{
+      if(board.length<3)return null;
+      const all=[...hole,...board];
+      const ck=c=>`${c.rank}${c.suit}`;const hSet=new Set(hole.map(ck));
+      for(const combo of _pmChooseJS(all,5)){const sc=_pmEval5JS(combo);if(sc>best.score)best={score:sc,usedHole:combo.filter(c=>hSet.has(ck(c))),usedBoard:combo.filter(c=>!hSet.has(ck(c)))};}
+    }
+    if(best.score<0)return null;
+    return{...best,name:_pmHandNameJS(best.score)};
+  }
+
   function renderOnlineTisch(){
     const el=document.getElementById('online-tisch-content');if(!el)return;
     if(!_pm?.session){el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;return;}
@@ -6970,7 +7016,7 @@
 
     // Kebab-Menü (Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -6991,15 +7037,22 @@
         <div style="font-size:16px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
     </div>`:'';
+    // Best hand berechnen (wenn Board ≥3 Karten und eigene Karten vorhanden)
+    const _boardCards=session.community_cards||[];
+    const bestHand=(myHoleCards.length>0&&_boardCards.length>=3&&myStatus!=='folded')?_pmBestHandJS(myHoleCards,_boardCards,session.variante):null;
+    const _cardKey=c=>`${c.rank}${c.suit}`;
+    const usedHoleKeys=new Set((bestHand?.usedHole||[]).map(_cardKey));
+    const usedBoardKeys=new Set((bestHand?.usedBoard||[]).map(_cardKey));
     // Equity berechnen wenn aktiviert, Spiel läuft und Karten vorhanden
     let equityTxt='';
     if(_pm._showEquity&&myHoleCards.length>0&&isRunning&&!handIsOver2&&myStatus!=='folded'){
       const activeOpps=seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='folded'&&s.status!=='sitting_out').length;
-      if(activeOpps>0)equityTxt=_pmCalcEquity(myHoleCards,session.community_cards||[],activeOpps,session.variante);
+      if(activeOpps>0)equityTxt=_pmCalcEquity(myHoleCards,_boardCards,activeOpps,session.variante);
     }
     const foldedBadge=myStatus==='folded'?`<div style="background:var(--danger-soft);color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;text-align:center;margin-top:4px">GEFOLDET</div>`:'';
     const equityBadge=equityTxt?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;text-align:center;margin-top:4px">~${equityTxt}% Equity</div>`:'';
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 var(--space-md);border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map(c=>_pmCard(c,{big:true})).join('')}</div>${foldedBadge}${equityBadge}</div>`:'';
+    const handBadge=bestHand?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 12px;border-radius:10px;text-align:center;margin-top:4px">${bestHand.name}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 var(--space-md);border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map(c=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c))})).join('')}</div>${foldedBadge}${handBadge}${equityBadge}</div>`:'';
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
@@ -7007,7 +7060,7 @@
       </div>
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id)}</div>
+          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys)}</div>
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
@@ -7037,7 +7090,8 @@
         case'post_bb':text=`${n} BB${amt}`;break;
         case'win':{
           const hand=a.meta?.hand;
-          const hc=(a.meta?.hole_cards||[]).map(c=>_pmCard(c)).join('');
+          const bestCards=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];
+          const hc=bestCards.map(c=>_pmCard(c)).join('');
           const handLine=hand?`<div style="font-size:11px;margin-top:3px;opacity:.85">${hand}${hc?` · <span style="display:inline-flex;gap:2px;vertical-align:middle">${hc}</span>`:''}</div>`:'';
           text=`${n} gewinnt${amt}${handLine}`;extra=' pm-feed-win';break;
         }

@@ -152,19 +152,23 @@ export function evalTexahma(hole: Card[], board: Card[]): { score: number; best:
 export function handName(score: number): string {
   const cat = score >> 20;
   const r1  = (score >> 16) & 0xf;
-  const rankName = (r: number) =>
-    r === 14 ? 'As' : r === 13 ? 'König' : r === 12 ? 'Dame' :
-    r === 11 ? 'Bube' : r === 10 ? 'Zehn' : String(r);
+  const r2  = (score >> 12) & 0xf;
+  const rn = (r: number) =>
+    ({ 14:'Ass', 13:'König', 12:'Dame', 11:'Bube', 10:'Zehn' } as Record<number,string>)[r] ?? String(r);
+  const rp = (r: number) =>
+    ({ 14:'Asse', 13:'Könige', 12:'Damen', 11:'Buben', 10:'Zehnen',
+       9:'Neuner', 8:'Achter', 7:'Siebener', 6:'Sechser', 5:'Fünfer',
+       4:'Vierer', 3:'Dreier', 2:'Zweier' } as Record<number,string>)[r] ?? `${r}er`;
   switch (cat) {
-    case STRAIGHT_FLUSH:  return r1 === 5 ? 'Royal-Flush (Rad)' : `Straight Flush, ${rankName(r1)} hoch`;
-    case FOUR_OF_A_KIND:  return `Vierling, ${rankName(r1)}s`;
-    case FULL_HOUSE:      return `Full House, ${rankName(r1)}s voll`;
-    case FLUSH:           return `Flush, ${rankName(r1)} hoch`;
-    case STRAIGHT:        return r1 === 5 ? 'Straight, Rad (A-2-3-4-5)' : `Straight, ${rankName(r1)} hoch`;
-    case THREE_OF_A_KIND: return `Drilling, ${rankName(r1)}s`;
-    case TWO_PAIR:        return `Zwei Paare, ${rankName(r1)}s und ${rankName((score >> 12) & 0xf)}s`;
-    case ONE_PAIR:        return `Paar ${rankName(r1)}s`;
-    default:              return `${rankName(r1)} hoch`;
+    case STRAIGHT_FLUSH:  return r1 === 14 ? 'Royal Flush' : r1 === 5 ? 'Straight Flush, Rad' : `Straight Flush, ${rn(r1)} hoch`;
+    case FOUR_OF_A_KIND:  return `Vierling, ${rp(r1)}`;
+    case FULL_HOUSE:      return `Full House, ${rp(r1)} über ${rp(r2)}`;
+    case FLUSH:           return `Flush, ${rn(r1)} hoch`;
+    case STRAIGHT:        return r1 === 5 ? 'Straight, Rad' : `Straight, ${rn(r1)} hoch`;
+    case THREE_OF_A_KIND: return `Drilling, ${rp(r1)}`;
+    case TWO_PAIR:        return `Zwei Paare, ${rp(r1)} und ${rp(r2)}`;
+    case ONE_PAIR:        return `Ein Paar ${rp(r1)}`;
+    default:              return `${rn(r1)} hoch`;
   }
 }
 
