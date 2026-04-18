@@ -681,9 +681,9 @@
   .pt-card.community{width:40px;height:56px}
   .pt-card.big{width:58px;height:80px}
   .pt-card.big .pt-rank{font-size:24px}
-  .pt-card.big .pt-suit{font-size:18px}
+  .pt-card.big .pt-suit{font-size:22px}
   .pt-rank{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;line-height:1;color:var(--text-primary)}
-  .pt-suit{font-size:14px;line-height:1;color:var(--text-primary)}
+  .pt-suit{font-size:17px;line-height:1;color:var(--text-primary)}
   .pm-hole-wrap{display:flex;gap:10px;justify-content:center;padding:var(--space-sm) 0}
 
   /* Aktions-Buttons */
@@ -6733,7 +6733,7 @@
         const initOp=isNew?'opacity="0"':'';
         communityHtml+=`<g ${initOp}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
-          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text>${anim}</g>`;
+          <text x="${bx+cw/2}" y="${by+32}" text-anchor="middle" font-size="15" fill="${cardText}">${s}</text>${anim}</g>`;
       }else{
         communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
       }
