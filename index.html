@@ -1642,6 +1642,13 @@
   }
   window.addEventListener('orientationchange',_pmCheckFullscreen);
   window.matchMedia('(orientation: landscape)').addEventListener?.('change',_pmCheckFullscreen);
+  // Re-render online table on orientation change so isLandscape is recomputed
+  const _pmOrientationHandler=()=>{
+    const onPm=document.getElementById('page-online-tisch')?.classList.contains('active');
+    if(onPm&&typeof renderOnlineTisch==='function'){if(_pm)_pm._lastFp='';renderOnlineTisch();}
+  };
+  window.addEventListener('orientationchange',_pmOrientationHandler);
+  window.matchMedia('(orientation: landscape)').addEventListener?.('change',_pmOrientationHandler);
   // Wake-Lock bei Tab-Rückkehr neu anfordern (Browser gibt ihn bei Hidden frei)
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden&&document.body.classList.contains('bt-fullscreen')){
@@ -7375,7 +7382,7 @@
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div id="pm-cards-reveal" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none"><div style="display:flex;justify-content:center;gap:8px">${myHoleCards.map(()=>`<div class="pt-card back big"></div>`).join('')}</div>${_fdHint}</div>`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
-    el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'8px 8px var(--space-xl)'}">
+    el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'4px 4px var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{});_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
