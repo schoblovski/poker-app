@@ -724,8 +724,8 @@
   .pm-feed-item.fold-action .pf-ini{background:rgba(0,0,0,.07)}
   .pm-feed-item.allin-action{background:#fff7ed;color:#c2410c;font-weight:700}
   .pm-feed-item.allin-action .pf-ini{background:rgba(0,0,0,.07)}
-  @keyframes pm-react-pop{0%{opacity:0;transform:scale(0.4)}60%{transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
-  .pm-react-emoji{animation:pm-react-pop .35s cubic-bezier(.34,1.56,.64,1) both;pointer-events:none}
+  @keyframes pm-react-full{0%{opacity:0;transform:scale(0.2) translateY(6px)}10%{opacity:1;transform:scale(1.3) translateY(-4px)}18%{transform:scale(0.9) translateY(2px)}26%{transform:scale(1.08) translateY(-1px)}33%{transform:scale(1) translateY(0);opacity:1}76%{transform:scale(1) translateY(0);opacity:1}100%{opacity:0;transform:scale(0.75) translateY(-5px)}}
+  .pm-react-emoji{animation:pm-react-full 4s ease-out both;pointer-events:none;transform-origin:center;transform-box:fill-box}
   .pm-react-btn{transition:transform .1s,border-color .1s!important}
   .pm-react-btn:hover{transform:scale(1.2)!important;border-color:var(--accent)!important}
   .pm-react-btn:active{transform:scale(.88)!important}
@@ -6908,7 +6908,8 @@
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
       const react=reactions[seat?.spieler_id];
-      const reactEl=react?`<text x="${sx}" y="${sy-30}" text-anchor="middle" font-size="18" class="pm-react-emoji">${react.emoji}</text>`:'';
+      const _rDelay=react?(-Math.min((Date.now()-react.ts)/1000,3.9)).toFixed(2):'0';
+      const reactEl=react?`<text x="${sx}" y="${sy-30}" text-anchor="middle" font-size="20" class="pm-react-emoji" style="animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}">
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
@@ -7394,7 +7395,7 @@
           ${handResultHtml}
           ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="display:flex;gap:6px;justify-content:center;padding:6px 0;border-top:1px solid var(--border);margin-top:2px">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .15s">${e}</button>`).join('')}</div>`:'';return isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>${_rStrip}`:feedSection+_rStrip;})()}
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="display:flex;gap:8px;overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div>`:'';return isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>${_rStrip}`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
