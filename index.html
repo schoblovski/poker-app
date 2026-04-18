@@ -1123,7 +1123,6 @@
           <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Während ein anderer Spieler am Zug ist, kannst du schon vorab entscheiden was du machen möchtest — die Aktion wird dann automatisch ausgeführt wenn du dran bist:</div>
           <div style="display:flex;flex-direction:column;gap:6px">
             <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Fold</div><div style="font-size:13px;color:var(--text-secondary)">Sofort folden wenn du dran bist</div></div>
-            <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Check/Fold</div><div style="font-size:13px;color:var(--text-secondary)">Checken wenn möglich, sonst folden</div></div>
             <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Check</div><div style="font-size:13px;color:var(--text-secondary)">Nur checken — wird abgebrochen wenn jemand setzt</div></div>
             <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Call</div><div style="font-size:13px;color:var(--text-secondary)">Mitgehen, optional bis zu einem selbst gewählten Betrag</div></div>
             <div style="display:flex;gap:8px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:90px">Call Any</div><div style="font-size:13px;color:var(--text-secondary)">Jeden Einsatz mitgehen egal wie hoch</div></div>
@@ -1163,7 +1162,7 @@
       <!-- Tisch verlassen -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tisch verlassen</div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Im Menü <b>(⋮)</b> kannst du den Tisch verlassen. Dein Stack bleibt erhalten. Wenn du wieder beitrittst, musst du einen freien Platz einnehmen.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Im Menü <b>(⋮)</b> kannst du den Tisch verlassen. Dein Platz und Stack bleiben reserviert — wenn du zurückkommst, nimmst du automatisch deinen alten Platz wieder ein.</div>
       </div>
 
       <!-- Was wäre noch gekommen -->
@@ -7069,7 +7068,7 @@
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
           :`${avatarEl}${pauseOverlay}${namePill}`}
         ${betChip}${dealerMark}${reactEl}
-        ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=13,_cH=18,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _tot=_rc.length*_cW+(_rc.length-1)*_cG;const _cx0=sx-_tot/2;const _cy=sy>cy?sy-56:sy+38;return _rc.map((c,i)=>{const _x=Math.round(_cx0+i*(_cW+_cG));const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_cy}" width="${_cW}" height="${_cH}" rx="1.5" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+2}" y="${_cy+7}" font-size="6.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+2}" y="${_cy+15}" font-size="6.5" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
+        ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _tot=_rc.length*_cW+(_rc.length-1)*_cG;const _cx0=sx-_tot/2;const _cy=sy>cy?sy-24-_cH-3:sy+24+3;return _rc.map((c,i)=>{const _x=Math.round(_cx0+i*(_cW+_cG));const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_cy}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_cy+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_cy+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
       </g>`;
     }
     const board=session?.community_cards||[];
@@ -7562,7 +7561,7 @@
           ${handResultHtml}
           ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection+_rStrip;})()}
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px">${actionArea}</div>`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
@@ -7895,11 +7894,11 @@
       const _byW={w:_availW,h:Math.round(_availW*260/400)};
       const _byH={w:Math.round(_availH*400/260),h:_availH};
       const {w:maxW,h:maxH}=(_byW.h<=_availH)?_byW:_byH;
-      const svgScaled=svgHtml.replace('width="400" height="260"',`width="${maxW}" height="${maxH}"`);
+      // SVG uses width:100% so wrap in a sized container
       const ov=document.createElement('div');
       ov.id='pm-tisch-modal';
       ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center';
-      ov.innerHTML=`<div style="position:relative"><button id="btn-pm-tisch-close" style="position:absolute;top:-44px;right:0;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:22px;line-height:1;backdrop-filter:blur(6px)">×</button><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)">${svgScaled}</div></div>`;
+      ov.innerHTML=`<div style="position:relative"><button id="btn-pm-tisch-close" style="position:absolute;top:-44px;right:0;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:22px;line-height:1;backdrop-filter:blur(6px)">×</button><div style="width:${maxW}px;height:${maxH}px;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)">${svgHtml}</div></div>`;
       document.body.appendChild(ov);
       ov.addEventListener('click',(e)=>{if(e.target===ov||e.target.id==='btn-pm-tisch-close')ov.remove();});
     });
@@ -7918,10 +7917,19 @@
     document.getElementById('btn-pm-info')?.addEventListener('click',()=>{
       document.getElementById('pm-kebab-menu').style.display='none';
       document.getElementById('pm-info-modal').style.display='block';
+      history.pushState({pm_info_open:true},'');
     });
     document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
       document.getElementById('pm-info-modal').style.display='none';
+      if(history.state?.pm_info_open)history.back();
     });
+    if(!window._pmInfoPopstateReg){
+      window._pmInfoPopstateReg=true;
+      window.addEventListener('popstate',()=>{
+        const m=document.getElementById('pm-info-modal');
+        if(m&&m.style.display!=='none'){m.style.display='none';if(_pm)showPage('online-tisch');}
+      });
+    }
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
       const isRunning=_pm.session?.status==='running';
@@ -8292,7 +8300,7 @@
 
   async function _pmSetPreAction(pre,limit){
     if(!_pm?.mySeat)return;
-    await db.from('online_seats').update({pre_action:pre,pre_action_limit:limit||null}).eq('id',_pm.mySeat.id);
+    await db.from('online_seats').update({pre_action:pre||null,pre_action_limit:limit||null}).eq('id',_pm.mySeat.id);
   }
 
   async function _callFn(name,body){
@@ -8329,11 +8337,11 @@
         ${[['fold','Sofort folden','Wird sofort gefoldet'],['check','Nur checken','Checkt wenn möglich, sonst Fold'],['call_limit','Bis Betrag callen','Callt bis zu einem Betrag'],['call_any','Alles callen','Callt jeden Einsatz']].map(([v,l,s],i)=>`<label class="pm-auto-option"><input type="radio" name="pm-auto" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
       </div>
       <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Max. Betrag</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${(bb*2).toFixed(2)}" data-label="Maximalbetrag" style="flex:1">
-          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:12px;padding:5px 10px">1BB (€${bb.toFixed(0)})</button>
-          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:12px;padding:5px 10px">3BB (€${(bb*3).toFixed(0)})</button>
+        <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Maximalbetrag</div>
+        <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${(bb*2).toFixed(2)}" data-label="Maximalbetrag" style="width:100%;font-size:22px;font-weight:700;text-align:center;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">1 BB &nbsp;(€${bb.toFixed(2)})</button>
+          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">3 BB &nbsp;(€${(bb*3).toFixed(2)})</button>
         </div>
       </div>
       <div class="btn-row-2">
