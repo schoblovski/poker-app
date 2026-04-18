@@ -6761,6 +6761,7 @@
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
               <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
+              <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
             </div>
             <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
@@ -6776,7 +6777,11 @@
         const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
         const hands=s.hand_nr>0?`· ${s.hand_nr} Hände`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
+        const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
+        const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
+        const varIcon=varIcons[s.variante]||'';
+        const varColor=varColors[s.variante]||'var(--text-secondary)';
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -6838,7 +6843,7 @@
       btn.textContent='Erstelle…';
       let spiel_id=null;
       if(!is_test){
-        const{data:ns}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa,modus:'online'}).select().single();
+        const{data:ns}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa,modus:'online',online_variante:variante}).select().single();
         spiel_id=ns?.id||null;
       }
       const big_blind=parseFloat(document.getElementById('pm-new-bb').value)||small_blind*2;
