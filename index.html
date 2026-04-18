@@ -674,6 +674,7 @@
   /* Spielkarten */
   .pt-card{width:46px;height:64px;border-radius:7px;background:var(--surface);border:1.5px solid var(--border);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 2px 6px rgba(0,0,0,.15);flex-shrink:0}
   .pt-card.red .pt-rank,.pt-card.red .pt-suit{color:var(--danger)}
+  [data-colorblind="true"] .pt-card.red .pt-rank,[data-colorblind="true"] .pt-card.red .pt-suit{color:var(--accent)}
   .pt-card.back{background:var(--accent);border-color:transparent}
   .pt-card.community{width:40px;height:56px}
   .pt-card.big{width:58px;height:80px}
@@ -6653,6 +6654,10 @@
 
   function _pmSVG(seats,session,myId,usedBoardKeys){
     const W=400,H=240,cx=200,cy=108,rx=148,ry=86;
+    const isCB=document.documentElement.getAttribute('data-colorblind')==='true';
+    const feltOuter=isCB?'#0a1a2e':'#0a2218';
+    const feltBorder=isCB?'#1e3a5c':'#1e5c35';
+    const feltInner=isCB?'#132340':'#133d24';
     const angles=[90,50,10,330,290,250,210,170,130];
     const seatMap={};(seats||[]).forEach(s=>{seatMap[s.seat]=s;});
     let svgSeats='';
@@ -6713,9 +6718,11 @@
         const isUsed=usedBoardKeys?.has(`${c.rank}${c.suit}`);
         const stroke=isR?'#f59e0b':isUsed?'#22c55e':'rgba(255,255,255,.3)';
         const strokeW=isUsed?2.5:isR?1.5:0.5;
-        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${red?'#fee2e2':'white'}" stroke="${stroke}" stroke-width="${strokeW}"/>
-          <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${red?'#dc2626':'#1c1c1e'}">${r}</text>
-          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${red?'#dc2626':'#1c1c1e'}">${s}</text>`;
+        const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
+        const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
+        communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
+          <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
+          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text>`;
       }else{
         communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
       }
@@ -6723,9 +6730,9 @@
     const pot=session?.pot||0;
     const potTxt=pot>0?`Pot: €${pot.toFixed(2)}`:'';
     return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
-      <ellipse cx="${cx}" cy="${cy}" rx="${rx+20}" ry="${ry+20}" fill="#0a2218"/>
-      <ellipse cx="${cx}" cy="${cy}" rx="${rx+15}" ry="${ry+15}" fill="none" stroke="#1e5c35" stroke-width="4"/>
-      <ellipse cx="${cx}" cy="${cy}" rx="${rx+11}" ry="${ry+11}" fill="#133d24"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+20}" ry="${ry+20}" fill="${feltOuter}"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+15}" ry="${ry+15}" fill="none" stroke="${feltBorder}" stroke-width="4"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="${rx+11}" ry="${ry+11}" fill="${feltInner}"/>
       ${communityHtml}
       ${potTxt?`<text x="${cx}" y="${by-8}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">${potTxt}</text>`:''}
       ${svgSeats}
@@ -7009,19 +7016,19 @@
     // Aktion-Bereich
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
     const playableSeats=seats.filter(s=>s.status!=='sitting_out'&&(s.stack>0||s.status==='allin'));
-    if(isRunning&&handIsOver2&&mySeat&&playableSeats.length>1){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important">Nächste Hand</button>`;}
+    const showNewHand=isRunning&&handIsOver2&&mySeat&&playableSeats.length>1;
 
     // Video-Call-Button (generischer Link + Teilnehmerzähler)
     const waLink=_pm._waLink||session.video_link||'';
     const callPeers=Array.isArray(session.call_teilnehmer)?session.call_teilnehmer:[];
     const imInCall=callPeers.includes(currentSpieler?.id);
     const callCount=callPeers.length;
-    const callLabel=`Video-Call${callCount>0?` (${callCount})`:''}`
-    const waBtn=waLink?`<button class="btn btn-ghost${imInCall?' pm-call-active':''}" id="pm-call-btn" style="font-size:12px;padding:5px 10px;max-width:none;width:auto;white-space:nowrap;height:30px!important;${imInCall?'border-color:var(--accent);color:var(--accent)':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>${callLabel}</button>`:'';
+    const callMenuLabel=imInCall?`Video-Call verlassen${callCount>1?` (${callCount} im Call)`:''}`:`Video-Call joinen${callCount>0?` (${callCount} im Call)`:''}`;
+    const callMenuIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
 
-    // Kebab-Menü (Tisch verlassen + Beenden)
+    // Kebab-Menü (Video-Call + Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)">▶ Nächste Hand</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -7061,7 +7068,7 @@
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
-        <div style="display:flex;gap:6px;align-items:center;position:relative">${waBtn}${newHandBtn}${menuBtn}</div>
+        <div style="display:flex;gap:6px;align-items:center;position:relative">${menuBtn}</div>
       </div>
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
@@ -7195,7 +7202,7 @@
       }catch(err){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Fehler: '+err.message);}
     });
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
-    document.getElementById('btn-pm-newhand')?.addEventListener('click',_pmNewHand);
+    document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
@@ -7224,7 +7231,8 @@
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
     document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
-    document.getElementById('pm-call-btn')?.addEventListener('click',async()=>{
+    document.getElementById('btn-pm-call')?.addEventListener('click',async()=>{
+      document.getElementById('pm-kebab-menu').style.display='none';
       const link=_pm._waLink||_pm.session?.video_link||'';
       if(link)window.open(link,'_blank','noopener,noreferrer');
       const current=Array.isArray(_pm.session?.call_teilnehmer)?_pm.session.call_teilnehmer:[];
