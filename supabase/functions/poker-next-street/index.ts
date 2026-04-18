@@ -51,9 +51,9 @@ Deno.serve(async (req) => {
   const remainingDeck = (deckRow.deck as { rank: number; suit: string }[]).slice(STREET_CARDS[session.street]);
   const newCommunity = [...(session.community_cards ?? []), ...newCards];
 
-  // Alle aktiven Spieler-Einsätze zurücksetzen, Dealer-Button-Sitz finden
+  // Alle Spieler-Einsätze zurücksetzen (auch gefoldete), Dealer-Button-Sitz finden
   const activeSeatIds = (seats ?? [])
-    .filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out')
+    .filter((s: { status: string }) => s.status !== 'sitting_out')
     .map((s: { id: string }) => s.id);
 
   // Erster Spieler nach Dealer der noch aktiv ist
