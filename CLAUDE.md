@@ -447,12 +447,22 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Branch-Naming: `claude/<kurze-beschreibung>` (z.B. `claude/admin-push-notification-view`)
 - Ablauf:
   1. Branch anlegen/auschecken, Änderungen committen, auf Remote pushen (`git push -u origin <branch>`)
-  2. Vercel erzeugt automatisch einen Preview-Deploy unter `https://poker-app-git-<branch>-schoblovskis-projects.vercel.app`
+  2. Vercel erzeugt automatisch einen Preview-Deploy – URL-Format: `https://poker-app-git-<branch-lowercase-slash-als-bindestrich>-schoblovskis-projects.vercel.app` (Vercel macht alles lowercase, `/` → `-`)  
+     Beispiel Branch `claude/app-ideas-0j3gF` → `https://poker-app-git-claude-app-ideas-0j3gf-schoblovskis-projects.vercel.app`
   3. Chris testet auf der Preview-URL (Google-Login über Supabase Redirect-URL-Whitelist freigegeben)
   4. Erst nach Freigabe: Version & Changelog bumpen, auf Feature-Branch committen, in `main` mergen und `main` pushen
 - Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
   - `https://poker-app-*-schoblovskis-projects.vercel.app/**`
   - `https://poker-app-git-*-schoblovskis-projects.vercel.app/**`
+
+## Edge Functions – Deployment
+
+- **Auto-Deploy via GitHub Actions** bei jedem Push auf `supabase/functions/**`
+- Einzeln deployen (falls nötig): `supabase functions deploy <function-name>`
+- Alle Functions auf einmal: `supabase functions deploy`
+- Service Role Key und andere Secrets sind in Supabase Dashboard → Settings → Edge Functions hinterlegt
+- Geänderte Functions in dieser Session: `poker-action`, `poker-showdown`
+- Weitere Functions (unverändert): `poker-start-game`, `poker-next-street`, `poker-new-hand`, `poker-reveal-runout`, `send-push`, `weekly-backup`
 
 ## Pandemie-Modus – Easter Egg Rollout (noch nicht implementiert)
 
