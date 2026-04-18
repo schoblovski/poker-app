@@ -114,21 +114,39 @@ Deno.serve(async (req) => {
     db.from('online_spiele').update({ pot: 0, current_player_id: null }).eq('id', online_spiel_id),
   ]);
 
+  // Split-Pot erkennen: irgendein Pot hatte mehr als 1 Gewinner
+  const hasSplit = pots.some(pot => {
+    const eligible = results.filter(r => pot.eligibleSeatIds.includes(r.seatId));
+    const maxScore = Math.max(...eligible.map(r => r.score));
+    return eligible.filter(r => r.score === maxScore).length > 1;
+  });
+
   // Action-Log: Showdown-Ergebnisse (inkl. Gewinner-Hand und Karten)
-  await db.from('online_actions').insert(
-    winLog.map(w => {
-      const res = results.find(r => r.spielerId === w.spieler_id);
-      return {
-        online_spiel_id,
-        spieler_id: w.spieler_id,
-        action: 'win',
-        amount: w.amount,
-        street: 'showdown',
-        hand_nr: session.hand_nr,
-        meta: res ? { hand: res.handDesc, best: res.best ?? [], hole_cards: holeMap[res.seatId] ?? [] } : null,
-      };
-    })
-  );
+  const logEntries: object[] = winLog.map(w => {
+    const res = results.find(r => r.spielerId === w.spieler_id);
+    return {
+      online_spiel_id,
+      spieler_id: w.spieler_id,
+      action: 'win',
+      amount: w.amount,
+      street: 'showdown',
+      hand_nr: session.hand_nr,
+      meta: res ? { hand: res.handDesc, best: res.best ?? [], hole_cards: holeMap[res.seatId] ?? [] } : null,
+    };
+  });
+
+  if (hasSplit) {
+    logEntries.unshift({
+      online_spiel_id,
+      spieler_id: winLog[0]?.spieler_id ?? null,
+      action: 'split_pot',
+      amount: session.pot,
+      street: 'showdown',
+      hand_nr: session.hand_nr,
+    });
+  }
+
+  await db.from('online_actions').insert(logEntries);
 
   return json({
     ok: true,
