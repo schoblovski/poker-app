@@ -7142,7 +7142,7 @@
     const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einstRows}]=await Promise.all([
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,spieler(id,name,profilbild)').eq('online_spiel_id',_pm.id).order('seat'),
-      db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(60),
+      db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
       db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe','pm_show_equity']),
     ]);
@@ -7161,6 +7161,10 @@
       const _hn=session?.hand_nr||0;
       if(!_fd&&_pm.myHoleCards.length>0&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==_hn){
         _pm._lookedHandNr=_hn;
+        // Optimistically add look to local actions so didLook check works immediately (before DB round-trip)
+        if(!_pm.actions.some(a=>a.action==='look'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_hn)){
+          _pm.actions.push({id:'_look_'+_hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:_hn,meta:null,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+        }
         db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:_hn}).then(()=>{});
       }
     }else{
@@ -7541,7 +7545,7 @@
         case'check':text=`<b>${escHtml(n)}</b> checkt`;break;
         case'call':text=`<b>${escHtml(n)}</b> callt${amt}`;break;
         case'raise':text=`<b>${escHtml(n)}</b> raised auf${amt}`;break;
-        case'allin':{const didLook=actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr);text=`<b>${escHtml(n)}</b> ${didLook?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
+        case'allin':{const _selfLooked=a.spieler_id===currentSpieler?.id&&(_pm?._lookedHandNr??-1)>=a.hand_nr&&localStorage.getItem('pm_facedown')!=='true';const didLook=_selfLooked||actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr);text=`<b>${escHtml(n)}</b> ${didLook?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
         case'blind':text=`<b>${escHtml(n)}</b> Blind${amt}`;break;
         case'post_sb':text=`<b>${escHtml(n)}</b> SB${amt}`;break;
         case'post_bb':text=`<b>${escHtml(n)}</b> BB${amt}`;break;
