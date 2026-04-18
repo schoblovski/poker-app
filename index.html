@@ -6816,8 +6816,8 @@
     _pm.mySeat=mySeatRow||null;
     _pm._waLink=(einst?.wert)||'';
     if(mySeatRow){
-      const{data:cardRow}=await db.from('online_seat_cards').select('cards').eq('seat_id',mySeatRow.id).maybeSingle();
-      _pm.myHoleCards=cardRow?.cards||[];
+      const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
+      _pm.myHoleCards=cardRow?.hole_cards||[];
     }else{
       _pm.myHoleCards=[];
     }
