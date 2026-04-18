@@ -3137,8 +3137,8 @@
       const pot=parseFloat(document.getElementById('set-pot').value)||0;
       const kassa=parseFloat(document.getElementById('set-kassa').value)||0;
       await save(async()=>{
-        await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot,beschreibung:'Euro pro BuyIn für Chips'});
-        await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa,beschreibung:'Euro pro BuyIn in die Pokerkasse'});
+        await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot});
+        await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa});
         einstellungen.buyin_pot=pot;
         einstellungen.buyin_kassa=kassa;
       },'Einstellungen gespeichert');
@@ -3248,8 +3248,8 @@
       const link=(document.getElementById('set-videocall').value||'').trim();
       const showEq=document.getElementById('set-pm-equity')?.checked?'1':'0';
       await save(async()=>{
-        await db.from('einstellungen').upsert({key:'video_call_link',wert:link,beschreibung:'Video-Call Link für Pandemie-Modus'});
-        await db.from('einstellungen').upsert({key:'pm_show_equity',wert:showEq,beschreibung:'Gewinnchancen am Tisch anzeigen'});
+        await db.from('einstellungen').upsert({key:'video_call_link',wert:link});
+        await db.from('einstellungen').upsert({key:'pm_show_equity',wert:showEq});
       },'Pandemie-Modus Einstellungen gespeichert');
       await showAlert('Einstellungen gespeichert.');
     });
@@ -7083,7 +7083,7 @@
         <button class="btn btn-ghost pm-preset-pre" data-bb="${bb.toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">1BB</button>
         <button class="btn btn-ghost pm-preset-pre" data-bb="${(bb*3).toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">3BB</button>
       </div>
-      <div style="text-align:center;margin-top:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-pause" style="font-size:12px">Pause</button></div>
+      <div style="display:flex;justify-content:center;margin-top:var(--space-sm)"><button class="btn btn-secondary" id="btn-pm-pause" style="font-size:12px;width:auto;max-width:none;padding:0 28px;height:36px!important">Pause</button></div>
     </div>`;
   }
 
