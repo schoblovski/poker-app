@@ -6975,10 +6975,16 @@
       const i=document.getElementById('pm-pre-limit-input');if(i)i.value=b.dataset.bb;
     }));
     // Buttons
-    document.getElementById('btn-pm-sitdown')?.addEventListener('click',async()=>{
-      const taken=new Set((_pm.seats||[]).map(s=>s.seat));
-      for(let i=1;i<=9;i++){if(!taken.has(i)){await _pmTakeSeatFlow(i);return;}}
-      showAlert('Keine freien Plätze.');
+    document.getElementById('btn-pm-sitdown')?.addEventListener('click',async(e)=>{
+      const btn=e.currentTarget;
+      btn.disabled=true;btn.textContent='Suche Platz…';
+      try{
+        const taken=new Set((_pm?.seats||[]).map(s=>s.seat));
+        let free=-1;for(let i=1;i<=9;i++){if(!taken.has(i)){free=i;break;}}
+        if(free===-1){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Keine freien Plätze.');return;}
+        await _pmTakeSeatFlow(free);
+        btn.disabled=false;btn.textContent='Platz nehmen';
+      }catch(err){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Fehler: '+err.message);}
     });
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     document.getElementById('btn-pm-newhand')?.addEventListener('click',_pmNewHand);
