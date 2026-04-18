@@ -694,6 +694,7 @@
   .pt-rank{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;line-height:1;color:var(--text-primary)}
   .pt-suit{font-size:17px;line-height:1;color:var(--text-primary)}
   .pm-hole-wrap{display:flex;gap:10px;justify-content:center;padding:var(--space-sm) 0}
+  @media(min-width:768px){.pm-feed .pt-card{width:54px;height:74px}.pm-feed .pt-rank{font-size:21px}.pm-feed .pt-suit{font-size:20px}}
 
   /* Aktions-Buttons */
   .pm-action-area{display:flex;flex-direction:column;gap:var(--space-sm)}
@@ -7139,6 +7140,13 @@
     if(mySeatRow){
       const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
       _pm.myHoleCards=cardRow?.hole_cards||[];
+      // Auto-insert 'look' action for players NOT using facedown mode (so they aren't marked as blind)
+      const _fd=localStorage.getItem('pm_facedown')==='true';
+      const _hn=session?.hand_nr||0;
+      if(!_fd&&_pm.myHoleCards.length>0&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==_hn){
+        _pm._lookedHandNr=_hn;
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:_hn}).then(()=>{});
+      }
     }else{
       _pm.myHoleCards=[];
     }
@@ -7229,7 +7237,7 @@
     if(!_pm?.session)return'';
     const s=_pm.session;
     const acts=_pm.actions||[];
-    return`${s.status}|${s.pot}|${s.current_player_id}|${s.street}|${s.hand_nr}|${(s.community_cards||[]).length}|${(s.runout_cards||[]).length}|${(_pm.seats||[]).map(x=>`${x.id}:${x.status}:${Math.round((x.stack||0)*100)}:${Math.round((x.bet_current_round||0)*100)}`).join(',')}|${acts.length}|${acts.at(-1)?.id||''}`;
+    return`${s.status}|${s.pot}|${s.current_player_id}|${s.street}|${s.hand_nr}|${(s.community_cards||[]).length}|${(s.runout_cards||[]).length}|${(_pm.seats||[]).map(x=>`${x.id}:${x.status}:${Math.round((x.stack||0)*100)}:${Math.round((x.bet_current_round||0)*100)}`).join(',')}|${acts.length}|${acts.at(-1)?.id||''}|${localStorage.getItem('pm_facedown')||'0'}|${_pm._revealedHandNr??''}`;
   }
 
   function renderOnlineTisch(){
@@ -7286,9 +7294,15 @@
     const callMenuLabel=imInCall?`Video-Call verlassen${callCount>1?` (${callCount} im Call)`:''}`:`Video-Call joinen${callCount>0?` (${callCount} im Call)`:''}`;
     const callMenuIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
 
+    // Karten-verdeckt-Modus (persönliche Einstellung, pro Gerät)
+    const facedown=localStorage.getItem('pm_facedown')==='true';
+    const fdIcon=facedown
+      ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+      :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
     // Kebab-Menü (Video-Call + Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;z-index:50;overflow:hidden">${showNewHand?`<button class="pm-menu-item" id="btn-pm-newhand" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button><div style="height:1px;background:var(--border)"></div>`:''  }${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">${fdIcon}${facedown?'Karten sichtbar':'Karten verdeckt'}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -7309,7 +7323,10 @@
       ${session.street?`<div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
-      </div>`:''}</div>${_canBuyin?`<div style="margin-top:8px"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;padding:0;margin:0;width:100%;letter-spacing:-.01em;text-align:center">Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
+      </div>`:''}
+      ${(()=>{const inv=(mySeat.buyins||1)*(session.start_stack||0);const net=Math.round(((mySeat.stack||0)-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>=0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const inv=(mySeat.buyins||1)*(session.start_stack||0);const net=Math.round(((mySeat.stack||0)-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>=0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
+      </div>${_canBuyin?`<div style="margin-top:8px"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;padding:0;margin:0;width:100%;letter-spacing:-.01em;text-align:center">Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
 
     // Best hand berechnen (wenn Board ≥3 Karten und eigene Karten vorhanden)
     const _boardCards=session.community_cards||[];
@@ -7344,9 +7361,11 @@
       }
     }
 
-    const _holeAnim=myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
+    const showFaceDown=facedown&&myHoleCards.length>0&&myStatus!=='folded'&&_pm._revealedHandNr!==session.hand_nr;
+    const _holeAnim=!showFaceDown&&myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
+    const _fdHint=`<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Antippen zum Aufdecken</div>`;
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div id="pm-cards-reveal" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none"><div style="display:flex;justify-content:center;gap:8px">${myHoleCards.map(()=>`<div class="pt-card back big"></div>`).join('')}</div>${_fdHint}</div>`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:var(--space-md) var(--space-md) var(--space-xl)">
@@ -7359,7 +7378,7 @@
         </div>
         <div class="pm-tisch-right">
           ${handResultHtml}
-          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:1px;background:var(--border);margin:4px 0 10px"></div>`:''}${infoBar||''}</div>`:''}
+          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
           ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection}
         </div>
@@ -7474,7 +7493,7 @@
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
     const raw=actions.slice(-40).reverse();
     const newHandMap={};
-    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}return true;});
+    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look')return false;return true;});
     const placed=new Set();
     const display=[];
     for(let i=0;i<others.length;i++){
@@ -7506,13 +7525,13 @@
         case'check':text=`<b>${escHtml(n)}</b> checkt`;break;
         case'call':text=`<b>${escHtml(n)}</b> callt${amt}`;break;
         case'raise':text=`<b>${escHtml(n)}</b> raised auf${amt}`;break;
-        case'allin':text=`<b>${escHtml(n)}</b> All-in${amt}`;extra=' allin-action';break;
+        case'allin':{const didLook=actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr);text=`<b>${escHtml(n)}</b> ${didLook?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
         case'blind':text=`<b>${escHtml(n)}</b> Blind${amt}`;break;
         case'post_sb':text=`<b>${escHtml(n)}</b> SB${amt}`;break;
         case'post_bb':text=`<b>${escHtml(n)}</b> BB${amt}`;break;
         case'win':{
           const hand=a.meta?.hand;
-          const bestCards=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];
+          const _rawBest=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];const _rankCounts=Object.fromEntries([...new Set(_rawBest.map(c=>c.rank))].map(r=>[r,_rawBest.filter(c=>c.rank===r).length]));const bestCards=[..._rawBest].sort((x,y)=>{const cx=_rankCounts[x.rank]||1,cy=_rankCounts[y.rank]||1;return cx!==cy?cy-cx:y.rank-x.rank;});
           const hc=bestCards.map(c=>_pmCard(c)).join('');
           const cardRow=hc?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
 </div>`:'';
@@ -7557,7 +7576,7 @@
     if(handIsOver&&isRunning){
       const myHC=_pm?.myHoleCards||[];
       const alreadyRevealed=(_pm?.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler?.id&&a.hand_nr===session.hand_nr);
-      const revealBtn=myHC.length>0&&!alreadyRevealed?`<button class="btn btn-ghost" id="btn-pm-reveal" style="font-size:12px;height:32px!important;padding:0 14px!important;margin-left:8px">Meine Karten offenlegen</button>`:'';
+      const revealBtn=myHC.length>0&&!alreadyRevealed?`<button class="btn btn-secondary" id="btn-pm-reveal" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px!important;padding:0 16px!important;font-weight:600;letter-spacing:-.01em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Karten zeigen</button>`:'';
       return`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)"><span>Spielrunde beendet – warte auf nächste Spielrunde…</span>${revealBtn}</div>`;
     }
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Spielrunde…</div>`;
@@ -7658,6 +7677,25 @@
       }
     });
     document.addEventListener('click',()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='none';},{once:false,capture:false});
+    // Facedown toggle
+    document.getElementById('btn-pm-facedown')?.addEventListener('click',()=>{
+      const cur=localStorage.getItem('pm_facedown')==='true';
+      localStorage.setItem('pm_facedown',String(!cur));
+      const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='none';
+      renderOnlineTisch();
+    });
+    // Tap face-down cards to reveal
+    document.getElementById('pm-cards-reveal')?.addEventListener('click',()=>{
+      if(!_pm)return;
+      const hn=_pm.session?.hand_nr||0;
+      _pm._revealedHandNr=hn;
+      // Insert look action so others can see player has seen their cards
+      if(currentSpieler?.id&&(_pm._lookedHandNr??-1)!==hn){
+        _pm._lookedHandNr=hn;
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn}).then(()=>{});
+      }
+      renderOnlineTisch();
+    });
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
       const isRunning=_pm.session?.status==='running';
