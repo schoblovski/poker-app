@@ -6718,7 +6718,8 @@
         const s=_pmSuitSymbol[c.suit]||'';
         const isR=!!rc;
         const isUsed=usedBoardKeys?.has(`${c.rank}${c.suit}`);
-        const stroke=isR?'#f59e0b':isUsed?'#22c55e':'rgba(255,255,255,.3)';
+        const hlColor=isCB?'#38bdf8':'#22c55e';
+        const stroke=isR?'#f59e0b':isUsed?hlColor:'rgba(255,255,255,.3)';
         const strokeW=isUsed?2.5:isR?1.5:0.5;
         const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
