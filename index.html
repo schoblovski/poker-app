@@ -1794,8 +1794,8 @@
     if(sec<604800)return `vor ${Math.floor(sec/86400)} Tg`;
     return new Date(ts).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
   }
-  const _BENACHR_KAT_LABEL={spielergebnisse:'Spielergebnis',buyins:'Buy-In',neue_hand:'Hand',transaktionen:'Transaktion',app_updates:'App-Update'};
-  const _BENACHR_KAT_COLOR={spielergebnisse:'var(--accent-text)',buyins:'var(--info)',neue_hand:'var(--warning)',transaktionen:'var(--text-secondary)',app_updates:'var(--text-tertiary)'};
+  const _BENACHR_KAT_LABEL={spielergebnisse:'Spielergebnis',buyins:'Buy-In',neue_hand:'Hand',transaktionen:'Transaktion',app_updates:'App-Update',online_spiel:'Online-Spiel'};
+  const _BENACHR_KAT_COLOR={spielergebnisse:'var(--accent-text)',buyins:'var(--info)',neue_hand:'var(--warning)',transaktionen:'var(--text-secondary)',app_updates:'var(--text-tertiary)',online_spiel:'var(--accent)'};
   async function loadBenachrichtigungen(){
     const el=document.getElementById('benachrichtigungen-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
@@ -2689,6 +2689,10 @@
             <div class="item-body"><div class="item-title" style="font-size:14px">App-Updates</div><div class="item-subtitle">Bei neuen Versionen der App</div></div>
             <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
           </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Pandemie-Modus</div><div class="item-subtitle">Push wenn du am Zug bist (Online-Spiel)</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="online_spiel" id="push-cat-online"><span class="toggle-slider"></span></label>
+          </div>
         </div>
       </div>
 
@@ -2877,6 +2881,7 @@
       document.getElementById('push-cat-hand').checked=e.neue_hand!==false;
       document.getElementById('push-cat-trans').checked=!!e.transaktionen;
       document.getElementById('push-cat-updates').checked=!!e.app_updates;
+      document.getElementById('push-cat-online').checked=e.online_spiel!==false;
     }
 
     await loadPushState();
@@ -2906,7 +2911,7 @@
             endpoint:sub.endpoint,
             p256dh,
             auth:authStr,
-            einstellungen:{spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true},
+            einstellungen:{spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true,online_spiel:true},
             aktualisiert_am:new Date().toISOString()
           },{onConflict:'endpoint'});
           if(upsertErr){
@@ -2958,6 +2963,7 @@
           neue_hand:document.getElementById('push-cat-hand').checked,
           transaktionen:document.getElementById('push-cat-trans').checked,
           app_updates:document.getElementById('push-cat-updates').checked,
+          online_spiel:document.getElementById('push-cat-online').checked,
         };
         const{error:catErr}=await db.from('push_subscriptions')
           .update({einstellungen,aktualisiert_am:new Date().toISOString()})
@@ -3319,8 +3325,8 @@
       const card=document.getElementById('detail-push-card');
       const{data:subs}=await db.from('push_subscriptions').select('einstellungen,aktualisiert_am,endpoint').eq('spieler_id',s.id).order('aktualisiert_am',{ascending:false});
       if(!subs||subs.length===0){card.innerHTML=`<span style="color:var(--text-tertiary)">Keine Geräte registriert</span>`;return;}
-      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates'};
-      const catActive=(e,k)=>k==='buyins'||k==='neue_hand'?e[k]!==false:!!e[k];
+      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates',online_spiel:'Pandemie-Modus'};
+      const catActive=(e,k)=>k==='buyins'||k==='neue_hand'||k==='online_spiel'?e[k]!==false:!!e[k];
       function deviceName(ep){
         if(ep.includes('fcm.googleapis.com'))return'Chrome / Android';
         if(ep.includes('mozilla.com'))return'Firefox';
