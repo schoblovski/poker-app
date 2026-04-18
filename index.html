@@ -7545,6 +7545,7 @@
           spieler_id:r.seat.spieler_id,
           buyins:r.buyins,
           payout:r.payout,
+          leihgabe:0,
           in_statistik:true,
         }));
         const{error:insErr}=await db.from('spiel_teilnehmer').insert(entries);
