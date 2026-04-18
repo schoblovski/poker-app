@@ -663,7 +663,7 @@
   .pm-seat-group.occupied .pm-seat-circle{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.35);stroke-width:1.5}
   .pm-seat-group.me .pm-seat-circle{fill:rgba(34,197,94,.25);stroke:var(--accent);stroke-width:2}
   [data-colorblind="true"] .pm-seat-group.me .pm-seat-circle{fill:rgba(56,189,248,.25)}
-  .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:2.5;animation:pm-pulse 1.2s infinite}
+  .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:4;animation:pm-pulse 1s infinite}
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
@@ -6729,10 +6729,11 @@
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
         const isNew=!isR&&i>=prevBoardCount;
         const delay=isNew?(i-prevBoardCount)*0.2:0;
-        const anim=isNew?`style="animation:pm-card-reveal .5s ${delay}s ease both"`:'';
-        communityHtml+=`<g ${anim}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
+        const anim=isNew?`<animate attributeName="opacity" values="0;1" dur=".5s" begin="${delay}s" fill="freeze"/>`:'';
+        const initOp=isNew?'opacity="0"':'';
+        communityHtml+=`<g ${initOp}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
-          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text></g>`;
+          <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text>${anim}</g>`;
       }else{
         communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
       }
@@ -6894,14 +6895,12 @@
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe','pm_show_equity']),
     ]);
     const einstMap={};(einstRows||[]).forEach(e=>{einstMap[e.key]=e.wert;});
-    _pm._prevBoardCount=_pm.session?.community_cards?.length??0;
     _pm.session=session;
     _pm.seats=seats||[];
     _pm.actions=(actions||[]).reverse();
     _pm.mySeat=mySeatRow||null;
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=einstMap['pm_show_equity']==='1';
-    _pm._prevHoleCount=_pm.myHoleCards?.length??0;
     if(mySeatRow){
       const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
       _pm.myHoleCards=cardRow?.hole_cards||[];
@@ -7079,7 +7078,25 @@
     const equityBadge=equityTxt?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px">~${equityTxt}% Equity</div>`:'';
     const handBadge=bestHand?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 12px;border-radius:10px">${bestHand.name}</div>`:'';
     const badgesRow=(foldedBadge||handBadge||equityBadge)?`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;padding:10px 0 12px">${foldedBadge}${handBadge}${equityBadge}</div>`:'<div style="height:12px"></div>';
-    const _holeAnim=myHoleCards.length>0&&(_pm._prevHoleCount??0)===0;
+    // ── Win/Loss Ergebnis-Banner ──
+    let handResultHtml='';
+    if(handIsOver2&&isRunning&&mySeat&&myStatus!=='sitting_out'){
+      const curHandNr=session.hand_nr;
+      const myHandActs=(actions||[]).filter(a=>a.hand_nr===curHandNr&&a.spieler_id===currentSpieler?.id);
+      const myWin=myHandActs.find(a=>a.action==='win');
+      if(myWin){
+        const hn=myWin.meta?.hand?`<div style="font-size:12px;font-weight:600;margin-top:2px;opacity:.85">${myWin.meta.hand}</div>`:'';
+        handResultHtml=`<div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px">+€${(+myWin.amount).toFixed(2)}</div>${hn}</div>`;
+      } else {
+        const invested=myHandActs.filter(a=>['call','raise','allin','post_sb','post_bb','blind'].includes(a.action)).reduce((s,a)=>s+(a.amount||0),0);
+        if(invested>0){
+          handResultHtml=`<div style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px;color:var(--danger)">-€${invested.toFixed(2)}</div><div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Nächste Runde</div></div>`;
+        }
+      }
+    }
+
+    const _holeAnim=myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
+    if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 0;border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
@@ -7088,11 +7105,12 @@
       </div>
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,_pm._prevBoardCount??0)}</div>
+          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${(()=>{const prev=_pm._renderedBoardCount??0;const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const stk=`€${(s.stack||0).toFixed(0)}`;const bg=isFold?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:'';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${isFold?'0.5':'1'}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
-          ${myCardsSection}${infoBar}${mySeat?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 var(--space-sm);margin-bottom:var(--space-sm);border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-tertiary)">Buy-Ins: <strong style="color:var(--text-secondary)">${mySeat.buyins||1}</strong></span>${(!isRunning||handIsOver2)&&mySeat.stack===0?`<button class="btn btn-secondary" id="btn-pm-buyin" style="height:28px!important;font-size:12px;padding:0 12px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button>`:''}
+          ${handResultHtml}${myCardsSection}${infoBar}${mySeat?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 var(--space-sm);margin-bottom:var(--space-sm);border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-tertiary)">Buy-Ins: <strong style="color:var(--text-secondary)">${mySeat.buyins||1}</strong></span>${(!isRunning||handIsOver2)&&mySeat.stack===0?`<button class="btn btn-secondary" id="btn-pm-buyin" style="height:28px!important;font-size:12px;padding:0 12px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button>`:''}
 </div>`:''}
           <div class="section-title">Verlauf</div>
           <div class="pm-feed">${feedHtml}</div>
