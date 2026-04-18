@@ -3137,8 +3137,8 @@
       const pot=parseFloat(document.getElementById('set-pot').value)||0;
       const kassa=parseFloat(document.getElementById('set-kassa').value)||0;
       await save(async()=>{
-        await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot});
-        await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa});
+        await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot},{onConflict:'key'});
+        await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa},{onConflict:'key'});
         einstellungen.buyin_pot=pot;
         einstellungen.buyin_kassa=kassa;
       },'Einstellungen gespeichert');
@@ -3248,8 +3248,8 @@
       const link=(document.getElementById('set-videocall').value||'').trim();
       const showEq=document.getElementById('set-pm-equity')?.checked?'1':'0';
       await save(async()=>{
-        await db.from('einstellungen').upsert({key:'video_call_link',wert:link});
-        await db.from('einstellungen').upsert({key:'pm_show_equity',wert:showEq});
+        await db.from('einstellungen').upsert({key:'video_call_link',wert:link},{onConflict:'key'});
+        await db.from('einstellungen').upsert({key:'pm_show_equity',wert:showEq},{onConflict:'key'});
       },'Pandemie-Modus Einstellungen gespeichert');
       await showAlert('Einstellungen gespeichert.');
     });
@@ -7049,7 +7049,7 @@
     if(handIsOver&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Hand beendet – warte auf nächste Hand…</div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
-    if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
+    if(myStatus==='paused')return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important">Zurück zum Spiel</button></div>`;
     if(isMyTurn){
       const maxBet=Math.max(0,...seats.map(s=>s.bet_current_round||0));
       const myBet=mySeat.bet_current_round||0;
