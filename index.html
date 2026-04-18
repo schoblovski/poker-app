@@ -1893,7 +1893,7 @@
     const appNameEl=document.querySelector('.header-app-name');
     if(appNameEl){
       appNameEl.style.cursor='default';
-      appNameEl.addEventListener('click',()=>{
+      appNameEl.addEventListener('pointerdown',()=>{
         _taps++;
         clearTimeout(_tapTimer);
         if(_taps>=7){
