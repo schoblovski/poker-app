@@ -257,7 +257,7 @@
     .select-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);cursor:pointer;transition:all var(--transition);text-align:center;}
     .select-card.selected{border-color:var(--accent);background:var(--accent-soft);}
     .select-card-name{font-size:14px;font-weight:500;}
-    .dropdown{position:absolute;top:calc(100% + 8px);right:var(--space-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-xs);z-index:200;display:none;box-shadow:var(--shadow-lg);min-width:200px;}
+    .dropdown{position:absolute;top:calc(100% + 8px);right:var(--space-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-xs);z-index:200;display:none;box-shadow:var(--shadow-lg);min-width:200px;max-height:calc(100dvh - 80px);overflow-y:auto;overscroll-behavior:contain;}
     .dropdown.open{display:block;animation:fadeIn 120ms ease;}
     .dropdown-item{display:flex;align-items:center;gap:var(--space-sm);padding:11px var(--space-md);border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;color:var(--text-primary);transition:background var(--transition);border:none;background:none;width:100%;text-align:left;font-family:var(--font-sans);}
     .dropdown-item:hover{background:var(--bg-secondary);}
