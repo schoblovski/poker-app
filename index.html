@@ -6888,7 +6888,8 @@
       const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
       const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
       const betChip=betAmt>0?`<circle cx="${bcx}" cy="${bcy}" r="10" fill="var(--accent)" opacity=".9"/><text x="${bcx}" y="${bcy+4}" text-anchor="middle" font-size="8" fill="white">€${betFmt}</text>`:'';
-      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.35:1}"/>`:'';
+      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused?0.45:1}"/>`:'';
+      const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
@@ -6897,7 +6898,7 @@
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`${avatarEl}${namePill}${stackPill}`}
+          :`${avatarEl}${pauseOverlay}${namePill}${stackPill}`}
         ${betChip}${dealerMark}
       </g>`;
     }
@@ -7101,6 +7102,13 @@
     showPage('online-tisch');
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
     await _pmLoad();
+    // Insert join action if player is returning to an existing seat after a leave
+    if(_pm.mySeat&&currentSpieler?.id){
+      const myLastEvt=[..._pm.actions].reverse().find(a=>a.spieler_id===currentSpieler.id&&(a.action==='join'||a.action==='leave'));
+      if(myLastEvt?.action==='leave'){
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      }
+    }
     _pmSubscribe();
   }
 
@@ -7343,7 +7351,7 @@
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div style="margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const _sv=s.stack||0;const stk=`€${Number.isInteger(_sv)?_sv:_sv.toFixed(2)}`;const bg=isFold?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:'';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${isFold?'0.5':'1'}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isPause=s.status==='paused';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const _sv=s.stack||0;const stk=`€${Number.isInteger(_sv)?_sv:_sv.toFixed(2)}`;const bg=isFold?'var(--bg-secondary)':isPause?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isPause?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:isPause?`<span style="font-size:9px;color:#f59e0b;margin-left:2px">pausiert</span>`:'';const opacity=isFold?'0.5':isPause?'0.6':'1';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${opacity}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover;${isPause?'opacity:.5':''}">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
           ${runoutDisplay}${runoutBtn}${isLandscape?'':actionArea}
           ${isLandscape?feedSection:''}
         </div>
