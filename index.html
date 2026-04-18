@@ -69,9 +69,16 @@
     @media(min-width:600px),(orientation:landscape){
       .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:0}
       .pm-tisch-left{flex:1.1;padding-right:var(--space-lg)}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;max-height:100dvh;overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border)}
+      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
       .pm-tisch-right .pm-feed{flex:1;min-height:0;max-height:none;overflow-y:auto}
     }
+    /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
+    @media(orientation:landscape){
+      #online-tisch-content{padding-top:env(safe-area-inset-top,0px);}
+    }
+    /* Smooth re-render transition to reduce flicker */
+    #online-tisch-content>*{animation:pm-fadein 0.12s ease-out both;}
+    @keyframes pm-fadein{from{opacity:.6}to{opacity:1}}
     body.pm-fullscreen .header,
     body.pm-fullscreen .bottom-nav{display:none!important;}
     body.pm-fullscreen #app-screen{max-width:none!important;}
@@ -704,7 +711,7 @@
   .pm-tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:var(--space-sm)}
   .pm-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
   .pm-tab.active{color:var(--accent-text);border-color:var(--accent)}
-  .pm-feed{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+  .pm-feed{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto}
   .pm-feed-item{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary)}
   .pm-feed-item.win{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
   .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger);font-weight:600}
@@ -798,7 +805,7 @@
       <div class="header-timer-progress"><div id="header-timer-progress-fill"></div></div>
     </button>
     <div class="header-right">
-      <button class="pm-live-btn" id="pm-live-btn" title="Online-Session aktiv" aria-label="Online-Session">
+      <button class="pm-live-btn" id="pm-live-btn" title="Online-Session aktiv" aria-label="Online-Session" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
       </button>
       <button class="bell-btn" id="bell-btn" hidden aria-label="Benachrichtigungen">
@@ -852,7 +859,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/><path d="M6 8h2M6 11h2"/><path d="M16 8h2M16 11h2"/></svg>
           Equity-Rechner
         </button>
-        <button class="dropdown-item" id="btn-online-poker">
+        <button class="dropdown-item" id="btn-online-poker" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
           Pandemie-Modus
         </button>
@@ -1645,6 +1652,7 @@
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
     if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}}
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
+    if(page==='home')loadHome();
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
     if(page==='einstellungen')loadEinstellungen();
@@ -1817,6 +1825,86 @@
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
   document.getElementById('bell-btn').addEventListener('click',()=>{showPage('benachrichtigungen');});
+
+  // ── EASTER EGG: 7× auf App-Titel tippen → Pandemie-Modus freischalten ──────
+  (function(){
+    let _taps=0,_tapTimer=null;
+    function _unlockPandemie(){
+      localStorage.setItem('dtks_pandemie_entdeckt','true');
+      document.getElementById('btn-online-poker').style.display='flex';
+      document.getElementById('pm-live-btn').style.removeProperty('display');
+    }
+    function _showEasterEgg(){
+      if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
+        // Bereits entdeckt → direkt öffnen
+        document.getElementById('dropdown').classList.remove('open');
+        showPage('online-lobby');
+        return;
+      }
+      const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
+      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:400px;padding:var(--space-xl) var(--space-lg);text-align:center">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-lg)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
+        <div style="font-size:15px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat.</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:var(--space-xl);color:var(--text-primary)">Wer ist der IT-Experte,<br>den ihr angeblich gar nicht habt?</div>
+        <input id="ee-input" type="text" class="form-input" placeholder="Antwort eingeben…" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;margin-bottom:var(--space-md)">
+        <div id="ee-msg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:var(--space-md)"></div>
+        <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
+          <button class="btn btn-primary" id="ee-confirm" style="max-width:none">Bestätigen</button>
+          <button class="btn btn-ghost" id="ee-cancel" style="max-width:none;font-size:13px">Abbrechen</button>
+        </div>
+      </div>`;
+      document.body.appendChild(ov);
+      const inp=document.getElementById('ee-input');
+      setTimeout(()=>inp?.focus(),100);
+      document.getElementById('ee-cancel').onclick=()=>ov.remove();
+      const confirm=async()=>{
+        const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
+        if(val==='chris'){
+          ov.remove();
+          _unlockPandemie();
+          _showV4Modal();
+        } else {
+          const msg=document.getElementById('ee-msg');
+          if(msg)msg.textContent='Falsch. Typisch. Und trotzdem läuft eure App.';
+          inp?.select();
+        }
+      };
+      document.getElementById('ee-confirm').onclick=confirm;
+      document.getElementById('ee-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirm();});
+    }
+    function _showV4Modal(){
+      const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
+      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:440px;padding:var(--space-xl) var(--space-lg);text-align:center;overflow-y:auto;max-height:90vh">
+        <div style="font-size:48px;margin-bottom:var(--space-md)">🎉</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Richtig!</div>
+        <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
+        <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
+        <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
+          <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Pandemie-Modus</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Findet ihr den Modus im Avatar-Menü unter <strong>Pandemie-Modus</strong>.</div>
+        </div>
+        <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
+      </div>`;
+      document.body.appendChild(ov);
+      document.getElementById('ee-v4-close').onclick=()=>{ov.remove();showPage('online-lobby');};
+    }
+    // Tap counter on header app name
+    const appNameEl=document.querySelector('.header-app-name');
+    if(appNameEl){
+      appNameEl.style.cursor='default';
+      appNameEl.addEventListener('click',()=>{
+        _taps++;
+        clearTimeout(_tapTimer);
+        if(_taps>=7){
+          _taps=0;
+          _showEasterEgg();
+        } else {
+          _tapTimer=setTimeout(()=>{_taps=0;},2000);
+        }
+      });
+    }
+  })();
 
   // ── BENACHRICHTIGUNGEN ─────────────────────────────────
   async function refreshBellBadge(){
@@ -2070,6 +2158,11 @@
     ['dropdown-admin-divider','dropdown-admin-label','dropdown-debug-divider','dropdown-debug-label'].forEach(id=>{document.getElementById(id).style.display=_adm?'block':'none';});
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
+    // Easter Egg: Pandemie-Modus nur sichtbar nach Entdeckung
+    if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
+      document.getElementById('btn-online-poker').style.display='flex';
+      document.getElementById('pm-live-btn').style.removeProperty('display');
+    }
     loginEl.style.display='none';
     document.getElementById('app-screen').style.display='flex';
     loadHome();
@@ -6853,11 +6946,11 @@
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="number" id="pm-new-sb" value="0.05" min="0.01" step="0.01" inputmode="decimal" class="form-input"></div>
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Big Blind</div><input type="number" id="pm-new-bb" value="0.10" min="0.02" step="0.01" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="text" id="pm-new-sb" value="0.05" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Big Blind</div><input type="text" id="pm-new-bb" value="0.10" inputmode="decimal" class="form-input"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
-        <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="number" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" min="0.05" step="0.05" inputmode="decimal" class="form-input"></div>
+        <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="decimal" class="form-input"></div>
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin:-var(--space-sm) 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
       <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);margin-bottom:var(--space-lg)">
@@ -6902,6 +6995,10 @@
     _pmSubscribe();
   }
 
+  // Re-request wake-lock when app comes back into focus during an active session
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&_pm&&typeof _btRequestWakeLock==='function')_btRequestWakeLock();});
+  window.addEventListener('focus',()=>{if(_pm&&typeof _btRequestWakeLock==='function')_btRequestWakeLock();});
+
   function _pmReleaseWakeLock(){if(typeof _btReleaseWakeLock==='function')_btReleaseWakeLock();}
 
   async function _pmLoad(){
@@ -6928,6 +7025,7 @@
     }
     renderOnlineTisch();
     if(_pm.session?.status==='finished')_pmUpdateLiveIndicator();
+    _pmCheckSpecialHands();
   }
 
   function _pmCalcEquity(myCards,boardCards,nOpponents,variante){
@@ -7067,7 +7165,8 @@
     const feedHtml=_pmFeedHtml(actions);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
-    const infoBar=mySeat?`<div style="display:flex;gap:8px;margin-bottom:var(--space-md)">
+    const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished;
+    const infoBar=mySeat?`<div style="display:flex;gap:8px;margin-bottom:${_canBuyin?'var(--space-sm)':'var(--space-md)'}">
       <div class="kpi-card" style="flex:1;padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Stack</div>
         <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(mySeat.stack||0).toFixed(2)}</div>
@@ -7076,11 +7175,16 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div>
         <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div>
       </div>
+      <div class="kpi-card" style="flex:1;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Buy-Ins</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">${mySeat.buyins||1}×</div>
+      </div>
       ${session.street?`<div class="kpi-card" style="flex:1;padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:16px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
-    </div>`:'';
+    </div>${_canBuyin?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button class="btn btn-secondary" id="btn-pm-buyin" style="height:34px!important;font-size:13px;padding:0 20px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button></div>`:''}`:'';
+
     // Best hand berechnen (wenn Board ≥3 Karten und eigene Karten vorhanden)
     const _boardCards=session.community_cards||[];
     const bestHand=(myHoleCards.length>0&&_boardCards.length>=3&&myStatus!=='folded')?_pmBestHandJS(myHoleCards,_boardCards,session.variante):null;
@@ -7129,8 +7233,7 @@
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
-          ${handResultHtml}${myCardsSection}${infoBar}${mySeat?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 var(--space-sm);margin-bottom:var(--space-sm);border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-tertiary)">Buy-Ins: <strong style="color:var(--text-secondary)">${mySeat.buyins||1}</strong></span>${(!isRunning||handIsOver2)&&mySeat.stack===0&&!isFinished?`<button class="btn btn-secondary" id="btn-pm-buyin" style="height:28px!important;font-size:12px;padding:0 12px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button>`:''}
-</div>`:''}
+          ${handResultHtml}${myCardsSection}${infoBar}
           <div class="section-title">Verlauf</div>
           <div class="pm-feed">${feedHtml}</div>
         </div>
@@ -7213,7 +7316,7 @@
     if(!mySeat&&isRunning)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 28px">Hinsetzen</button></div></div>`;
     if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="width:auto;padding:0 28px">Zur Übersicht</button></div></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px"${enoughPlayers?'':' disabled'}>Erste Spielrunde starten</button></div>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
-    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout" style="width:auto;padding:0 28px">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="width:auto;padding:0 28px">Zur Übersicht</button></div></div>`;
+    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test&&!session.spiel_id?`<button class="btn btn-primary" id="btn-pm-payout" style="width:auto;padding:0 28px">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="width:auto;padding:0 28px">Zur Übersicht</button></div>${isAdmin&&!session.is_test&&session.spiel_id?`<div style="font-size:12px;color:var(--accent-text);margin-top:8px">Ergebnis bereits übernommen</div>`:''}</div>`;
     // Hand vorbei → keine Aktions-Buttons anzeigen
     if(handIsOver&&isRunning){
       const myHC=_pm?.myHoleCards||[];
@@ -7247,7 +7350,7 @@
     }
     // Waiting → compact 2-button layout (Vorauswahl opens sheet)
     const pre=mySeat?.pre_action||'';
-    const preLabels={fold:'Fold',check_fold:'Chk/Fold',check:'Check',call:'Call',call_any:'Call Any'};
+    const preLabels={fold:'Fold',check:'Check',call:'Call',call_any:'Call Any'};
     const preLabel=pre?preLabels[pre]||pre:'';
     const preBtnLabel=pre?`Vorauswahl: ${preLabel}`:'Vorauswahl';
     return`<div class="pm-action-area">
@@ -7322,12 +7425,14 @@
       if(error){await showAlert('Fehler: '+error.message);return;}
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'finish',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       // For non-test sessions: show payout modal immediately; otherwise go straight to lobby
+      // Stop Realtime updates but keep _pm data alive for the payout modal (doFinish will null it out)
+      if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+      _pmReleaseWakeLock();
       if(!_pm.session?.is_test){
-        _pmUnsubscribe();
         await _pmLoad(); // refresh so _pm.seats has final stacks
         _pmPayoutModal();
       } else {
-        _pmUnsubscribe();
+        _pm=null;
         showPage('online-lobby');
       }
     });
@@ -7363,12 +7468,30 @@
     }catch(e){await showAlert('Unbekannter Fehler: '+e.message);}
   }
 
+  function _pmFriendlyError(raw){
+    if(!raw)return'Unbekannter Fehler';
+    // Try to extract JSON message field from HTTP error body like "HTTP 400: {...}"
+    const jsonMatch=raw.match(/\{[\s\S]*\}/);
+    if(jsonMatch){try{const o=JSON.parse(jsonMatch[0]);if(o.message)raw=o.message;}catch{}}
+    // Map known server-side error strings to German
+    const map=[
+      [/not enough.*player|zu wenig.*spieler|need.*player/i,'Zu wenig Spieler am Tisch (mindestens 2 benötigt).'],
+      [/no.*chip|no.*stack|stack.*0/i,'Mindestens ein Spieler hat keine Chips mehr – Buy-In nötig.'],
+      [/buy.?in|buyin/i,'Buy-In fehlt für mindestens einen Spieler.'],
+      [/not.*turn|wrong.*player/i,'Du bist gerade nicht am Zug.'],
+      [/game.*finished|session.*ended/i,'Session ist bereits beendet.'],
+      [/not.*admin|admin.*required/i,'Diese Aktion ist nur für Admins.'],
+    ];
+    for(const[re,msg]of map){if(re.test(raw))return msg;}
+    return raw;
+  }
+
   async function _pmStartHand(){
     if(!_pm)return;
     if((_pm.seats||[]).length<2){await showAlert('Mindestens 2 Spieler nötig.');return;}
     const btn=document.getElementById('btn-pm-start');if(btn){btn.disabled=true;btn.textContent='Starte…';}
     const resp=await _callFn('poker-start-game',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
-    if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Erste Spielrunde starten';}}
+    if(resp?.error){await showAlert(_pmFriendlyError(resp.error));if(btn){btn.disabled=false;btn.textContent='Erste Spielrunde starten';}}
     else await _pmLoad();
   }
 
@@ -7376,7 +7499,7 @@
     if(!_pm)return;
     const btn=document.getElementById('btn-pm-newhand');if(btn){btn.disabled=true;btn.textContent='…';}
     const resp=await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
-    if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Nächste Spielrunde';}}
+    if(resp?.error){await showAlert(_pmFriendlyError(resp.error));if(btn){btn.disabled=false;btn.textContent='Nächste Spielrunde';}}
     else await _pmLoad();
   }
 
@@ -7397,11 +7520,11 @@
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Vorauswahl</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        ${[['fold','Fold'],['check_fold','Chk/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pas-btn" data-pre="${v}" style="flex:1 0 calc(33% - 6px);font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">${l}</button>`).join('')}
+        ${[['fold','Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pas-btn" data-pre="${v}" style="flex:1 0 calc(45% - 6px);font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">${l}</button>`).join('')}
       </div>
       <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
-        <input type="number" id="pm-pas-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
+        <input type="text" id="pm-pas-limit" class="form-input" inputmode="decimal" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
           <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
@@ -7414,7 +7537,7 @@
     const saveAndUpdate=async(v,lim)=>{
       await _pmSetPreAction(v,lim);
       if(_pm?.mySeat)_pm.mySeat.pre_action=v;
-      const labels={fold:'Fold',check_fold:'Chk/Fold',check:'Check',call:'Call',call_any:'Call Any'};
+      const labels={fold:'Fold',check:'Check',call:'Call',call_any:'Call Any'};
       const vBtn=document.getElementById('btn-pm-preaction');
       if(vBtn){vBtn.textContent=v?'Vorauswahl: '+(labels[v]||v):'Vorauswahl';vBtn.className='btn '+(v?'btn-primary':'btn-ghost');vBtn.style.cssText='font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0';}
     };
@@ -7473,6 +7596,7 @@
 
   async function _pmPayoutModal(){
     if(!_pm)return;
+    if(!_pm.session){await showAlert('Session-Daten konnten nicht geladen werden.');_pm=null;showPage('online-lobby');return;}
     console.log('[payout-modal-v2] opening');
     const session=_pm.session;
     const seats=_pm.seats||[];
@@ -7529,6 +7653,8 @@
       if(skipBtn)skipBtn.disabled=true;
 
       if(withStats){
+        // Guard against double-submission
+        if(_pm?.session?.spiel_id){await showAlert('Ergebnis wurde bereits übernommen.');overlay.remove();_pmUnsubscribe();showPage('online-lobby');return;}
         // Create the spiele entry now (deferred from session creation to avoid phantom entries)
         const today=new Date().toISOString().split('T')[0];
         const{data:ns,error:nsErr}=await db.from('spiele').insert({
@@ -7566,6 +7692,37 @@
     document.getElementById('btn-payout-cancel').addEventListener('click',()=>overlay.remove());
   }
 
+  // Besondere Hände aus Online-Spiel: nach Showdown anbieten, Hand in hand_statistik zu speichern
+  const SPECIAL_HANDS=['7-2','Straight Flush','Royal Flush','Four of a Kind','Vierling'];
+  async function _pmCheckSpecialHands(){
+    if(!_pm?.session||!currentSpieler?.ist_admin)return; // nur Admin sieht Prompt (macht mehr Sinn)
+    const session=_pm.session;
+    const actions=_pm.actions||[];
+    const handNr=session.hand_nr;
+    if(!handNr||session.current_player_id)return; // nur wenn Hand vorbei
+    if(!_pm._promptedHands)_pm._promptedHands=new Set();
+    if(_pm._promptedHands.has(handNr))return; // schon mal gefragt
+    const winActs=actions.filter(a=>a.action==='win'&&a.hand_nr===handNr&&a.meta?.hand&&SPECIAL_HANDS.some(h=>a.meta.hand.includes(h)));
+    if(!winActs.length)return;
+    _pm._promptedHands.add(handNr);
+    // Unique winner+hand combos
+    const seen=new Set();
+    const specials=winActs.filter(a=>{const k=`${a.spieler_id}:${a.meta.hand}`;if(seen.has(k))return false;seen.add(k);return true;});
+    for(const act of specials){
+      const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
+      const name=sp?.spieler?.name||'?';
+      const hand=act.meta.hand;
+      const save=await confirmAction(`Besondere Hand erkannt!\n\n${name}: ${hand}\n\nIn Besondere Hände eintragen?`);
+      if(!save)continue;
+      const datum=new Date().toISOString().split('T')[0];
+      const entry={datum,gewinner_id:act.spieler_id,hand,kommentar:`Online-Spiel Spielrunde #${handNr}`};
+      if(session.spiel_id)entry.spiel_id=session.spiel_id;
+      const{error}=await db.from('hand_statistik').insert(entry);
+      if(error)await showAlert('Fehler beim Speichern: '+error.message);
+      else console.log('[pm] Besondere Hand gespeichert:',hand,name);
+    }
+  }
+
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
     _pmActInFlight=true;
@@ -7574,7 +7731,7 @@
     if(amount!==undefined&&amount>0)body.amount=amount;
     const resp=await _callFn('poker-action',body);
     _pmActInFlight=false;
-    if(resp?.error){await showAlert('Fehler: '+resp.error);}
+    if(resp?.error){await showAlert(_pmFriendlyError(resp.error));}
     await _pmLoad();
   }
 
@@ -7619,7 +7776,7 @@
       <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Max. Betrag</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="number" id="pm-pause-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${(bb*2).toFixed(2)}" style="flex:1">
+          <input type="text" id="pm-pause-limit" class="form-input" inputmode="decimal" value="${(bb*2).toFixed(2)}" style="flex:1">
           <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:12px;padding:5px 10px">1BB (€${bb.toFixed(0)})</button>
           <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:12px;padding:5px 10px">3BB (€${(bb*3).toFixed(0)})</button>
         </div>
@@ -7666,7 +7823,7 @@
         <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
-        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${minRaise}" max="${myStack.toFixed(2)}" value="${Math.min(fullPot,myStack).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
+        <input type="text" id="pm-rs-input" class="form-input" inputmode="decimal" value="${Math.min(fullPot,myStack).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
@@ -7679,7 +7836,7 @@
     overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
     let _allinSelected=false;
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
-      const i=document.getElementById('pm-rs-input');if(i)i.value=+(parseFloat(b.dataset.amt||0).toFixed(2));
+      const i=document.getElementById('pm-rs-input');if(i)i.value=parseFloat(b.dataset.amt||0).toFixed(2);
       _allinSelected=!!b.dataset.allin;
       document.getElementById('pm-rs-confirm').textContent=_allinSelected?'All-in bestätigen':'Raise bestätigen';
     }));

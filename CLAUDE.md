@@ -344,10 +344,8 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 
 
 ## Aktueller Backlog / TODOs
-1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
-2. **Pandemie-Modus** – Kernmodus implementiert (auf Branch `claude/app-ideas-0j3gF`), wartet auf Freigabe/Version-Bump
-3. **Easter Egg für Pandemie-Modus** – Noch NICHT implementiert! Erst einbauen wenn Modus vollständig stabil und freigegeben ist. Konzept: 7× auf App-Logo/Titel tippen → Rätsel-Seite → Antwort „Chris" → Freischaltung + Version 4.0 Modal. State in `localStorage: 'dtks_pandemie_entdeckt'`. Vollständiges Konzept weiter unten im Dokument.
-4. **Besondere Hände aus Online-Spiel übernehmen** – Nach Showdown Option anzeigen wenn besondere Hand erkannt (7-2-Sieg, Straight Flush, Royal Flush, Vierling): Eintrag in `hand_statistik` erstellen mit vorbellegtem Gewinner/Hand-Typ/Datum/spiel_id; Beweisfoto = Hinweis „Mach einen Screenshot" + Upload-Möglichkeit. Hand-Typ wird vom Evaluator-Ergebnis abgeleitet.
+1. **Pandemie-Modus Stabilisierung** – Bugs + Improvements auf Branch `claude/review-pending-tasks-C6KUk` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg + Besondere Hände aus Online-Spiel bereits implementiert.
+2. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
