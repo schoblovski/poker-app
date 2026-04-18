@@ -1,11 +1,9 @@
 // DTKS Poker – Edge Function: poker-new-hand
 // Startet die nächste Hand. Wird NUR auf expliziten Knopfdruck ausgelöst –
-// kein Auto-Start! Der Dealer-Button-Spieler (oder Admin) drückt den Button.
+// kein Auto-Start! Jeder aktive Mitspieler am Tisch darf den Button drücken.
 //
 // POST Body:
 //   { online_spiel_id: string, spieler_id: string }
-//
-// Validierung: nur Dealer-Button-Spieler oder Admin darf starten.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { CORS, corsOk, json, err } from '../poker-utils/index.ts';
@@ -25,22 +23,16 @@ Deno.serve(async (req) => {
   const { online_spiel_id, spieler_id } = body;
   if (!online_spiel_id || !spieler_id) return err('Fehlende Parameter');
 
-  const [{ data: session }, { data: seats }, { data: spieler }] = await Promise.all([
+  const [{ data: session }, { data: seats }] = await Promise.all([
     db.from('online_spiele').select('*').eq('id', online_spiel_id).single(),
     db.from('online_seats').select('*').eq('online_spiel_id', online_spiel_id).order('seat'),
-    db.from('spieler').select('ist_admin').eq('id', spieler_id).single(),
   ]);
 
   if (!session) return err('Session nicht gefunden', 404);
 
-  // Wer darf starten: Dealer-Button-Spieler oder Admin
-  const dealerSeat = seats?.find((s: { seat: number }) => s.seat === session.dealer_seat);
-  const isDealer = dealerSeat?.spieler_id === spieler_id;
-  const isAdmin = spieler?.ist_admin === true;
-
-  if (!isDealer && !isAdmin) {
-    return err('Nur der Dealer-Button-Spieler oder ein Admin kann die nächste Hand starten', 403);
-  }
+  // Jeder Spieler am Tisch darf die nächste Hand starten
+  const callerSeat = seats?.find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
+  if (!callerSeat) return err('Du bist nicht an diesem Tisch', 403);
 
   // Spieler ohne Stack eliminieren (busted), paused → sitting_out
   const bustsAndPaused = (seats ?? []).filter(
