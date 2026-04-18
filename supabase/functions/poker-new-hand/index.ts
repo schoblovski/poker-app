@@ -59,6 +59,17 @@ Deno.serve(async (req) => {
     return err('Nicht genug aktive Spieler für eine neue Hand');
   }
 
+  const newHandNr = (session.hand_nr ?? 0) + 1;
+
+  // Action-Log zuerst einfügen damit Runden-Trennlinie im Feed vor den Blinds erscheint
+  await db.from('online_actions').insert({
+    online_spiel_id,
+    spieler_id,
+    action: 'new_hand',
+    street: 'preflop',
+    hand_nr: newHandNr,
+  });
+
   // poker-start-game delegieren (übernimmt Dealer-Button-Weitersetzen, Karten austeilen, etc.)
   const startRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-start-game`, {
     method: 'POST',
@@ -71,17 +82,6 @@ Deno.serve(async (req) => {
 
   const startData = await startRes.json();
   if (!startRes.ok) return json(startData, startRes.status);
-
-  const newHandNr = (session.hand_nr ?? 0) + 1;
-
-  // Action-Log: neue Hand gestartet von wem
-  await db.from('online_actions').insert({
-    online_spiel_id,
-    spieler_id,
-    action: 'new_hand',
-    street: 'preflop',
-    hand_nr: newHandNr,
-  });
 
   return json({ ok: true, new_hand: true, hand_nr: newHandNr, ...startData });
 });

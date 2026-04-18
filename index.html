@@ -6654,7 +6654,8 @@
     const sz=opts.big?'big':opts.community?'community':'';
     const _hlCB=document.documentElement.getAttribute('data-colorblind')==='true';
     const hl=opts.highlight?`box-shadow:0 0 0 2.5px var(--accent),0 2px 10px ${_hlCB?'rgba(56,189,248,.4)':'rgba(34,197,94,.4)'};`:'';
-    return`<div class="pt-card ${red?'red':''} ${sz}" style="${hl}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
+    const animStyle=opts.animDelay!==undefined?`animation:pm-card-reveal .5s ${opts.animDelay}s ease both;`:'';
+    return`<div class="pt-card ${red?'red':''} ${sz}" style="${hl}${animStyle}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;
   }
 
   function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0){
@@ -6727,8 +6728,8 @@
         const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
         const isNew=!isR&&i>=prevBoardCount;
-        const delay=isNew?(i-prevBoardCount)*0.12:0;
-        const anim=isNew?`style="animation:pm-card-reveal .28s ${delay}s ease both"`:'';
+        const delay=isNew?(i-prevBoardCount)*0.2:0;
+        const anim=isNew?`style="animation:pm-card-reveal .5s ${delay}s ease both"`:'';
         communityHtml+=`<g ${anim}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
           <text x="${bx+cw/2}" y="${by+31}" text-anchor="middle" font-size="12" fill="${cardText}">${s}</text></g>`;
@@ -6793,7 +6794,7 @@
         const cnt=seatsDone.length;
         const totalBuyins=seatsDone.reduce((sum,seat)=>sum+(seat.buyins||1),0);
         const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
-        const hands=s.hand_nr>0?`· ${s.hand_nr} Hände`:'';
+        const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
         const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
         const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
@@ -6900,6 +6901,7 @@
     _pm.mySeat=mySeatRow||null;
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=einstMap['pm_show_equity']==='1';
+    _pm._prevHoleCount=_pm.myHoleCards?.length??0;
     if(mySeatRow){
       const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
       _pm.myHoleCards=cardRow?.hole_cards||[];
@@ -7077,7 +7079,8 @@
     const equityBadge=equityTxt?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px">~${equityTxt}% Equity</div>`:'';
     const handBadge=bestHand?`<div style="background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700;padding:3px 12px;border-radius:10px">${bestHand.name}</div>`:'';
     const badgesRow=(foldedBadge||handBadge||equityBadge)?`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;padding:10px 0 12px">${foldedBadge}${handBadge}${equityBadge}</div>`:'<div style="height:12px"></div>';
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 0;border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map(c=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c))})).join('')}</div>${badgesRow}</div>`:'';
+    const _holeAnim=myHoleCards.length>0&&(_pm._prevHoleCount??0)===0;
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 0;border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
@@ -7101,7 +7104,21 @@
 
   function _pmFeedHtml(actions){
     if(!actions?.length)return`<div style="padding:var(--space-md);color:var(--text-tertiary);font-size:13px;text-align:center">Noch keine Aktionen</div>`;
-    return actions.slice(-40).reverse().map(a=>{
+    // Newest first, but new_hand always tops its hand_nr group
+    const raw=actions.slice(-40).reverse();
+    const placed=new Set();
+    const newHandMap={};
+    raw.forEach(a=>{if(a.action==='new_hand')newHandMap[a.hand_nr]=a;});
+    const display=[];
+    for(const a of raw){
+      if(a.action==='new_hand'){continue;}
+      const nh=newHandMap[a.hand_nr];
+      if(nh&&!placed.has(a.hand_nr)){placed.add(a.hand_nr);display.push(nh);}
+      display.push(a);
+    }
+    // Add new_hand entries whose hand_nr had no other actions yet
+    Object.values(newHandMap).forEach(nh=>{if(!placed.has(nh.hand_nr))display.push(nh);});
+    return display.map(a=>{
       const n=a.spieler?.name||'?';
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
       let text='';let extra='';
