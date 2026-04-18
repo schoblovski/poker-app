@@ -7218,7 +7218,8 @@
   function _pmFingerprint(){
     if(!_pm?.session)return'';
     const s=_pm.session;
-    return`${s.status}|${s.pot}|${s.current_player_id}|${s.street}|${s.hand_nr}|${(s.community_cards||[]).length}|${(s.runout_cards||[]).length}|${(_pm.seats||[]).map(x=>`${x.id}:${x.status}:${Math.round((x.stack||0)*100)}:${Math.round((x.bet_current_round||0)*100)}`).join(',')}|${(_pm.actions||[]).length}`;
+    const acts=_pm.actions||[];
+    return`${s.status}|${s.pot}|${s.current_player_id}|${s.street}|${s.hand_nr}|${(s.community_cards||[]).length}|${(s.runout_cards||[]).length}|${(_pm.seats||[]).map(x=>`${x.id}:${x.status}:${Math.round((x.stack||0)*100)}:${Math.round((x.bet_current_round||0)*100)}`).join(',')}|${acts.length}|${acts.at(-1)?.id||''}`;
   }
 
   function renderOnlineTisch(){
@@ -7337,7 +7338,7 @@
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
-    el.innerHTML=`${testBanner}<div style="padding:var(--space-xs) var(--space-md) var(--space-xl)">
+    el.innerHTML=`${testBanner}<div style="padding:var(--space-md) var(--space-md) var(--space-xl)">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div style="margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
