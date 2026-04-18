@@ -6683,7 +6683,9 @@
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
-    if(currentSpieler?.ist_admin)html+=`<button class="btn btn-primary" id="btn-pm-new" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neue Session</button>`;
+    const hasActive=(sessions||[]).some(s=>s.status==='waiting'||s.status==='running');
+    html+=`<button class="btn btn-primary" id="btn-pm-new" style="margin-bottom:var(--space-md)"${hasActive?' disabled title="Es läuft bereits eine aktive Session"':''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neue Session</button>`;
     const active=(sessions||[]).filter(s=>s.status!=='finished');
     const done=(sessions||[]).filter(s=>s.status==='finished');
     if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
@@ -7113,7 +7115,7 @@
 
   function _pmSubscribe(){
     if(!_pm?.id)return;
-    _pmUnsubscribe();
+    if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},()=>_pmLoad())
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},()=>_pmLoad())
@@ -7125,7 +7127,7 @@
 
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
-    if(_pm)_pm=null;
+    _pm=null;
   }
 
   // ── INIT ───────────────────────────────────────────────
