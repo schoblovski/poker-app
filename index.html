@@ -711,11 +711,16 @@
   .pm-tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:var(--space-sm)}
   .pm-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
   .pm-tab.active{color:var(--accent-text);border-color:var(--accent)}
-  .pm-feed{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto}
-  .pm-feed-item{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary)}
+  .pm-feed{display:flex;flex-direction:column;gap:3px;max-height:280px;overflow-y:auto}
+  .pm-feed-item{display:flex;align-items:flex-start;gap:7px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12.5px;color:var(--text-secondary);line-height:1.4}
+  .pm-feed-item .pf-av{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:1px}
+  .pm-feed-item .pf-ini{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px;background:var(--bg);color:var(--text-secondary)}
   .pm-feed-item.win{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
-  .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger);font-weight:600}
+  .pm-feed-item.win .pf-ini{background:rgba(0,0,0,.08)}
+  .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger)}
+  .pm-feed-item.fold-action .pf-ini{background:rgba(0,0,0,.07)}
   .pm-feed-item.allin-action{background:#fff7ed;color:#c2410c;font-weight:700}
+  .pm-feed-item.allin-action .pf-ini{background:rgba(0,0,0,.07)}
   [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
   .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
   .pm-chat-msg{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px}
@@ -7277,21 +7282,20 @@
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
     const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished;
-    const infoBar=mySeat?`<div style="display:flex;gap:8px;margin-bottom:${_canBuyin?'var(--space-sm)':'var(--space-md)'}">
-      <div class="kpi-card" style="flex:1;padding:10px 12px">
-        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Stack</div>
-        <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(mySeat.stack||0).toFixed(2)}</div>
+    const infoBar=mySeat?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <div class="kpi-card" style="padding:10px 12px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
+        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(mySeat.stack||0).toFixed(2)}</div>
       </div>
-      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="flex:1;padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:13px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="flex:1;padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
-      <div class="kpi-card" style="flex:1;padding:10px 12px">
+      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
+      <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Buy-Ins</div>
-        <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">${mySeat.buyins||1}×</div>
+        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${mySeat.buyins||1}×</div>
       </div>
-      ${session.street?`<div class="kpi-card" style="flex:1;padding:10px 12px">
+      ${session.street?`<div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
-        <div style="font-size:16px;font-weight:700">${streetLabel[session.street]||session.street}</div>
-      </div>`:''}
-    </div>${_canBuyin?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button class="btn btn-secondary" id="btn-pm-buyin" style="height:34px!important;font-size:13px;padding:0 20px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button></div>`:''}`:'';
+        <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
+      </div>`:''}</div>${_canBuyin?`<div style="margin-top:8px"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;padding:0;margin:0;width:100%;letter-spacing:-.01em">+ Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
 
     // Best hand berechnen (wenn Board ≥3 Karten und eigene Karten vorhanden)
     const _boardCards=session.community_cards||[];
@@ -7328,7 +7332,7 @@
 
     const _holeAnim=myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0 0;border-bottom:1px solid var(--border);margin-bottom:var(--space-md)"><div style="display:flex;justify-content:center;gap:12px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-xs) 0 0"><div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>${badgesRow}</div>`:'';
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Spielrunde #${session.hand_nr||0}</div>
@@ -7341,13 +7345,19 @@
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
-          ${handResultHtml}${myCardsSection}${infoBar}
-          <div class="section-title">Verlauf</div>
+          ${handResultHtml}
+          ${(myCardsSection||infoBar)?`<div style="display:flex;gap:var(--space-sm);align-items:flex-start;margin-bottom:var(--space-md)">${myCardsSection?`<div style="flex-shrink:0">${myCardsSection}</div>`:''}${infoBar?`<div style="flex:1;min-width:0">${infoBar}</div>`:''}</div>`:''}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span></div>
           <div class="pm-feed">${feedHtml}</div>
         </div>
       </div>
     </div>`;
     _pmBindEvents();
+    // Show broke modal once per hand when player hits €0
+    if(_canBuyin&&(_pm._buyinPromptedHand??-1)!==session.hand_nr){
+      _pm._buyinPromptedHand=session.hand_nr;
+      setTimeout(_pmShowBrokeModal,400);
+    }
   }
 
   function _pmFeedHtml(actions){
@@ -7369,53 +7379,54 @@
     }
     // new_hand entries with no other actions in the window (e.g. very first action of a hand)
     Object.values(newHandMap).forEach(nh=>{if(!placed.has(nh.hand_nr))display.push(nh);});
+    const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
     return display.map(a=>{
       const n=a.spieler?.name||'?';
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
       let text='';let extra='';
       switch(a.action){
-        case'fold':text=`${n} foldet`;extra=' fold-action';break;
-        case'check':text=`${n} checkt`;break;
-        case'call':text=`${n} callt${amt}`;break;
-        case'raise':text=`${n} raised auf${amt}`;break;
-        case'allin':text=`${n} All-in${amt}`;extra=' allin-action';break;
-        case'blind':text=`${n} Blind${amt}`;break;
-        case'post_sb':text=`${n} SB${amt}`;break;
-        case'post_bb':text=`${n} BB${amt}`;break;
+        case'fold':text=`<b>${escHtml(n)}</b> foldet`;extra=' fold-action';break;
+        case'check':text=`<b>${escHtml(n)}</b> checkt`;break;
+        case'call':text=`<b>${escHtml(n)}</b> callt${amt}`;break;
+        case'raise':text=`<b>${escHtml(n)}</b> raised auf${amt}`;break;
+        case'allin':text=`<b>${escHtml(n)}</b> All-in${amt}`;extra=' allin-action';break;
+        case'blind':text=`<b>${escHtml(n)}</b> Blind${amt}`;break;
+        case'post_sb':text=`<b>${escHtml(n)}</b> SB${amt}`;break;
+        case'post_bb':text=`<b>${escHtml(n)}</b> BB${amt}`;break;
         case'win':{
           const hand=a.meta?.hand;
           const bestCards=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];
           const hc=bestCards.map(c=>_pmCard(c)).join('');
-          const cardRow=hc?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="display:inline-flex;gap:2px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
+          const cardRow=hc?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:2px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
 </div>`:'';
-          text=`${n} gewinnt${amt}${cardRow}`;extra=' pm-feed-win';break;
+          text=`<b>${escHtml(n)}</b> gewinnt${amt}${cardRow}`;extra=' pm-feed-win';break;
         }
-        case'pause':text=`${n} pausiert`;break;
-        case'resume':text=`${n} ist zurück`;break;
-        case'reveal_runout':text=`${n} deckt Runout auf`;break;
+        case'pause':text=`<b>${escHtml(n)}</b> pausiert`;break;
+        case'resume':text=`<b>${escHtml(n)}</b> ist zurück`;break;
+        case'reveal_runout':text=`<b>${escHtml(n)}</b> deckt Runout auf`;break;
         case'reveal_cards':{
           const hc=a.meta?.hole_cards||[];
           const ck=c=>`${c.rank}${c.suit}`;
           const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
           const handName=a.meta?.hand_name;
-          const cardRow=`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="display:inline-flex;gap:2px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
+          const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:2px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
 </div>`;
-          text=`${n} zeigt Karten${cardRow}`;
+          text=`<b>${escHtml(n)}</b> zeigt Karten${cardRow}`;
           break;
         }
-        case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
-        case'buyin':text=`${n} kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
-        case'leave':text=`${n} hat den Tisch verlassen`;break;
-        case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
-        case'split_pot':return`<div class="pm-feed-item" style="background:#fef3c7;color:#92400e;font-weight:700;text-align:center;font-size:13px;border-radius:var(--radius-sm);padding:6px 10px">🤝 Split Pot! €${(+a.amount).toFixed(2)}</div>`;
+        case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
+        case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
+        case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
+        case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
+        case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:#fef3c7;color:#92400e;font-weight:700;font-size:12px">Split Pot – €${(+a.amount).toFixed(2)} aufgeteilt</div>`;
         case'new_hand':{
-          const starter=a.spieler?.name?` · gestartet von ${a.spieler.name}`:'';
-          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:4px 0"><div style="flex:1;height:1px;background:var(--accent)"></div><span style="font-size:11px;font-weight:700;color:var(--accent-text);white-space:nowrap;background:var(--accent-soft);padding:2px 8px;border-radius:10px">Spielrunde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--accent)"></div></div>`;
+          const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
         }
-        default:text=`${n}: ${a.action}`;
+        default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
-      return`<div class="pm-feed-item${extra}">${text}</div>`;
+      return`<div class="pm-feed-item${extra}">${_fav(a.spieler)}<span style="flex:1;min-width:0">${text}</span></div>`;
     }).join('');
   }
 
@@ -7703,6 +7714,26 @@
       hand_nr:_pm.session?.hand_nr||0,
     });
     _pmLoad();
+  }
+
+  function _pmShowBrokeModal(){
+    if(document.getElementById('pm-broke-overlay'))return;
+    const startStack=_pm?.session?.start_stack||100;
+    const overlay=document.createElement('div');
+    overlay.id='pm-broke-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
+    overlay.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px 24px;max-width:310px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.45)">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--danger-soft);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.5" style="width:28px;height:28px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:6px">Stack leer</div>
+      <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--danger);margin-bottom:10px">€0.00</div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg)">Du hast keinen Stack mehr. Möchtest du mit einem neuen Buy-In weiterspielen?</div>
+      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">+ Buy-In · €${(+startStack).toFixed(2)}</button>
+      <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:14px">Nein, danke – aussteigen</button>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#pm-broke-buyin').addEventListener('click',async()=>{overlay.remove();await _pmBuyIn();});
+    overlay.querySelector('#pm-broke-dismiss').addEventListener('click',()=>overlay.remove());
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   }
 
   async function _pmPayoutModal(){
