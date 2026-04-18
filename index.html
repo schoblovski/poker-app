@@ -6997,7 +6997,8 @@
       online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
       seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
     });
-    if(error)await showAlert('Fehler: '+error.message);
+    if(error){await showAlert('Fehler: '+error.message);return;}
+    await _pmLoad();
   }
 
   async function _pmStartHand(){
@@ -7006,6 +7007,7 @@
     const btn=document.getElementById('btn-pm-start');if(btn){btn.disabled=true;btn.textContent='Starte…';}
     const resp=await _callFn('poker-start-game',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
     if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Erste Hand starten';}}
+    else await _pmLoad();
   }
 
   async function _pmNewHand(){
@@ -7013,6 +7015,7 @@
     const btn=document.getElementById('btn-pm-newhand');if(btn){btn.disabled=true;btn.textContent='…';}
     const resp=await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
     if(resp?.error){await showAlert('Fehler: '+resp.error);if(btn){btn.disabled=false;btn.textContent='Nächste Hand';}}
+    else await _pmLoad();
   }
 
   async function _pmRunout(){
@@ -7028,6 +7031,7 @@
     if(amount!==undefined&&amount>0)body.amount=amount;
     const resp=await _callFn('poker-action',body);
     if(resp?.error){await showAlert('Fehler: '+resp.error);document.querySelectorAll('.pm-act-btn').forEach(b=>b.disabled=false);}
+    else await _pmLoad();
   }
 
   async function _pmSetPreAction(pre,limit){
