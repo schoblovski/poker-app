@@ -45,7 +45,7 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | buyin_pot       | numeric | €5 default (historisch auch 2.5)          |
 | buyin_kassa     | numeric | €2 default                                |
 | modus           | text    | null = cash, 'online' = Pandemie-Modus   |
-| online_variante | text    | 'holdem'/'omaha'/'texahma' (bei online)   |
+| online_variante | text    | 'holdem'/'omaha'/'texama' (bei online)   |
 
 ### `spiel_teilnehmer`
 
@@ -389,7 +389,7 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 | `poker-start-game` | ✅ | Deck mischen, Karten austeilen, Dealer/Blinds setzen |
 | `poker-action` | ✅ | Fold/Call/Raise/Check/Allin; All-in wird auf max. was Gegner matchen können gekappt |
 | `poker-next-street` | ✅ | Flop/Turn/River; setzt bet_current_round auf 0 (daher für Sidepots unbrauchbar!) |
-| `poker-showdown` | ✅ | Sidepots via action-log (investedBySeat), Cent-Rundung, Hold'em/Omaha/Texahma |
+| `poker-showdown` | ✅ | Sidepots via action-log (investedBySeat), Cent-Rundung, Hold'em/Omaha/Texama |
 | `poker-new-hand` | ✅ | Nächste Hand auf Knopfdruck, Dealer-Button weiter |
 | `poker-reveal-runout` | ✅ | Rest-Board aufdecken (deterministisch aus gespeichertem Deck) |
 
@@ -412,7 +412,7 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 |---|---|---|---|
 | Texas Hold'em | 2 | Best-of-7 | evalHoldem |
 | Omaha | 4 | exakt 2+3, 60 Kombi | evalOmaha |
-| Texahma | 4 | 0-4 eigene, 126 Kombi | evalTexahma |
+| Texama | 4 | 0-4 eigene, 126 Kombi | evalTexama |
 
 ### DB: online_spiele relevante Felder
 `id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante, small_blind, big_blind, start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, deck, hand_nr, street, runout_cards, call_aktiv, call_teilnehmer, video_link`
@@ -486,7 +486,7 @@ Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…"
   → Direkt danach: **«Version 4.0 freigeschaltet!»** Modal mit:
     - Konfetti / Celebration-Effekt
     - Changelog für v4.0 (Pandemie-Modus)
-    - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texahma), Pause, Pre-Action, Runout, Video-Call etc.
+    - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texama), Pause, Pre-Action, Runout, Video-Call etc.
     - Diese Infos jederzeit wieder abrufbar via Avatar-Menü → «Pandemie-Modus»
 
 **Version-Bump beim Freischalten:**
@@ -516,16 +516,16 @@ Server (Supabase) ist einzige Wahrheit. Karten werden serverseitig gemischt und 
 |---|---|---|---|
 | Texas Hold'em | 2 | 0, 1 oder 2 | Standard 7-Karten best-of-5 |
 | Omaha | 4 | exakt 2 + exakt 3 Board | 60 Kombinationen |
-| Texahma | 4 | 0, 1, 2, 3 oder 4 (beliebig!) | 126 Kombinationen |
+| Texama | 4 | 0, 1, 2, 3 oder 4 (beliebig!) | 126 Kombinationen |
 
-**Texahma-Detail:** Eigene Erfindung der Runde. 4 Hole Cards wie Omaha, aber man kann 0–4 eigene Karten verwenden (wie Hold'em, nur freier). Vierling in der Hand + 1 Community Card → gültig. Evaluator prüft alle 126 Kombinationen (k=0..4 eigene × passende Board-Karten).
+**Texama-Detail:** Eigene Erfindung der Runde. 4 Hole Cards wie Omaha, aber man kann 0–4 eigene Karten verwenden (wie Hold'em, nur freier). Vierling in der Hand + 1 Community Card → gültig. Evaluator prüft alle 126 Kombinationen (k=0..4 eigene × passende Board-Karten).
 
 ### DB-Tabellen (neu)
 
 ```sql
 online_spiele
   id, spiel_id (FK→spiele), status (waiting|running|finished),
-  variante ('holdem'|'omaha'|'texahma'),
+  variante ('holdem'|'omaha'|'texama'),
   dealer_seat, current_player_id, pot,
   community_cards (jsonb), deck (jsonb, verschlüsselt),
   runout_cards (jsonb),  -- "was wäre noch gekommen"
@@ -661,7 +661,7 @@ Kein Auto-Fold, keine Sanduhr. Stattdessen:
 
 - Alle Hole Cards aufdecken
 - Winning Hand highlighten + Beschriftung («Straight, Dame hoch»)
-- Texahma: zeigen welche eigene Karten verwendet wurden (0–4)
+- Texama: zeigen welche eigene Karten verwendet wurden (0–4)
 - Omaha: zeigen welche exakt 2+3 Kombination gewann
 
 ### Integration bestehend
@@ -713,7 +713,7 @@ Kein Auto-Fold, keine Sanduhr. Stattdessen:
 | Phase | Was | Aufwand |
 |---|---|---|
 | 1 | DB-Schema + RLS | Klein |
-| 2 | Hand-Evaluatoren (Hold'em / Omaha / Texahma) | Gross |
+| 2 | Hand-Evaluatoren (Hold'em / Omaha / Texama) | Gross |
 | 3 | Edge Functions (Game-Flow) | Gross |
 | 4 | Realtime-Subscriptions + Push | Mittel |
 | 5 | Tisch-UI | Mittel |

@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
   // Deck mischen
   const deck = shuffle(buildDeck());
 
-  // Karten austeilen (2 für holdem, 4 für omaha/texahma)
+  // Karten austeilen (2 für holdem, 4 für omaha/texama)
   const holeCount = session.variante === 'holdem' ? 2 : 4;
   const holeCards: Record<string, Card[]> = {};
   let deckIdx = 0;

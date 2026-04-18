@@ -1896,7 +1896,7 @@
         <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
         <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
           <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Pandemie-Modus</div>
-          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texama. Echte Karten, echter Einsatz, echter Spass.</div>
           <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Findet ihr den Modus im Avatar-Menü unter <strong>Pandemie-Modus</strong>.</div>
         </div>
         <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
@@ -5857,7 +5857,7 @@
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
     {version:'4.0',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
+      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texama. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
       {typ:'neu',text:'Easter Egg: Pandemie-Modus via verstecktem Rätsel freischaltbar (7× auf DTKS POKER tippen → Sicherheitsüberprüfung → richtiger IT-Experte eingeben)'},
       {typ:'fix',text:'Hand-Evaluator: Kategorie-Vergleich korrigiert (Pärchen schlug fälschlicherweise Ass-hoch nicht)'},
       {typ:'verbessert',text:'Pandemie-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
@@ -6983,7 +6983,7 @@
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
     if(_pm)_pm._waLink=waLink;
     const seatsMap={};(allSeats||[]).forEach(s=>{if(!seatsMap[s.online_spiel_id])seatsMap[s.online_spiel_id]=[];seatsMap[s.online_spiel_id].push(s);});
-    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texama:'Texama'};
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
     const hasActive=(sessions||[]).some(s=>s.status==='waiting'||s.status==='running');
@@ -7000,7 +7000,7 @@
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
               <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
-              <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
+              <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texama:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texama:'✦'}[s.variante]||''}</span>
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
             </div>
             <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
@@ -7031,8 +7031,8 @@
         }
         const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
-        const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
-        const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
+        const varIcons={holdem:'♠',omaha:'♦',texama:'✦'};
+        const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texama:'#8b5cf6'};
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
         html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
@@ -7060,7 +7060,7 @@
       <div style="margin-bottom:var(--space-md)">
         <div class="section-title" style="margin:0 0 var(--space-sm)">Spielvariante</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          ${[['holdem',"Texas Hold'em",'2 Karten, best of 7'],['omaha','Omaha','4 Karten, exakt 2+3 Pflicht'],['texahma','Texahma','4 Karten, 0–4 eigene (126 Kombis)']].map(([v,l,s],i)=>`<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface)"><input type="radio" name="pm-variante" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
+          ${[['holdem',"Texas Hold'em",'2 Karten, best of 7'],['omaha','Omaha','4 Karten, exakt 2+3 Pflicht'],['texama','Texama','4 Karten, 0–4 eigene (126 Kombis)']].map(([v,l,s],i)=>`<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface)"><input type="radio" name="pm-variante" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
@@ -7169,8 +7169,8 @@
     const boardEnc=boardCards.map(enc);
     const known=new Set([...myEnc,...boardEnc]);
     const deck=[];for(let c=0;c<52;c++)if(!known.has(c))deck.push(c);
-    const isOmaha=variante==='omaha';const isTexahma=variante==='texahma';
-    const holeSize=isOmaha?4:isTexahma?4:2;
+    const isOmaha=variante==='omaha';const isTexama=variante==='texama';
+    const holeSize=isOmaha?4:isTexama?4:2;
     const boardNeed=5-boardEnc.length;
     const totalDeal=nOpponents*holeSize+boardNeed;
     let wins=0,ties=0;const ITERS=1200;
@@ -7183,13 +7183,13 @@
       for(let i=0;i<boardNeed;i++)fb.push(d[idx++]);
       let myScore;
       if(isOmaha)myScore=_eqEvalOmaha(myEnc,fb);
-      else if(isTexahma)myScore=_eqEvalN([...myEnc,...fb]);
+      else if(isTexama)myScore=_eqEvalN([...myEnc,...fb]);
       else myScore=_eqEvalN([...myEnc,...fb]);
       let maxOpp=-Infinity;
       for(const oh of oppHands){
         let sc;
         if(isOmaha)sc=_eqEvalOmaha(oh,fb);
-        else if(isTexahma)sc=_eqEvalN([...oh,...fb]);
+        else if(isTexama)sc=_eqEvalN([...oh,...fb]);
         else sc=_eqEvalN([...oh,...fb]);
         if(sc>maxOpp)maxOpp=sc;
       }
@@ -7222,7 +7222,7 @@
   }
   function _pmBestHandJS(hole,board,variante){
     if(!hole?.length||!board?.length)return null;
-    const isO=variante==='omaha',isT=variante==='texahma';
+    const isO=variante==='omaha',isT=variante==='texama';
     let best={score:-1,usedHole:[],usedBoard:[]};
     if(isO){
       if(board.length<3)return null;
@@ -7266,7 +7266,7 @@
     const isRunning=session.status==='running';
     const isWaiting=session.status==='waiting';
     const isFinished=session.status==='finished';
-    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texama:'Texama'};
 
     // Test-Modus Banner
     const testBanner=session.is_test?`<div style="background:#fef3c7;color:#92400e;text-align:center;padding:6px;font-size:12px;font-weight:700;letter-spacing:.5px">TEST-MODUS – Keine echten Kontostände</div>`:'';
