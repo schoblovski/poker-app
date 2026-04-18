@@ -6757,12 +6757,16 @@
       db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins'),
       db.from('einstellungen').select('key,wert'),
     ]);
-    // Endzeiten der abgeschlossenen Sessions aus dem Action-Log
+    // Start/Endzeit aus online_actions (min/max created_at pro Session)
     const finishedIds=(sessions||[]).filter(s=>s.status==='finished').slice(0,5).map(s=>s.id);
-    let finishMap={};
+    const timeMap={};// id→{start,end}
     if(finishedIds.length){
-      const{data:finActs}=await db.from('online_actions').select('online_spiel_id,created_at').in('online_spiel_id',finishedIds).eq('action','finish');
-      (finActs||[]).forEach(a=>{finishMap[a.online_spiel_id]=a.created_at;});
+      const{data:actTimes}=await db.from('online_actions').select('online_spiel_id,created_at').in('online_spiel_id',finishedIds);
+      (actTimes||[]).forEach(a=>{
+        const t=new Date(a.created_at);
+        if(!timeMap[a.online_spiel_id])timeMap[a.online_spiel_id]={start:t,end:t};
+        else{if(t<timeMap[a.online_spiel_id].start)timeMap[a.online_spiel_id].start=t;if(t>timeMap[a.online_spiel_id].end)timeMap[a.online_spiel_id].end=t;}
+      });
     }
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
     if(_pm)_pm._waLink=waLink;
@@ -6800,17 +6804,18 @@
         const seatsDone=seatsMap[s.id]||[];
         const cnt=seatsDone.length;
         const totalBuyins=seatsDone.reduce((sum,seat)=>sum+(seat.buyins||1),0);
-        const startDt=s.created_at?new Date(s.created_at):null;
-        const endDt=finishMap[s.id]?new Date(finishMap[s.id]):null;
+        const tm=timeMap[s.id];
+        const startDt=tm?.start||(s.created_at?new Date(s.created_at):null);
+        const endDt=tm?.end||null;
+        const fmtTime=dt=>{if(!dt)return'';const h=String(dt.getHours()).padStart(2,'0'),m=String(dt.getMinutes()).padStart(2,'0');return`${h}:${m}`;};
         const datum=startDt?startDt.toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
-        const fmtTime=dt=>dt?dt.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'}):'';
         let zeitStr='';
         if(startDt){
           zeitStr=fmtTime(startDt);
-          if(endDt){
+          if(endDt&&endDt>startDt){
             zeitStr+=` – ${fmtTime(endDt)}`;
             const durMin=Math.round((endDt-startDt)/60000);
-            if(durMin>0){const h=Math.floor(durMin/60),m=durMin%60;zeitStr+=` (${h?h+'h ':''  }${m?m+'m':''})`;  }
+            if(durMin>0){const h=Math.floor(durMin/60),m=durMin%60;zeitStr+=` (${h?h+'h ':''}${m?m+'m':h?'':''})`.replace('()','');}
           }
         }
         const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
