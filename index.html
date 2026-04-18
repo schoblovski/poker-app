@@ -7233,9 +7233,9 @@
       <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
         <input type="number" id="pm-pas-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:12px;height:32px!important;padding:0;max-width:none">1BB (€${bb.toFixed(2)})</button>
-          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:12px;height:32px!important;padding:0;max-width:none">3BB (€${(bb*3).toFixed(2)})</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
         </div>
       </div>
       <button class="btn btn-secondary" id="pm-pas-close" style="width:100%;max-width:none;margin:0">Fertig</button>
