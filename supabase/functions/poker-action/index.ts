@@ -232,8 +232,13 @@ Deno.serve(async (req) => {
   // Ist der aktuelle Spieler der letzte Akteur dieser Runde?
   const isLastActor = spieler_id === newStreetLastActorId;
 
-  // Runde vorbei wenn: letzter Akteur hat gehandelt (kein Raise) UND alle Einsätze gleich
-  const roundOver = !isRaise && allEqual && isLastActor;
+  // Fallback: designierter letzter Akteur ist nicht mehr im Spiel (gefoldet/allin)
+  const lastActorStillBetting = bettingActive.some(
+    (s: { spieler_id: string }) => s.spieler_id === newStreetLastActorId
+  );
+
+  // Runde vorbei wenn: kein Raise UND alle gleich UND (letzter Akteur war dran ODER er ist nicht mehr aktiv)
+  const roundOver = !isRaise && allEqual && (isLastActor || !lastActorStillBetting);
 
   // Alle all-in (kein weiteres Bieten möglich) bei mehr als 1 Spieler
   const allAllin = bettingActive.length === 0 && nonFolded.length > 1;

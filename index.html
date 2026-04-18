@@ -6747,7 +6747,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:sessions},{data:allSeats},{data:einst}]=await Promise.all([
       db.from('online_spiele').select('*').order('created_at',{ascending:false}).limit(20),
-      db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status'),
+      db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins'),
       db.from('einstellungen').select('key,wert'),
     ]);
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
@@ -6783,7 +6783,9 @@
     if(done.length){
       html+=`<div class="section-title" style="margin-top:var(--space-lg)">Beendet</div><div class="card">`;
       done.slice(0,5).forEach(s=>{
-        const cnt=(seatsMap[s.id]||[]).length;
+        const seatsDone=seatsMap[s.id]||[];
+        const cnt=seatsDone.length;
+        const totalBuyins=seatsDone.reduce((sum,seat)=>sum+(seat.buyins||1),0);
         const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
         const hands=s.hand_nr>0?`· ${s.hand_nr} Hände`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
@@ -6791,7 +6793,7 @@
         const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -7080,7 +7082,8 @@
           ${runoutDisplay}${runoutBtn}${actionArea}
         </div>
         <div class="pm-tisch-right">
-          ${myCardsSection}${infoBar}
+          ${myCardsSection}${infoBar}${mySeat?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 var(--space-sm);margin-bottom:var(--space-sm);border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-tertiary)">Buy-Ins: <strong style="color:var(--text-secondary)">${mySeat.buyins||1}</strong></span>${(!isRunning||handIsOver2)&&mySeat.stack===0?`<button class="btn btn-secondary" id="btn-pm-buyin" style="height:28px!important;font-size:12px;padding:0 12px;margin:0;width:auto">+ Buy-In (€${(session.start_stack||100).toFixed(2)})</button>`:''}
+</div>`:''}
           <div class="section-title">Verlauf</div>
           <div class="pm-feed">${feedHtml}</div>
         </div>
@@ -7127,6 +7130,7 @@
           break;
         }
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
+        case'buyin':text=`${n} kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
         case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
         case'new_hand':{
@@ -7164,7 +7168,7 @@
       const pot=session.pot||0;
       const bb=(session.small_blind||1)*2;
       // Store raise params on _pm for the sheet
-      _pm._raiseParams={halfPot:parseFloat(Math.min(myStack,Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myStack,Math.max(bb,pot)).toFixed(2)),myStack,bb,maxBet};
+      _pm._raiseParams={halfPot:parseFloat(Math.min(myBet+myStack,myBet+Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myBet+myStack,myBet+Math.max(bb,pot)).toFixed(2)),myStack,myBet,bb,maxBet};
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
@@ -7222,6 +7226,7 @@
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
+    document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     // Kebab-Menü Toggle
@@ -7364,6 +7369,29 @@
     await _pmLoad();
   }
 
+  async function _pmBuyIn(){
+    if(!_pm?.mySeat||!currentSpieler)return;
+    const btn=document.getElementById('btn-pm-buyin');
+    if(btn)btn.disabled=true;
+    const startStack=_pm.session?.start_stack||100;
+    const curBuyins=_pm.mySeat.buyins||1;
+    const{error}=await db.from('online_seats').update({
+      stack:startStack,
+      status:'sitting_out',
+      buyins:curBuyins+1,
+    }).eq('id',_pm.mySeat.id);
+    if(error){if(btn)btn.disabled=false;await showAlert('Fehler: '+error.message);return;}
+    await db.from('online_actions').insert({
+      online_spiel_id:_pm.id,
+      spieler_id:currentSpieler.id,
+      action:'buyin',
+      amount:startStack,
+      street:_pm.session?.street||'preflop',
+      hand_nr:_pm.session?.hand_nr||0,
+    });
+    _pmLoad();
+  }
+
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
     _pmActInFlight=true;
@@ -7450,7 +7478,8 @@
   function _pmRaiseSheet(){
     if(!_pm)return;
     const p=_pm._raiseParams||{};
-    const{halfPot=0,fullPot=0,myStack=0,bb=0.1,maxBet=0}=p;
+    const{halfPot=0,fullPot=0,myStack=0,myBet=0,bb=0.1,maxBet=0}=p;
+    const allInTotal=+((myBet+myStack).toFixed(2));
     const sid='pm-raise-sheet';document.getElementById(sid)?.remove();
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
@@ -7459,10 +7488,10 @@
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
         <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span></button>
         <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span></button>
-        <button class="pm-rs-preset" data-amt="${myStack.toFixed(2)}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
+        <button id="pm-rs-allin" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
-        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${+((maxBet+bb).toFixed(2))}" max="${myStack.toFixed(2)}" value="${Math.min(fullPot,myStack).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
+        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${+((maxBet+bb).toFixed(2))}" max="${allInTotal}" value="${Math.min(fullPot,allInTotal).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
@@ -7476,6 +7505,7 @@
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-rs-input');if(i)i.value=+(parseFloat(b.dataset.amt||0).toFixed(2));
     }));
+    document.getElementById('pm-rs-allin').onclick=async()=>{close();await _pmAct('allin');};
     document.getElementById('pm-rs-confirm').onclick=async()=>{
       const v=parseFloat(document.getElementById('pm-rs-input')?.value||0);
       if(!v||v<=0){await showAlert('Bitte Betrag eingeben.');return;}
