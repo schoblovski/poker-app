@@ -70,7 +70,7 @@
       .pm-tisch-layout{flex-direction:row;align-items:flex-start;gap:0}
       .pm-tisch-left{flex:1.1;padding-right:var(--space-lg)}
       .pm-tisch-left .pm-feed{max-height:42dvh;overflow-y:auto}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
+      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
@@ -724,6 +724,11 @@
   .pm-feed-item.fold-action .pf-ini{background:rgba(0,0,0,.07)}
   .pm-feed-item.allin-action{background:#fff7ed;color:#c2410c;font-weight:700}
   .pm-feed-item.allin-action .pf-ini{background:rgba(0,0,0,.07)}
+  @keyframes pm-react-pop{0%{opacity:0;transform:scale(0.4)}60%{transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
+  .pm-react-emoji{animation:pm-react-pop .35s cubic-bezier(.34,1.56,.64,1) both;pointer-events:none}
+  .pm-react-btn{transition:transform .1s,border-color .1s!important}
+  .pm-react-btn:hover{transform:scale(1.2)!important;border-color:var(--accent)!important}
+  .pm-react-btn:active{transform:scale(.88)!important}
   [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
   .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
   .pm-chat-msg{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px}
@@ -6853,7 +6858,7 @@
     return pots.length>1?pots:null;
   }
 
-  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null){
+  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={}){
     const W=400,H=260,cx=200,cy=120,rx=148,ry=86;
     const isCB=document.documentElement.getAttribute('data-colorblind')==='true';
     const feltOuter=isCB?'#0a1a2e':'#0a2218';
@@ -6888,19 +6893,21 @@
       const _bdx=cx-sx,_bdy=cy-sy,_bd=Math.sqrt(_bdx*_bdx+_bdy*_bdy)||1;
       const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
       const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
-      const betChip=betAmt>0?`<circle cx="${bcx}" cy="${bcy}" r="10" fill="var(--accent)" opacity=".9"/><text x="${bcx}" y="${bcy+4}" text-anchor="middle" font-size="8" fill="white">€${betFmt}</text>`:'';
+      const betW=Math.max(26,(betFmt.length+2)*5.8+6);
+      const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy+5}" text-anchor="middle" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused?0.45:1}"/>`:'';
       const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
-      const stackPill=seat?`<text x="${sx}" y="${namePillY+14}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)">${stackTxt}</text>`:'';
+      const react=reactions[seat?.spieler_id];
+      const reactEl=react?`<text x="${sx}" y="${sy-30}" text-anchor="middle" font-size="18" class="pm-react-emoji">${react.emoji}</text>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}">
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`${avatarEl}${pauseOverlay}${namePill}${stackPill}`}
-        ${betChip}${dealerMark}
+          :`${avatarEl}${pauseOverlay}${namePill}`}
+        ${betChip}${dealerMark}${reactEl}
       </g>`;
     }
     const board=session?.community_cards||[];
@@ -7368,19 +7375,19 @@
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div id="pm-cards-reveal" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none"><div style="display:flex;justify-content:center;gap:8px">${myHoleCards.map(()=>`<div class="pt-card back big"></div>`).join('')}</div>${_fdHint}</div>`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
-    el.innerHTML=`${testBanner}<div style="padding:var(--space-md) var(--space-md) var(--space-xl)">
+    el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'8px 8px var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-sm)">${seats.filter(s=>s.spieler_id!==currentSpieler?.id&&s.status!=='sitting_out').map(s=>{const isAct=s.spieler_id===session.current_player_id;const isFold=s.status==='folded';const isPause=s.status==='paused';const isAllin=s.status==='allin';const nm=(s.spieler?.name||'?').slice(0,10);const _sv=s.stack||0;const stk=`€${Number.isInteger(_sv)?_sv:_sv.toFixed(2)}`;const bg=isFold?'var(--bg-secondary)':isPause?'var(--bg-secondary)':isAct?'var(--accent-soft)':isAllin?'#fff7ed':'var(--bg-secondary)';const col=isFold?'var(--text-tertiary)':isPause?'var(--text-tertiary)':isAct?'var(--accent-text)':isAllin?'#c2410c':'var(--text-primary)';const badge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;margin-left:2px">ALLIN</span>`:isPause?`<span style="font-size:9px;color:#f59e0b;margin-left:2px">pausiert</span>`:'';const opacity=isFold?'0.5':isPause?'0.6':'1';return`<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${bg};border-radius:20px;font-size:11px;color:${col};opacity:${opacity}">${s.spieler?.profilbild?`<img src="${s.spieler.profilbild}" style="width:14px;height:14px;border-radius:50%;object-fit:cover;${isPause?'opacity:.5':''}">`:''}${escHtml(nm)}<span style="font-family:var(--font-mono);font-weight:700">${stk}</span>${badge}</div>`;}).join('')}</div>
+          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{});_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
           ${runoutDisplay}${runoutBtn}${isLandscape?'':actionArea}
           ${isLandscape?feedSection:''}
         </div>
-        <div class="pm-tisch-right">
+        <div class="pm-tisch-right" style="${isLandscape?'':'border-top:1px solid var(--border);padding-top:var(--space-md)'}">
+          ${hasMenu?`<div style="display:flex;justify-content:flex-end;margin-bottom:4px">${menuBtn}</div>`:''}
           ${handResultHtml}
-          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
+          ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection}
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="display:flex;gap:6px;justify-content:center;padding:6px 0;border-top:1px solid var(--border);margin-top:2px">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .15s">${e}</button>`).join('')}</div>`:'';return isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>${_rStrip}`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
@@ -7554,6 +7561,7 @@
         case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
+        case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
         case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
         case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:#fef3c7;color:#92400e;font-weight:700;font-size:12px">Split Pot – €${(+a.amount).toFixed(2)} aufgeteilt</div>`;
         case'new_hand':{
@@ -7695,6 +7703,51 @@
         db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn}).then(()=>{});
       }
       renderOnlineTisch();
+    });
+    document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',async()=>{
+      if(!_pm)return;
+      const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
+      const svgHtml=_pmSVG(_pm.seats,_pm.session,currentSpieler?.id,new Set(),prev,potBd,_pm._reactions||{});
+      const ov=document.createElement('div');
+      ov.id='pm-tisch-modal';
+      ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.92);overflow:hidden';
+      const _closeModal=()=>{try{screen.orientation?.unlock?.();}catch(e){}ov.remove();};
+      const _isPortrait=window.innerHeight>window.innerWidth;
+      let innerHtml='';
+      if(_isPortrait){
+        // Rotate SVG 90deg so table appears in landscape orientation
+        const svgVisW=window.innerWidth-24;           // visual width after rotation
+        const svgVisH=Math.round(svgVisW*260/400);    // visual height after rotation (shorter edge of SVG)
+        // Pre-rotation element dims: width=svgVisH, height=svgVisW → after rotate(90deg) visually swaps
+        const elW=Math.round(svgVisW*400/260);        // element width before rotation = visual height after
+        const elH=svgVisW;                            // element height before rotation = visual width after
+        // position: centered in screen, then rotated
+        const tx=Math.round((window.innerWidth-elW)/2);
+        const ty=Math.round((window.innerHeight-elH)/2);
+        const svgScaled=svgHtml.replace('width="400" height="260"',`width="${elW}" height="${elH}"`);
+        innerHtml=`<div style="position:absolute;left:${tx}px;top:${ty}px;width:${elW}px;height:${elH}px;transform:rotate(90deg);transform-origin:${elW/2}px ${elH/2}px;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)">${svgScaled}</div>`;
+      } else {
+        const maxW=Math.min(window.innerWidth-40,640);
+        const svgScaled=svgHtml.replace('width="400" height="260"',`width="${maxW}" height="auto"`);
+        innerHtml=`<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)">${svgScaled}</div>`;
+      }
+      ov.innerHTML=innerHtml+`<button id="btn-pm-tisch-close" style="position:absolute;top:${Math.max(12,window.innerHeight*0.04)}px;right:16px;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:22px;line-height:1;backdrop-filter:blur(6px)">×</button>`;
+      document.body.appendChild(ov);
+      ov.addEventListener('click',(e)=>{if(e.target===ov||e.target.id==='btn-pm-tisch-close')_closeModal();});
+      // Try to lock landscape orientation (works on Android + some PWAs)
+      if(_isPortrait){try{await screen.orientation.lock('landscape-primary');}catch(e){}}
+    });
+    document.querySelectorAll('.pm-react-btn').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        if(!_pm||!currentSpieler?.id)return;
+        const _emoji=btn.dataset.emoji;
+        if(!_pm._reactions)_pm._reactions={};
+        _pm._reactions[currentSpieler.id]={emoji:_emoji,ts:Date.now()};
+        _pm._lastFp='';renderOnlineTisch();
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{});
+        const _ts2=_pm._reactions[currentSpieler.id].ts;
+        setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];_pm._lastFp='';renderOnlineTisch();}},4000);
+      });
     });
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
@@ -8189,7 +8242,7 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};_pm._reactions[_sid]={emoji:_em,ts:Date.now()};_pm._lastFp='';renderOnlineTisch();const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];_pm._lastFp='';renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
       .subscribe();
   }
 
