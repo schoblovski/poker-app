@@ -63,7 +63,14 @@
 
     /* APP */
     #app-screen{display:none;flex-direction:column;flex:1;max-width:430px;margin:0 auto;width:100%;}
-    @media(min-width:600px){#app-screen.pm-wide{max-width:none;max-width:800px;}}
+    @media(min-width:600px){#app-screen.pm-wide{max-width:none;}}
+    .pm-tisch-layout{display:flex;flex-direction:column;gap:var(--space-md)}
+    .pm-tisch-left,.pm-tisch-right{min-width:0}
+    @media(min-width:600px),(orientation:landscape){
+      .pm-tisch-layout{flex-direction:row;align-items:start;gap:var(--space-lg)}
+      .pm-tisch-left{flex:1.1}
+      .pm-tisch-right{flex:0.9}
+    }
 
 
 
@@ -6644,12 +6651,16 @@
       }
       const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
       const betChip=betAmt>0?`<circle cx="${sx}" cy="${sy+28}" r="11" fill="var(--accent)" opacity=".85"/><text x="${sx}" y="${sy+32}" text-anchor="middle" font-size="8" fill="white">€${betAmt.toFixed(0)}</text>`:'';
-      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="20"/></clipPath><image href="${avatarUrl}" x="${sx-20}" y="${sy-20}" width="40" height="40" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.4:1}"/>`:'';
+      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.35:1}"/>`:'';
+      // Name pill: dark semi-transparent background below the circle, always readable
+      const namePillY=sy+28;const namePillW=Math.min(52,name.length*6+12);
+      const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
+      const stackPill=seat?`<text x="${sx}" y="${namePillY+14}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)">${stackTxt}</text>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}">
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`${avatarEl}<text x="${sx}" y="${sy+33}" text-anchor="middle" font-size="8" font-weight="600" fill="white" opacity=".9">${escHtml(name)}</text>`}
+          :`${avatarEl}${namePill}${stackPill}`}
         ${cardBacks}${betChip}${dealerMark}
       </g>`;
     }
@@ -6860,7 +6871,7 @@
     const runoutDisplay=(session.runout_cards?.length>0)?`<div style="margin:var(--space-sm) 0;padding:8px 12px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e"><span style="font-weight:700">Was wäre gekommen: </span><span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px">${session.runout_cards.map(c=>_pmCard(c)).join('')}</span></div>`:'';
 
     // Eigene Karten
-    const myCardsHtml=(mySeat&&myHoleCards.length>0&&myStatus!=='folded')?`<div style="display:flex;justify-content:center;gap:8px;margin:var(--space-sm) 0">${myHoleCards.map(c=>_pmCard(c,{big:true})).join('')}</div>`:'';
+    const myCardsHtml=!!(mySeat&&myHoleCards.length>0&&myStatus!=='folded');
 
     // Aktion-Bereich
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus);
@@ -6882,14 +6893,38 @@
     // Feed
     const feedHtml=_pmFeedHtml(actions);
 
+    const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
+    const infoBar=mySeat?`<div style="display:flex;gap:8px;margin-bottom:var(--space-md)">
+      <div class="kpi-card" style="flex:1;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Stack</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(mySeat.stack||0).toFixed(2)}</div>
+      </div>
+      <div class="kpi-card" style="flex:1;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div>
+      </div>
+      ${session.street?`<div class="kpi-card" style="flex:1;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
+        <div style="font-size:16px;font-weight:700">${streetLabel[session.street]||session.street}</div>
+      </div>`:''}
+    </div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;justify-content:center;gap:12px;padding:var(--space-md) 0;border-bottom:1px solid var(--border);margin-bottom:var(--space-md)">${myHoleCards.map(c=>_pmCard(c,{big:true})).join('')}</div>`:'';
     el.innerHTML=`${testBanner}<div style="padding:var(--space-sm) var(--space-md) var(--space-xl)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-sm)">
         <div style="font-size:12px;color:var(--text-secondary)">${varLabel[session.variante]||session.variante} · Hand #${session.hand_nr||0}</div>
         <div style="display:flex;gap:6px;align-items:center;position:relative">${waBtn}${newHandBtn}${menuBtn}</div>
       </div>
-      <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id)}</div>
-      ${runoutDisplay}${runoutBtn}${myCardsHtml}${actionArea}
-      <div style="margin-top:var(--space-lg)"><div class="section-title">Verlauf</div><div class="pm-feed">${feedHtml}</div></div>
+      <div class="pm-tisch-layout">
+        <div class="pm-tisch-left">
+          <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-sm)">${_pmSVG(seats,session,currentSpieler?.id)}</div>
+          ${runoutDisplay}${runoutBtn}${actionArea}
+        </div>
+        <div class="pm-tisch-right">
+          ${myCardsSection}${infoBar}
+          <div class="section-title">Verlauf</div>
+          <div class="pm-feed">${feedHtml}</div>
+        </div>
+      </div>
     </div>`;
     _pmBindEvents();
   }
