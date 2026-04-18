@@ -7358,7 +7358,7 @@
         </div>
         <div class="pm-tisch-right">
           ${handResultHtml}
-          ${(myCardsSection||infoBar||hasMenu)?`<div style="display:flex;gap:16px;align-items:stretch;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection?`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center">${myCardsSection}</div>`:''}${infoBar?`<div style="flex:1;min-width:0;${myCardsSection?'border-left:1px solid var(--border);padding-left:14px':''}">${infoBar}</div>`:''}${hasMenu?`<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;padding-top:2px">${menuBtn}</div>`:''}</div>`:''}
+          ${(myCardsSection||infoBar||hasMenu)?`<div style="position:relative;padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${hasMenu?`<div style="position:absolute;top:0;right:0;z-index:2">${menuBtn}</div>`:''}${myCardsSection||''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
           ${isLandscape?`<div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:var(--space-sm);margin-top:2px">${actionArea}</div>`:feedSection}
         </div>
@@ -7646,7 +7646,15 @@
     // Kebab-Menü Toggle
     document.getElementById('pm-kebab-btn')?.addEventListener('click',(e)=>{
       e.stopPropagation();
-      const m=document.getElementById('pm-kebab-menu');if(m)m.style.display=m.style.display==='none'?'block':'none';
+      const m=document.getElementById('pm-kebab-menu');
+      const btn=e.currentTarget;
+      if(m&&btn){
+        if(m.style.display==='block'){m.style.display='none';}
+        else{
+          const r=btn.getBoundingClientRect();
+          m.style.position='fixed';m.style.top=(r.bottom+4)+'px';m.style.right=(window.innerWidth-r.right)+'px';m.style.left='';m.style.display='block';
+        }
+      }
     });
     document.addEventListener('click',()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='none';},{once:false,capture:false});
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
