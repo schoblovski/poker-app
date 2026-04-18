@@ -37,13 +37,15 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 
 ### `spiele`
 
-| Spalte        | Typ     | Beschreibung                     |
-|---------------|---------|----------------------------------|
-| id            | uuid    | Primary Key                      |
-| datum         | date    |                                  |
-| abgeschlossen | boolean | false = läuft noch               |
-| buyin_pot     | numeric | €5 default (historisch auch 2.5) |
-| buyin_kassa   | numeric | €2 default                       |
+| Spalte          | Typ     | Beschreibung                              |
+|-----------------|---------|-------------------------------------------|
+| id              | uuid    | Primary Key                               |
+| datum           | date    |                                           |
+| abgeschlossen   | boolean | false = läuft noch                        |
+| buyin_pot       | numeric | €5 default (historisch auch 2.5)          |
+| buyin_kassa     | numeric | €2 default                                |
+| modus           | text    | null = cash, 'online' = Pandemie-Modus   |
+| online_variante | text    | 'holdem'/'omaha'/'texahma' (bei online)   |
 
 ### `spiel_teilnehmer`
 
@@ -278,6 +280,40 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 | 21 | Buy-In Minimum = 1 (kein Minus auf 0 möglich)                                      | ✅ v2.11 |
 | 22 | Doppelte Spieler im aktiven Spiel verhindern                                        | ✅ v2.11 |
 
+## Aktueller Feature-Branch (noch nicht in main / kein Version-Bump)
+
+Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
+
+**Was implementiert wurde (noch auf dem Branch, wartet auf Freigabe):**
+- Terminologie: „Hand/nächste Hand" → „Spielrunde/nächste Spielrunde" überall in der UI
+- Community-Card-Animationen: SMIL → JS-driven CSS transition (opacity)
+- Showdown-Fixes:
+  - Sidepot-Berechnung nutzt `online_actions` als Source of Truth (bet_current_round wird nach jeder Strasse auf 0 zurückgesetzt → unbrauchbar)
+  - `Math.floor(pot/winners)` → `Math.floor(pot/winners*100)/100` (Cent-Rundung statt Integer-Rundung)
+  - Doppelte Win-Einträge im Feed behoben (Aggregation per Spieler statt pro Sidepot)
+  - Uncontested Sidepots (eigenes Geld zurück) werden nicht mehr als „Gewinn" geloggt
+- All-in Capping: Excess-Chips bleiben im Stack des Spielers (kein Aufblähen des Pots)
+- Floating-Point-Fix beim Call-as-Allin: `Math.round(*100)/100` + `<= 0` statt `=== 0`
+- Payout-Modal (Nicht-Test-Sessions): erscheint sofort beim Beenden; zeigt Name/Buy-Ins/Einsatz/Auszahlung/Netto pro Spieler; „Bestätigen" schreibt `spiel_teilnehmer` + `spiele` (erst HIER erstellt, nicht beim Session-Start!); „Ohne Übernahme" = nur Session beenden
+- `spiele`-Eintrag erst bei Payout-Bestätigung erstellt → kein Phantom-Eintrag im Spiel-Tab während laufender Online-Session
+- `loadSpiel()` filtert `modus='online'` aus (bestehende Alteinträge bleiben unsichtbar)
+- Home-Kontostände: `loadHome()` wird nach Payout-Bestätigung im Hintergrund aufgerufen
+- Buy-In-Button auf beendeter Session ausgeblendet (`&&!isFinished`)
+- „Zur Übersicht"-Button zentriert (wrapper `max-width:320px;margin:0 auto`)
+- Avatar-Dropdown Landscape: `max-height` von `100dvh-80px` auf `100dvh-150px` (nav-Überlappung behoben)
+- Andere Spieler-Stacks ohne Rundung angezeigt
+
+**Edge Functions geändert:**
+- `poker-showdown/index.ts`: investedBySeat aus action-log, Cent-Rundung, Sidepot-Remainder nach pots[0]
+- `poker-action/index.ts`: All-in capping, Float-Point-Rundung beim Call
+
+**Nächste Schritte für diese Branch:**
+1. Chris testet auf Preview-URL
+2. Changelog-Text entwerfen
+3. Nach Freigabe: Version bumpen (3.13 oder 4.0?), in main mergen
+
+---
+
 ## Letzte Anpassungen
 
 - ~~**PWA Mobile Polish + In-App Benachrichtigungen**~~ ✅ v3.12 – Neue Tabelle `benachrichtigungen` (id, spieler_id, datum, kategorie, title, body, url, tag, gelesen) – triggerPush schreibt zusätzlich pro Empfänger einen Eintrag (broadcast → alle aktiven Nicht-Bank-Spieler); Glocke im Header mit Unread-Badge, nur sichtbar wenn Push-Subscription existiert; eigene Benachrichtigungen-Seite, Auto-Mark-as-Read beim Öffnen, visueller Neu-Zustand bleibt für den Besuch; Deep-Link bei Klick. Blind-Timer: Vollbild im Landscape (Header/Nav weg, Countdown gross, volle Bildschirmbreite via max-width-Override), Wake-Lock aktiv solange Vollbild aktiv (wie Netflix). App-Badge-API: Service Worker zählt ungelesene Pushes aufs App-Icon, Clear bei Öffnen/Fokus. Manueller "App installieren"-Eintrag im Avatar-Menü (nur wenn noch nicht als PWA installiert).
@@ -309,8 +345,10 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Aktueller Backlog / TODOs
 1. **Turnier-Modus** – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
-2. **Pandemie-Modus** – Online-Poker via Supabase Realtime (siehe vollständiges Konzept unten)
-2. **Push Notifications** ✅ vollständig implementiert:
+2. **Pandemie-Modus** – Kernmodus implementiert (auf Branch `claude/app-ideas-0j3gF`), wartet auf Freigabe/Version-Bump
+3. **Easter Egg für Pandemie-Modus** – Noch NICHT implementiert! Erst einbauen wenn Modus vollständig stabil und freigegeben ist. Konzept: 7× auf App-Logo/Titel tippen → Rätsel-Seite → Antwort „Chris" → Freischaltung + Version 4.0 Modal. State in `localStorage: 'dtks_pandemie_entdeckt'`. Vollständiges Konzept weiter unten im Dokument.
+4. **Besondere Hände aus Online-Spiel übernehmen** – Wenn im Pandemie-Modus eine besondere Hand auftaucht (z.B. 7-2 Sieg, Straight Flush, Royal Flush, Vierling), soll nach dem Showdown eine Option erscheinen: Screenshot als Beweisfoto machen + Eintrag direkt in `hand_statistik` erstellen (Gewinner vorbelegt, Hand-Typ erkannt aus Evaluator-Ergebnis, Spiel-Datum/ID vorbelegt). Beweisfoto = Screenshot des Tisches (nicht Upload – eher Hinweis: „Mach einen Screenshot und lade ihn hoch").
+5. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
    - ✅ Supabase Tabelle `push_subscriptions` angelegt
@@ -320,6 +358,45 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
    - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
    - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
 
+
+## Pandemie-Modus – Wichtige Implementierungsdetails
+
+### Edge Functions (Supabase Deno)
+| Function | Status | Key-Logik |
+|---|---|---|
+| `poker-start-game` | ✅ | Deck mischen, Karten austeilen, Dealer/Blinds setzen |
+| `poker-action` | ✅ | Fold/Call/Raise/Check/Allin; All-in wird auf max. was Gegner matchen können gekappt |
+| `poker-next-street` | ✅ | Flop/Turn/River; setzt bet_current_round auf 0 (daher für Sidepots unbrauchbar!) |
+| `poker-showdown` | ✅ | Sidepots via action-log (investedBySeat), Cent-Rundung, Hold'em/Omaha/Texahma |
+| `poker-new-hand` | ✅ | Nächste Hand auf Knopfdruck, Dealer-Button weiter |
+| `poker-reveal-runout` | ✅ | Rest-Board aufdecken (deterministisch aus gespeichertem Deck) |
+
+### Wichtige Implementierungs-Gotchas
+- **`bet_current_round` wird nach jeder Strasse auf 0 gesetzt** – kann NICHT für Sidepot-Berechnung beim Showdown verwendet werden. Stattdessen: `online_actions` als Source of Truth (Summe aller `call/raise/allin/post_sb/post_bb/blind/bet` Beträge pro Spieler pro Hand)
+- **Sidepot-Remainder** gehört in `pots[0]` (Hauptpot), nicht `pots[pots.length-1]` (da frühere Strassen-Beiträge zum Hauptpot gehören)
+- **Math.floor für Pot-Aufteilung** muss Cent-Level verwenden: `Math.floor(amount/count*100)/100`, sonst gehen Cents verloren
+
+### Payout-Flow (Nicht-Test-Sessions)
+1. Admin beendet Session → `status='finished'`
+2. Payout-Modal erscheint sofort (nicht nach Navigation)
+3. Zeigt: Name, Buy-Ins, Einsatz (buyins × start_stack), Auszahlung (final stack), Netto
+4. „Bestätigen": erstellt JETZT `spiele` (mit `abgeschlossen:true, modus:'online'`) + `spiel_teilnehmer` Einträge, dann `loadHome()` im Hintergrund
+5. „Ohne Übernahme": beendet Session ohne DB-Eintrag
+- WICHTIG: `spiele` wird NICHT beim Session-Start erstellt (würde Phantom-Eintrag im Spiel-Tab erzeugen)
+- `loadSpiel()` filtert `modus='online'` aus: `.or('modus.is.null,modus.neq.online')`
+
+### Varianten
+| Variante | Hole Cards | Kombinationen | Evaluator |
+|---|---|---|---|
+| Texas Hold'em | 2 | Best-of-7 | evalHoldem |
+| Omaha | 4 | exakt 2+3, 60 Kombi | evalOmaha |
+| Texahma | 4 | 0-4 eigene, 126 Kombi | evalTexahma |
+
+### DB: online_spiele relevante Felder
+`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante, small_blind, big_blind, start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, deck, hand_nr, street, runout_cards, call_aktiv, call_teilnehmer, video_link`
+
+### DB: online_seats relevante Felder
+`id, online_spiel_id, spieler_id, seat (1-9), stack, status (active/folded/allin/paused/sitting_out), bet_current_round, buyins (Anzahl, startet bei 1), hole_cards (RLS: nur owner), auto_folded, pause_auto_action, pre_action`
 
 ## Migrations-Script
 

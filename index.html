@@ -3566,7 +3566,7 @@
   async function loadSpiel(){
     const el=document.getElementById('spiel-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:spiele}=await db.from('spiele').select('*').eq('abgeschlossen',false).order('created_at',{ascending:false}).limit(1);
+    const{data:spiele}=await db.from('spiele').select('*').eq('abgeschlossen',false).or('modus.is.null,modus.neq.online').order('created_at',{ascending:false}).limit(1);
     aktuellesSpiel=spiele?.[0]||null;
     if(!aktuellesSpiel){
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Eröffne eine neue Spielrunde.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
@@ -7557,6 +7557,7 @@
 
       overlay.remove();
       _pmUnsubscribe();
+      if(withStats)loadHome(); // refresh balances in background
       showPage('online-lobby');
     }
 
