@@ -730,6 +730,7 @@
   @keyframes pm-react-full{0%{opacity:0;transform:scale(0.05)}12%{opacity:1;transform:scale(1.25)}22%{transform:scale(0.92)}30%{transform:scale(1.06)}38%{transform:scale(1);opacity:1}78%{transform:scale(1);opacity:1}100%{opacity:0;transform:scale(0.85)}}
   .pm-react-emoji{animation:pm-react-full 4s ease-out both;pointer-events:none;transform-origin:center;transform-box:fill-box}
   .pm-react-btn{transition:transform .1s,border-color .1s!important}
+  .pm-wait-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;height:44px!important;padding:0 20px!important;max-width:none;margin:0;border-radius:22px!important}
   .pm-react-btn:hover{transform:scale(1.2)!important;border-color:var(--accent)!important}
   .pm-react-btn:active{transform:scale(.88)!important}
   [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
@@ -1421,6 +1422,13 @@
     }
   },1000);
   window.addEventListener('popstate',()=>{
+    // Intercept info modal close before any page navigation
+    const _infoModal=document.getElementById('pm-info-modal');
+    if(_infoModal&&_infoModal.style.display!=='none'){
+      _infoModal.style.display='none';
+      history.pushState({},'',' ');
+      return;
+    }
     if(_pageHistory.length>1){
       _pageHistory.pop();
       const prev=_pageHistory[_pageHistory.length-1];
@@ -7068,7 +7076,7 @@
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
           :`${avatarEl}${pauseOverlay}${namePill}`}
         ${betChip}${dealerMark}${reactEl}
-        ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _tot=_rc.length*_cW+(_rc.length-1)*_cG;const _cx0=sx-_tot/2;const _cy=sy>cy?sy-24-_cH-3:sy+24+3;return _rc.map((c,i)=>{const _x=Math.round(_cx0+i*(_cW+_cG));const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_cy}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_cy+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_cy+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
+        ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _n=_rc.length;const _R=34;const _isBot=sy>=cy;return _rc.map((c,i)=>{const _dxC=(i-(_n-1)/2)*(_cW+_cG);const _dyC=Math.sqrt(Math.max(0,_R*_R-_dxC*_dxC));const _x=Math.round(sx+_dxC-_cW/2);const _y=Math.round(sy+(_isBot?-_dyC:_dyC)-_cH/2);const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_y}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_y+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_y+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
       </g>`;
     }
     const board=session?.community_cards||[];
@@ -7547,7 +7555,7 @@
     if(_holeAnim||myHoleCards.length===0)_pm._renderedHoleCount=myHoleCards.length;
     const _fdHint=`<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Antippen zum Aufdecken</div>`;
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div id="pm-cards-reveal" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none"><div style="display:flex;justify-content:center;gap:8px">${myHoleCards.map(()=>`<div class="pt-card back big"></div>`).join('')}</div>${_fdHint}</div>`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
-    const isLandscape=window.innerWidth>window.innerHeight&&window.innerWidth>=600;
+    const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'4px 4px var(--space-xl)'}">
       <div class="pm-tisch-layout">
@@ -7796,8 +7804,8 @@
     const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span>`:`${_preIcon}<span>Vorauswahl</span>`;
     return`<div class="pm-action-area">
       <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn ${pre?'btn-primary':'btn-ghost'}" id="btn-pm-preaction" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;height:44px!important;padding:0 20px!important;max-width:none;margin:0;border-radius:22px!important">${preBtnLabel}</button>
-        <button class="btn btn-ghost" id="btn-pm-pause" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;height:44px!important;padding:0 20px!important;max-width:none;margin:0;border-radius:22px!important">${_pauseIcon}<span>Pause</span></button>
+        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction">${preBtnLabel}</button>
+        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause">${_pauseIcon}<span>Pause</span></button>
       </div>
     </div>`;
   }
@@ -7917,19 +7925,10 @@
     document.getElementById('btn-pm-info')?.addEventListener('click',()=>{
       document.getElementById('pm-kebab-menu').style.display='none';
       document.getElementById('pm-info-modal').style.display='block';
-      history.pushState({pm_info_open:true},'');
     });
     document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
       document.getElementById('pm-info-modal').style.display='none';
-      if(history.state?.pm_info_open)history.back();
     });
-    if(!window._pmInfoPopstateReg){
-      window._pmInfoPopstateReg=true;
-      window.addEventListener('popstate',()=>{
-        const m=document.getElementById('pm-info-modal');
-        if(m&&m.style.display!=='none'){m.style.display='none';if(_pm)showPage('online-tisch');}
-      });
-    }
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
       const isRunning=_pm.session?.status==='running';
@@ -8047,9 +8046,10 @@
       <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
         <input type="text" id="pm-pas-limit" class="form-input pm-num" inputmode="none" value="${mySeat.pre_action_limit||''}" placeholder="∞" data-label="Maximalbetrag" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
-          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(mySeat.stack||0).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${(mySeat.stack||0).toFixed(2)})</button>
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:2px">
@@ -8071,7 +8071,8 @@
     };
     document.getElementById('pm-pas-close').onclick=async()=>{
       const curPre=overlay.querySelector('.pm-pas-btn.btn-primary')?.dataset.pre||'';
-      const lim=curPre==='call'?(parseFloat(document.getElementById('pm-pas-limit')?.value)||null):null;
+      const rawLim=curPre==='call'?(parseFloat(document.getElementById('pm-pas-limit')?.value)||null):null;
+      const lim=rawLim!==null?Math.min(rawLim,mySeat.stack||Infinity):null;
       await saveAndUpdate(curPre,lim);close();
     };
     document.getElementById('pm-pas-clear')?.addEventListener('click',async()=>{
@@ -8094,6 +8095,16 @@
     if(!_pm?.session||!currentSpieler?.id)return;
     const myHC=_pm.myHoleCards||[];
     if(!myHC.length)return;
+    // Auto-flip face-down cards to visible before sharing with opponents
+    const hn=_pm.session.hand_nr;
+    if(localStorage.getItem('pm_facedown')==='true'&&(_pm._revealedHandNr??-1)!==hn){
+      _pm._revealedHandNr=hn;
+      _pm._lookedHandNr=hn;
+      if(!_pm.actions.some(a=>a.action==='look'&&a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===hn)){
+        _pm.actions.push({id:'_look_fd_'+hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true}}).then(()=>{});
+      }
+    }
     // Guard: prevent duplicate reveal inserts from rapid taps
     const alreadyRevealed=(_pm.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_pm.session.hand_nr);
     if(alreadyRevealed)return;
@@ -8328,6 +8339,7 @@
   function _pmPauseSheet(){
     const sid='pm-pause-sheet';document.getElementById(sid)?.remove();
     const sb=_pm?.session?.small_blind||1;const bb=sb*2;
+    const myStack=_pm?.mySeat?.stack||0;
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
@@ -8338,10 +8350,11 @@
       </div>
       <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
         <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Maximalbetrag</div>
-        <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${(bb*2).toFixed(2)}" data-label="Maximalbetrag" style="width:100%;font-size:22px;font-weight:700;text-align:center;margin-bottom:8px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">1 BB &nbsp;(€${bb.toFixed(2)})</button>
-          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">3 BB &nbsp;(€${(bb*3).toFixed(2)})</button>
+        <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${Math.min(bb*2,myStack).toFixed(2)}" data-label="Maximalbetrag" style="width:100%;font-size:22px;font-weight:700;text-align:center;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">1BB (€${Math.min(bb,myStack).toFixed(2)})</button>
+          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">3BB (€${Math.min(bb*3,myStack).toFixed(2)})</button>
+          <button class="btn btn-ghost" id="pm-pl-max" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${myStack.toFixed(2)})</button>
         </div>
       </div>
       <div class="btn-row-2">
@@ -8356,11 +8369,13 @@
     overlay.querySelectorAll('[name="pm-auto"]').forEach(r=>r.addEventListener('change',()=>{
       document.getElementById('pm-pause-limit-row').style.display=r.value==='call_limit'&&r.checked?'block':'none';
     }));
-    document.getElementById('pm-pl-1bb').onclick=()=>{document.getElementById('pm-pause-limit').value=bb.toFixed(2);};
-    document.getElementById('pm-pl-3bb').onclick=()=>{document.getElementById('pm-pause-limit').value=(bb*3).toFixed(2);};
+    document.getElementById('pm-pl-1bb').onclick=()=>{document.getElementById('pm-pause-limit').value=Math.min(bb,myStack).toFixed(2);};
+    document.getElementById('pm-pl-3bb').onclick=()=>{document.getElementById('pm-pause-limit').value=Math.min(bb*3,myStack).toFixed(2);};
+    document.getElementById('pm-pl-max').onclick=()=>{document.getElementById('pm-pause-limit').value=myStack.toFixed(2);};
     document.getElementById('pm-pause-confirm').onclick=async()=>{
       const auto=overlay.querySelector('[name="pm-auto"]:checked')?.value||'fold';
-      const lim=auto==='call_limit'?(parseFloat(document.getElementById('pm-pause-limit').value)||null):null;
+      const rawLim=auto==='call_limit'?(parseFloat(document.getElementById('pm-pause-limit').value)||null):null;
+      const lim=rawLim!==null?Math.min(rawLim,myStack):null;
       document.getElementById('pm-pause-confirm').disabled=true;
       const resp=await _callFn('poker-action',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'pause',pause_auto_action:auto,pause_call_limit:lim??undefined});
       if(resp?.error){await showAlert('Fehler: '+resp.error);document.getElementById('pm-pause-confirm').disabled=false;return;}
