@@ -71,6 +71,10 @@
       .pm-tisch-left{flex:1.1}
       .pm-tisch-right{flex:0.9}
     }
+    body.pm-fullscreen .header,
+    body.pm-fullscreen .bottom-nav{display:none!important;}
+    body.pm-fullscreen #app-screen{max-width:none!important;}
+    body.pm-fullscreen .content{padding:0!important;overflow-y:auto;height:100dvh;}
 
 
 
@@ -1604,6 +1608,13 @@
   }
   window.addEventListener('orientationchange',_btCheckFullscreen);
   window.matchMedia('(orientation: landscape)').addEventListener?.('change',_btCheckFullscreen);
+  function _pmCheckFullscreen(){
+    const onPm=document.getElementById('page-online-tisch')?.classList.contains('active');
+    const isLandscape=window.matchMedia('(orientation: landscape)').matches;
+    document.body.classList.toggle('pm-fullscreen',!!onPm&&isLandscape);
+  }
+  window.addEventListener('orientationchange',_pmCheckFullscreen);
+  window.matchMedia('(orientation: landscape)').addEventListener?.('change',_pmCheckFullscreen);
   // Wake-Lock bei Tab-Rückkehr neu anfordern (Browser gibt ihn bei Hidden frei)
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden&&document.body.classList.contains('bt-fullscreen')){
@@ -1637,7 +1648,8 @@
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
     if(page==='benachrichtigungen')loadBenachrichtigungen();
     if(page==='online-lobby')loadOnlineLobby();
-    if(page==='online-tisch')renderOnlineTisch();
+    if(page==='online-tisch'){renderOnlineTisch();_pmCheckFullscreen();}
+    else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
@@ -2058,6 +2070,10 @@
     _btInit();
     refreshBellBadge();
     _pmUpdateLiveIndicator();
+    // Globaler Listener: Globe-Indikator von überall in der App aktuell halten
+    db.channel('pm-global-indicator')
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>_pmUpdateLiveIndicator())
+      .subscribe();
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -6712,7 +6728,7 @@
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
     const hasActive=(sessions||[]).some(s=>s.status==='waiting'||s.status==='running');
-    html+=`<button class="btn btn-primary" id="btn-pm-new" style="margin-bottom:var(--space-md)"${hasActive?' disabled title="Es läuft bereits eine aktive Session"':''}>
+    html+=`<button class="btn btn-primary" id="btn-pm-new" style="margin-bottom:var(--space-md);display:block;margin-left:auto;margin-right:auto"${hasActive?' disabled title="Es läuft bereits eine aktive Session"':''}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neue Session</button>`;
     const active=(sessions||[]).filter(s=>s.status!=='finished');
     const done=(sessions||[]).filter(s=>s.status==='finished');
@@ -6843,6 +6859,7 @@
       _pm.myHoleCards=[];
     }
     renderOnlineTisch();
+    if(_pm.session?.status==='finished')_pmUpdateLiveIndicator();
   }
 
   function renderOnlineTisch(){
@@ -6961,9 +6978,9 @@
   function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus){
     if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
     if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Hinsetzen</button></div>`;
-    if(!mySeat&&isFinished)return'';
+    if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><button class="btn btn-secondary" onclick="showPage('online-lobby')">Zur Übersicht</button></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
-    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout" style="margin-top:var(--space-sm)">Payout & Abrechnung</button>`:''}</div>`;
+    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" onclick="showPage('online-lobby')">Zur Übersicht</button></div></div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
     if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
@@ -7157,8 +7174,8 @@
 
   async function _callFn(name,body){
     const{data:{session:s}}=await db.auth.getSession();
-    const hdrs=s?.access_token?{Authorization:`Bearer ${s.access_token}`}:{};
-    const{data,error}=await db.functions.invoke(name,{body,headers:hdrs});
+    const token=s?.access_token||SUPABASE_KEY;
+    const{data,error}=await db.functions.invoke(name,{body,headers:{Authorization:`Bearer ${token}`}});
     if(error)return{error:error.message||String(error)};
     return data||{};
   }
