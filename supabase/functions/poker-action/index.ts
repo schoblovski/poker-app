@@ -130,12 +130,14 @@ Deno.serve(async (req) => {
     }
 
     case 'raise': {
-      if (!amount || amount <= maxBet) return err('Raise muss höher als aktueller Einsatz sein');
-      const toAdd = amount - mySeat.bet_current_round;
-      if (toAdd > mySeat.stack) return err('Nicht genug Chips');
-      newStack -= toAdd;
-      newBet = amount;
-      newPot += toAdd;
+      // amount = zusätzliche Chips (raise UM, nicht AUF)
+      if (!amount || amount <= 0) return err('Raise-Betrag muss positiv sein');
+      if (amount > mySeat.stack) return err('Nicht genug Chips');
+      const newTotalBet = mySeat.bet_current_round + amount;
+      if (newTotalBet <= maxBet) return err('Raise muss höher als aktueller Einsatz sein');
+      newStack -= amount;
+      newBet = newTotalBet;
+      newPot += amount;
       logAmount = amount;
       if (newStack === 0) newStatus = 'allin';
       break;

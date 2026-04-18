@@ -7168,7 +7168,7 @@
       const pot=session.pot||0;
       const bb=(session.small_blind||1)*2;
       // Store raise params on _pm for the sheet
-      _pm._raiseParams={halfPot:parseFloat(Math.min(myBet+myStack,myBet+Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myBet+myStack,myBet+Math.max(bb,pot)).toFixed(2)),myStack,myBet,bb,maxBet};
+      _pm._raiseParams={halfPot:parseFloat(Math.min(myStack,Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myStack,Math.max(bb,pot)).toFixed(2)),myStack,myBet,bb,maxBet};
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
@@ -7479,7 +7479,8 @@
     if(!_pm)return;
     const p=_pm._raiseParams||{};
     const{halfPot=0,fullPot=0,myStack=0,myBet=0,bb=0.1,maxBet=0}=p;
-    const allInTotal=+((myBet+myStack).toFixed(2));
+    const minRaise=+((Math.max(bb,maxBet-myBet+bb)).toFixed(2));
+    const allInTotal=myStack;
     const sid='pm-raise-sheet';document.getElementById(sid)?.remove();
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
@@ -7491,7 +7492,7 @@
         <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
-        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${+((maxBet+bb).toFixed(2))}" max="${allInTotal}" value="${Math.min(fullPot,allInTotal).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
+        <input type="number" id="pm-rs-input" class="form-input" inputmode="decimal" step="0.01" min="${minRaise}" max="${myStack.toFixed(2)}" value="${Math.min(fullPot,myStack).toFixed(2)}" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
