@@ -7129,7 +7129,10 @@
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
         case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
-        case'new_hand':text=`── Hand #${a.hand_nr}${a.spieler?.name?' · '+a.spieler.name:''} ──`;extra=' pm-feed-dim';break;
+        case'new_hand':{
+          const starter=a.spieler?.name?` · gestartet von ${a.spieler.name}`:'';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:11px;font-weight:700;color:var(--text-tertiary);white-space:nowrap">Hand #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
+        }
         default:text=`${n}: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${text}</div>`;
