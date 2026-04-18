@@ -7106,7 +7106,8 @@
     if(_pm.mySeat&&currentSpieler?.id){
       const myLastEvt=[..._pm.actions].reverse().find(a=>a.spieler_id===currentSpieler.id&&(a.action==='join'||a.action==='leave'));
       if(myLastEvt?.action==='leave'){
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+        await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0});
+        await _pmLoad();
       }
     }
     _pmSubscribe();
