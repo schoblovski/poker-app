@@ -33,6 +33,25 @@ Deno.serve(async (req) => {
 
   if (!session) return err('Session nicht gefunden', 404);
 
+  // Gesamteinsatz pro Seat aus dem Action-Log berechnen.
+  // bet_current_round wird nach jeder Strasse auf 0 zurückgesetzt und ist
+  // beim Showdown nach Auto-Runout nicht mehr verlässlich → Action-Log ist Quelle der Wahrheit.
+  const { data: handActions } = await db
+    .from('online_actions')
+    .select('spieler_id, amount')
+    .eq('online_spiel_id', online_spiel_id)
+    .eq('hand_nr', session.hand_nr)
+    .in('action', ['call', 'raise', 'allin', 'post_sb', 'post_bb', 'blind', 'bet']);
+
+  const playerToSeat: Record<string, string> = {};
+  for (const seat of seats ?? []) playerToSeat[seat.spieler_id] = seat.id;
+
+  const investedBySeat: Record<string, number> = {};
+  for (const act of handActions ?? []) {
+    const seatId = playerToSeat[act.spieler_id];
+    if (seatId && act.amount) investedBySeat[seatId] = (investedBySeat[seatId] ?? 0) + act.amount;
+  }
+
   const board: Card[] = session.community_cards ?? [];
   const nonFolded = (seats ?? []).filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out');
 
@@ -85,7 +104,7 @@ Deno.serve(async (req) => {
   });
 
   // Sidepots berechnen
-  const pots = calcSidepots(seats ?? [], session.pot);
+  const pots = calcSidepots(seats ?? [], session.pot, investedBySeat);
 
   // Gewinner pro Sidepot bestimmen
   const stackUpdates: Record<string, number> = {};
@@ -178,7 +197,11 @@ Deno.serve(async (req) => {
 
 type SidePot = { amount: number; eligibleSeatIds: string[] };
 
-function calcSidepots(seats: { id: string; status: string; bet_current_round: number; stack: number }[], totalPot: number): SidePot[] {
+function calcSidepots(
+  seats: { id: string; status: string; bet_current_round: number; stack: number }[],
+  totalPot: number,
+  investedBySeat: Record<string, number> = {},
+): SidePot[] {
   // Vereinfachung: bei keinem All-In → ein Pot für alle
   const allins = seats.filter(s => s.status === 'allin');
   if (allins.length === 0) {
@@ -186,11 +209,13 @@ function calcSidepots(seats: { id: string; status: string; bet_current_round: nu
     return [{ amount: totalPot, eligibleSeatIds: eligible.map(s => s.id) }];
   }
 
-  // Sidepot-Berechnung über Einsatzstufen
+  // Sidepot-Berechnung über Einsatzstufen.
+  // Quelle der Wahrheit: investedBySeat aus dem Action-Log (funktioniert auch
+  // wenn bet_current_round nach vorherigen Strassen zurückgesetzt wurde).
   const nonFolded = seats.filter(s => s.status !== 'folded' && s.status !== 'sitting_out');
   const contributions = seats
-    .filter(s => s.bet_current_round > 0)
-    .map(s => ({ id: s.id, contrib: s.bet_current_round }))
+    .map(s => ({ id: s.id, contrib: investedBySeat[s.id] ?? s.bet_current_round }))
+    .filter(c => c.contrib > 0)
     .sort((a, b) => a.contrib - b.contrib);
 
   const levels = [...new Set(contributions.map(c => c.contrib))].sort((a, b) => a - b);
