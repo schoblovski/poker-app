@@ -723,8 +723,8 @@
   .pm-auto-options{display:flex;flex-direction:column;gap:8px}
   .pm-auto-option{display:flex;align-items:center;gap:12px;padding:10px var(--space-md);border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s}
   .pm-auto-option.selected{border-color:var(--accent);background:var(--accent-soft)}
-  .pm-action-btns{display:flex;gap:6px}
-  .pm-action-btns .btn{flex:1;min-width:0;min-height:40px;padding:0 6px;font-size:13px;font-weight:600}
+  .pm-action-btns{display:flex;gap:6px;align-items:stretch}
+  .pm-action-btns .btn{flex:1;min-width:0;height:40px!important;padding:0 6px!important;font-size:13px!important;font-weight:600;margin-top:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
   .pm-feed-dim{color:var(--text-tertiary)!important;font-size:11px!important;text-align:center!important}
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
@@ -1153,7 +1153,7 @@
   applyColorblind(localStorage.getItem('dtks-colorblind')==='1');
 
   // ── SYNC ───────────────────────────────────────────────
-  function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');el.className='sync-badge '+s;dot.className='sync-dot'+(s==='pending'?' spin':'');lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
+  function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');if(el)el.className='sync-badge '+s;if(dot)dot.className='sync-dot'+(s==='pending'?' spin':'');if(lbl)lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
   async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
 
   // ── STATISTIK FILTER STATE ─────────────────────────────
@@ -6952,7 +6952,7 @@
 
     // Aktion-Bereich
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
-    if(isRunning&&handIsOver2&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
+    if(isRunning&&handIsOver2&&mySeat){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
 
     // Video-Call-Button (generischer Link)
     const waLink=_pm._waLink||session.video_link||'';
@@ -7032,7 +7032,7 @@
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
         case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
-        case'new_hand':text=`── Hand #${a.hand_nr} ──`;extra=' pm-feed-dim';break;
+        case'new_hand':text=`── Hand #${a.hand_nr}${a.spieler?.name?' · '+a.spieler.name:''} ──`;extra=' pm-feed-dim';break;
         default:text=`${n}: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${text}</div>`;
