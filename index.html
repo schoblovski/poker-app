@@ -6686,7 +6686,7 @@
       // Bet chip: position toward table center (between seat and oval)
       const _bdx=cx-sx,_bdy=cy-sy,_bd=Math.sqrt(_bdx*_bdx+_bdy*_bdy)||1;
       const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
-      const betFmt=betAmt>=1?betAmt.toFixed(0):betAmt.toFixed(2);
+      const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
       const betChip=betAmt>0?`<circle cx="${bcx}" cy="${bcy}" r="10" fill="var(--accent)" opacity=".9"/><text x="${bcx}" y="${bcy+4}" text-anchor="middle" font-size="8" fill="white">€${betFmt}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.35:1}"/>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
