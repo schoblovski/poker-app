@@ -6924,7 +6924,10 @@
     const{session,seats,actions,mySeat,myHoleCards}=_pm;
     const isAdmin=currentSpieler?.ist_admin;
     const isMyTurn=session.current_player_id===currentSpieler?.id&&session.status==='running';
-    if(isMyTurn&&!_pmPrevTurn&&navigator.vibrate)navigator.vibrate(200);
+    if(isMyTurn&&!_pmPrevTurn){
+      if(navigator.vibrate)navigator.vibrate(200);
+      try{const ac=new AudioContext();const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=520;g.gain.setValueAtTime(0.18,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.18);o.start();o.stop(ac.currentTime+0.18);}catch(e){}
+    }
     _pmPrevTurn=isMyTurn;
     const myStatus=mySeat?.status;
     const isRunning=session.status==='running';
@@ -7227,11 +7230,13 @@
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         ${[['fold','Fold'],['check_fold','Chk/Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pas-btn" data-pre="${v}" style="flex:1 0 calc(33% - 6px);font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">${l}</button>`).join('')}
       </div>
-      <div id="pm-pas-limit-row" style="display:${pre==='call'?'flex':'none'};gap:6px;align-items:center;margin-bottom:14px">
-        <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;flex-shrink:0">Max €</span>
-        <input type="number" id="pm-pas-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="flex:1;min-width:0;font-size:16px">
-        <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">1BB</button>
-        <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="font-size:12px;padding:4px 8px;flex-shrink:0">3BB</button>
+      <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
+        <input type="number" id="pm-pas-limit" class="form-input" inputmode="decimal" step="0.5" min="0" value="${mySeat.pre_action_limit||''}" placeholder="∞" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="flex:1;font-size:12px;height:32px!important;padding:0;max-width:none">1BB (€${bb.toFixed(2)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="flex:1;font-size:12px;height:32px!important;padding:0;max-width:none">3BB (€${(bb*3).toFixed(2)})</button>
+        </div>
       </div>
       <button class="btn btn-secondary" id="pm-pas-close" style="width:100%;max-width:none;margin:0">Fertig</button>
     </div>`;
@@ -7253,7 +7258,7 @@
     overlay.querySelectorAll('.pm-pas-btn').forEach(b=>b.addEventListener('click',()=>{
       overlay.querySelectorAll('.pm-pas-btn').forEach(x=>{x.classList.remove('btn-primary');x.classList.add('btn-ghost');});
       b.classList.remove('btn-ghost');b.classList.add('btn-primary');
-      const row=document.getElementById('pm-pas-limit-row');if(row)row.style.display=b.dataset.pre==='call'?'flex':'none';
+      const row=document.getElementById('pm-pas-limit-row');if(row)row.style.display=b.dataset.pre==='call'?'block':'none';
     }));
     overlay.querySelectorAll('.pm-pas-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-pas-limit');if(i)i.value=b.dataset.val;
