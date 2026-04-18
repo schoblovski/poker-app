@@ -38,13 +38,18 @@ Deno.serve(async (req) => {
   const bustsAndPaused = (seats ?? []).filter(
     (s: { stack: number; status: string }) => s.stack === 0 || s.status === 'paused'
   );
+  const bustIds = new Set(bustsAndPaused.map((s: { id: string }) => s.id));
   for (const s of bustsAndPaused) {
     await db.from('online_seats').update({ status: 'sitting_out' }).eq('id', s.id);
   }
 
-  // Noch genug Spieler?
+  // Genug Spieler? Zähle nur Spieler die tatsächlich mitspielen:
+  // - nicht gerade auf sitting_out gesetzt (busted/paused)
+  // - nicht bereits sitting_out
+  // - haben Chips
   const activeSeatCount = (seats ?? []).filter(
-    (s: { stack: number; status: string }) => s.stack > 0 && s.status !== 'paused'
+    (s: { id: string; stack: number; status: string }) =>
+      !bustIds.has(s.id) && s.status !== 'sitting_out' && s.stack > 0
   ).length;
   if (activeSeatCount < 2) return err('Nicht genug aktive Spieler für eine neue Hand');
 

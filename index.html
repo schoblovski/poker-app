@@ -7377,7 +7377,7 @@
     const curBuyins=_pm.mySeat.buyins||1;
     const{error}=await db.from('online_seats').update({
       stack:startStack,
-      status:'sitting_out',
+      status:'active',
       buyins:curBuyins+1,
     }).eq('id',_pm.mySeat.id);
     if(error){if(btn)btn.disabled=false;await showAlert('Fehler: '+error.message);return;}
