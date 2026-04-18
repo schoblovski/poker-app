@@ -2071,9 +2071,11 @@
     refreshBellBadge();
     _pmUpdateLiveIndicator();
     // Globaler Listener: Globe-Indikator von überall in der App aktuell halten
-    db.channel('pm-global-indicator')
-      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>_pmUpdateLiveIndicator())
-      .subscribe();
+    if(!window._pmGlobalCh){
+      window._pmGlobalCh=db.channel('pm-global-indicator')
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>_pmUpdateLiveIndicator())
+        .subscribe();
+    }
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -7175,9 +7177,16 @@
   async function _callFn(name,body){
     const{data:{session:s}}=await db.auth.getSession();
     const token=s?.access_token||SUPABASE_KEY;
-    const{data,error}=await db.functions.invoke(name,{body,headers:{Authorization:`Bearer ${token}`}});
-    if(error)return{error:error.message||String(error)};
-    return data||{};
+    let res;
+    try{
+      res=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,'apikey':SUPABASE_KEY},
+        body:JSON.stringify(body),
+      });
+    }catch(e){return{error:e.message};}
+    if(!res.ok){const t=await res.text().catch(()=>'');return{error:`HTTP ${res.status}: ${t}`};}
+    try{return await res.json();}catch{return{};}
   }
 
   async function _pmUpdateLiveIndicator(){
