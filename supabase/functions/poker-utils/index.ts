@@ -1,4 +1,4 @@
-// DTKS Poker – Shared Utilities v1.2
+// DTKS Poker – Shared Utilities v1.3
 // Deck management + Hand evaluators for Hold'em, Omaha, Texahma
 //
 // Card format: { rank: number, suit: string }
@@ -180,11 +180,12 @@ export function cardStr(c: Card): string {
 
 export const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 export function corsOk() {
-  return new Response(null, { headers: CORS });
+  return new Response(null, { status: 204, headers: CORS });
 }
 
 export function json(data: unknown, status = 200) {

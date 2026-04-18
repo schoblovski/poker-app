@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   // Die tatsächliche Blind-Höhe wird beim Session-Start festgelegt (small_blind Feld)
   // Hier nehmen wir Standardwerte aus der Session (werden beim Erstellen gesetzt)
   const smallBlind: number = session.small_blind ?? 1;
-  const bigBlind = smallBlind * 2;
+  const bigBlind: number = session.big_blind ?? (smallBlind * 2);
 
   // Stacks für Blinds abziehen
   const sbStack = Math.max(0, sbSeat.stack - smallBlind);

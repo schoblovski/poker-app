@@ -714,7 +714,8 @@
   .pm-action-btns{display:flex;gap:8px;justify-content:center}
   .pm-action-btns .btn{flex:1;min-width:0;min-height:44px}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
-  .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);position:relative}
+  .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
+  .pm-live-btn.live{display:flex}
   .pm-live-btn::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pm-pulse 1.4s infinite}
   .pm-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)}
   .pm-sheet-overlay{opacity:0;pointer-events:none;transition:opacity .25s}
@@ -779,7 +780,7 @@
       <div class="header-timer-progress"><div id="header-timer-progress-fill"></div></div>
     </button>
     <div class="header-right">
-      <button class="pm-live-btn" id="pm-live-btn" hidden title="Online-Session aktiv" aria-label="Online-Session">
+      <button class="pm-live-btn" id="pm-live-btn" title="Online-Session aktiv" aria-label="Online-Session">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
       </button>
       <button class="bell-btn" id="bell-btn" hidden aria-label="Benachrichtigungen">
@@ -6735,6 +6736,7 @@
     if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     _pmLobbyChannel=db.channel('pm-lobby')
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>loadOnlineLobby())
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby())
       .subscribe();
   }
 
@@ -6751,8 +6753,11 @@
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="number" id="pm-new-sb" value="0.5" min="0.05" step="0.05" inputmode="decimal" class="form-input"></div>
-        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="number" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" min="0.05" step="0.05" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Small Blind</div><input type="number" id="pm-new-sb" value="0.05" min="0.01" step="0.01" inputmode="decimal" class="form-input"></div>
+        <div><div class="section-title" style="margin:0 0 var(--space-xs)">Big Blind</div><input type="number" id="pm-new-bb" value="0.10" min="0.02" step="0.01" inputmode="decimal" class="form-input"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
+        <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="number" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" min="0.05" step="0.05" inputmode="decimal" class="form-input"></div>
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin:-var(--space-sm) 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
       <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);margin-bottom:var(--space-lg)">
@@ -6784,7 +6789,8 @@
         const{data:ns}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa,modus:'online'}).select().single();
         spiel_id=ns?.id||null;
       }
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
+      const big_blind=parseFloat(document.getElementById('pm-new-bb').value)||small_blind*2;
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       close();enterOnlineSession(sess.id);
     };
@@ -6864,8 +6870,8 @@
     const waBtn=waLink?`<a href="${escHtml(waLink)}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;padding:5px 12px;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-right:4px"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3-8.63A2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>Call</a>`:'';
 
     // Kebab-Menü (Tisch verlassen + Beenden)
-    const hasMenu=(mySeat&&!isFinished)||( isAdmin&&!isFinished);
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${isAdmin&&!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}  </div></div>`:'';
+    const hasMenu=!isFinished;
+    const menuBtn=hasMenu?`<div class="pm-kebab-wrap"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
     // "Nächste Hand" nur wenn keine Hand läuft (current_player_id ist null)
     const handIsOver=!session.current_player_id;
 
@@ -6904,6 +6910,7 @@
         case'reveal_runout':text=`${n} deckt Runout auf`;break;
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
+        case'finish':text=`${n} hat die Session beendet`;cls=' pm-feed-win';break;
         default:text=`${n}: ${a.action}`;
       }
       const isWin=a.action==='win';
@@ -6916,7 +6923,7 @@
     if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Beobachter-Modus</div>`;
     if(!mySeat&&isFinished)return'';
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
-    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}</div>`;
+    if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout" style="margin-top:var(--space-sm)">Payout & Abrechnung</button>`:''}</div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Hand…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
     if(myStatus==='paused')return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:var(--space-sm)">Pausiert</div><button class="btn btn-primary" id="btn-pm-resume">Zurück zum Spiel</button></div>`;
@@ -7009,8 +7016,13 @@
       const btn=e.currentTarget;
       btn.disabled=true;btn.textContent='Suche Platz…';
       try{
-        const taken=new Set((_pm?.seats||[]).map(s=>s.seat));
-        let free=-1;for(let i=1;i<=9;i++){if(!taken.has(i)){free=i;break;}}
+        // Fresh query to avoid stale local state (race condition)
+        const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
+        const taken=new Set((freshSeats||[]).map(s=>s.seat));
+        // Randomize starting point to reduce collision probability
+        const start=Math.floor(Math.random()*9)+1;
+        let free=-1;
+        for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
         if(free===-1){btn.disabled=false;btn.textContent='Platz nehmen';await showAlert('Keine freien Plätze.');return;}
         await _pmTakeSeatFlow(free);
         btn.disabled=false;btn.textContent='Platz nehmen';
@@ -7037,10 +7049,12 @@
       showPage('online-lobby');
     });
     document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
-      if(!await confirmAction('Session wirklich beenden?'))return;
+      if(!await confirmAction('Session wirklich beenden?\n\nAlle Spieler werden zurück zur Übersicht geleitet.'))return;
       const{error}=await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
-      if(error)await showAlert('Fehler: '+error.message);
-      else{await _pmLoad();_pmUpdateLiveIndicator();}
+      if(error){await showAlert('Fehler: '+error.message);return;}
+      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'finish',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      _pmUnsubscribe();
+      showPage('online-lobby');
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',()=>showAlert('Payout-Flow folgt in einer späteren Version.'));
   }
@@ -7110,8 +7124,8 @@
   async function _pmUpdateLiveIndicator(){
     const btn=document.getElementById('pm-live-btn');if(!btn)return;
     const{data}=await db.from('online_spiele').select('id').in('status',['waiting','running']).limit(1);
-    if(data?.length>0){btn.hidden=false;btn.onclick=()=>enterOnlineSession(data[0].id);}
-    else btn.hidden=true;
+    if(data?.length>0){btn.classList.add('live');btn.onclick=()=>enterOnlineSession(data[0].id);}
+    else btn.classList.remove('live');
   }
 
   function _pmPauseSheet(){
@@ -7164,6 +7178,7 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},()=>_pmLoad())
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},()=>_pmLoad())
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},()=>_pmLoad())
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},payload=>{
         if(_pm){_pm.actions.push(payload.new);renderOnlineTisch();}
       })
