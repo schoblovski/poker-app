@@ -7103,9 +7103,10 @@
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
     await _pmLoad();
     // Insert join action if player is returning to an existing seat after a leave
+    // Use a direct targeted query instead of _pm.actions (which is capped at 60 rows)
     if(_pm.mySeat&&currentSpieler?.id){
-      const myLastEvt=[..._pm.actions].reverse().find(a=>a.spieler_id===currentSpieler.id&&(a.action==='join'||a.action==='leave'));
-      if(myLastEvt?.action==='leave'){
+      const{data:lastEvt}=await db.from('online_actions').select('action').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).in('action',['join','leave']).order('created_at',{ascending:false}).limit(1).maybeSingle();
+      if(lastEvt?.action==='leave'){
         await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0});
         await _pmLoad();
       }
@@ -7662,7 +7663,7 @@
       const isRunning=_pm.session?.status==='running';
       const msg=isRunning?'Tisch verlassen?\n\nDein Platz bleibt reserviert. Du kannst jederzeit zurückkehren.':'Platz freigeben und Tisch verlassen?';
       if(!await confirmAction(msg))return;
-      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
       if(!isRunning)await db.from('online_seats').delete().eq('id',_pm.mySeat.id);
       showPage('online-lobby');
     });
