@@ -6771,7 +6771,8 @@
         const cnt=(seatsMap[s.id]||[]).length;
         const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
         const hands=s.hand_nr>0?`· ${s.hand_nr} Hände`:'';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · ${datum}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
+        const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--text-secondary)">${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -7052,8 +7053,8 @@
   }
 
   function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver){
-    if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
-    if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Hinsetzen</button></div>`;
+    if(!mySeat&&isWaiting)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 28px">Platz nehmen</button></div></div>`;
+    if(!mySeat&&isRunning)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-sitdown" style="width:auto;max-width:none;padding:0 28px">Hinsetzen</button></div></div>`;
     if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
     if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;gap:var(--space-sm);justify-content:center;margin-top:var(--space-sm)">${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button>`:''}<button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div></div>`;
