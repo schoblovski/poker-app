@@ -7030,7 +7030,12 @@
         case'blind':text=`${n} Blind${amt}`;break;
         case'post_sb':text=`${n} SB${amt}`;break;
         case'post_bb':text=`${n} BB${amt}`;break;
-        case'win':text=`${n} gewinnt${amt}`;extra=' pm-feed-win';break;
+        case'win':{
+          const hand=a.meta?.hand;
+          const hc=(a.meta?.hole_cards||[]).map(c=>_pmCard(c)).join('');
+          const handLine=hand?`<div style="font-size:11px;margin-top:3px;opacity:.85">${hand}${hc?` · <span style="display:inline-flex;gap:2px;vertical-align:middle">${hc}</span>`:''}</div>`:'';
+          text=`${n} gewinnt${amt}${handLine}`;extra=' pm-feed-win';break;
+        }
         case'pause':text=`${n} pausiert`;break;
         case'resume':text=`${n} ist zurück`;break;
         case'reveal_runout':text=`${n} deckt Runout auf`;break;

@@ -114,16 +114,20 @@ Deno.serve(async (req) => {
     db.from('online_spiele').update({ pot: 0, current_player_id: null }).eq('id', online_spiel_id),
   ]);
 
-  // Action-Log: Showdown-Ergebnisse
+  // Action-Log: Showdown-Ergebnisse (inkl. Gewinner-Hand und Karten)
   await db.from('online_actions').insert(
-    winLog.map(w => ({
-      online_spiel_id,
-      spieler_id: w.spieler_id,
-      action: 'win',
-      amount: w.amount,
-      street: 'showdown',
-      hand_nr: session.hand_nr,
-    }))
+    winLog.map(w => {
+      const res = results.find(r => r.spielerId === w.spieler_id);
+      return {
+        online_spiel_id,
+        spieler_id: w.spieler_id,
+        action: 'win',
+        amount: w.amount,
+        street: 'showdown',
+        hand_nr: session.hand_nr,
+        meta: res ? { hand: res.handDesc, hole_cards: holeMap[res.seatId] ?? [] } : null,
+      };
+    })
   );
 
   return json({
