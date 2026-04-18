@@ -6790,7 +6790,8 @@
         spiel_id=ns?.id||null;
       }
       const big_blind=parseFloat(document.getElementById('pm-new-bb').value)||small_blind*2;
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
+      if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       close();enterOnlineSession(sess.id);
     };
