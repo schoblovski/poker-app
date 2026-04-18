@@ -7170,7 +7170,7 @@
         <div class="pm-action-btns">
           <button class="btn btn-danger pm-act-btn" data-action="fold">Fold</button>
           ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
-          <button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>
+          ${myStack>0?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>`:''}
         </div>
       </div>`;
     }
