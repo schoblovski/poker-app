@@ -6551,7 +6551,7 @@
         if(!_netBanner){
           _netBanner=document.createElement('div');
           _netBanner.id='network-status-banner';
-          _netBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9995;background:var(--danger);color:white;text-align:center;font-size:12px;font-weight:700;padding:5px 16px;display:flex;align-items:center;justify-content:center;gap:6px';
+          _netBanner.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:9995;background:var(--danger);color:white;text-align:center;font-size:12px;font-weight:700;padding:6px 16px;display:flex;align-items:center;justify-content:center;gap:6px';
           document.body.appendChild(_netBanner);
         }
         _netBanner.textContent=off?'Offline – neue Transaktionen werden lokal gespeichert':`Schwache Verbindung (${(et||'').toUpperCase()})`;
@@ -6644,12 +6644,22 @@
     if(!window.PublicKeyCredential)return;
     const avail=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
     if(!avail)return;
+    document.getElementById('biometric-offer-sheet')?.remove();
     const sheet=document.createElement('div');
-    sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9996;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px)+20px);box-shadow:0 -4px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center';
-    sheet.innerHTML=`<div style="width:40px;height:4px;background:var(--border);border-radius:2px"></div><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="width:44px;height:44px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><div style="font-size:17px;font-weight:700">Face ID / Touch ID aktivieren?</div><div style="font-size:13px;color:var(--text-secondary)">Melde dich beim nächsten Mal mit einem Fingerabdruck oder Face ID an – statt mit Google.</div><button class="btn btn-primary" id="biometric-offer-yes" style="max-width:none;width:100%">Jetzt aktivieren</button><button class="btn btn-ghost" id="biometric-offer-no" style="max-width:none;width:100%;color:var(--text-tertiary)">Nicht jetzt</button>`;
+    sheet.id='biometric-offer-sheet';
+    sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:10001;background:var(--surface);border-radius:20px 20px 0 0;padding:20px 24px calc(env(safe-area-inset-bottom,0px)+88px);box-shadow:0 -4px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;animation:modal-slide-in .3s cubic-bezier(.34,1.2,.64,1) both';
+    sheet.innerHTML=`
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="width:44px;height:44px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <div style="font-size:17px;font-weight:700">Face ID / Touch ID aktivieren?</div>
+      <div style="font-size:13px;color:var(--text-secondary);max-width:280px;line-height:1.5">Beim nächsten Besuch mit Fingerabdruck oder Face ID anmelden – statt mit Google.</div>
+      <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
+        <button id="biometric-offer-yes" class="btn btn-primary" style="max-width:none;margin:0">Jetzt aktivieren</button>
+        <button id="biometric-offer-no" class="btn btn-ghost" style="max-width:none;margin:0;color:var(--text-tertiary)">Nicht jetzt</button>
+      </div>`;
     document.body.appendChild(sheet);
-    document.getElementById('biometric-offer-yes').onclick=async()=>{sheet.remove();await _webAuthnRegister();};
-    document.getElementById('biometric-offer-no').onclick=()=>{localStorage.setItem('dtks_webauthn_declined','1');sheet.remove();};
+    sheet.querySelector('#biometric-offer-yes').addEventListener('click',async()=>{sheet.remove();await _webAuthnRegister();});
+    sheet.querySelector('#biometric-offer-no').addEventListener('click',()=>{localStorage.setItem('dtks_webauthn_declined','1');sheet.remove();});
   }
 
   // ── INIT ───────────────────────────────────────────────
