@@ -44,8 +44,12 @@ const ONE_PAIR        = 1;
 const HIGH_CARD       = 0;
 
 function encode(cat: number, ...ranks: number[]): number {
+  // Always use exactly 5 rank slots so cat is always at bit 20.
+  // Without padding, HIGH_CARD (0<<20|ranks) would produce larger numbers than
+  // ONE_PAIR (1<<16|ranks) for high cards, making comparison across categories wrong.
+  const slots = [...ranks, 0, 0, 0, 0, 0].slice(0, 5);
   let v = cat;
-  for (const r of ranks) { v = (v << 4) | r; }
+  for (const r of slots) { v = (v << 4) | r; }
   return v;
 }
 
