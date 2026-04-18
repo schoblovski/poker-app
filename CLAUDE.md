@@ -105,7 +105,7 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | endpoint        | text      | Browser Push-Endpoint URL (unique)                                        |
 | p256dh          | text      | ECDH Public Key (Base64)                                                  |
 | auth            | text      | Auth Secret (Base64)                                                      |
-| einstellungen   | jsonb     | Kategorie-Toggles: spielergebnisse, buyins, neue_hand, transaktionen, app_updates |
+| einstellungen   | jsonb     | Kategorie-Toggles: spielergebnisse, buyins, neue_hand, transaktionen, app_updates, online_spiel |
 | aktualisiert_am | timestamp | Letztes Update der Subscription                                           |
 
 ## Finanz-Logik (KRITISCH – exakt so umsetzen!)
@@ -546,7 +546,7 @@ Kein Auto-Fold, keine Sanduhr. Stattdessen:
 - Raise: Slider + Schnellbeträge (½ Pot, Pot, All-In)
 - Action-Feed: «Gutsch foldet», «Chris raises €12»
 - Chat
-- Video-Call: externer Link (WhatsApp/Meet/FaceTime) einbettbar
+- Video-Call: externer Link (WhatsApp/Meet/FaceTime) einbettbar (siehe Video-Call-Konzept unten)
 
 ### Showdown-Anzeige
 
@@ -560,6 +560,44 @@ Kein Auto-Fold, keine Sanduhr. Stattdessen:
 - Online-Spiel erstellt Eintrag in `spiele` (modus = 'online' neu)
 - Buy-Ins als `spiel_teilnehmer` Einträge (Stack-Reloads = neue Buy-Ins)
 - Spielende → normaler Payout-Flow → Kontostände, Statistik, Verlauf
+
+### Video-Call Integration (noch nicht implementiert)
+
+**Einschränkung:** WhatsApp hat keine öffentliche API für Gruppen-Video-Calls. `wa.me`-Links können nur Einzelchats öffnen – Group Video Calls programmatisch starten ist nicht möglich.
+
+**Realistisches Konzept:**
+
+**DB-Änderungen:**
+- `spieler.telefon` – Handynummer (optional, für spätere Nutzung)
+- `online_spiele.video_link` – bereits vorhanden (admin speichert WhatsApp-Gruppen-Link einmalig)
+- `online_spiele.call_aktiv` (boolean) – ob gerade jemand im Call ist
+- `online_spiele.call_teilnehmer` (jsonb array von spieler_ids) – wer ist gerade im Call
+
+**Ablauf:**
+1. Admin erstellt Session → trägt WhatsApp-Gruppen-Einladungslink ein (wird für die Runde einmalig erstellt und bleibt gleich)
+2. Erster Spieler drückt «Call starten» → setzt `call_aktiv=true`, fügt sich zu `call_teilnehmer` hinzu, App öffnet Link extern
+3. Alle anderen sehen «Call joinen» statt «Call starten»
+4. Jeder Spieler der beitritt: drückt «Im Call» → fügt sich zu `call_teilnehmer` hinzu
+5. Tisch-UI zeigt: «Im Call: 4/6 Spieler» mit Avataren
+6. Spieler verlässt App wieder → «Verlassen»-Button entfernt ihn aus `call_teilnehmer`
+
+**Push Notification – neuer Trigger:**
+- Wenn erster Spieler `call_aktiv` setzt → Push an alle Mitspieler der Session
+- Kategorie: `video_call` (neues Toggle in Profil → Push-Einstellungen)
+- Titel: «Pokernacht läuft! 🎴»
+- Body: «Andreas hat den Video-Call gestartet – jetzt joinen!»
+- Deep Link: direkt der video_link URL (öffnet WhatsApp)
+
+**Call-Status im Tisch-UI:**
+- Wenn kein Call aktiv: Button «Call starten» (öffnet Link + setzt call_aktiv)
+- Wenn Call aktiv, ich nicht drin: Button «Call joinen» (öffnet Link + fügt mich hinzu)
+- Wenn ich im Call: Button «Call verlassen» + grüner Indikator
+- Anzeige: Avatare der Call-Teilnehmer mit Anzahl «3 im Call»
+
+**Telefonnummer im Spieler-Profil:**
+- Optionales Feld, wird für direkten wa.me-Link verwendet (Einzelkontakt)
+- Format: +41791234567 (mit Ländervorwahl)
+- Sichtbar nur für Admins in der Spielerverwaltung
 
 ### Implementierungs-Phasen
 

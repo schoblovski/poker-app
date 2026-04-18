@@ -4,7 +4,10 @@
 ALTER TABLE online_spiele
   ADD COLUMN IF NOT EXISTS small_blind  numeric NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS start_stack  numeric NOT NULL DEFAULT 100,
-  ADD COLUMN IF NOT EXISTS video_link   text;
+  ADD COLUMN IF NOT EXISTS video_link   text,
+  ADD COLUMN IF NOT EXISTS is_test      boolean NOT NULL DEFAULT false;
+
+COMMENT ON COLUMN online_spiele.is_test IS 'Test-Modus: kein Eintrag in spiele/spiel_teilnehmer, Payout schreibt nicht in echte Kontostände, erscheint nicht in Statistik/Verlauf';
 
 COMMENT ON COLUMN online_spiele.small_blind IS 'Small Blind in Stack-Einheiten';
 COMMENT ON COLUMN online_spiele.start_stack IS 'Start-Stack jedes Spielers';
