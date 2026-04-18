@@ -105,6 +105,17 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Gewinne pro Spieler zusammenführen (mehrere Sidepots → ein Eintrag)
+  const winAgg = new Map<string, { amount: number; hand: string }>();
+  for (const w of winLog) {
+    if (winAgg.has(w.spieler_id)) {
+      winAgg.get(w.spieler_id)!.amount += w.amount;
+    } else {
+      winAgg.set(w.spieler_id, { amount: w.amount, hand: w.hand });
+    }
+  }
+  const winLogAgg = Array.from(winAgg.entries()).map(([spieler_id, v]) => ({ spieler_id, ...v }));
+
   // Stacks aktualisieren
   await Promise.all([
     ...Object.entries(stackUpdates).map(([seatId, amount]) => {
@@ -122,7 +133,7 @@ Deno.serve(async (req) => {
   });
 
   // Action-Log: Showdown-Ergebnisse (inkl. Gewinner-Hand und Karten)
-  const logEntries: object[] = winLog.map(w => {
+  const logEntries: object[] = winLogAgg.map(w => {
     const res = results.find(r => r.spielerId === w.spieler_id);
     return {
       online_spiel_id,
@@ -138,7 +149,7 @@ Deno.serve(async (req) => {
   if (hasSplit) {
     logEntries.unshift({
       online_spiel_id,
-      spieler_id: winLog[0]?.spieler_id ?? null,
+      spieler_id: winLogAgg[0]?.spieler_id ?? null,
       action: 'split_pot',
       amount: session.pot,
       street: 'showdown',
@@ -157,7 +168,7 @@ Deno.serve(async (req) => {
       score: r.score,
       used_hole: r.usedHole,
     })),
-    winners: winLog,
+    winners: winLogAgg,
   });
 });
 
