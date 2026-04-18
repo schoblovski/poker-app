@@ -343,7 +343,8 @@ async function executePreActionIfSet(
     case 'call':
     case 'call_limit': {
       if (effectiveLimit !== null && callAmount > effectiveLimit) {
-        autoAction = 'fold';
+        // Paused players can't manually act → fold. Active players keep control.
+        autoAction = seat.status === 'paused' ? 'fold' : null;
       } else {
         autoAction = 'call';
       }

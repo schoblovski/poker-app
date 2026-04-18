@@ -7514,7 +7514,7 @@
           const hand=a.meta?.hand;
           const bestCards=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];
           const hc=bestCards.map(c=>_pmCard(c)).join('');
-          const cardRow=hc?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:2px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
+          const cardRow=hc?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
 </div>`:'';
           text=`<b>${escHtml(n)}</b> gewinnt${amt}${cardRow}`;extra=' pm-feed-win';break;
         }
@@ -7527,7 +7527,7 @@
           const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
           const handName=a.meta?.hand_name;
-          const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:2px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
+          const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
 </div>`;
           text=`<b>${escHtml(n)}</b> zeigt Karten${cardRow}`;
           break;
@@ -8090,9 +8090,8 @@
       const auto=overlay.querySelector('[name="pm-auto"]:checked')?.value||'fold';
       const lim=auto==='call_limit'?(parseFloat(document.getElementById('pm-pause-limit').value)||null):null;
       document.getElementById('pm-pause-confirm').disabled=true;
-      const resp=await _callFn('poker-action',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'pause'});
+      const resp=await _callFn('poker-action',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'pause',pause_auto_action:auto,pause_call_limit:lim??undefined});
       if(resp?.error){await showAlert('Fehler: '+resp.error);document.getElementById('pm-pause-confirm').disabled=false;return;}
-      if(_pm?.mySeat)await db.from('online_seats').update({pause_auto_action:auto,pause_call_limit:lim,paused_at:new Date().toISOString()}).eq('id',_pm.mySeat.id);
       close();
     };
   }
