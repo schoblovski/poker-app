@@ -120,12 +120,12 @@ Deno.serve(async (req) => {
       break;
 
     case 'call': {
-      const toCall = Math.min(callAmount, mySeat.stack);
-      newStack -= toCall;
-      newBet += toCall;
-      newPot += toCall;
+      const toCall = Math.round(Math.min(callAmount, mySeat.stack) * 100) / 100;
+      newStack = Math.round((mySeat.stack - toCall) * 100) / 100;
+      newBet = Math.round((mySeat.bet_current_round + toCall) * 100) / 100;
+      newPot = Math.round((session.pot + toCall) * 100) / 100;
       logAmount = toCall;
-      if (newStack === 0) newStatus = 'allin';
+      if (newStack <= 0) { newStack = 0; newStatus = 'allin'; }
       break;
     }
 
