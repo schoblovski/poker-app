@@ -6757,6 +6757,13 @@
       db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins'),
       db.from('einstellungen').select('key,wert'),
     ]);
+    // Endzeiten der abgeschlossenen Sessions aus dem Action-Log
+    const finishedIds=(sessions||[]).filter(s=>s.status==='finished').slice(0,5).map(s=>s.id);
+    let finishMap={};
+    if(finishedIds.length){
+      const{data:finActs}=await db.from('online_actions').select('online_spiel_id,created_at').in('online_spiel_id',finishedIds).eq('action','finish');
+      (finActs||[]).forEach(a=>{finishMap[a.online_spiel_id]=a.created_at;});
+    }
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
     if(_pm)_pm._waLink=waLink;
     const seatsMap={};(allSeats||[]).forEach(s=>{if(!seatsMap[s.online_spiel_id])seatsMap[s.online_spiel_id]=[];seatsMap[s.online_spiel_id].push(s);});
@@ -6793,14 +6800,26 @@
         const seatsDone=seatsMap[s.id]||[];
         const cnt=seatsDone.length;
         const totalBuyins=seatsDone.reduce((sum,seat)=>sum+(seat.buyins||1),0);
-        const datum=s.created_at?new Date(s.created_at).toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+        const startDt=s.created_at?new Date(s.created_at):null;
+        const endDt=finishMap[s.id]?new Date(finishMap[s.id]):null;
+        const datum=startDt?startDt.toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+        const fmtTime=dt=>dt?dt.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'}):'';
+        let zeitStr='';
+        if(startDt){
+          zeitStr=fmtTime(startDt);
+          if(endDt){
+            zeitStr+=` – ${fmtTime(endDt)}`;
+            const durMin=Math.round((endDt-startDt)/60000);
+            if(durMin>0){const h=Math.floor(durMin/60),m=durMin%60;zeitStr+=` (${h?h+'h ':''  }${m?m+'m':''})`;  }
+          }
+        }
         const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
         const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
         const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins</div></div>${chevron}</div>`;
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
