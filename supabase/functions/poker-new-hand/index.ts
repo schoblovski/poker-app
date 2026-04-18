@@ -51,7 +51,13 @@ Deno.serve(async (req) => {
     (s: { id: string; stack: number; status: string }) =>
       !bustIds.has(s.id) && s.status !== 'sitting_out' && s.stack > 0
   ).length;
-  if (activeSeatCount < 2) return err('Nicht genug aktive Spieler für eine neue Hand');
+  if (activeSeatCount < 2) {
+    const totalAtTable = (seats ?? []).filter((s: { status: string }) => s.status !== 'sitting_out').length;
+    if (totalAtTable >= 2) {
+      return err('Nicht genug Spieler mit Chips – bitte zuerst einen neuen Buy-In kaufen');
+    }
+    return err('Nicht genug aktive Spieler für eine neue Hand');
+  }
 
   // poker-start-game delegieren (übernimmt Dealer-Button-Weitersetzen, Karten austeilen, etc.)
   const startRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-start-game`, {
