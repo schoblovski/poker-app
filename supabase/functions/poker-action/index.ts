@@ -143,13 +143,25 @@ Deno.serve(async (req) => {
       break;
     }
 
-    case 'allin':
-      newBet = mySeat.bet_current_round + mySeat.stack;
-      newPot += mySeat.stack;
-      newStack = 0;
+    case 'allin': {
+      // Effektiven All-in-Betrag berechnen: maximal was Gegner zusammen decken können.
+      // Überschuss hat niemand der matchen kann → sofort zurück in den Stack.
+      const opponents = (seats ?? []).filter(
+        (s: { id: string; status: string }) =>
+          s.id !== mySeat.id && s.status !== 'folded' && s.status !== 'sitting_out'
+      );
+      const maxOpponentTotal = opponents.length > 0
+        ? Math.max(...opponents.map((s: { bet_current_round: number; stack: number }) => s.bet_current_round + s.stack))
+        : mySeat.bet_current_round + mySeat.stack;
+      const effectiveTotalBet = Math.min(mySeat.bet_current_round + mySeat.stack, maxOpponentTotal);
+      const effectiveAdditional = Math.max(0, effectiveTotalBet - mySeat.bet_current_round);
+      newBet = effectiveTotalBet;
+      newPot += effectiveAdditional;
+      newStack = mySeat.stack - effectiveAdditional; // Überschuss bleibt im Stack
       newStatus = 'allin';
-      logAmount = mySeat.stack;
+      logAmount = effectiveAdditional;
       break;
+    }
 
     default:
       return err(`Unbekannte Aktion: ${action}`);
