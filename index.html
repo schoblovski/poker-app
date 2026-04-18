@@ -714,6 +714,7 @@
   .pm-action-btns{display:flex;gap:8px;justify-content:center}
   .pm-action-btns .btn{flex:1;min-width:0;min-height:44px}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
+  .pm-feed-dim{color:var(--text-tertiary)!important;font-size:11px!important;text-align:center!important}
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn.live{display:flex}
   .pm-live-btn::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pm-pulse 1.4s infinite}
@@ -6634,19 +6635,21 @@
       const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,8);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
+      const avatarUrl=seat?.spieler?.profilbild||'';
       const nCards=session?.variante==='holdem'?2:4;
       let cardBacks='';
       if(seat&&!isEmpty&&!isFolded){
         const cw=8,ch=12,gap=3,tot=nCards*(cw+gap)-gap;
-        for(let c=0;c<nCards;c++){const bx=sx-tot/2+c*(cw+gap);cardBacks+=`<rect x="${bx}" y="${sy-28}" width="${cw}" height="${ch}" rx="2" fill="${isMe?'rgba(0,0,0,0)':'rgba(34,197,94,.8)'}" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>`;}
+        for(let cv=0;cv<nCards;cv++){const bx=sx-tot/2+cv*(cw+gap);cardBacks+=`<rect x="${bx}" y="${sy-28}" width="${cw}" height="${ch}" rx="2" fill="${isMe?'rgba(0,0,0,0)':'rgba(34,197,94,.8)'}" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>`;}
       }
       const dealerMark=isDealer?`<circle cx="${sx+18}" cy="${sy-18}" r="7" fill="#f59e0b" stroke="white" stroke-width="1.5"/><text x="${sx+18}" y="${sy-14}" text-anchor="middle" font-size="7" font-weight="700" fill="white">D</text>`:'';
       const betChip=betAmt>0?`<circle cx="${sx}" cy="${sy+28}" r="11" fill="var(--accent)" opacity=".85"/><text x="${sx}" y="${sy+32}" text-anchor="middle" font-size="8" fill="white">€${betAmt.toFixed(0)}</text>`:'';
+      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="20"/></clipPath><image href="${avatarUrl}" x="${sx-20}" y="${sy-20}" width="40" height="40" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.4:1}"/>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}">
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`<text x="${sx}" y="${sy-5}" text-anchor="middle" font-size="9" font-weight="600" fill="white" opacity=".9">${escHtml(name)}</text><text x="${sx}" y="${sy+7}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.6)">${stackTxt}</text>`}
+          :`${avatarEl}<text x="${sx}" y="${sy+33}" text-anchor="middle" font-size="8" font-weight="600" fill="white" opacity=".9">${escHtml(name)}</text>`}
         ${cardBacks}${betChip}${dealerMark}
       </g>`;
     }
@@ -6735,7 +6738,7 @@
     // Realtime für Lobby
     if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     _pmLobbyChannel=db.channel('pm-lobby')
-      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>loadOnlineLobby())
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{loadOnlineLobby();_pmUpdateLiveIndicator();})
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby())
       .subscribe();
   }
@@ -6864,7 +6867,8 @@
 
     // Neue-Hand-Button
     let newHandBtn='';
-    if(isRunning&&handIsOver&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
+    const handIsOver2=!session.current_player_id;
+    if(isRunning&&handIsOver2&&(isDealer||isAdmin)){newHandBtn=`<button class="btn btn-ghost" id="btn-pm-newhand" style="font-size:12px;padding:5px 12px">Nächste Hand</button>`;}
 
     // WhatsApp-Button
     const waLink=_pm._waLink||session.video_link||'';
@@ -6873,7 +6877,6 @@
     // Kebab-Menü (Tisch verlassen + Beenden)
     const hasMenu=!isFinished;
     const menuBtn=hasMenu?`<div class="pm-kebab-wrap"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:160px;z-index:50;overflow:hidden">${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
-    // "Nächste Hand" nur wenn keine Hand läuft (current_player_id ist null)
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -6896,32 +6899,33 @@
     return actions.slice(-40).reverse().map(a=>{
       const n=a.spieler?.name||'?';
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
-      let text='';
+      let text='';let extra='';
       switch(a.action){
         case'fold':text=`${n} foldet`;break;
         case'check':text=`${n} checkt`;break;
         case'call':text=`${n} callt${amt}`;break;
         case'raise':text=`${n} raised auf${amt}`;break;
         case'allin':text=`${n} All-in${amt}`;break;
+        case'blind':text=`${n} Blind${amt}`;break;
         case'post_sb':text=`${n} SB${amt}`;break;
         case'post_bb':text=`${n} BB${amt}`;break;
-        case'win':text=`${n} gewinnt${amt}`;break;
+        case'win':text=`${n} gewinnt${amt}`;extra=' pm-feed-win';break;
         case'pause':text=`${n} pausiert`;break;
         case'resume':text=`${n} ist zurück`;break;
         case'reveal_runout':text=`${n} deckt Runout auf`;break;
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
-        case'finish':text=`${n} hat die Session beendet`;cls=' pm-feed-win';break;
+        case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
+        case'new_hand':text=`── Hand #${a.hand_nr} ──`;extra=' pm-feed-dim';break;
         default:text=`${n}: ${a.action}`;
       }
-      const isWin=a.action==='win';
-      return`<div class="pm-feed-item${isWin?' pm-feed-win':''}">${text}</div>`;
+      return`<div class="pm-feed-item${extra}">${text}</div>`;
     }).join('');
   }
 
   function _pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus){
     if(!mySeat&&isWaiting)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist noch nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Platz nehmen</button></div>`;
-    if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Beobachter-Modus</div>`;
+    if(!mySeat&&isRunning)return`<div style="text-align:center;padding:var(--space-md)"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Zuschauer – du bist nicht am Tisch</p><button class="btn btn-primary" id="btn-pm-sitdown">Hinsetzen</button></div>`;
     if(!mySeat&&isFinished)return'';
     if(mySeat&&isWaiting){const enoughPlayers=seats.length>=2;return`<div style="text-align:center;padding:var(--space-sm)"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><button class="btn btn-primary" id="btn-pm-start"${enoughPlayers?'':' disabled'}>Erste Hand starten</button>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Warte auf mindestens 1 weiteren Spieler</div>`:''}</div>`;}
     if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div>${isAdmin&&!session.is_test?`<button class="btn btn-primary" id="btn-pm-payout" style="margin-top:var(--space-sm)">Payout & Abrechnung</button>`:''}</div>`;
@@ -7063,13 +7067,13 @@
   async function _pmTakeSeatFlow(seatNr){
     if(_pm?.mySeat){await showAlert('Du bist bereits am Tisch.');return;}
     if(!_pm?.session){await showAlert('Session nicht geladen.');return;}
-    if(_pm.session.status!=='waiting'){await showAlert('Session läuft bereits.');return;}
+    if(_pm.session.status==='finished'){await showAlert('Session ist beendet.');return;}
     if((_pm.seats||[]).some(s=>s.seat===seatNr)){await showAlert('Platz bereits besetzt.');return;}
     if(!currentSpieler?.id){await showAlert('Spieler nicht geladen – bitte neu einloggen.');return;}
     try{
       const{error}=await db.from('online_seats').insert({
         online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
-        seat:seatNr,stack:_pm.session.start_stack,status:'active',bet_current_round:0,
+        seat:seatNr,stack:_pm.session.start_stack,status:_pm.session.status==='running'?'sitting_out':'active',bet_current_round:0,
       });
       if(error){await showAlert('Fehler beim Platz nehmen: '+error.message);return;}
       // Join-Eintrag im Feed
@@ -7117,7 +7121,9 @@
   }
 
   async function _callFn(name,body){
-    const{data,error}=await db.functions.invoke(name,{body});
+    const{data:{session:s}}=await db.auth.getSession();
+    const hdrs=s?.access_token?{Authorization:`Bearer ${s.access_token}`}:{};
+    const{data,error}=await db.functions.invoke(name,{body,headers:hdrs});
     if(error)return{error:error.message||String(error)};
     return data||{};
   }
