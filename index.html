@@ -7131,7 +7131,7 @@
         case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
         case'new_hand':{
           const starter=a.spieler?.name?` · gestartet von ${a.spieler.name}`:'';
-          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:11px;font-weight:700;color:var(--text-tertiary);white-space:nowrap">Hand #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:4px 0"><div style="flex:1;height:1px;background:var(--accent)"></div><span style="font-size:11px;font-weight:700;color:var(--accent-text);white-space:nowrap;background:var(--accent-soft);padding:2px 8px;border-radius:10px">Hand #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--accent)"></div></div>`;
         }
         default:text=`${n}: ${a.action}`;
       }
