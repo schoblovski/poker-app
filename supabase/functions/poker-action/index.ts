@@ -164,10 +164,11 @@ Deno.serve(async (req) => {
     pre_action_limit: null,
   }).eq('id', mySeat.id);
 
-  // Action loggen
+  // Action loggen (call der den Stack aufbraucht → als allin loggen)
+  const logAction = (action === 'call' && newStatus === 'allin') ? 'allin' : action;
   await db.from('online_actions').insert({
     online_spiel_id, spieler_id,
-    action, amount: logAmount,
+    action: logAction, amount: logAmount,
     street: session.street, hand_nr: session.hand_nr,
   });
 

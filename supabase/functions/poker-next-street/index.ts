@@ -64,12 +64,13 @@ Deno.serve(async (req) => {
   const lastToAct = firstToActIdx >= 0 ? findPrevActivePlayer(seats ?? [], firstToActIdx) : null;
   const newStreetLastActorId = lastToAct?.spieler_id ?? null;
 
-  // Alle allin-Spieler → falls alle anderen auch allin/fold → sofort alle Streets aufdecken
+  // Kein weiteres Bieten mehr möglich: alle all-in, oder nur noch 1 aktiver Spieler
+  // (der könnte nur noch checken – direkt alle restlichen Karten aufdecken und Showdown)
   const stillActive = (seats ?? []).filter((s: { status: string }) => s.status === 'active' || s.status === 'paused');
-  const allAllin = stillActive.length === 0;
+  const runItOut = stillActive.length <= 1;
 
-  if (allAllin) {
-    // Alle restlichen Community Cards sofort aufdecken (runout)
+  if (runItOut) {
+    // Alle restlichen Community Cards sofort aufdecken
     const allNewCards = remainingDeck.slice(0, 5 - newCommunity.length);
     const fullBoard = [...newCommunity, ...allNewCards];
 
@@ -80,6 +81,10 @@ Deno.serve(async (req) => {
         current_player_id: null,
       }).eq('id', online_spiel_id),
       db.from('online_decks').update({ deck: remainingDeck.slice(allNewCards.length) }).eq('id', online_spiel_id),
+      // Einsätze zurücksetzen (für sauberen Showdown-State)
+      ...activeSeatIds.map((id: string) =>
+        db.from('online_seats').update({ bet_current_round: 0 }).eq('id', id)
+      ),
     ]);
 
     // Showdown auslösen
