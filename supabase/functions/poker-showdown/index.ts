@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
     const maxScore = Math.max(...eligible.map(r => r.score));
     const winners = eligible.filter(r => r.score === maxScore);
-    const share = Math.floor(pot.amount / winners.length);
+    const share = Math.floor(pot.amount / winners.length * 100) / 100;
 
     for (const w of winners) {
       stackUpdates[w.seatId] = (stackUpdates[w.seatId] ?? 0) + share;
