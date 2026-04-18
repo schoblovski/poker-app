@@ -101,7 +101,11 @@ Deno.serve(async (req) => {
 
     for (const w of winners) {
       stackUpdates[w.seatId] = (stackUpdates[w.seatId] ?? 0) + share;
-      winLog.push({ spieler_id: w.spielerId, amount: share, hand: w.handDesc });
+      // Nur umkämpfte Pots (≥2 berechtigte Spieler) als "Gewinn" loggen.
+      // Unkontestierter Sidepot = eigenes Geld zurück, kein echter Gewinn.
+      if (eligible.length > 1) {
+        winLog.push({ spieler_id: w.spielerId, amount: share, hand: w.handDesc });
+      }
     }
   }
 
@@ -205,10 +209,12 @@ function calcSidepots(seats: { id: string; status: string; bet_current_round: nu
     prevLevel = level;
   }
 
-  // Sicherstellen dass Gesamtpot korrekt ist
+  // Sicherstellen dass Gesamtpot korrekt ist.
+  // Differenz = Beiträge aus früheren Strassen (bet_current_round wurde zurückgesetzt).
+  // Diese gehören in den Hauptpot (pots[0]), da alle Spieler daran teilgenommen haben.
   const sumPots = pots.reduce((s, p) => s + p.amount, 0);
   if (sumPots < totalPot && pots.length > 0) {
-    pots[pots.length - 1].amount += totalPot - sumPots;
+    pots[0].amount += totalPot - sumPots;
   }
 
   return pots.length > 0 ? pots : [{ amount: totalPot, eligibleSeatIds: nonFolded.map(s => s.id) }];
