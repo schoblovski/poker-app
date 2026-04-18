@@ -7110,7 +7110,16 @@
         case'pause':text=`${n} pausiert`;break;
         case'resume':text=`${n} ist zurück`;break;
         case'reveal_runout':text=`${n} deckt Runout auf`;break;
-        case'reveal_cards':{const hc=(a.meta?.hole_cards||[]).map(c=>_pmCard(c)).join('');text=`${n} zeigt: <span style="display:inline-flex;gap:2px;vertical-align:middle">${hc}</span>`;break;}
+        case'reveal_cards':{
+          const hc=a.meta?.hole_cards||[];
+          const ck=c=>`${c.rank}${c.suit}`;
+          const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
+          const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
+          const handName=a.meta?.hand_name;
+          const handLine=handName?`<div style="font-size:11px;color:var(--accent-text);font-weight:700;margin-top:3px">${handName}</div>`:'';
+          text=`${n} zeigt: <span style="display:inline-flex;gap:2px;vertical-align:middle">${cards}</span>${handLine}`;
+          break;
+        }
         case'join':text=`${n} hat sich an den Tisch gesetzt`;break;
         case'leave':text=`${n} hat den Tisch verlassen`;break;
         case'finish':text=`${n} hat die Session beendet`;extra=' pm-feed-win';break;
@@ -7164,7 +7173,7 @@
     return`<div class="pm-action-area">
       <div style="display:flex;gap:8px;justify-content:center">
         <button class="btn ${pre?'btn-primary':'btn-ghost'}" id="btn-pm-preaction" style="font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0">${preBtnLabel}</button>
-        <button class="btn btn-secondary" id="btn-pm-pause" style="font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0">Pause</button>
+        <button class="btn btn-ghost" id="btn-pm-pause" style="font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0">Pause</button>
       </div>
     </div>`;
   }
@@ -7336,10 +7345,12 @@
     if(!_pm?.session||!currentSpieler?.id)return;
     const myHC=_pm.myHoleCards||[];
     if(!myHC.length)return;
+    const board=_pm.session.community_cards||[];
+    const best=board.length>=3?_pmBestHandJS(myHC,board,_pm.session.variante):null;
     await db.from('online_actions').insert({
       online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
       action:'reveal_cards',street:_pm.session.street,hand_nr:_pm.session.hand_nr,
-      meta:{hole_cards:myHC},
+      meta:{hole_cards:myHC,used_hole:best?.usedHole||[],used_board:best?.usedBoard||[],hand_name:best?.name||''},
     });
     await _pmLoad();
   }
