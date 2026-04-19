@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.15">
+  <meta name="version" content="3.16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -266,6 +266,7 @@
     @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
     @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
     @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
+    @keyframes toast-pop{from{opacity:0;transform:translate(-50%,-50%) scale(0.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
     .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
@@ -926,7 +927,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
 
-  const VERSION='3.15';
+  const VERSION='3.16';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1752,6 +1753,15 @@
   document.getElementById('btn-login-google').addEventListener('click',()=>loginWith('google'));
   document.getElementById('btn-login-facebook').addEventListener('click',()=>loginWith('facebook'));
   document.getElementById('btn-login-linkedin').addEventListener('click',()=>loginWith('linkedin_oidc'));
+  // Face ID / Touch ID Button – zeigen wenn Credential vorhanden
+  if(localStorage.getItem('dtks_webauthn')&&'credentials' in navigator&&window.PublicKeyCredential){
+    const biBtn=document.createElement('button');
+    biBtn.id='btn-login-biometric';biBtn.className='btn-oauth';
+    biBtn.style.cssText='border-color:var(--accent);color:var(--accent-text);background:var(--accent-soft)';
+    biBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Mit Face ID / Touch ID anmelden`;
+    biBtn.addEventListener('click',_webAuthnLogin);
+    document.getElementById('login-buttons').insertBefore(biBtn,document.getElementById('login-buttons').firstChild);
+  }
   // Buttons erst einblenden wenn Event-Listener aktiv sind (verhindert "sichtbar aber nicht tappbar")
   document.getElementById('login-buttons').style.opacity='1';
 
@@ -1861,7 +1871,7 @@
     window.location.reload();
   });
 
-  async function showApp(){
+  async function showApp(sessionParam=null){
     // Sofort Ladeanimation zeigen – verhindert leeren Bildschirm während DB-Calls
     const loginEl=document.getElementById('login-screen');
     loginEl.innerHTML=`<div class="login-card" style="gap:var(--space-xl)">
@@ -1932,6 +1942,19 @@
     loadHome();
     _btInit();
     refreshBellBadge();
+    _initBatteryAlert();
+    _initNetworkMonitor();
+    _processOfflineQueue();
+    // WebAuthn-Tokens mit der bereits bekannten Session aktualisieren (kein separates getSession nötig)
+    const _waCred=localStorage.getItem('dtks_webauthn');
+    if(_waCred&&sessionParam?.access_token){
+      const c=JSON.parse(_waCred);
+      if(c.credentialId){localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:sessionParam.access_token,rt:sessionParam.refresh_token}));console.log('🔑 WebAuthn Tokens aktualisiert');}
+    }
+    // Biometric offer (einmalig, nur wenn Platform Authenticator verfügbar und noch nicht eingerichtet)
+    if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){
+      setTimeout(_showBiometricOffer,5000);
+    }
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -1953,8 +1976,20 @@
     });
   }
   db.auth.onAuthStateChange((ev,session)=>{
-    if(session){currentUser=session.user;showApp();}
-    else{currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+    if(session){
+      currentUser=session.user;
+      if(ev==='TOKEN_REFRESHED'){
+        // Nur RT aktualisieren – kein showApp() nötig, App läuft bereits
+        const _wc=localStorage.getItem('dtks_webauthn');
+        if(_wc&&session.refresh_token){const c=JSON.parse(_wc);if(c.credentialId){localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:c.credentialId,at:'',rt:session.refresh_token}));console.log('🔑 WebAuthn RT nach Auto-Refresh aktualisiert');}}
+      } else {
+        showApp(session);
+      }
+    } else {
+      currentUser=null;currentSpieler=null;
+      document.getElementById('login-screen').style.display='flex';
+      document.getElementById('app-screen').style.display='none';
+    }
   });
 
   // ── HOME ───────────────────────────────────────────────
@@ -2596,6 +2631,26 @@
         </div>
       </div>
 
+      ${(()=>{
+        const hasCred=!!localStorage.getItem('dtks_webauthn');
+        const supported='credentials' in navigator&&!!window.PublicKeyCredential;
+        if(!supported)return'';
+        return`<div class="section-title" style="margin-top:var(--space-lg)">Anmeldung</div>
+        <div class="card"><div class="list-item">
+          <div class="item-avatar" style="width:40px;height:40px;background:${hasCred?'var(--accent-soft)':'var(--bg-secondary)'};color:${hasCred?'var(--accent)':'var(--text-tertiary)'}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </div>
+          <div class="item-body">
+            <div class="item-title">Face ID / Touch ID</div>
+            <div class="item-subtitle">${hasCred?'Aktiviert auf diesem Gerät':'Schnell anmelden ohne Google'}</div>
+          </div>
+          ${hasCred
+            ?`<button class="btn btn-ghost" id="btn-webauthn-remove" style="font-size:12px;padding:5px 14px;height:32px!important;min-width:0;width:auto;flex-shrink:0;margin:0">Entfernen</button>`
+            :`<button class="btn btn-primary" id="btn-webauthn-register" style="font-size:12px;padding:5px 14px;height:32px!important;min-width:0;width:auto;flex-shrink:0;margin:0">Aktivieren</button>`
+          }
+        </div></div>`;
+      })()}
+
       <div class="section-title" style="margin-top:var(--space-lg)">Account</div>
       <div class="card">
         <button class="list-item clickable" id="profil-btn-wechseln" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans)">
@@ -2625,6 +2680,10 @@
     // Back button
     document.getElementById('profil-back').addEventListener('click',()=>showPage('home'));
 
+    // WebAuthn buttons
+    document.getElementById('btn-webauthn-register')?.addEventListener('click',_webAuthnRegister);
+    document.getElementById('btn-webauthn-remove')?.addEventListener('click',_webAuthnRemove);
+
     // Farbenblind-Modus Toggle
     document.getElementById('cb-mode-toggle').addEventListener('change',e=>applyColorblind(e.target.checked));
 
@@ -2636,7 +2695,20 @@
     // Abmelden
     document.getElementById('profil-btn-logout').addEventListener('click',async()=>{
       if(!await confirmAction('Wirklich abmelden?'))return;
-      await db.auth.signOut();
+      const hasBiometric=!!localStorage.getItem('dtks_webauthn');
+      if(hasBiometric){
+        // RT sichern BEVOR Supabase irgendetwas macht (kein signOut → kein interner RT-Refresh/Rotation)
+        const{data:{session:s}}=await db.auth.getSession();
+        if(s?.refresh_token){
+          const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');
+          if(c.credentialId)localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:c.credentialId,at:'',rt:s.refresh_token}));
+        }
+        // Supabase Session manuell aus localStorage entfernen (kein API-Call → RT bleibt serverseitig gültig)
+        const sbKey=Object.keys(localStorage).find(k=>k.startsWith('sb-')&&k.endsWith('-auth-token'));
+        if(sbKey)localStorage.removeItem(sbKey);
+      } else {
+        await db.auth.signOut();
+      }
       location.reload();
     });
 
@@ -3268,6 +3340,17 @@
   // ── TRANSAKTIONEN ──────────────────────────────────────
   async function loadTransaktionen(){
     const el=document.getElementById('transaktionen-content');
+    // Offline-Queue-Banner
+    const offQ=JSON.parse(localStorage.getItem('dtks_offline_queue')||'[]');
+    const qBanner=document.getElementById('trans-queue-banner');
+    if(offQ.length>0){
+      if(!qBanner){
+        const b=document.createElement('div');b.id='trans-queue-banner';
+        b.style.cssText='background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px';
+        b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>${offQ.length} Transaktion${offQ.length>1?'en':''} warten auf Synchronisierung`;
+        el.before(b);
+      }
+    } else qBanner?.remove();
     const{data:trans}=await db.from('transaktionen').select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)').order('datum',{ascending:false}).order('created_at',{ascending:false}).limit(100);
     if(!trans||trans.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
     const gruppen={};
@@ -3354,7 +3437,15 @@
     if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
     if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
-    else{
+    else if(!navigator.onLine){
+      // Offline: in Warteschlange speichern
+      const q=JSON.parse(localStorage.getItem('dtks_offline_queue')||'[]');
+      q.push({...data,_id:Date.now()});
+      localStorage.setItem('dtks_offline_queue',JSON.stringify(q));
+      _showToast('Offline gespeichert – wird automatisch synchronisiert','info');
+      document.getElementById('modal-transaktion').classList.remove('open');
+      return;
+    } else {
       await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);
       // Push an betroffene Spieler (von + nach, ohne Bank, ohne null)
       const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
@@ -5506,6 +5597,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.16',datum:'April 2026',eintraege:[
+      {typ:'neu',text:'Face ID / Touch ID Login – nach einmaliger Aktivierung im Profil kann man sich ohne Google anmelden; Passkey wird sicher auf dem Gerät gespeichert'},
+      {typ:'neu',text:'Offline-Modus für Transaktionen – neue Transaktionen werden bei fehlender Verbindung lokal gespeichert und automatisch synchronisiert sobald die Verbindung wieder da ist'},
+      {typ:'neu',text:'Verbindungsmonitor – Banner bei Offline oder sehr schwacher Verbindung (2G/Slow-2G)'},
+      {typ:'neu',text:'Akku-Warnung – Hinweis wenn der Akku unter 20% fällt und das Gerät nicht geladen wird'},
+      {typ:'verbessert',text:'Bestätigungsmeldungen erscheinen als zentriertes Modal-Popup statt Banner (kein Problem mehr mit Dynamic Island / Notch)'},
+    ]},
     {version:'3.15',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
       {typ:'neu',text:'Modals schieben sich vom unteren Bildschirmrand hoch und beim Schliessen wieder herunter (kein Fade)'},
@@ -6451,9 +6549,196 @@
     document.getElementById('btn-roh-alles')?.addEventListener('click',()=>loadRohdaten(undefined,true));
   }
 
+  // ── MOBILE FEATURES ────────────────────────────────────
+
+  // Toast-Utility – erscheint unterhalb Dynamic Island / Notch
+  function _showToast(msg,type='info',dur=4000){
+    const icon=type==='success'?`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:type==='error'?`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`:'';
+    const bg=type==='error'?'var(--danger)':type==='success'?'var(--accent)':'var(--surface)';
+    const fg=type==='info'?'var(--text-primary)':'white';
+    const el=document.createElement('div');
+    el.style.cssText=`position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:${bg};color:${fg};border:${type==='info'?'1px solid var(--border)':'none'};border-radius:16px;padding:16px 24px;font-size:14px;font-weight:600;z-index:10002;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.28);max-width:calc(100vw - 48px);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;animation:toast-pop .2s ease-out both`;
+    el.innerHTML=(icon?`<div>${icon}</div>`:'')+'<div>'+msg+'</div>';
+    document.body.appendChild(el);
+    setTimeout(()=>{el.style.animation='toast-pop .15s ease-in reverse both';setTimeout(()=>el.remove(),150);},dur);
+  }
+
+  // ── BATTERY ALERT ──
+  async function _initBatteryAlert(){
+    if(!navigator.getBattery)return;
+    try{
+      const batt=await navigator.getBattery();
+      let _lastPct=-1;
+      function _check(){
+        if(!batt.charging&&batt.level<=0.2){
+          const p=Math.round(batt.level*100);
+          if(p!==_lastPct){_lastPct=p;_showToast(`Akku ${p}% – jetzt laden!`,'error',12000);}
+        } else _lastPct=-1;
+      }
+      batt.addEventListener('levelchange',_check);
+      batt.addEventListener('chargingchange',_check);
+      setTimeout(_check,5000);
+    }catch(e){}
+  }
+
+  // ── NETZWERK-MONITOR (einmalig registriert) ──
+  let _netBanner=null,_netMonitorInit=false;
+  function _initNetworkMonitor(){
+    if(_netMonitorInit)return;_netMonitorInit=true;
+    const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+    function _update(){
+      const off=!navigator.onLine;
+      const et=conn?.effectiveType;
+      const slow=et&&['2g','slow-2g'].includes(et);
+      if(off||slow){
+        if(!_netBanner){
+          _netBanner=document.createElement('div');
+          _netBanner.id='network-status-banner';
+          // padding-top verschiebt Text unter Dynamic Island, Banner selbst beginnt bei top:0
+          _netBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9995;background:var(--danger);color:white;text-align:center;font-size:12px;font-weight:700;padding:calc(env(safe-area-inset-top,0px)+6px) 16px 6px;display:flex;align-items:center;justify-content:center;gap:6px';
+          document.body.appendChild(_netBanner);
+        }
+        _netBanner.textContent=off?'Offline – neue Transaktionen werden lokal gespeichert':`Schwache Verbindung (${(et||'').toUpperCase()})`;
+      } else {
+        _netBanner?.remove();_netBanner=null;
+      }
+    }
+    window.addEventListener('online',()=>{_update();setTimeout(_processOfflineQueue,1500);});
+    window.addEventListener('offline',_update);
+    if(conn)conn.addEventListener('change',_update);
+    _update();
+  }
+
+  // ── OFFLINE-WARTESCHLANGE (nur Transaktionen) ──
+  let _queueProcessing=false;
+  async function _processOfflineQueue(){
+    if(_queueProcessing||!navigator.onLine)return;
+    const q=JSON.parse(localStorage.getItem('dtks_offline_queue')||'[]');
+    if(!q.length)return;
+    _queueProcessing=true;
+    localStorage.removeItem('dtks_offline_queue');
+    let ok=0;const failed=[];
+    const _insertWithTimeout=(data)=>Promise.race([
+      db.from('transaktionen').insert(data),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000)),
+    ]);
+    try{
+      for(const {_id,...data} of q){
+        try{
+          const{error}=await _insertWithTimeout(data);
+          if(error)failed.push({_id,...data});else ok++;
+        }catch{failed.push({_id:Date.now(),...data});}
+      }
+    }finally{
+      if(failed.length)localStorage.setItem('dtks_offline_queue',JSON.stringify(failed));
+      _queueProcessing=false;
+    }
+    if(ok>0){
+      _showToast(`${ok} offline Transaktion${ok>1?'en':''} synchronisiert`,'success');
+      await loadTransaktionen().catch(()=>{});await loadHome().catch(()=>{});
+    }
+    if(failed.length){
+      _showToast(`${failed.length} Transaktion${failed.length>1?'en':''} fehlgeschlagen – erneuter Versuch beim nächsten Start`,'error',6000);
+    }
+  }
+
+  // ── WEBAUTHN / FACE ID ──
+  function _b64uEnc(buf){return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
+  function _b64uDec(s){return Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));}
+
+  async function _webAuthnLogin(){
+    const raw=localStorage.getItem('dtks_webauthn');if(!raw)return;
+    const cred=JSON.parse(raw);
+    if(!cred.rt){
+      // Kein RT vorhanden – einmal mit Google anmelden um Face ID zu erneuern
+      await showAlert('Face ID erneuern: Bitte einmal mit Google anmelden. Danach funktioniert Face ID wieder.');
+      return;
+    }
+    const btn=document.getElementById('btn-login-biometric');
+    try{
+      if(btn){btn.disabled=true;btn.childNodes[btn.childNodes.length-1].textContent=' Verifiziere…';}
+      const assertion=await navigator.credentials.get({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{id:_b64uDec(cred.credentialId),type:'public-key'}],
+        userVerification:'preferred',timeout:60000,
+      }});
+      if(assertion){
+        // refreshSession braucht nur den RT – kein AT nötig, egal ob abgelaufen oder leer
+        const{data,error}=await db.auth.refreshSession({refresh_token:cred.rt});
+        if(!error&&data?.session){
+          const s=data.session;
+          localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:s.access_token,rt:s.refresh_token}));
+          currentUser=s.user;showApp(s);
+        } else {
+          // RT abgelaufen/widerrufen – Credential-ID behalten, RT leeren
+          localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:'',rt:''}));
+          await showAlert('Session abgelaufen: Bitte einmal mit Google anmelden. Face ID funktioniert danach wieder automatisch.');
+          if(btn){btn.disabled=false;btn.childNodes[btn.childNodes.length-1].textContent=' Mit Face ID / Touch ID anmelden';}
+        }
+      }
+    }catch(e){if(btn){btn.disabled=false;btn.childNodes[btn.childNodes.length-1].textContent=' Mit Face ID / Touch ID anmelden';}}
+  }
+
+  async function _webAuthnRegister(){
+    if(!navigator.credentials||!window.PublicKeyCredential)return showAlert('WebAuthn wird auf diesem Gerät nicht unterstützt.');
+    try{
+      const challenge=crypto.getRandomValues(new Uint8Array(32));
+      const credential=await navigator.credentials.create({publicKey:{
+        challenge,
+        rp:{name:'DTKS Poker',id:location.hostname},
+        user:{id:new TextEncoder().encode(currentSpieler.id),name:currentSpieler.email||currentSpieler.name,displayName:currentSpieler.name},
+        pubKeyCredParams:[{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+        authenticatorSelection:{authenticatorAttachment:'platform',requireResidentKey:false,userVerification:'preferred'},
+        timeout:60000,
+      }});
+      if(credential){
+        const s=(await db.auth.getSession()).data.session;
+        localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:_b64uEnc(credential.rawId),at:'',rt:s?.refresh_token||''}));
+        _showToast('Face ID / Touch ID aktiviert!','success');
+        loadProfil();
+      }
+    }catch(e){if(e.name!=='NotAllowedError')await showAlert('Fehler: '+(e.message||e.name));}
+  }
+
+  async function _webAuthnRemove(){
+    if(!await confirmAction('Face ID / Touch ID auf diesem Gerät entfernen?'))return;
+    localStorage.removeItem('dtks_webauthn');
+    _showToast('Face ID / Touch ID entfernt');
+    loadProfil();
+  }
+
+  async function _showBiometricOffer(){
+    if(!window.PublicKeyCredential)return;
+    if(localStorage.getItem('dtks_webauthn'))return; // bereits eingerichtet
+    const avail=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
+    if(!avail)return;
+    document.getElementById('biometric-offer-sheet')?.remove();
+    const sheet=document.createElement('div');
+    sheet.id='biometric-offer-sheet';
+    // Overlay
+    sheet.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;animation:modal-backdrop-in .2s ease-out both';
+    sheet.innerHTML=`
+      <div style="background:var(--surface);border-radius:20px;padding:28px 24px 24px;max-width:320px;width:100%;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.28);animation:toast-pop .25s cubic-bezier(.34,1.2,.64,1) both">
+        <div style="width:56px;height:56px;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="1.8" style="width:28px;height:28px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </div>
+        <div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px">Face ID aktivieren?</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.5">Beim nächsten Besuch direkt mit Face ID oder Touch ID anmelden.</div>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px">
+          <button id="biometric-offer-yes" class="btn btn-primary" style="max-width:none;margin:0">Jetzt aktivieren</button>
+          <button id="biometric-offer-no" class="btn btn-ghost" style="max-width:none;margin:0;color:var(--text-tertiary);font-size:13px">Nicht jetzt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(sheet);
+    sheet.querySelector('#biometric-offer-yes').addEventListener('click',async()=>{sheet.remove();await _webAuthnRegister();});
+    sheet.querySelector('#biometric-offer-no').addEventListener('click',()=>{localStorage.setItem('dtks_webauthn_declined','1');sheet.remove();});
+  }
+
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
-  if(session){currentUser=session.user;showApp();}
+  if(session){currentUser=session.user;showApp(session);}
 </script>
 
 <!-- Was ist neu Modal -->
