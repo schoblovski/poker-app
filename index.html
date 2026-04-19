@@ -1871,7 +1871,7 @@
     window.location.reload();
   });
 
-  async function showApp(){
+  async function showApp(sessionParam=null){
     // Sofort Ladeanimation zeigen – verhindert leeren Bildschirm während DB-Calls
     const loginEl=document.getElementById('login-screen');
     loginEl.innerHTML=`<div class="login-card" style="gap:var(--space-xl)">
@@ -1945,11 +1945,11 @@
     _initBatteryAlert();
     _initNetworkMonitor();
     _processOfflineQueue();
-    // WebAuthn-Tokens nach jedem Login aktualisieren (hält gespeicherte AT/RT frisch)
-    if(localStorage.getItem('dtks_webauthn')){
-      db.auth.getSession().then(({data:{session:s}})=>{
-        if(s){const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:s.access_token,rt:s.refresh_token}));}
-      });
+    // WebAuthn-Tokens mit der bereits bekannten Session aktualisieren (kein separates getSession nötig)
+    const _waCred=localStorage.getItem('dtks_webauthn');
+    if(_waCred&&sessionParam?.access_token){
+      const c=JSON.parse(_waCred);
+      if(c.credentialId){localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:sessionParam.access_token,rt:sessionParam.refresh_token}));console.log('🔑 WebAuthn Tokens aktualisiert');}
     }
     // Biometric offer (einmalig, nur wenn Platform Authenticator verfügbar und noch nicht eingerichtet)
     if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){
@@ -1976,7 +1976,7 @@
     });
   }
   db.auth.onAuthStateChange((ev,session)=>{
-    if(session){currentUser=session.user;showApp();}
+    if(session){currentUser=session.user;showApp(session);}
     else{currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
   });
 
@@ -6637,7 +6637,7 @@
         if(!error&&data?.session){
           const s=data.session;
           localStorage.setItem('dtks_webauthn',JSON.stringify({...cred,at:s.access_token,rt:s.refresh_token}));
-          currentUser=s.user;showApp();
+          currentUser=s.user;showApp(s);
         } else {
           // Credential-ID behalten, nur Tokens leeren – nach Google-Login werden sie automatisch erneuert
           localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:'',rt:''}));
@@ -6707,7 +6707,7 @@
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
-  if(session){currentUser=session.user;showApp();}
+  if(session){currentUser=session.user;showApp(session);}
 </script>
 
 <!-- Was ist neu Modal -->
