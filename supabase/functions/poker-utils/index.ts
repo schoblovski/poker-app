@@ -1,5 +1,5 @@
 // DTKS Poker – Shared Utilities v1.4
-// Deck management + Hand evaluators for Hold'em, Omaha, Texama
+// Deck management + Hand evaluators for Hold'em, Omaha, Texahma
 //
 // Card format: { rank: number, suit: string }
 //   rank: 2-14 (11=J, 12=Q, 13=K, 14=A)
@@ -132,10 +132,10 @@ export function evalOmaha(hole: Card[], board: Card[]): { score: number; best: C
   return best;
 }
 
-// ─── Texama: 0-4 hole cards + matching board cards ──────────
+// ─── Texahma: 0-4 hole cards + matching board cards ──────────
 // 126 combinations total
 
-export function evalTexama(hole: Card[], board: Card[]): { score: number; best: Card[]; usedHole: Card[]; usedBoard: Card[] } {
+export function evalTexahma(hole: Card[], board: Card[]): { score: number; best: Card[]; usedHole: Card[]; usedBoard: Card[] } {
   let best = { score: -1, best: [] as Card[], usedHole: [] as Card[], usedBoard: [] as Card[] };
   for (let k = 0; k <= 4; k++) {
     const need = 5 - k;

@@ -1,12 +1,12 @@
 // DTKS Poker – Edge Function: poker-showdown
 // Evaluiert alle verbleibenden Hände, bestimmt Gewinner, verteilt Pot.
-// Unterstützt Hold'em, Omaha, Texama inkl. Sidepots.
+// Unterstützt Hold'em, Omaha, Texahma inkl. Sidepots.
 //
 // POST Body: { online_spiel_id: string }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
-  evalHoldem, evalOmaha, evalTexama, handName,
+  evalHoldem, evalOmaha, evalTexahma, handName,
   CORS, corsOk, json, err,
   type Card,
 } from '../poker-utils/index.ts';
@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
         score = r.score; usedHole = r.usedHole; best = r.best;
         break;
       }
-      case 'texama': {
-        const r = evalTexama(hole, board);
+      case 'texahma': {
+        const r = evalTexahma(hole, board);
         score = r.score; usedHole = r.usedHole; best = r.best;
         break;
       }

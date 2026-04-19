@@ -83,6 +83,7 @@
     body.pm-fullscreen .bottom-nav{display:none!important;}
     .pm-rt-inline{display:none!important;}
     body.pm-fullscreen .pm-rt-inline{display:flex!important;}
+    .pm-tisch-left .pm-rt-inline{display:flex!important;}
     body.pm-fullscreen #app-screen{max-width:none!important;}
     body.pm-fullscreen .content{padding:0!important;overflow-y:auto;height:100dvh;}
     body.pm-tisch .bottom-nav{display:none!important;}
@@ -415,7 +416,7 @@
     #pwa-sheet{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;max-width:430px;padding:0 var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));animation:pwaSlideUp 350ms cubic-bezier(.32,1.1,.6,1);position:relative;outline:none;}
     .pwa-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:var(--space-md) auto var(--space-lg);}
     .pwa-close{position:absolute;top:16px;right:var(--space-md);width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);}
-    .pwa-icon-wrap{width:72px;height:72px;border-radius:18px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);font-size:40px;}
+    .pwa-icon-wrap{width:72px;height:72px;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.15);margin:0 auto var(--space-md);}
     .pwa-title{font-size:22px;font-weight:700;letter-spacing:-.4px;text-align:center;margin-bottom:6px;}
     .pwa-sub{font-size:14px;color:var(--text-secondary);text-align:center;line-height:1.5;margin-bottom:var(--space-lg);}
     .pwa-steps{list-style:none;margin-bottom:var(--space-lg);}
@@ -688,8 +689,9 @@
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes pm-card-flip-out{0%{transform:scaleX(1) scaleY(1)}35%{transform:scaleX(0.55) scaleY(1.04)}100%{transform:scaleX(0) scaleY(1)}}
-  @keyframes pm-card-flip-in{0%{transform:scaleX(0) scaleY(1)}55%{transform:scaleX(1.07) scaleY(1.03)}75%{transform:scaleX(0.97) scaleY(1)}100%{transform:scaleX(1) scaleY(1)}}
+  @keyframes pm-card-flip-out{0%{transform:perspective(400px) rotateY(0deg)}100%{transform:perspective(400px) rotateY(-90deg)}}
+  @keyframes pm-card-flip-in{0%{transform:perspective(400px) rotateY(90deg)}100%{transform:perspective(400px) rotateY(0deg)}}
+  .pm-card-ind{backface-visibility:hidden;-webkit-backface-visibility:hidden;}
   .pm-dealer-btn{fill:#f59e0b;font-size:8px;font-weight:700;font-family:'DM Mono',monospace}
   .pm-community{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:var(--space-sm) 0}
   .pm-pot-label{text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:2px}
@@ -729,6 +731,7 @@
   .pm-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
   .pm-tab.active{color:var(--accent-text);border-color:var(--accent)}
   .pm-feed{display:flex;flex-direction:column;gap:3px;max-height:clamp(200px,40vh,380px);overflow-y:auto}
+  @media (min-width:600px) and (orientation:portrait){.pm-feed{max-height:clamp(300px,55vh,600px)}}
   .pm-feed-item{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12.5px;color:var(--text-secondary);line-height:1.4}
   .pm-feed-item .pf-av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0}
   .pm-feed-item .pf-ini{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:var(--bg);color:var(--text-secondary)}
@@ -1100,7 +1103,7 @@
             <div style="font-size:13px;color:var(--text-secondary)">Du bekommst 4 eigene Karten — musst aber genau 2 davon + genau 3 vom Tisch verwenden.</div>
           </div>
           <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
-            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:3px">Texama <span style="font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px;margin-left:4px">Eigene Erfindung</span></div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:3px">Texahma <span style="font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px;margin-left:4px">Eigene Erfindung</span></div>
             <div style="font-size:13px;color:var(--text-secondary)">4 eigene Karten wie Omaha — du kannst aber frei wählen wie viele du davon verwendest: 0 bis 4. Vierling in der Hand + 1 Tischkarte? Gültig!</div>
           </div>
         </div>
@@ -1378,7 +1381,7 @@
     const body=document.getElementById('pwa-sheet-body');
     if(isIos){
       body.innerHTML=`
-        <div class="pwa-icon-wrap">♠️</div>
+        <div class="pwa-icon-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="72" height="72"><rect width="192" height="192" fill="white"/><text x="50%" y="52%" font-size="120" dominant-baseline="central" text-anchor="middle">♠</text></svg></div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Füge DTKS Poker zum Home-Bildschirm hinzu – so hast du die App immer griffbereit.</p>
         <ol class="pwa-steps">
@@ -1400,7 +1403,7 @@
         </div>`;
     } else {
       body.innerHTML=`
-        <div class="pwa-icon-wrap">♠️</div>
+        <div class="pwa-icon-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="72" height="72"><rect width="192" height="192" fill="white"/><text x="50%" y="52%" font-size="120" dominant-baseline="central" text-anchor="middle">♠</text></svg></div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Installiere DTKS Poker als App – schneller Zugriff, kein Browser nötig.</p>
         <div class="pwa-btn-row">
@@ -2044,8 +2047,9 @@
       }
       const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
       ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:400px;padding:var(--space-xl) var(--space-lg);text-align:center">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-lg)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
-        <div style="font-size:15px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat.</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
+        <div style="font-size:22px;margin-bottom:var(--space-md)">🕵️</div>
+        <div style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Ooohhh… du hast was gefunden! Gut gemacht.<br>Leider musst du erst beweisen, dass du qualifiziert bist.</div>
         <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:var(--space-xl);color:var(--text-primary)">Wer ist der IT-Experte,<br>den ihr angeblich gar nicht habt?</div>
         <input id="ee-input" type="text" class="form-input" placeholder="Antwort eingeben…" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;margin-bottom:var(--space-md)">
         <div id="ee-msg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:var(--space-md)"></div>
@@ -2082,8 +2086,8 @@
         <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
         <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
           <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Pandemie-Modus</div>
-          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texama. Echte Karten, echter Einsatz, echter Spass.</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Findet ihr den Modus im Avatar-Menü unter <strong>Pandemie-Modus</strong>.</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Den Pandemie-Modus findest du jetzt im Avatar-Menü.</div>
         </div>
         <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
       </div>`;
@@ -2960,7 +2964,7 @@
       <div style="font-size:12px;color:var(--text-secondary);margin-bottom:var(--space-sm)">Von stärkster (1) bis schwächster (10) Hand</div>`;
 
     HAENDE.forEach(h=>{
-      const isTop=h.rank<=4;
+      const isTop=h.rank<=3;
       html+=`<div class="hand-card">
         <div class="hand-rank${isTop?' top':''}">${h.rank}</div>
         <div class="hand-cards-row">${h.cards.map(([r,s])=>card(r,s)).join('')}</div>
@@ -6047,8 +6051,7 @@
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
     {version:'4.0',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texama. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
-      {typ:'neu',text:'Easter Egg: Pandemie-Modus via verstecktem Rätsel freischaltbar (7× auf DTKS POKER tippen → Sicherheitsüberprüfung → richtiger IT-Experte eingeben)'},
+      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
       {typ:'fix',text:'Hand-Evaluator: Kategorie-Vergleich korrigiert (Pärchen schlug fälschlicherweise Ass-hoch nicht)'},
       {typ:'verbessert',text:'Pandemie-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
       {typ:'verbessert',text:'Nummernblock: eigener Overlay für Betragsfelder im Pandemie-Modus (kein System-Keyboard)'},
@@ -7181,7 +7184,7 @@
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
     if(_pm)_pm._waLink=waLink;
     const seatsMap={};(allSeats||[]).forEach(s=>{if(!seatsMap[s.online_spiel_id])seatsMap[s.online_spiel_id]=[];seatsMap[s.online_spiel_id].push(s);});
-    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texama:'Texama'};
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
     const hasActive=(sessions||[]).some(s=>s.status==='waiting'||s.status==='running');
@@ -7198,7 +7201,7 @@
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
               <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
-              <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texama:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texama:'✦'}[s.variante]||''}</span>
+              <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
             </div>
             <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
@@ -7229,8 +7232,8 @@
         }
         const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
         const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
-        const varIcons={holdem:'♠',omaha:'♦',texama:'✦'};
-        const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texama:'#8b5cf6'};
+        const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
+        const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
         html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
@@ -7259,7 +7262,7 @@
       <div style="margin-bottom:var(--space-md)">
         <div class="section-title" style="margin:0 0 var(--space-sm)">Spielvariante</div>
         <div style="display:flex;gap:8px">
-          ${[['holdem','♠',"Texas Hold'em",'2 Karten'],['omaha','♦','Omaha','4 Karten, exakt 2+3'],['texama','✦','Texama','4 Karten, 0–4 eigene']].map(([v,icon,l,s],i)=>`<div class="pm-var-tile" data-variante="${v}" style="flex:1;border:2px solid ${v===_initVar?'var(--accent)':'var(--border)'};border-radius:var(--radius-md);padding:12px 6px;text-align:center;cursor:pointer;background:${v===_initVar?'var(--accent-soft)':'var(--surface)'};transition:border-color var(--transition),background var(--transition)"><div style="font-size:22px;color:${['var(--text-secondary)','var(--danger)','#8b5cf6'][i]}">${icon}</div><div style="font-size:13px;font-weight:700;margin-top:4px;color:${v===_initVar?'var(--accent-text)':'var(--text-primary)'}">${l}</div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;line-height:1.3">${s}</div></div>`).join('')}
+          ${[['holdem','♠',"Texas Hold'em",'2 Karten'],['omaha','♦','Omaha','4 Karten, exakt 2+3'],['texahma','✦','Texahma','4 Karten, 0–4 eigene']].map(([v,icon,l,s],i)=>`<div class="pm-var-tile" data-variante="${v}" style="flex:1;border:2px solid ${v===_initVar?'var(--accent)':'var(--border)'};border-radius:var(--radius-md);padding:12px 6px;text-align:center;cursor:pointer;background:${v===_initVar?'var(--accent-soft)':'var(--surface)'};transition:border-color var(--transition),background var(--transition)"><div style="font-size:22px;color:${['var(--text-secondary)','var(--danger)','#8b5cf6'][i]}">${icon}</div><div style="font-size:13px;font-weight:700;margin-top:4px;color:${v===_initVar?'var(--accent-text)':'var(--text-primary)'}">${l}</div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;line-height:1.3">${s}</div></div>`).join('')}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
@@ -7399,8 +7402,8 @@
     const boardEnc=boardCards.map(enc);
     const known=new Set([...myEnc,...boardEnc]);
     const deck=[];for(let c=0;c<52;c++)if(!known.has(c))deck.push(c);
-    const isOmaha=variante==='omaha';const isTexama=variante==='texama';
-    const holeSize=isOmaha?4:isTexama?4:2;
+    const isOmaha=variante==='omaha';const isTexahma=variante==='texahma';
+    const holeSize=isOmaha?4:isTexahma?4:2;
     const boardNeed=5-boardEnc.length;
     const totalDeal=nOpponents*holeSize+boardNeed;
     let wins=0,ties=0;const ITERS=1200;
@@ -7413,13 +7416,13 @@
       for(let i=0;i<boardNeed;i++)fb.push(d[idx++]);
       let myScore;
       if(isOmaha)myScore=_eqEvalOmaha(myEnc,fb);
-      else if(isTexama)myScore=_eqEvalN([...myEnc,...fb]);
+      else if(isTexahma)myScore=_eqEvalN([...myEnc,...fb]);
       else myScore=_eqEvalN([...myEnc,...fb]);
       let maxOpp=-Infinity;
       for(const oh of oppHands){
         let sc;
         if(isOmaha)sc=_eqEvalOmaha(oh,fb);
-        else if(isTexama)sc=_eqEvalN([...oh,...fb]);
+        else if(isTexahma)sc=_eqEvalN([...oh,...fb]);
         else sc=_eqEvalN([...oh,...fb]);
         if(sc>maxOpp)maxOpp=sc;
       }
@@ -7452,7 +7455,7 @@
   }
   function _pmBestHandJS(hole,board,variante){
     if(!hole?.length||!board?.length)return null;
-    const isO=variante==='omaha',isT=variante==='texama';
+    const isO=variante==='omaha',isT=variante==='texahma';
     let best={score:-1,usedHole:[],usedBoard:[]};
     if(isO){
       if(board.length<3)return null;
@@ -7498,6 +7501,9 @@
         const _atBottom=_feedEl.scrollHeight-_feedEl.clientHeight-_feedEl.scrollTop<80;
         _feedEl.innerHTML=_newFeed;
         if(_atBottom)_feedEl.scrollTop=_feedEl.scrollHeight;
+        // Also update feed modal if open
+        const _modalBody=document.getElementById('pm-feed-modal-body');
+        if(_modalBody){const _atBottomM=_modalBody.scrollHeight-_modalBody.clientHeight-_modalBody.scrollTop<80;_modalBody.innerHTML=_newFeed;if(_atBottomM)_modalBody.scrollTop=_modalBody.scrollHeight;}
       }
       _pm._lastStructFp=_sFp;return;
     }
@@ -7514,7 +7520,7 @@
     const isRunning=session.status==='running';
     const isWaiting=session.status==='waiting';
     const isFinished=session.status==='finished';
-    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texama:'Texama'};
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
 
     // Test-Modus Banner
     const testBanner=session.is_test?`<div style="background:#fef3c7;color:#92400e;text-align:center;padding:6px;font-size:12px;font-weight:700;letter-spacing:.5px">TEST-MODUS – Keine echten Kontostände</div>`:'';
@@ -7638,12 +7644,13 @@
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
+          <div style="display:flex;align-items:center;gap:6px;padding:0 4px 4px"><div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden></div></div>
           <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
           ${isLandscape?`${runoutDisplay}${runoutBtn}${newHandBtn}`:`<div style="padding:0 var(--space-sm)">${runoutDisplay}${runoutBtn}${newHandBtn}${actionArea}</div>`}
           ${isLandscape?feedSection:''}
         </div>
         <div class="pm-tisch-right" style="${isLandscape?'':'border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0'}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden></div>${hasMenu?menuBtn:''}</div>
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">${hasMenu?menuBtn:''}</div>
           ${handResultHtml}
           ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
           ${_pmStackBarsHtml(seats,currentSpieler?.id)}
@@ -7917,8 +7924,8 @@
     const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span>`:`${_preIcon}<span>Vorauswahl</span>`;
     return`<div class="pm-action-area">
       <div style="display:flex;gap:10px;justify-content:center;width:100%">
-        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="flex:1 1 0;width:0!important;min-width:0;overflow:hidden">${preBtnLabel}</button>
-        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="flex:1 1 0;width:0!important;min-width:0;flex-shrink:0">${_pauseIcon}<span>Pause</span></button>
+        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preBtnLabel}</button>
+        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="flex:1 1 0;min-width:0;white-space:nowrap">${_pauseIcon}<span>Pause</span></button>
       </div>
     </div>`;
   }
@@ -8042,9 +8049,9 @@
           }
           _pm._flipRevealIdx=idx;
           _pm._flipReveal=true;
+          _pm._lastStructFp='';_pm._lastFp='';
           renderOnlineTisch();
-          _pm._flipReveal=false;
-          _pm._flipRevealIdx=undefined;
+          setTimeout(()=>{_pm._flipReveal=false;_pm._flipRevealIdx=undefined;},320);
         },240);
       });
     });
@@ -8070,7 +8077,7 @@
       const ov=document.createElement('div');
       ov.id='pm-feed-modal';
       ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,16px) 16px env(safe-area-inset-bottom,16px);touch-action:none';
-      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.4);width:100%;max-width:480px;max-height:calc(100dvh - 48px);display:flex;flex-direction:column;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:14px;font-weight:700;color:var(--text-primary)">Verlauf</span><button id="btn-pm-feed-modal-close" style="margin-left:auto;background:none;border:none;padding:4px;cursor:pointer;color:var(--text-secondary);font-size:22px;line-height:1">×</button></div><div id="pm-feed-modal-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)">${allFeedHtml}</div></div>`;
+      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.4);width:100%;max-width:480px;max-height:calc(100dvh - 48px);display:flex;flex-direction:column;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:14px;font-weight:700;color:var(--text-primary)">Verlauf</span><button id="btn-pm-feed-modal-close" style="margin-left:auto;background:none;border:none;padding:4px;cursor:pointer;color:var(--text-secondary);font-size:22px;line-height:1">×</button></div><div id="pm-feed-modal-body" style="flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)">${allFeedHtml}</div></div>`;
       document.body.appendChild(ov);
       ov.querySelector('#btn-pm-feed-modal-close').addEventListener('click',()=>ov.remove());
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -8608,6 +8615,22 @@
     _pmLoadTimer=setTimeout(()=>_pmLoad(),150);
   }
 
+  function _pmShowRtInfo(){
+    const status=_pm?._rtStatus||'';
+    const info={
+      'SUBSCRIBED':['Live','Echtzeit-Verbindung aktiv. Spielstände werden sofort synchronisiert.'],
+      'CHANNEL_ERROR':['Verbindungsfehler','Verbindung getrennt. Spielstände könnten veraltet sein – Seite neu laden falls nötig.'],
+      'TIMED_OUT':['Timeout','Verbindung unterbrochen. Erneuter Verbindungsversuch läuft…'],
+    };
+    const [title,desc]=info[status]||['Verbinde…','Echtzeit-Verbindung wird aufgebaut…'];
+    const existing=document.getElementById('pm-rt-info-pop');if(existing){existing.remove();return;}
+    const pop=document.createElement('div');pop.id='pm-rt-info-pop';
+    pop.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 16px;font-size:13px;z-index:3000;box-shadow:0 4px 24px rgba(0,0,0,.2);max-width:280px;width:max-content;text-align:center';
+    pop.innerHTML=`<div style="font-weight:700;margin-bottom:4px">${title}</div><div style="color:var(--text-secondary);line-height:1.5">${desc}</div>`;
+    document.body.appendChild(pop);
+    setTimeout(()=>pop.remove(),3500);
+    setTimeout(()=>document.addEventListener('click',()=>pop.remove(),{once:true,capture:true}),50);
+  }
   function _pmUpdateRtBadge(status){
     if(_pm)_pm._rtStatus=status;
     const cls=status==='SUBSCRIBED'?'rt-live':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'rt-error':'rt-connecting';
@@ -8620,6 +8643,8 @@
       el.hidden=false;
       el.className=`pm-rt-badge${id==='pm-rt-inline'?' pm-rt-inline':''} ${cls}`;
       el.innerHTML=inner;
+      el.style.cursor='pointer';
+      el.onclick=_pmShowRtInfo;
     }
   }
 
@@ -8641,9 +8666,12 @@
     const cards=_pm?.myHoleCards||[];if(!cards.length)return;
     const ov=document.createElement('div');
     ov.id='pm-card-peek-overlay';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9990;display:flex;align-items:center;justify-content:center;gap:12px;pointer-events:none;animation:pm-fadein .15s ease-out';
-    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2)">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9990;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:pm-fadein .15s ease-out';
+    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2);pointer-events:none">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
     document.body.appendChild(ov);
+    const _dismissPeek=()=>{clearTimeout(_peekAutoTimer);_pmPeekActive=false;ov.remove();};
+    const _peekAutoTimer=setTimeout(_dismissPeek,5000);
+    ov.addEventListener('click',_dismissPeek,{once:true});
   }
   function _pmSetupCardPeek(){
     if(_pmOrientHandler)return;
@@ -8676,6 +8704,7 @@
     const d=Math.abs(m-_shakeLastMag);_shakeLastMag=m;
     if(d>18&&!_shakeCd){
       _shakeCd=true;setTimeout(()=>_shakeCd=false,4000);
+      if(typeof _pm!=='undefined'&&_pm!==null)return; // Don't trigger during online session
       if(typeof showPage!=='function'||typeof loadRandomizer!=='function')return;
       const t=document.createElement('div');
       t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--accent);color:var(--accent-text);border-radius:24px;padding:10px 20px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.25)';
