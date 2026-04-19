@@ -761,7 +761,9 @@
   .pm-feed-item.facedown-action{background:#eff6ff;color:#2563eb}
   .pm-feed-item.facedown-action .pf-ini{background:rgba(0,0,0,.07)}
   @keyframes pm-react-full{0%{opacity:0;transform:scale(0.05)}12%{opacity:1;transform:scale(1.25)}22%{transform:scale(0.92)}30%{transform:scale(1.06)}38%{transform:scale(1);opacity:1}78%{transform:scale(1);opacity:1}100%{opacity:0;transform:scale(0.85)}}
-  .pm-react-emoji{animation:pm-react-full 4s ease-out both;pointer-events:none;transform-origin:center;transform-box:fill-box}
+  /* transform-origin is set inline to exact SVG seat coords – avoids transform-box:fill-box
+     which causes wrong bounding-box centre calculation on iOS Safari for <text> elements */
+  .pm-react-emoji{animation:pm-react-full 4s ease-out both;pointer-events:none}
   .pm-react-btn{transition:transform .1s,border-color .1s!important}
   .pm-wait-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;height:44px!important;padding:0 20px!important;max-width:none;margin:0;border-radius:22px!important}
   .pm-react-btn:hover{transform:scale(1.2)!important;border-color:var(--accent)!important}
@@ -7159,7 +7161,7 @@
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
       const react=reactions[seat?.spieler_id];
       const _rDelay=react?(-Math.min((Date.now()-react.ts)/1000,3.9)).toFixed(2):'0';
-      const reactEl=react?`<text x="${sx}" y="${sy}" dominant-baseline="central" text-anchor="middle" font-size="34" class="pm-react-emoji" style="animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
+      const reactEl=react?`<text x="${sx}" y="${sy}" dominant-baseline="central" text-anchor="middle" font-size="34" class="pm-react-emoji" style="transform-origin:${sx}px ${sy}px;animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
       svgSeats+=`<g class="${cls}" data-seat="${nr}"${!isEmpty?` data-spieler-id="${seat.spieler_id}"`:''}${!isEmpty?` data-spieler-name="${escHtml(seat.spieler?.name||'?')}"`:''}${!isEmpty?` data-spieler-stack="${seat.stack||0}"`:''}${!isEmpty?` data-spieler-status="${seat.status||''}"`:''}${!isEmpty?` data-spieler-away="${isAway}"`:''}${!isEmpty&&seat.spieler?.profilbild?` data-spieler-bild="${seat.spieler.profilbild}"`:''}${!isEmpty&&seat.spieler_id!==myId?' style="cursor:pointer"':''}>
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
