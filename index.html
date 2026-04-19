@@ -1045,6 +1045,8 @@
 
   // ── PWA + NAVIGATION STATE ─────────────────────────────
   let _pwaInstallEvent=null;
+  let _manifestIconSrc=null;
+  fetch('/manifest.json').then(r=>r.json()).then(m=>{_manifestIconSrc=m.icons?.[0]?.src||null;}).catch(()=>{});
   let _pageHistory=['home'];
   let _handlingPopstate=false;
   const _isPwa=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
@@ -1064,7 +1066,9 @@
     const body=document.getElementById('pwa-sheet-body');
     if(isIos){
       body.innerHTML=`
-        <div class="pwa-icon-wrap">♠️</div>
+        <div class="pwa-icon-wrap" style="${_manifestIconSrc?'background:transparent;padding:0;overflow:hidden':''}">
+          ${_manifestIconSrc?`<img src="${_manifestIconSrc}" style="width:72px;height:72px;border-radius:18px;display:block" alt="DTKS Poker">`:'♠️'}
+        </div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Füge DTKS Poker zum Home-Bildschirm hinzu – so hast du die App immer griffbereit.</p>
         <ol class="pwa-steps">
@@ -1086,7 +1090,9 @@
         </div>`;
     } else {
       body.innerHTML=`
-        <div class="pwa-icon-wrap">♠️</div>
+        <div class="pwa-icon-wrap" style="${_manifestIconSrc?'background:transparent;padding:0;overflow:hidden':''}">
+          ${_manifestIconSrc?`<img src="${_manifestIconSrc}" style="width:72px;height:72px;border-radius:18px;display:block" alt="DTKS Poker">`:'♠️'}
+        </div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Installiere DTKS Poker als App – schneller Zugriff, kein Browser nötig.</p>
         <div class="pwa-btn-row">
@@ -1758,7 +1764,7 @@
     const biBtn=document.createElement('button');
     biBtn.id='btn-login-biometric';biBtn.className='btn-oauth';
     biBtn.style.cssText='border-color:var(--accent);color:var(--accent-text);background:var(--accent-soft)';
-    biBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Mit Face ID / Touch ID anmelden`;
+    biBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.12-1.37.34-2"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2"/></svg> Mit Face ID / Touch ID anmelden`;
     biBtn.addEventListener('click',_webAuthnLogin);
     document.getElementById('login-buttons').insertBefore(biBtn,document.getElementById('login-buttons').firstChild);
   }
@@ -2506,7 +2512,7 @@
       <div style="font-size:12px;color:var(--text-secondary);margin-bottom:var(--space-sm)">Von stärkster (1) bis schwächster (10) Hand</div>`;
 
     HAENDE.forEach(h=>{
-      const isTop=h.rank<=4;
+      const isTop=h.rank<=3;
       html+=`<div class="hand-card">
         <div class="hand-rank${isTop?' top':''}">${h.rank}</div>
         <div class="hand-cards-row">${h.cards.map(([r,s])=>card(r,s)).join('')}</div>
@@ -2643,7 +2649,7 @@
         return`<div class="section-title" style="margin-top:var(--space-lg)">Anmeldung</div>
         <div class="card"><div class="list-item">
           <div class="item-avatar" style="width:40px;height:40px;background:${hasCred?'var(--accent-soft)':'var(--bg-secondary)'};color:${hasCred?'var(--accent)':'var(--text-tertiary)'}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.12-1.37.34-2"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2"/></svg>
           </div>
           <div class="item-body">
             <div class="item-title">Face ID / Touch ID</div>
@@ -6723,9 +6729,9 @@
     // Overlay
     sheet.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;animation:modal-backdrop-in .2s ease-out both';
     sheet.innerHTML=`
-      <div style="background:var(--surface);border-radius:20px;padding:28px 24px 24px;max-width:320px;width:100%;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.28);animation:toast-pop .25s cubic-bezier(.34,1.2,.64,1) both">
+      <div style="background:var(--surface);border-radius:20px;padding:28px 24px 24px;max-width:320px;width:100%;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.28);animation:modal-scale-in .25s cubic-bezier(.34,1.2,.64,1) both">
         <div style="width:56px;height:56px;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="1.8" style="width:28px;height:28px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.12-1.37.34-2"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2"/></svg>
         </div>
         <div>
           <div style="font-size:17px;font-weight:700;margin-bottom:6px">Face ID aktivieren?</div>
