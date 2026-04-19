@@ -266,6 +266,7 @@
     @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
     @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
     @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
+    @keyframes toast-pop{from{opacity:0;transform:translate(-50%,-50%) scale(0.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
     .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
@@ -6514,11 +6515,14 @@
 
   // Toast-Utility – erscheint unterhalb Dynamic Island / Notch
   function _showToast(msg,type='info',dur=4000){
+    const icon=type==='success'?`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:type==='error'?`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`:'';
     const bg=type==='error'?'var(--danger)':type==='success'?'var(--accent)':'var(--surface)';
     const fg=type==='info'?'var(--text-primary)':'white';
     const el=document.createElement('div');
-    el.style.cssText=`position:fixed;top:calc(env(safe-area-inset-top,0px)+12px);left:50%;transform:translateX(-50%);background:${bg};color:${fg};border:${type==='info'?'1px solid var(--border)':'none'};border-radius:24px;padding:10px 20px;font-size:13px;font-weight:600;z-index:10002;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:calc(100vw - 32px);text-align:center;animation:modal-slide-in .25s ease-out both`;
-    el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),dur);
+    el.style.cssText=`position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:${bg};color:${fg};border:${type==='info'?'1px solid var(--border)':'none'};border-radius:16px;padding:16px 24px;font-size:14px;font-weight:600;z-index:10002;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.28);max-width:calc(100vw - 48px);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;animation:toast-pop .2s ease-out both`;
+    el.innerHTML=(icon?`<div>${icon}</div>`:'')+'<div>'+msg+'</div>';
+    document.body.appendChild(el);
+    setTimeout(()=>{el.style.animation='toast-pop .15s ease-in reverse both';setTimeout(()=>el.remove(),150);},dur);
   }
 
   // ── BATTERY ALERT ──
