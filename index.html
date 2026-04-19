@@ -6624,6 +6624,11 @@
   async function _webAuthnLogin(){
     const raw=localStorage.getItem('dtks_webauthn');if(!raw)return;
     const cred=JSON.parse(raw);
+    if(!cred.rt){
+      // Kein RT vorhanden – einmal mit Google anmelden um Face ID zu erneuern
+      await showAlert('Face ID erneuern: Bitte einmal mit Google anmelden. Danach funktioniert Face ID wieder.');
+      return;
+    }
     const btn=document.getElementById('btn-login-biometric');
     try{
       if(btn){btn.disabled=true;btn.childNodes[btn.childNodes.length-1].textContent=' Verifiziere…';}
@@ -6633,15 +6638,16 @@
         userVerification:'preferred',timeout:60000,
       }});
       if(assertion){
-        const{data,error}=await db.auth.setSession({access_token:cred.at,refresh_token:cred.rt});
+        // refreshSession braucht nur den RT – kein AT nötig, egal ob abgelaufen oder leer
+        const{data,error}=await db.auth.refreshSession({refresh_token:cred.rt});
         if(!error&&data?.session){
           const s=data.session;
-          localStorage.setItem('dtks_webauthn',JSON.stringify({...cred,at:s.access_token,rt:s.refresh_token}));
+          localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:s.access_token,rt:s.refresh_token}));
           currentUser=s.user;showApp(s);
         } else {
-          // Credential-ID behalten, nur Tokens leeren – nach Google-Login werden sie automatisch erneuert
+          // RT abgelaufen/widerrufen – Credential-ID behalten, RT leeren
           localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:'',rt:''}));
-          await showAlert('Session erneuern: Bitte einmal mit Google anmelden. Face ID funktioniert danach wieder automatisch.');
+          await showAlert('Session abgelaufen: Bitte einmal mit Google anmelden. Face ID funktioniert danach wieder automatisch.');
           if(btn){btn.disabled=false;btn.childNodes[btn.childNodes.length-1].textContent=' Mit Face ID / Touch ID anmelden';}
         }
       }
@@ -6662,7 +6668,7 @@
       }});
       if(credential){
         const s=(await db.auth.getSession()).data.session;
-        localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:_b64uEnc(credential.rawId),at:s?.access_token||'',rt:s?.refresh_token||''}));
+        localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:_b64uEnc(credential.rawId),at:'',rt:s?.refresh_token||''}));
         _showToast('Face ID / Touch ID aktiviert!','success');
         loadProfil();
       }
