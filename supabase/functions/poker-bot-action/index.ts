@@ -1,4 +1,4 @@
-// DTKS Poker – Edge Function: poker-bot-action
+// DTKS Poker – Edge Function: poker-bot-action v1.1
 // Executes an AI decision for a bot player (ist_bot=true in spieler table).
 // Called by any human client when current_player_id belongs to a bot.
 //
