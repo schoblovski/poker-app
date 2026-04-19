@@ -7229,7 +7229,7 @@
     const el=document.getElementById('online-lobby-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:sessions},{data:allSeats},{data:einst}]=await Promise.all([
-      db.from('online_spiele').select('*').order('created_at',{ascending:false}).limit(20),
+      db.from('online_spiele').select('*').neq('status','cancelled').order('created_at',{ascending:false}).limit(20),
       db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins'),
       db.from('einstellungen').select('key,wert'),
     ]);
@@ -7313,7 +7313,6 @@
     _pmLobbyChannel=db.channel('pm-lobby')
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{loadOnlineLobby();_pmUpdateLiveIndicator();})
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby())
-      .on('broadcast',{event:'session_deleted'},()=>loadOnlineLobby())
       .subscribe();
   }
 
@@ -8415,15 +8414,14 @@
         const _id=_pm.id;
         if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
         _pmReleaseWakeLock();_pm=null;_pmDrawerHide();
-        // Notify lobby clients before deleting so their realtime picks up the removal
-        try{const _nc=db.channel('pm-lobby');_nc.subscribe(st=>{if(st==='SUBSCRIBED'){_nc.send({type:'broadcast',event:'session_deleted',payload:{id:_id}}).then(()=>setTimeout(()=>db.removeChannel(_nc),500));}});}catch(_){}
-        // Delete child rows first (no CASCADE assumed), then the session itself
-        await Promise.all([
-          db.from('online_seats').delete().eq('online_spiel_id',_id),
-          db.from('online_actions').delete().eq('online_spiel_id',_id),
-        ]);
-        const{error:delErr}=await db.from('online_spiele').delete().eq('id',_id);
-        if(delErr)await showAlert('Fehler beim Löschen: '+delErr.message);
+        // UPDATE triggers postgres_changes for all lobby clients (DELETE is unreliable cross-client)
+        // 'cancelled' sessions are filtered out of the lobby query
+        const{error:delErr}=await db.from('online_spiele').update({status:'cancelled'}).eq('id',_id);
+        if(delErr){await showAlert('Fehler beim Löschen: '+delErr.message);}
+        // Hard-delete asynchronously (cleanup, not critical for UX)
+        db.from('online_seats').delete().eq('online_spiel_id',_id).then(()=>{});
+        db.from('online_actions').delete().eq('online_spiel_id',_id).then(()=>{});
+        db.from('online_spiele').delete().eq('id',_id).then(()=>{});
         showPage('online-lobby');
         return;
       }
