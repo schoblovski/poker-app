@@ -7413,6 +7413,20 @@
       _pm.myHoleCards=cardRow?.hole_cards||[];
       const _fd=localStorage.getItem('pm_facedown')==='true';
       const _hn=session?.hand_nr||0;
+      // Restore per-card revealed state from localStorage (survives app close/reopen)
+      if(_fd&&_pm.myHoleCards.length>0){
+        if(!_pm._perCardRevealed)_pm._perCardRevealed={};
+        if(!_pm._perCardRevealed[_hn]){
+          try{
+            const _stored=localStorage.getItem(`pm_pc_${_pm.id}_${_hn}`);
+            if(_stored){
+              const _idxs=JSON.parse(_stored);
+              _pm._perCardRevealed[_hn]=new Set(_idxs);
+              if(_idxs.length>=_pm.myHoleCards.length)_pm._revealedHandNr=_hn;
+            }
+          }catch{}
+        }
+      }
       if(_pm.myHoleCards.length>0&&currentSpieler?.id){
         if(!_fd&&(_pm._lookedHandNr??-1)!==_hn){
           // Non-facedown: auto-look so player isn't marked as blind
@@ -7528,7 +7542,8 @@
   function _pmFingerprint(){
     if(!_pm?.session)return'';
     const acts=_pm.actions||[];
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}`;
+    const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}`;
   }
 
   function renderOnlineTisch(){
@@ -7696,13 +7711,13 @@
           ${isLandscape?`<div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div>`:`<div style="padding:0 var(--space-sm)"><div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div><div id="pm-s-action">${actionArea}</div></div>`}
           ${isLandscape?feedSection:''}
         </div>
-        <div class="pm-tisch-right" style="${isLandscape?'':'border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0'}">
-          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">${hasMenu?menuBtn:''}</div>
-          <div id="pm-s-result">${handResultHtml}</div>
-          ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}
-          <div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}${_rStrip?'<div style="height:80px"></div>':''}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px"><div id="pm-s-action">${actionArea}</div></div>`:feedSection+_rStrip;})()}
-        </div>
+        ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';
+          const _scrollContent=`<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">${hasMenu?menuBtn:''}</div><div id="pm-s-result">${handResultHtml}</div>${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}<div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>`;
+          if(isLandscape){
+            return`<div class="pm-tisch-right" style="overflow-y:hidden"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 4px;border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
+          }
+          return`<div class="pm-tisch-right" style="border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0">${_scrollContent}${feedSection}${_rStrip}</div>`;
+        })()}
       </div>
     </div>`;
     if(_needsFull){
@@ -8200,6 +8215,8 @@
           _pm._perCardRevealed[hn].delete(idx);
           if(_pm._revealedHandNr===hn)_pm._revealedHandNr=undefined;
         }
+        // Persist reveal state so a reload/reopen restores the same face-up/down positions
+        try{localStorage.setItem(`pm_pc_${_pm.id}_${hn}`,JSON.stringify([..._pm._perCardRevealed[hn]]));}catch{}
         // Surgical card swap – use fresh DOM reference to avoid stale closure
         const c=_pm.myHoleCards?.[idx];
         if(!c)return;
@@ -8378,12 +8395,22 @@
     if(_pm.session.status==='finished'){await showAlert('Session ist beendet.');return;}
     if((_pm.seats||[]).some(s=>s.seat===seatNr&&s.spieler_id!==currentSpieler?.id)){await showAlert('Platz bereits besetzt.');return;}
     if(!currentSpieler?.id){await showAlert('Spieler nicht geladen – bitte neu einloggen.');return;}
+    // Umsetzen während laufender Hand blockieren
+    if(_pm.session.status==='running'&&_pm.session.current_player_id){
+      await showAlert('Umsetzen nur zwischen den Runden möglich.');return;
+    }
     try{
       if(_pm?.mySeat){
         // Umsetzen: Platz-Nummer aktualisieren
         const{error}=await db.from('online_seats').update({seat:seatNr}).eq('id',_pm.mySeat.id);
         if(error){await showAlert('Fehler beim Umsetzen: '+error.message);return;}
-        await _pmLoad();
+        // Optimistic local update – DB read-after-write can lag; realtime will sync shortly
+        const idx=(_pm.seats||[]).findIndex(s=>s.id===_pm.mySeat.id);
+        if(idx>=0)_pm.seats[idx]={..._pm.seats[idx],seat:seatNr};
+        _pm.mySeat={..._pm.mySeat,seat:seatNr};
+        _pm._lastFp='';
+        renderOnlineTisch();
+        setTimeout(()=>{if(_pm)_pmLoad();},800);
         return;
       }
       const{error}=await db.from('online_seats').insert({
@@ -8725,6 +8752,10 @@
     _pmActInFlight=false;
     if(resp?.error){await showAlert(_pmFriendlyError(resp.error));}
     await _pmLoad();
+    // Safety net: if the server triggered a next-street asynchronously, the first load might
+    // see an intermediate state. Reload once more if nothing changed within 1.5 s.
+    const _fpSnap=_pm?._lastFp;
+    setTimeout(()=>{if(_pm&&_pm._lastFp===_fpSnap)_pmLoad();},1500);
   }
 
   async function _pmSetPreAction(pre,limit){
