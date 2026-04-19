@@ -7164,7 +7164,7 @@
       const bcx=Math.round(sx+_bdx/_bd*40),bcy=Math.round(sy+_bdy/_bd*40);
       const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
       const betW=Math.max(26,(betFmt.length+2)*5.8+6);
-      const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy+5}" text-anchor="middle" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
+      const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused||isAway?0.45:1}"/>`:'';
       const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:'';
       const awayBadge=isAway?`<rect x="${sx+10}" y="${sy-28}" width="18" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">AFK</text>`:'';
