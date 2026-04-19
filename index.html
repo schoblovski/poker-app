@@ -9955,13 +9955,13 @@
     });
     const data=await resp.json().catch(()=>({}));
     if(!resp.ok||!data.ok) throw new Error(data.error||`HTTP ${resp.status}`);
-    _pmScheduleLoad();
+    await _pmLoad();
   }
 
   async function _pmUpdateBotConfig(seat,config){
     if(!seat?.id)return;
     await db.from('online_seats').update({bot_config:config}).eq('id',seat.id);
-    _pmScheduleLoad();
+    await _pmLoad();
   }
 
   async function _pmRemoveBot(spieler_id,name){
@@ -9972,7 +9972,7 @@
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
       body:JSON.stringify({online_spiel_id:_pm.id,bot_spieler_id:spieler_id,action:'remove'}),
     });
-    _pmScheduleLoad();
+    await _pmLoad();
   }
 
   function _pmSubscribe(){
