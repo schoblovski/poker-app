@@ -7729,7 +7729,8 @@
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtB=!_fo||(_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop)<80;const _fbS=_fo?.scrollTop??0;
       el.innerHTML=_newHtml;
-      const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtB)_fn.scrollTop=_fn.scrollHeight;else _fn.scrollTop=_fbS;}
+      // Use rAF so the browser lays out the new content before we set scrollTop
+      requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtB)_fn.scrollTop=_fn.scrollHeight;else _fn.scrollTop=_fbS;}});
       _pmBindEvents();
       if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     }else{
@@ -8210,7 +8211,9 @@
           const revealedSoFar=_pm._perCardRevealed[hn].size;
           const totalCards=_pm.myHoleCards?.length||0;
           const actionId=`_look_fd_${hn}_${idx}`;
-          if(!_pm.actions.some(a=>a.id===actionId)){
+          // Check both synthetic (local) and real DB actions – DB rows have UUIDs not actionId
+          const alreadyLogged=_pm.actions.some(a=>a.id===actionId||(a.action==='look'&&a.hand_nr===hn&&a.spieler_id===currentSpieler?.id&&a.meta?.facedown===true&&a.meta?.card_idx===idx));
+          if(!alreadyLogged){
             // First reveal of this card this hand – log once only
             _pm.actions.push({id:actionId,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
             if(currentSpieler?.id){
