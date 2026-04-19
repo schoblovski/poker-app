@@ -1045,8 +1045,7 @@
 
   // ── PWA + NAVIGATION STATE ─────────────────────────────
   let _pwaInstallEvent=null;
-  let _manifestIconSrc=null;
-  fetch('/manifest.json').then(r=>r.json()).then(m=>{_manifestIconSrc=m.icons?.[0]?.src||null;}).catch(()=>{});
+  const _pwaIconHtml=`<div style="width:72px;height:72px;border-radius:18px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto var(--space-md)">♠</div>`;
   let _pageHistory=['home'];
   let _handlingPopstate=false;
   const _isPwa=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
@@ -1066,9 +1065,7 @@
     const body=document.getElementById('pwa-sheet-body');
     if(isIos){
       body.innerHTML=`
-        <div class="pwa-icon-wrap" style="${_manifestIconSrc?'background:transparent;padding:0;overflow:hidden':''}">
-          ${_manifestIconSrc?`<img src="${_manifestIconSrc}" style="width:72px;height:72px;border-radius:18px;display:block;box-shadow:0 2px 12px rgba(0,0,0,.15)" alt="DTKS Poker">`:'♠️'}
-        </div>
+        ${_pwaIconHtml}
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Füge DTKS Poker zum Home-Bildschirm hinzu – so hast du die App immer griffbereit.</p>
         <ol class="pwa-steps">
@@ -1090,9 +1087,7 @@
         </div>`;
     } else {
       body.innerHTML=`
-        <div class="pwa-icon-wrap" style="${_manifestIconSrc?'background:transparent;padding:0;overflow:hidden':''}">
-          ${_manifestIconSrc?`<img src="${_manifestIconSrc}" style="width:72px;height:72px;border-radius:18px;display:block;box-shadow:0 2px 12px rgba(0,0,0,.15)" alt="DTKS Poker">`:'♠️'}
-        </div>
+        ${_pwaIconHtml}
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Installiere DTKS Poker als App – schneller Zugriff, kein Browser nötig.</p>
         <div class="pwa-btn-row">
