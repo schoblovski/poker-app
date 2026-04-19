@@ -690,6 +690,7 @@
   .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:4;animation:pm-pulse 1s infinite}
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
+  .pm-seat-group.away .pm-seat-circle{stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 3}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pm-card-flip-out{0%{transform:perspective(400px) rotateY(0deg)}100%{transform:perspective(400px) rotateY(-90deg)}}
@@ -1855,7 +1856,7 @@
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
-    if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}}
+    if(!isOnlinePage){if(typeof _pmSendAway==='function')_pmSendAway();if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}}
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='home')loadHome();
     if(page==='spiel')loadSpiel();
@@ -7054,7 +7055,7 @@
     return pots.length>1?pots:null;
   }
 
-  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={},revealedCards={}){
+  function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={},revealedCards={},awaySet=null){
     const W=400,H=260,cx=200,cy=120,rx=148,ry=86;
     const isCB=document.documentElement.getAttribute('data-colorblind')==='true';
     const feltOuter=isCB?'#0a1a2e':'#0a2218';
@@ -7075,9 +7076,10 @@
       const isPaused=seat&&seat.status==='paused';
       const isActive=seat&&session&&seat.spieler_id===session.current_player_id&&session.status==='running';
       const isDealer=seat&&session&&seat.seat===session.dealer_seat;
+      const isAway=!isEmpty&&!isPaused&&awaySet?.has(seat.spieler_id);
       let cls='pm-seat-group';
       if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
-      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isActive&&!isFolded)cls+=' active-turn';
+      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isActive&&!isFolded)cls+=' active-turn';if(isAway)cls+=' away';
       const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,10);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
@@ -7097,8 +7099,9 @@
       const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
       const betW=Math.max(26,(betFmt.length+2)*5.8+6);
       const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy+5}" text-anchor="middle" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
-      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused?0.45:1}"/>`:'';
+      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused||isAway?0.45:1}"/>`:'';
       const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:'';
+      const awayBadge=isAway?`<rect x="${sx+12}" y="${sy-28}" width="14" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">weg</text>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
@@ -7109,7 +7112,7 @@
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`${avatarEl}${pauseOverlay}${namePill}`}
+          :`${avatarEl}${pauseOverlay}${awayBadge}${namePill}`}
         ${betChip}${dealerMark}${reactEl}
         ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _n=_rc.length;const _R=34;const _isBot=sy>=cy;return _rc.map((c,i)=>{const _dxC=(i-(_n-1)/2)*(_cW+_cG);const _dyC=Math.sqrt(Math.max(0,_R*_R-_dxC*_dxC));const _x=Math.round(sx+_dxC-_cW/2);const _y=Math.round(sy+(_isBot?-_dyC:_dyC)-_cH/2);const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_y}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_y+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_y+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
       </g>`;
@@ -7338,6 +7341,18 @@
         await _pmLoad();
       }
     }
+    // Restore away flag from action log, then send 'back' if player left while marked away
+    const _lastAB=(_pm.actions||[]).filter(a=>(a.action==='away'||a.action==='back')&&a.spieler_id===currentSpieler?.id).at(-1);
+    _pm._isAway=_lastAB?.action==='away';
+    if(_pm.mySeat)await _pmSendBack();
+    // Visibility-change: screen lock / app switch → away/back
+    if(_pm._visHandler)document.removeEventListener('visibilitychange',_pm._visHandler);
+    _pm._visHandler=()=>{
+      if(!_pm)return;
+      if(document.hidden)_pmSendAway();
+      else _pmSendBack();
+    };
+    document.addEventListener('visibilitychange',_pm._visHandler);
     _pmSubscribe();
   }
 
@@ -7473,10 +7488,12 @@
   }
 
   function _pmStructFp(){
+    // Layout-only fingerprint – controls when a full DOM rebuild is needed.
+    // Game state changes (pot, stacks, current player) are handled by incremental section updates.
     if(!_pm?.session)return'';
     const s=_pm.session;
     const isL=window.innerWidth>window.innerHeight||window.innerWidth>=768;
-    return`${s.status}|${s.pot}|${s.current_player_id}|${s.street}|${s.hand_nr}|${(s.community_cards||[]).length}|${(s.runout_cards||[]).length}|${(_pm.seats||[]).map(x=>`${x.id}:${x.status}:${Math.round((x.stack||0)*100)}:${Math.round((x.bet_current_round||0)*100)}`).join(',')}|${localStorage.getItem('pm_facedown')||'0'}|${_pm._revealedHandNr??''}|${isL?'L':'P'}`;
+    return`${isL?'L':'P'}|${s.variante}|${s.status==='finished'?'F':''}|${!!_pm.mySeat}|${s.is_test?'T':''}|${localStorage.getItem('pm_facedown')||'0'}`;
   }
   function _pmFingerprint(){
     if(!_pm?.session)return'';
@@ -7491,21 +7508,10 @@
     const fp=_pmFingerprint();
     if(fp&&fp===_pm._lastFp)return;
     _pm._lastFp=fp;
-    // Fast-path: nur Feed geändert → nur .pm-feed updaten, kein Full-Rebuild
+    // Layout fingerprint: only triggers full DOM rebuild on orientation/role/mode change
     const _sFp=_pmStructFp();
-    if(_sFp&&_sFp===(_pm._lastStructFp||'')&&el.querySelector('.pm-feed')){
-      const _acts=_pm.actions||[];const _feedEl=el.querySelector('.pm-feed');
-      const _newFeed=_pmFeedHtml(_acts);
-      if(_feedEl&&_feedEl.innerHTML!==_newFeed){
-        const _atBottom=_feedEl.scrollHeight-_feedEl.clientHeight-_feedEl.scrollTop<80;
-        _feedEl.innerHTML=_newFeed;
-        if(_atBottom)_feedEl.scrollTop=_feedEl.scrollHeight;
-        // Also update feed modal if open
-        const _modalBody=document.getElementById('pm-feed-modal-body');
-        if(_modalBody){const _atBottomM=_modalBody.scrollHeight-_modalBody.clientHeight-_modalBody.scrollTop<80;_modalBody.innerHTML=_newFeed;if(_atBottomM)_modalBody.scrollTop=_modalBody.scrollHeight;}
-      }
-      _pm._lastStructFp=_sFp;return;
-    }
+    const _hasSects=!!el.querySelector('#pm-s-svg');
+    const _needsFull=_sFp!==(_pm._lastStructFp||'')||!_hasSects;
     _pm._lastStructFp=_sFp;
     const{session,seats,actions,mySeat,myHoleCards}=_pm;
     const isAdmin=currentSpieler?.ist_admin;
@@ -7641,38 +7647,115 @@
       if(isRev){const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';const red=c.suit==='h'||c.suit==='d';return`<div class="pt-card ${red?'red':''} big pm-card-ind${hl?' highlight':''}" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;}
       return`<div class="pt-card back big pm-card-ind" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"></div>`;
     }).join('');
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div id="pm-hole-cards-wrap" style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${useFdLayout?'':badgesRow}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div id="pm-hole-cards-wrap" style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${(!useFdLayout||_pm._revealedHandNr===session.hand_nr)?badgesRow:''}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span><button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
-    el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
+    // Compute which players are currently "away" (screen locked / left the app)
+    const _awayLast={};
+    for(const _aa of(_pm.actions||[])){
+      if(_aa.action==='away'||_aa.action==='back')_awayLast[_aa.spieler_id]=_aa.action;
+      else if(_aa.action==='new_hand')Object.keys(_awayLast).forEach(k=>delete _awayLast[k]);
+    }
+    const _awaySet=new Set(Object.entries(_awayLast).filter(([,v])=>v==='away').map(([k])=>k));
+    const _newHtml=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
-          ${isLandscape?`${runoutDisplay}${runoutBtn}${newHandBtn}`:`<div style="padding:0 var(--space-sm)">${runoutDisplay}${runoutBtn}${newHandBtn}${actionArea}</div>`}
+          <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
+          ${isLandscape?`<div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div>`:`<div style="padding:0 var(--space-sm)"><div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div><div id="pm-s-action">${actionArea}</div></div>`}
           ${isLandscape?feedSection:''}
         </div>
         <div class="pm-tisch-right" style="${isLandscape?'':'border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0'}">
           <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">${hasMenu?menuBtn:''}</div>
-          ${handResultHtml}
-          ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)">${myCardsSection||''}${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}${infoBar||''}</div>`:''}
-          ${_pmStackBarsHtml(seats,currentSpieler?.id)}
-          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px">${actionArea}</div>`:feedSection+_rStrip;})()}
+          <div id="pm-s-result">${handResultHtml}</div>
+          ${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}
+          <div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>
+          ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);margin-top:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';return isLandscape?`${_rStrip}<div style="flex-shrink:0;position:sticky;bottom:0;background:var(--bg);z-index:2;border-top:1px solid var(--border);padding-top:var(--space-sm);padding-bottom:4px"><div id="pm-s-action">${actionArea}</div></div>`:feedSection+_rStrip;})()}
         </div>
       </div>
     </div>`;
-    _pmBindEvents();
-    // Re-apply RT badge state after full re-render (element was replaced by innerHTML)
-    if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
-    requestAnimationFrame(()=>{const _f=el.querySelector('.pm-feed');if(_f)_f.scrollTop=_f.scrollHeight;});
-    // Vibrate once when it becomes the player's turn (Android/supported devices)
+    if(_needsFull){
+      // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
+      const _fo=el.querySelector('.pm-feed');const _fbAtB=!_fo||(_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop)<80;const _fbS=_fo?.scrollTop??0;
+      el.innerHTML=_newHtml;
+      const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtB)_fn.scrollTop=_fn.scrollHeight;else _fn.scrollTop=_fbS;}
+      _pmBindEvents();
+      if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
+    }else{
+      // Incremental section update – only changed sections are replaced, no full DOM rebuild
+      const _tmp=document.createElement('div');_tmp.innerHTML=_newHtml;
+      for(const _sid of['pm-s-svg','pm-s-runout','pm-s-action','pm-s-result','pm-s-cards','pm-s-info','pm-s-stacks']){
+        const _nEl=_tmp.querySelector('#'+_sid);const _oEl=document.getElementById(_sid);
+        if(!_nEl||!_oEl||_nEl.innerHTML===_oEl.innerHTML)continue;
+        _oEl.innerHTML=_nEl.innerHTML;
+        _pmRebindSection(_sid);
+      }
+      // Feed: update with scroll preservation
+      const _fo=el.querySelector('.pm-feed');const _fn=_tmp.querySelector('.pm-feed');
+      if(_fo&&_fn&&_fo.innerHTML!==_fn.innerHTML){
+        const _atB=_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop<80;const _svd=_fo.scrollTop;
+        _fo.innerHTML=_fn.innerHTML;if(_atB)_fo.scrollTop=_fo.scrollHeight;else _fo.scrollTop=_svd;
+        const _mb=document.getElementById('pm-feed-modal-body');
+        if(_mb){const _atBM=_mb.scrollHeight-_mb.clientHeight-_mb.scrollTop<80;_mb.innerHTML=_fn.innerHTML;if(_atBM)_mb.scrollTop=_mb.scrollHeight;}
+      }
+      if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
+    }
+    // Common post-render
     if(isMyTurn&&navigator.vibrate){
       const _vk=`${session.hand_nr}_${session.current_player_id}`;
       if((_pm._lastVibTurn??'')!==_vk){_pm._lastVibTurn=_vk;navigator.vibrate([80,40,120]);}
     }
-    // Show broke modal once per hand when player hits €0
     if(_canBuyin&&myStatus!=='sitting_out'&&(_pm._buyinPromptedHand??-1)!==session.hand_nr){
-      _pm._buyinPromptedHand=session.hand_nr;
-      setTimeout(_pmShowBrokeModal,400);
+      _pm._buyinPromptedHand=session.hand_nr;setTimeout(_pmShowBrokeModal,400);
+    }
+  }
+
+  function _pmRebindSection(id){
+    if(id==='pm-s-svg'){
+      if(_pm?.session?.status!=='finished'){
+        document.querySelectorAll('.pm-seat-group.empty').forEach(g=>{
+          g.addEventListener('click',()=>_pmTakeSeatFlow(parseInt(g.dataset.seat)));
+        });
+      }
+      document.querySelectorAll('.pm-new-card').forEach(g=>{
+        const ms=parseFloat(g.dataset.delay||0)*1000;
+        setTimeout(()=>{g.style.transition='opacity 0.6s ease';g.style.opacity='1';},ms);
+      });
+      document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
+        if(!_pm)return;
+        const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
+        const svgHtml=_pmSVG(_pm.seats,_pm.session,currentSpieler?.id,new Set(),prev,potBd,_pm._reactions||{});
+        const _availW=window.innerWidth-32;const _availH=window.innerHeight-100;
+        const _byW={w:_availW,h:Math.round(_availW*260/400)};const _byH={w:Math.round(_availH*400/260),h:_availH};
+        const{w:maxW,h:maxH}=(_byW.h<=_availH)?_byW:_byH;
+        const ov=document.createElement('div');ov.id='pm-tisch-modal';
+        ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center';
+        ov.innerHTML=`<div style="position:relative"><button id="btn-pm-tisch-close" style="position:absolute;top:-44px;right:0;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:22px;line-height:1;backdrop-filter:blur(6px)">×</button><div style="width:${maxW}px;height:${maxH}px;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)">${svgHtml}</div></div>`;
+        document.body.appendChild(ov);
+        ov.addEventListener('click',(e)=>{if(e.target===ov||e.target.id==='btn-pm-tisch-close')ov.remove();});
+      });
+    }else if(id==='pm-s-runout'){
+      document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
+      document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
+    }else if(id==='pm-s-action'){
+      document.getElementById('pm-raise-toggle')?.addEventListener('click',_pmRaiseSheet);
+      document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
+        b.addEventListener('click',()=>_pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined));
+      });
+      document.getElementById('btn-pm-preaction')?.addEventListener('click',_pmPreActionSheet);
+      document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
+      document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
+      document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
+      document.getElementById('btn-pm-reveal')?.addEventListener('click',_pmRevealCards);
+      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
+      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
+      document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
+      document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
+    }else if(id==='pm-s-cards'){
+      const _hcW=document.getElementById('pm-hole-cards-wrap');if(_hcW)_pmBindCardFlip(_hcW);
+    }else if(id==='pm-s-stacks'){
+      document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
+    }else if(id==='pm-s-info'){
+      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
     }
   }
 
@@ -7828,6 +7911,8 @@
         }
         case'pause':text=`<b>${escHtml(n)}</b> pausiert`;break;
         case'resume':text=`<b>${escHtml(n)}</b> ist zurück`;break;
+        case'away':text=`<b>${escHtml(n)}</b> ist weg`;extra=' facedown-action';break;
+        case'back':text=`<b>${escHtml(n)}</b> ist wieder da`;extra=' facedown-action';break;
         case'reveal_runout':{
           const _rsess=_pm?.session;
           const _rCurHand=_rsess&&a.hand_nr===_rsess.hand_nr;
@@ -7934,6 +8019,104 @@
     </div>`;
   }
 
+  // ── AWAY / BACK helpers ──────────────────────────────────────────────────
+  async function _pmSendAway(){
+    if(!_pm?.mySeat||!currentSpieler?.id)return;
+    if(_pm._isAway)return;
+    _pm._isAway=true;
+    try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'away',hand_nr:_pm.session?.hand_nr||0});}catch(_){}
+  }
+  async function _pmSendBack(){
+    if(!_pm?.mySeat||!currentSpieler?.id)return;
+    if(!_pm._isAway)return;
+    _pm._isAway=false;
+    try{
+      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'back',hand_nr:_pm.session?.hand_nr||0});
+      _pmScheduleLoad();
+    }catch(_){}
+  }
+
+  // ── NAMED HANDLERS (referenced from _pmRebindSection) ───────────────────
+  async function _pmHandleSitDown(e){
+    const btn=e.currentTarget;
+    btn.disabled=true;btn.textContent='Suche Platz…';
+    try{
+      const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
+      const taken=new Set((freshSeats||[]).map(s=>s.seat));
+      const start=Math.floor(Math.random()*9)+1;
+      let free=-1;
+      for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
+      if(free===-1){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Keine freien Plätze.');return;}
+      await _pmTakeSeatFlow(free);
+      btn.disabled=false;btn.textContent='Mitspielen';
+    }catch(err){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Fehler: '+err.message);}
+  }
+  async function _pmHandleSitDownSpectate(e){
+    const btn=e.currentTarget;btn.disabled=true;btn.textContent='…';
+    try{
+      const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
+      const taken=new Set((freshSeats||[]).map(s=>s.seat));
+      const start=Math.floor(Math.random()*9)+1;
+      let free=-1;
+      for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
+      if(free===-1){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Keine freien Plätze.');return;}
+      const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0});
+      if(error){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+error.message);return;}
+      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      await _pmLoad();
+    }catch(err){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+err.message);}
+  }
+  function _pmBindCardFlip(hcWrap){
+    hcWrap.addEventListener('click',(e)=>{
+      if(!_pm)return;
+      const cardEl=e.target.closest('.pm-card-ind');
+      if(!cardEl)return;
+      const idx=parseInt(cardEl.dataset.cardIdx);
+      const hn=_pm.session?.hand_nr||0;
+      const isBack=cardEl.classList.contains('back');
+      cardEl.style.animation='pm-card-flip-out .22s ease-in both';
+      setTimeout(()=>{
+        if(!_pm)return;
+        if(!_pm._perCardRevealed)_pm._perCardRevealed={};
+        if(!_pm._perCardRevealed[hn])_pm._perCardRevealed[hn]=new Set();
+        if(isBack){
+          _pm._perCardRevealed[hn].add(idx);
+          const revealedSoFar=_pm._perCardRevealed[hn].size;
+          const totalCards=_pm.myHoleCards?.length||0;
+          const actionId=`_look_fd_${hn}_${idx}`;
+          if(!_pm.actions.some(a=>a.id===actionId)){
+            _pm.actions.push({id:actionId,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+          }
+          if(revealedSoFar===1&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==hn){
+            _pm._lookedHandNr=hn;
+            db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards}}).then(()=>{_pmScheduleLoad();});
+          }
+          if(_pm._perCardRevealed[hn].size>=totalCards)_pm._revealedHandNr=hn;
+        }else{
+          _pm._perCardRevealed[hn].delete(idx);
+          if(_pm._revealedHandNr===hn)_pm._revealedHandNr=undefined;
+        }
+        // Surgical card swap – use fresh DOM reference to avoid stale closure
+        const c=_pm.myHoleCards?.[idx];
+        if(!c)return;
+        const nowRev=_pm._perCardRevealed[hn]?.has(idx);
+        const newEl=document.createElement('div');
+        if(nowRev){
+          const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';
+          const red=c.suit==='h'||c.suit==='d';
+          newEl.className=`pt-card ${red?'red':''} big pm-card-ind`;
+          newEl.innerHTML=`<span class="pt-rank">${r}</span><span class="pt-suit">${s}</span>`;
+        }else{
+          newEl.className='pt-card back big pm-card-ind';
+        }
+        newEl.dataset.cardIdx=String(idx);
+        newEl.style.cssText='cursor:pointer;animation:pm-card-flip-in .28s cubic-bezier(.34,1.56,.64,1) both';
+        const target=document.getElementById('pm-hole-cards-wrap')?.querySelector(`[data-card-idx="${idx}"]`);
+        if(target)target.replaceWith(newEl);
+      },240);
+    });
+  }
+
   function _pmBindEvents(){
     // Community card reveal animation
     document.querySelectorAll('.pm-new-card').forEach(g=>{
@@ -7957,36 +8140,8 @@
     // Reveal cards
     document.getElementById('btn-pm-reveal')?.addEventListener('click',_pmRevealCards);
     // Buttons
-    document.getElementById('btn-pm-sitdown')?.addEventListener('click',async(e)=>{
-      const btn=e.currentTarget;
-      btn.disabled=true;btn.textContent='Suche Platz…';
-      try{
-        const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
-        const taken=new Set((freshSeats||[]).map(s=>s.seat));
-        const start=Math.floor(Math.random()*9)+1;
-        let free=-1;
-        for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
-        if(free===-1){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Keine freien Plätze.');return;}
-        await _pmTakeSeatFlow(free);
-        btn.disabled=false;btn.textContent='Mitspielen';
-      }catch(err){btn.disabled=false;btn.textContent='Mitspielen';await showAlert('Fehler: '+err.message);}
-    });
-    document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',async(e)=>{
-      const btn=e.currentTarget;btn.disabled=true;btn.textContent='…';
-      try{
-        const{data:freshSeats}=await db.from('online_seats').select('seat').eq('online_spiel_id',_pm.id);
-        const taken=new Set((freshSeats||[]).map(s=>s.seat));
-        const start=Math.floor(Math.random()*9)+1;
-        let free=-1;
-        for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
-        if(free===-1){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Keine freien Plätze.');return;}
-        // Join as spectator: sitting_out, stack 0
-        const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0});
-        if(error){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+error.message);return;}
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
-        await _pmLoad();
-      }catch(err){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+err.message);}
-    });
+    document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
+    document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
@@ -8018,58 +8173,9 @@
       // Re-open menu after re-render
       setTimeout(()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='block';},20);
     });
-    // Event delegation on hole-cards-wrap – surgical DOM swap, no full re-render
+    // Card flip – delegate to named function (avoids stale DOM reference on re-render)
     const _hcWrap=document.getElementById('pm-hole-cards-wrap');
-    if(_hcWrap){
-      _hcWrap.addEventListener('click',(e)=>{
-        if(!_pm)return;
-        const cardEl=e.target.closest('.pm-card-ind');
-        if(!cardEl)return;
-        const idx=parseInt(cardEl.dataset.cardIdx);
-        const hn=_pm.session?.hand_nr||0;
-        const isBack=cardEl.classList.contains('back');
-        cardEl.style.animation='pm-card-flip-out .22s ease-in both';
-        setTimeout(()=>{
-          if(!_pm)return;
-          if(!_pm._perCardRevealed)_pm._perCardRevealed={};
-          if(!_pm._perCardRevealed[hn])_pm._perCardRevealed[hn]=new Set();
-          if(isBack){
-            _pm._perCardRevealed[hn].add(idx);
-            const revealedSoFar=_pm._perCardRevealed[hn].size;
-            const totalCards=_pm.myHoleCards?.length||0;
-            const actionId=`_look_fd_${hn}_${idx}`;
-            if(!_pm.actions.some(a=>a.id===actionId)){
-              _pm.actions.push({id:actionId,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
-            }
-            if(revealedSoFar===1&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==hn){
-              _pm._lookedHandNr=hn;
-              db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards}}).then(()=>{_pmScheduleLoad();});
-            }
-            if(_pm._perCardRevealed[hn].size>=totalCards)_pm._revealedHandNr=hn;
-          }else{
-            _pm._perCardRevealed[hn].delete(idx);
-            if(_pm._revealedHandNr===hn)_pm._revealedHandNr=undefined;
-          }
-          // Surgical card swap – no full re-render, no scroll/flicker side-effects
-          const c=_pm.myHoleCards?.[idx];
-          if(!c)return;
-          const nowRev=_pm._perCardRevealed[hn]?.has(idx);
-          const newEl=document.createElement('div');
-          if(nowRev){
-            const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';
-            const red=c.suit==='h'||c.suit==='d';
-            newEl.className=`pt-card ${red?'red':''} big pm-card-ind`;
-            newEl.innerHTML=`<span class="pt-rank">${r}</span><span class="pt-suit">${s}</span>`;
-          }else{
-            newEl.className='pt-card back big pm-card-ind';
-          }
-          newEl.dataset.cardIdx=String(idx);
-          newEl.style.cssText='cursor:pointer;animation:pm-card-flip-in .28s cubic-bezier(.34,1.56,.64,1) both';
-          const target=_hcWrap.querySelector(`[data-card-idx="${idx}"]`);
-          if(target)target.replaceWith(newEl);
-        },240);
-      });
-    }
+    if(_hcWrap)_pmBindCardFlip(_hcWrap);
     document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
       if(!_pm)return;
       const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
@@ -8681,6 +8787,7 @@
 
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+    if(_pm?._visHandler){document.removeEventListener('visibilitychange',_pm._visHandler);_pm._visHandler=null;}
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
     _pm=null;
