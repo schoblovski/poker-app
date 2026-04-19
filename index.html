@@ -89,6 +89,9 @@
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
     body.pm-tisch .content{overscroll-behavior-y:none;touch-action:pan-x pan-y;}
+    /* Override page-enter to fade-only for online-tisch – prevents position:fixed stacking-context bug */
+    #page-online-tisch.active{animation-name:pm-page-fade;}
+    @keyframes pm-page-fade{from{opacity:0}to{opacity:1}}
 
 
 
@@ -7174,7 +7177,7 @@
       const react=reactions[seat?.spieler_id];
       const _rDelay=react?(-Math.min((Date.now()-react.ts)/1000,3.9)).toFixed(2):'0';
       const reactEl=react?`<text x="${sx}" y="${sy}" dominant-baseline="central" text-anchor="middle" font-size="34" class="pm-react-emoji" style="transform-origin:${sx}px ${sy}px;animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
-      svgSeats+=`<g class="${cls}" data-seat="${nr}"${!isEmpty?` data-spieler-id="${seat.spieler_id}"`:''}${!isEmpty?` data-spieler-name="${escHtml(seat.spieler?.name||'?')}"`:''}${!isEmpty?` data-spieler-stack="${seat.stack||0}"`:''}${!isEmpty?` data-spieler-status="${seat.status||''}"`:''}${!isEmpty?` data-spieler-away="${isAway}"`:''}${!isEmpty&&seat.spieler?.profilbild?` data-spieler-bild="${seat.spieler.profilbild}"`:''}${!isEmpty&&seat.spieler_id!==myId?' style="cursor:pointer"':''}>
+      svgSeats+=`<g class="${cls}" data-seat="${nr}"${!isEmpty?` data-spieler-id="${seat.spieler_id}"`:''}${!isEmpty?` data-spieler-name="${escHtml(seat.spieler?.name||'?')}"`:''}${!isEmpty?` data-spieler-stack="${seat.stack||0}"`:''}${!isEmpty?` data-spieler-status="${seat.status||''}"`:''}${!isEmpty?` data-spieler-away="${isAway}"`:''}${!isEmpty&&seat.spieler?.profilbild?` data-spieler-bild="${seat.spieler.profilbild}"`:''}${!isEmpty?' style="cursor:pointer"':''}>
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
@@ -7306,12 +7309,12 @@
           }
         }
         const hands=s.hand_nr>0?`· ${s.hand_nr} Runden`:'';
-        const testBadgeDone=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
         const varIcons={holdem:'♠',omaha:'♦',texahma:'✦'};
         const varColors={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${testBadgeDone}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
+        const transferBadge=s.spiel_id?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px;flex-shrink:0">Übertragen</span>`:`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);border-radius:10px;padding:1px 6px;font-weight:600;margin-left:4px;flex-shrink:0">Nicht übertragen</span>`;
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${transferBadge}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -7348,10 +7351,6 @@
         <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="none" class="form-input pm-num" data-label="Buy-In Wert"></div>
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin:-var(--space-sm) 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
-      <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);margin-bottom:var(--space-lg)">
-        <input type="checkbox" id="pm-new-test" style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0">
-        <div><div style="font-size:14px;font-weight:600">Test-Modus</div><div style="font-size:12px;color:var(--text-secondary)">Keine echten Kontostände – TEST-Banner sichtbar</div></div>
-      </label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-new-cancel" style="max-width:none;margin:0">Abbrechen</button>
         <button class="btn btn-primary" id="pm-new-ok" style="max-width:none;margin:0">Session erstellen</button>
@@ -7375,7 +7374,7 @@
       const variante=_selVar||'holdem';
       const small_blind=parseFloat(document.getElementById('pm-new-sb').value)||1;
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
-      const is_test=document.getElementById('pm-new-test').checked;
+      const is_test=false;
       const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Prüfe…';
       // Prüfen ob bereits eine aktive Session existiert
       const{data:existing}=await db.from('online_spiele').select('id').in('status',['waiting','running']).limit(1);
@@ -7576,7 +7575,7 @@
     if(!_pm?.session)return'';
     const s=_pm.session;
     const isL=window.innerWidth>window.innerHeight||window.innerWidth>=768;
-    return`${isL?'L':'P'}|${s.variante}|${s.status==='finished'?'F':''}|${!!_pm.mySeat}|${s.is_test?'T':''}|${localStorage.getItem('pm_facedown')||'0'}`;
+    return`${isL?'L':'P'}|${s.variante}|${s.status==='finished'?'F':''}|${!!_pm.mySeat}|${localStorage.getItem('pm_facedown')||'0'}`;
   }
   function _pmFingerprint(){
     if(!_pm?.session)return'';
@@ -7612,9 +7611,6 @@
     const isWaiting=session.status==='waiting';
     const isFinished=session.status==='finished';
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
-
-    // Test-Modus Banner
-    const testBanner=session.is_test?`<div style="background:#fef3c7;color:#92400e;text-align:center;padding:6px;font-size:12px;font-weight:700;letter-spacing:.5px">TEST-MODUS – Keine echten Kontostände</div>`:'';
 
     // Runout
     const boardCount=(session.community_cards||[]).length;
@@ -7749,7 +7745,7 @@
       else if(_aa.action==='new_hand')Object.keys(_awayLast).forEach(k=>delete _awayLast[k]);
     }
     const _awaySet=new Set(Object.entries(_awayLast).filter(([,v])=>v==='away').map(([k])=>k));
-    const _newHtml=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
+    const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
@@ -7810,9 +7806,7 @@
         });
       }
       document.querySelectorAll('.pm-seat-group[data-spieler-id]').forEach(g=>{
-        if(g.dataset.spielerId!==currentSpieler?.id){
-          g.addEventListener('click',()=>_pmShowPlayerCard(g));
-        }
+        g.addEventListener('click',()=>_pmShowPlayerCard(g));
       });
       document.querySelectorAll('.pm-new-card').forEach(g=>{
         const ms=parseFloat(g.dataset.delay||0)*1000;
@@ -7837,7 +7831,14 @@
     }else if(id==='pm-s-action'){
       document.getElementById('pm-raise-toggle')?.addEventListener('click',_pmRaiseSheet);
       document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
-        b.addEventListener('click',()=>_pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined));
+        b.addEventListener('click',async()=>{
+          if(b.dataset.action==='fold'){
+            const _canChk=b.dataset.canCheck==='true';
+            const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?\n\nDu könntest noch callen.';
+            if(!await confirmAction(_msg))return;
+          }
+          _pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined);
+        });
       });
       document.getElementById('btn-pm-preaction')?.addEventListener('click',()=>{if(Date.now()<_pmActCooldownUntil)return;_pmPreActionSheet();});
       document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
@@ -8096,7 +8097,7 @@
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
-          ${canCheck?'':`<button class="btn btn-danger pm-act-btn" data-action="fold">Fold</button>`}
+          <button class="btn btn-danger pm-act-btn" data-action="fold" data-can-check="${canCheck}">Fold</button>
           ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
           ${myStack>0&&anyoneCanCall?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>`:''}
         </div>
@@ -8319,15 +8320,20 @@
     }
     // Spieler-Avatar → Profil-Card
     document.querySelectorAll('.pm-seat-group[data-spieler-id]').forEach(g=>{
-      if(g.dataset.spielerId!==currentSpieler?.id){
-        g.addEventListener('click',()=>_pmShowPlayerCard(g));
-      }
+      g.addEventListener('click',()=>_pmShowPlayerCard(g));
     });
     // Raise → opens bottom sheet
     document.getElementById('pm-raise-toggle')?.addEventListener('click',_pmRaiseSheet);
     // Aktions-Buttons (fold/check/call)
     document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
-      b.addEventListener('click',()=>_pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined));
+      b.addEventListener('click',async()=>{
+        if(b.dataset.action==='fold'){
+          const _canChk=b.dataset.canCheck==='true';
+          const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?\n\nDu könntest noch callen.';
+          if(!await confirmAction(_msg))return;
+        }
+        _pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined);
+      });
     });
     // Pre-Action & Vorauswahl sheet
     document.getElementById('btn-pm-preaction')?.addEventListener('click',_pmPreActionSheet);
@@ -8344,11 +8350,10 @@
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
-    // FAB – Pointer Events API (unified touch+mouse, no synthetic-event bugs)
+    // FAB – touch events (reliable on iOS, avoids setPointerCapture bugs)
     const _fab=document.getElementById('pm-fab');
-    const _fabMenu=document.getElementById('pm-fab-menu');
     let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
-    let _fabDown=false,_fabDragged=false;
+    let _fabDragged=false,_fabTouchId=-1;
     let _fabSX=0,_fabSY=0,_fabFX=0,_fabFY=0;
     function _pmFabApplyCorner(corner,animate){
       const fab=document.getElementById('pm-fab');const menu=document.getElementById('pm-fab-menu');if(!fab)return;
@@ -8368,33 +8373,34 @@
     function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
     function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.add('pm-fab-open');if(m)m.classList.add('pm-fab-open');}
     if(_fab){
-      _fab.addEventListener('pointerdown',(e)=>{
-        if(e.button>0)return;
-        _fabDown=true;_fabDragged=false;
-        _fabSX=e.clientX;_fabSY=e.clientY;
+      _fab.addEventListener('touchstart',(e)=>{
+        if(e.touches.length>1)return;
+        const t=e.touches[0];
+        _fabTouchId=t.identifier;_fabDragged=false;
+        _fabSX=t.clientX;_fabSY=t.clientY;
         const r=_fab.getBoundingClientRect();_fabFX=r.left;_fabFY=r.top;
         _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
-        try{_fab.setPointerCapture(e.pointerId);}catch(_){}
-      });
-      _fab.addEventListener('pointermove',(e)=>{
-        if(!_fabDown)return;
-        const dx=e.clientX-_fabSX,dy=e.clientY-_fabSY;
-        if(!_fabDragged&&Math.hypot(dx,dy)<10)return;
+      },{passive:true});
+      _fab.addEventListener('touchmove',(e)=>{
+        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
+        if(!t)return;
+        const dx=t.clientX-_fabSX,dy=t.clientY-_fabSY;
+        if(!_fabDragged&&Math.hypot(dx,dy)<8)return;
         if(!_fabDragged){_fabDragged=true;_pmFabClose();}
+        e.preventDefault();
         _fab.style.left=Math.max(4,Math.min(window.innerWidth-50,_fabFX+dx))+'px';
         _fab.style.top=Math.max(4,Math.min(window.innerHeight-50,_fabFY+dy))+'px';
         _fab.style.right='auto';_fab.style.bottom='auto';
-      });
-      _fab.addEventListener('pointerup',()=>{
-        if(!_fabDown)return;
-        _fabDown=false;
-        if(!_fabDragged)return;
+      },{passive:false});
+      _fab.addEventListener('touchend',(e)=>{
+        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
+        _fabTouchId=-1;
+        if(!t||!_fabDragged)return;
         const r=_fab.getBoundingClientRect();
         _fabCorner=(r.top+23<window.innerHeight/2?'t':'b')+(r.left+23<window.innerWidth/2?'l':'r');
         localStorage.setItem('pm_fab_corner',_fabCorner);
         _pmFabApplyCorner(_fabCorner,true);
-      });
-      _fab.addEventListener('pointercancel',()=>{_fabDown=false;if(_fabDragged)_pmFabApplyCorner(_fabCorner,true);_fabDragged=false;});
+      },{passive:true});
       _fab.addEventListener('click',(e)=>{
         e.stopPropagation();
         if(_fabDragged){_fabDragged=false;return;}
