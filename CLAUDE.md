@@ -282,35 +282,26 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 
 ## Aktueller Feature-Branch (noch nicht in main / kein Version-Bump)
 
-Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
+Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilisierung
 
 **Was implementiert wurde (noch auf dem Branch, wartet auf Freigabe):**
 - Terminologie: „Hand/nächste Hand" → „Spielrunde/nächste Spielrunde" überall in der UI
 - Community-Card-Animationen: SMIL → JS-driven CSS transition (opacity)
-- Showdown-Fixes:
-  - Sidepot-Berechnung nutzt `online_actions` als Source of Truth (bet_current_round wird nach jeder Strasse auf 0 zurückgesetzt → unbrauchbar)
-  - `Math.floor(pot/winners)` → `Math.floor(pot/winners*100)/100` (Cent-Rundung statt Integer-Rundung)
-  - Doppelte Win-Einträge im Feed behoben (Aggregation per Spieler statt pro Sidepot)
-  - Uncontested Sidepots (eigenes Geld zurück) werden nicht mehr als „Gewinn" geloggt
-- All-in Capping: Excess-Chips bleiben im Stack des Spielers (kein Aufblähen des Pots)
-- Floating-Point-Fix beim Call-as-Allin: `Math.round(*100)/100` + `<= 0` statt `=== 0`
-- Payout-Modal (Nicht-Test-Sessions): erscheint sofort beim Beenden; zeigt Name/Buy-Ins/Einsatz/Auszahlung/Netto pro Spieler; „Bestätigen" schreibt `spiel_teilnehmer` + `spiele` (erst HIER erstellt, nicht beim Session-Start!); „Ohne Übernahme" = nur Session beenden
-- `spiele`-Eintrag erst bei Payout-Bestätigung erstellt → kein Phantom-Eintrag im Spiel-Tab während laufender Online-Session
-- `loadSpiel()` filtert `modus='online'` aus (bestehende Alteinträge bleiben unsichtbar)
-- Home-Kontostände: `loadHome()` wird nach Payout-Bestätigung im Hintergrund aufgerufen
-- Buy-In-Button auf beendeter Session ausgeblendet (`&&!isFinished`)
-- „Zur Übersicht"-Button zentriert (wrapper `max-width:320px;margin:0 auto`)
-- Avatar-Dropdown Landscape: `max-height` von `100dvh-80px` auf `100dvh-150px` (nav-Überlappung behoben)
-- Andere Spieler-Stacks ohne Rundung angezeigt
+- Showdown-Fixes: Sidepots via action-log, Cent-Rundung, keine doppelten Win-Einträge
+- All-in Capping + Floating-Point-Fix beim Call-as-Allin
+- Payout-Modal: erscheint sofort beim Beenden, schreibt `spiel_teilnehmer` + `spiele` erst bei Bestätigung
+- `loadSpiel()` filtert `modus='online'` aus (Phantom-Einträge verhindert)
+- Beobachter-Modus für Nicht-Spieler
+- Karten-Umdreh-Animation, Feed-Vollbild, Bogen-Layout
+- Vibration bei eigenem Spielzug
+- Easter Eggs: Shake-to-Randomizer, Kippen-to-Peek
+- Direktkamera via `capture="environment"` bei Beweisfotos
+- Zahlreiche UI-Fixes (Dealer-D, Stack-Icons, Kebab-Breite, KPIs, Landscape-Layout)
 
-**Edge Functions geändert:**
-- `poker-showdown/index.ts`: investedBySeat aus action-log, Cent-Rundung, Sidepot-Remainder nach pots[0]
-- `poker-action/index.ts`: All-in capping, Float-Point-Rundung beim Call
-
-**Nächste Schritte für diese Branch:**
+**Nächste Schritte:**
 1. Chris testet auf Preview-URL
 2. Changelog-Text entwerfen
-3. Nach Freigabe: Version bumpen (3.13 oder 4.0?), in main mergen
+3. Nach Freigabe: Version bumpen auf 4.0, in main mergen
 
 ---
 
@@ -344,7 +335,7 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
 
 
 ## Aktueller Backlog / TODOs
-1. **Pandemie-Modus Stabilisierung** – Bugs + Improvements auf Branch `claude/review-pending-tasks-C6KUk` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg + Besondere Hände aus Online-Spiel bereits implementiert.
+1. **Pandemie-Modus Finalisierung** – UI-Polish + Stabilisierung auf Branch `claude/polish-pandemic-mode-ZaJXb` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs bereits implementiert. Offene Punkte: FK SET NULL, Feed-Flackern, Vorauswahl-Fold-Fix, Runout-Handauswertung.
 2. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
@@ -356,29 +347,15 @@ Branch: `claude/app-ideas-0j3gF` – Pandemie-Modus Bugfixes & Payout-Flow
    - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
    - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
 
-### Pandemie-Modus – Offene Bugs & Verbesserungen (aus Tests)
-- **Doppel-Übernahme verhindern** – Nach Payout-Bestätigung prüfen ob für diese `online_spiel_id` bereits ein verknüpfter `spiel_id` existiert; Button „Payout & Abrechnung" deaktivieren/verstecken wenn `session.spiel_id` bereits gesetzt ist. Ohne vorherige Löschung aus dem Verlauf darf kein zweiter Eintrag entstehen.
-- **Home-Kontostände nach Payout** – `loadHome()` wird zwar aufgerufen, aber Seite zeigt alten Stand bis zur manuellen App-Neu-Laden. Problem: `showPage('home')` nutzt gecachtes DOM. Fix: nach Payout `loadHome()` awaiten oder Cache-Invalidierungslogik prüfen.
-- **Online-Spiel-Liste unabhängig vom Verlauf** – Abgeschlossene Online-Sessions (`online_spiele` Tabelle) sollen NICHT verschwinden wenn das verknüpfte `spiele`-Objekt im regulären Verlauf gelöscht wird. `online_spiele` ist eine eigene Tabelle – Lösch-Kaskade via FK prüfen/entfernen. Admin soll selbst entscheiden wann eine Online-Session aus der Lobby-Liste verschwindet.
-- **Session beenden ohne Spieler am Tisch – Crash** – Wenn keine Spieler am Tisch sitzen und Admin Session beendet, kommt `TypeError: Cannot read properties of null (reading 'id')` (Index ~7321). Guard einbauen: prüfen ob `_pm.session` noch existiert bevor auf `.id` zugegriffen wird.
-- **Verlauf-Container Höhe** – Im Portrait-Modus auf Handy: Verlauf-Container sollte ca. 50% höher sein damit mehr Feed-Einträge sichtbar sind.
-- **„Zurück am Tisch"-Meldung im Feed** – Wenn Spieler nach Pause/Abwesenheit wieder aktiv wird, soll im Verlauf eine Meldung erscheinen (analog zu „X verlässt den Tisch"). Action-Typ `resume` oder `rejoin` im Feed anzeigen.
-- **iPadOS Statusleiste überlappt Kebab-Menü** – Auf iPad im Landscape-Modus überlagert die iPadOS-Statusleiste den oberen Bereich; Kebab-Menü-Button schwer erreichbar. Header braucht `padding-top: env(safe-area-inset-top)` oder equivalente Anpassung für iPadOS Landscape.
-- **Fehlermeldung „zu wenig Spieler"** – Wenn man nächste Spielrunde startet ohne genug Buy-Ins, erscheint rohe JSON-Fehlermeldung. Fix: Server-Fehlertext parsen und sprechende Meldung ausgeben, inkl. Liste welche Spieler noch kein Buy-In haben.
-- **Vorauswahl „Fold"** – Soll nur folden wenn tatsächlich ein Einsatz zu callen ist. Wenn man noch checken könnte (kein offener Einsatz), soll automatisch gecheckt werden statt gefoldet. Analog zum „Check/Fold"-Verhalten.
-- **Vorauswahl „Chk/Fold"** – Ist redundant zu geplantem neuem Fold-Verhalten oben; kann entfernt werden.
-- **Wake-Lock auf Handy** – Screen-Sleep-Verhinderung funktioniert nicht mehr zuverlässig auf Handy (weder Portrait noch Landscape). Wake-Lock-Logik prüfen und ggf. `navigator.wakeLock.request('screen')` erneut bei `visibilitychange` und `focus`-Events anfordern.
-- **„Was wäre gekommen"-Karten im Verlauf** – Nach Runout-Reveal soll jeder Spieler der seine Karten offengelegt hat im Feed sehen was für ein Blatt er gehabt hätte (z.B. „Du hättest einen Flush gehabt"). Evaluator auf kombinierte Hole Cards + vollständiges Board anwenden.
-- **Landscape-Header-Position auf Handy** – Oberste Zeile (Spielmodus/Spielrunde/Kebab) soll im Landscape-Modus tiefer sein (bündig mit Oberkante der eigenen Karten), damit Aktions-Buttons besser sichtbar sind. Vorsicht: Layout nicht zerschiessen.
-- **Flackern bei UI-Updates** – Wenn der Screen bei neuen Feed-Einträgen vollständig neu gerendert wird, flackert er kurz. Lösung: nur den Feed-Container inkrementell updaten statt `el.innerHTML` komplett neu zu setzen; oder CSS `opacity`-Transition beim Re-Render verwenden.
-   - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
-   - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
-   - ✅ Supabase Tabelle `push_subscriptions` angelegt
-   - ✅ Profil-Seite: Subscribe/Unsubscribe + Kategorie-Toggles (5 Kategorien)
-   - ✅ Supabase Edge Function `send-push` deployed (npm:web-push)
-   - ✅ App-Trigger: Spielabschluss, neue Transaktion, Buy-In, Besondere Hand
-   - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
-   - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
+### Pandemie-Modus – Offene Bugs & Verbesserungen
+
+- **Online-Spiel-Liste unabhängig vom Verlauf** – FK `online_spiele.spiel_id → spiele(id)` ist aktuell `ON DELETE CASCADE`. Stattdessen sollte `ON DELETE SET NULL` verwendet werden, damit beim Löschen eines Spiel-Eintrags im Verlauf die Online-Session in der Lobby erhalten bleibt. Admin soll selbst entscheiden wann eine Session verschwindet.
+- **Verlauf-Container Höhe** – Im Portrait-Modus: `.pm-feed` hat fix `max-height: 280px`. Besser: viewport-relativ (`max-height: calc(50vh - 120px)`) damit auf kleinen Handys mehr Feed-Einträge sichtbar sind.
+- **iPadOS Statusleiste überlappt Kebab-Menü** – Content-Bereich hat bereits `padding-top: env(safe-area-inset-top)` in Landscape, aber der Kebab-Button selbst ist noch nicht positioniert. Braucht separate Anpassung für iPadOS Landscape.
+- **Vorauswahl „Fold" → auto-Check** – Pre-Action `fold` soll nur folden wenn ein Einsatz zu callen ist (`callAmount > 0`). Bei `callAmount === 0` soll automatisch gecheckt werden. Analog zu `check_fold`-Logik die bereits im Server existiert.
+- **Vorauswahl „Chk/Fold"** – Server-seitig implementiert aber nicht in UI exponiert; Option kann aus `poker-action/index.ts` entfernt werden da das neue Fold-Verhalten oben es ersetzt.
+- **„Was wäre gekommen"-Karten im Verlauf** – Nach Runout-Reveal: jeder Spieler der seine Karten offengelegt hat soll im Feed sehen was für ein Blatt er gehabt hätte (z.B. „Du hättest einen Flush gehabt"). Evaluator auf kombinierte Hole Cards + vollständiges Board anwenden.
+- **Flackern bei UI-Updates** – `renderOnlineTisch()` ersetzt bei jedem Update das komplette `el.innerHTML`. Lösung: nur den Feed-Container inkrementell updaten (neue Einträge appenden statt full rebuild); oder CSS `opacity`-Transition beim Re-Render.
 
 
 ## Pandemie-Modus – Wichtige Implementierungsdetails
