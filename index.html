@@ -8666,12 +8666,11 @@
     const cards=_pm?.myHoleCards||[];if(!cards.length)return;
     const ov=document.createElement('div');
     ov.id='pm-card-peek-overlay';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9990;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:pm-fadein .15s ease-out';
-    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2);pointer-events:none">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9990;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:pm-fadein .15s ease-out';
+    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2)">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
     document.body.appendChild(ov);
-    const _dismissPeek=()=>{clearTimeout(_peekAutoTimer);_pmPeekActive=false;ov.remove();};
-    const _peekAutoTimer=setTimeout(_dismissPeek,5000);
-    ov.addEventListener('click',_dismissPeek,{once:true});
+    // Auto-dismiss after 5s (pointer-events:none so we can't use click)
+    const _peekAutoTimer=setTimeout(()=>{_pmPeekActive=false;ov.remove();},5000);
   }
   function _pmSetupCardPeek(){
     if(_pmOrientHandler)return;
