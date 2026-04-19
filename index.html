@@ -7212,8 +7212,8 @@
         const strokeW=isUsed?2.5:rcRevealed?1.5:0.5;
         const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
-        const isNew=!rcRevealed&&i>=prevBoardCount;
-        const delay=isNew?(i-prevBoardCount)*0.25:0;
+        const isNew=(!rcRevealed&&i>=prevBoardCount)||(rcRevealed&&rcIdx===runoutRevCount-1);
+        const delay=(!rcRevealed&&isNew)?(i-prevBoardCount)*0.25:0;
         const newAttr=isNew?`class="pm-new-card" style="opacity:0" data-delay="${delay}"`:'';
         communityHtml+=`<g ${newAttr}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
@@ -7615,7 +7615,7 @@
     const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
     const ccKey=(s.community_cards||[]).map(c=>`${c.rank}${c.suit}`).join('');
     const presenceKey=(_pm._presence||[]).map(p=>p.spieler_id).sort().join(',');
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${seats.filter(s=>s.status==='sitting_out').length}`;
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${(_pm.seats||[]).filter(x=>x.status==='sitting_out').length}`;
   }
 
   function renderOnlineTisch(){
@@ -7869,18 +7869,11 @@
         if(!_isDealer)return;
         g.addEventListener('click',()=>{
           const rcIdx=parseInt(g.dataset.runoutIdx||'0');
-          if(rcIdx!==(_pm._runoutRevealedCount||0))return; // only reveal the next card in order
+          if(rcIdx!==(_pm._runoutRevealedCount||0))return;
           _pm._runoutRevealedCount=rcIdx+1;
           _pmChannel?.send({type:'broadcast',event:'runout_reveal',payload:{count:_pm._runoutRevealedCount}});
-          // Flip animation before re-render
-          const rect=g.querySelector('rect');
-          if(rect){
-            const bx=parseFloat(rect.getAttribute('x'));const bw=parseFloat(rect.getAttribute('width')||'30');
-            const cx2=bx+bw/2;const cy2=parseFloat(rect.getAttribute('y'))+(parseFloat(rect.getAttribute('height')||'42'))/2;
-            const t0=performance.now();const dur=260;
-            function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<0.5?1-t*2:0+(t-0.5)*2;g.setAttribute('transform',`translate(${cx2},${cy2}) scale(${sc.toFixed(3)},1) translate(${-cx2},${-cy2})`);if(t<1)requestAnimationFrame(step);else{g.removeAttribute('transform');renderOnlineTisch();}}
-            requestAnimationFrame(step);
-          }else renderOnlineTisch();
+          _pm._lastFp=''; // force re-render
+          renderOnlineTisch(); // newly revealed card gets pm-new-card flip animation
         });
       });
       document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
