@@ -1816,7 +1816,12 @@
     const entries=seen
       ?CHANGELOG.filter(c=>isNewer(c.version,seen))
       :[CHANGELOG.find(c=>c.version===VERSION)].filter(Boolean);
-    if(!entries.length){localStorage.setItem('dtks_version_seen',VERSION);return;}
+    if(!entries.length){
+      localStorage.setItem('dtks_version_seen',VERSION);
+      // Kein Changelog → Biometric-Offer direkt nach kurzem Delay zeigen
+      if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){setTimeout(_showBiometricOffer,2000);}
+      return;
+    }
     const typColor={neu:'var(--accent-text)',fix:'var(--info)',verbessert:'var(--warning)'};
     const typLabel={neu:'NEU',fix:'FIX',verbessert:'UPDATE'};
     const typBg={neu:'var(--accent-soft)',fix:'var(--info-soft)',verbessert:'var(--warning-soft)'};
@@ -1846,6 +1851,10 @@
     document.getElementById('whats-new-close').addEventListener('click',()=>{
       document.getElementById('modal-whats-new').classList.remove('open');
       localStorage.setItem('dtks_version_seen',VERSION);
+      // Biometric-Offer erst NACH dem Changelog zeigen
+      if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){
+        setTimeout(_showBiometricOffer,1500);
+      }
     });
   }
 
@@ -1951,11 +1960,7 @@
       const c=JSON.parse(_waCred);
       if(c.credentialId){localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:sessionParam.access_token,rt:sessionParam.refresh_token}));console.log('🔑 WebAuthn Tokens aktualisiert');}
     }
-    // Biometric offer (einmalig, nur wenn Platform Authenticator verfügbar und noch nicht eingerichtet)
-    if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){
-      setTimeout(_showBiometricOffer,5000);
-    }
-    setTimeout(showWhatsNew, 600);
+    setTimeout(showWhatsNew, 600); // Biometric-Offer kommt ggf. nach Changelog-Close (in showWhatsNew)
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
 
