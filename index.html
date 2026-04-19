@@ -1924,6 +1924,8 @@
     if(page==='online-tisch'){
       if(typeof _pmDrawerHide==='function')_pmDrawerHide();
       if(typeof _pmSendBack==='function')_pmSendBack();
+      // Force full FAB rebuild on every navigation to tisch so it's always at body level with fresh listeners
+      if(_pm)_pm._lastStructFp='';
       renderOnlineTisch();_pmCheckFullscreen();
     }else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
@@ -7778,11 +7780,12 @@
     if(_needsFull){
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
+      // Always clean up any body-level FAB before full rebuild to prevent duplicates
+      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       el.innerHTML=_newHtml;
       // Only move FAB to document.body when the tisch page is the active page.
-      // This prevents the FAB appearing on other pages when _pmLoad fires from a realtime event.
-      // When the user navigates back to tisch, showPage sets the page active first, then calls
-      // renderOnlineTisch(), so the FAB correctly goes to body at that point.
+      // When _pmLoad fires from a realtime event on another page, FAB stays inside
+      // the hidden page content (display:none) – no body-append, no ghost overlay.
       if(document.getElementById('page-online-tisch')?.classList.contains('active')){
         const _fabEl=el.querySelector('#pm-fab');const _fabMenuEl=el.querySelector('#pm-fab-menu');
         if(_fabEl&&_fabMenuEl){document.body.appendChild(_fabMenuEl);document.body.appendChild(_fabEl);}
