@@ -1903,7 +1903,6 @@
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
     // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
     if(page!=='online-tisch'){
-      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
@@ -7351,7 +7350,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
         <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="none" class="form-input pm-num" data-label="Buy-In Wert"></div>
       </div>
-      <div style="font-size:12px;color:var(--text-secondary);margin:-var(--space-sm) 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin:0 0 var(--space-lg);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-new-cancel" style="max-width:none;margin:0">Abbrechen</button>
         <button class="btn btn-primary" id="pm-new-ok" style="max-width:none;margin:0">Session erstellen</button>
@@ -7386,6 +7385,12 @@
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
+      // Race-condition check: delete our session if another one was just created simultaneously
+      const{data:raceCheck}=await db.from('online_spiele').select('id').in('status',['waiting','running']).neq('id',sess.id).limit(1);
+      if(raceCheck?.length>0){
+        db.from('online_spiele').delete().eq('id',sess.id).then(()=>{});
+        btn.disabled=false;btn.textContent='Session erstellen';close();await showAlert('Eine andere Session wurde gleichzeitig erstellt. Bitte dieser beitreten.');loadOnlineLobby();return;
+      }
       close();enterOnlineSession(sess.id);
     };
   }
@@ -7488,7 +7493,7 @@
     }
     renderOnlineTisch();
     _pmDrawerUpdateFeed();
-    if(_pm.session?.status==='finished')_pmUpdateLiveIndicator();
+    if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
     _pmCheckSpecialHands();
   }
 
@@ -7765,12 +7770,10 @@
     if(_needsFull){
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
-      // Remove existing body-level FAB so the fresh one from _newHtml can take its place
-      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       el.innerHTML=_newHtml;
-      // Move FAB from page DOM to document.body – position:fixed inside a transformed ancestor breaks
-      const _fabEl=el.querySelector('#pm-fab');const _fabMenuEl=el.querySelector('#pm-fab-menu');
-      if(_fabEl&&_fabMenuEl){document.body.appendChild(_fabMenuEl);document.body.appendChild(_fabEl);}
+      // FAB stays inside the page content – #page-online-tisch uses opacity-only animation
+      // (pm-page-fade) so no transform stacking context; position:fixed works correctly.
+      // display:none on inactive pages hides FAB automatically, no body-append needed.
       // Feed is newest-first (top), so scroll to top unless user scrolled down into history
       requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}});
       _pmBindEvents();
@@ -8075,6 +8078,8 @@
     if(!mySeat&&isRunning)return`<div style="padding:var(--space-md);text-align:center"><p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md)">Du bist nicht am Tisch</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:300px;margin:0 auto"><button class="btn btn-primary" id="btn-pm-sitdown" style="max-width:none;margin:0">Mitspielen</button><button class="btn btn-ghost" id="btn-pm-sitdown-spectate" style="max-width:none;margin:0">Beobachten</button></div></div>`;
     if(!mySeat&&isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="min-width:160px;max-width:none;padding:14px 28px">Zur Übersicht</button></div></div>`;
     if(mySeat&&isWaiting){const enoughPlayers=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px"${enoughPlayers?'':' disabled'}>Erste Spielrunde starten</button></div>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Mindestens 2 Spieler mit Buy-In benötigt</div>`:''}</div>`;}
+    // Sitting-out (beobachten) check BEFORE handIsOver so buy-in button always shows
+    if(myStatus==='sitting_out')return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(+(session?.start_stack||100)).toFixed(2)}</button></div>`;
     if(isFinished){const _showPayout=isAdmin&&!session.is_test&&!session.spiel_id;return`<div style="padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-md);text-align:center">Session beendet</div>${_showPayout?`<div class="btn-row-2"><button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`:`<div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="min-width:160px;max-width:none;padding:14px 28px">Zur Übersicht</button></div>`}${isAdmin&&!session.is_test&&session.spiel_id?`<div style="font-size:12px;color:var(--accent-text);margin-top:8px;text-align:center">Ergebnis bereits übernommen</div>`:''}</div>`;}
     // Hand vorbei → keine Aktions-Buttons anzeigen
     if(handIsOver&&isRunning){
@@ -8084,7 +8089,6 @@
       const revealBtn=handSettled&&myHC.length>0&&!alreadyRevealed?`<button class="btn btn-secondary" id="btn-pm-reveal" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px!important;padding:0 16px!important;font-weight:600;letter-spacing:-.01em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Karten zeigen</button>`:'';
       return`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)"><span>Spielrunde beendet – warte auf nächste Spielrunde…</span>${revealBtn}</div>`;
     }
-    if(myStatus==='sitting_out')return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(+(session?.start_stack||100)).toFixed(2)}</button></div>`;
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Spielrunde…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
     if(myStatus==='paused'){const _paa=mySeat?.pause_auto_action||'fold';const _pcl=mySeat?.pause_call_limit;const _paaLabels={fold:'Sofort folden',check:'Nur checken',call_limit:`Callen bis €${_pcl!=null?parseFloat(_pcl).toFixed(2):'?'}`,call_any:'Alles callen'};return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:6px"><div style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:14px;height:14px"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span style="font-size:13px;color:#f59e0b;font-weight:700">Pausiert</span></div><div style="font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:8px;padding:5px 12px">${_paaLabels[_paa]||_paa}</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important;margin-top:4px">Zurück zum Spiel</button></div>`;}
@@ -8371,13 +8375,16 @@
       if(corner[0]==='t')fab.style.top=hdrH+'px';
       else if(corner[0]==='m')fab.style.top=Math.round(window.innerHeight/2-fs/2)+'px';
       else fab.style.bottom=pad+'px';
-      if(corner[1]==='r')fab.style.right=pad+'px';else fab.style.left=pad+'px';
+      if(corner[1]==='m')fab.style.left=Math.round(window.innerWidth/2-fs/2)+'px';
+      else if(corner[1]==='r')fab.style.right=pad+'px';
+      else fab.style.left=pad+'px';
       if(!menu)return;
-      menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';
+      menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';menu.style.transform='none';
       if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px';
       else if(corner[0]==='m')menu.style.bottom=Math.round(window.innerHeight/2+fs/2+gap)+'px';
       else menu.style.bottom=(pad+fs+gap)+'px';
-      if(corner[1]==='r'){menu.style.right=pad+'px';menu.style.alignItems='flex-end';}
+      if(corner[1]==='m'){menu.style.left='50%';menu.style.transform='translateX(-50%)';menu.style.alignItems='center';}
+      else if(corner[1]==='r'){menu.style.right=pad+'px';menu.style.alignItems='flex-end';}
       else{menu.style.left=pad+'px';menu.style.alignItems='flex-start';}
     }
     _pmFabApplyCorner(_fabCorner,false);
@@ -8408,9 +8415,11 @@
         _fabTouchId=-1;
         if(!t||!_fabDragged)return;
         const r=_fab.getBoundingClientRect();
-        const cy=r.top+23,h=window.innerHeight;
+        const cx=r.left+23,cy=r.top+23,h=window.innerHeight,w=window.innerWidth;
         const vert=cy<h/3?'t':cy>h*2/3?'b':'m';
-        _fabCorner=vert+(r.left+23<window.innerWidth/2?'l':'r');
+        // Middle row only snaps l/r (no centre); top/bottom rows snap l/m/r
+        const horiz=vert==='m'?(cx<w/2?'l':'r'):(cx<w/3?'l':cx>w*2/3?'r':'m');
+        _fabCorner=vert+horiz;
         localStorage.setItem('pm_fab_corner',_fabCorner);
         _pmFabApplyCorner(_fabCorner,true);
       },{passive:true});
@@ -8422,10 +8431,10 @@
     }
     document.addEventListener('click',_pmFabClose,{capture:false});
     // Re-snap FAB on orientation/resize so position tracks the new viewport
-    if(!window._pmFabResizeHandler){
-      window._pmFabResizeHandler=()=>{_pmFabApplyCorner(localStorage.getItem('pm_fab_corner')||'tr',false);};
-      window.addEventListener('resize',window._pmFabResizeHandler);
-    }
+    window._pmFabResizeHandler=()=>{_pmFabApplyCorner(localStorage.getItem('pm_fab_corner')||'tr',false);};
+    window.removeEventListener('resize',window._pmFabResizePrev||window._pmFabResizeHandler);
+    window.addEventListener('resize',window._pmFabResizeHandler);
+    window._pmFabResizePrev=window._pmFabResizeHandler;
     // Facedown toggle – update FAB label directly (FAB lives at body, not in incremental sections)
     document.getElementById('btn-pm-facedown')?.addEventListener('click',(e)=>{
       e.stopPropagation();
