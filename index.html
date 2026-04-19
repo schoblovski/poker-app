@@ -8342,65 +8342,63 @@
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
-    // FAB – position, drag-to-corner, toggle
+    // FAB – Pointer Events API (unified touch+mouse, no synthetic-event bugs)
     const _fab=document.getElementById('pm-fab');
     const _fabMenu=document.getElementById('pm-fab-menu');
     let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
-    let _fabDragged=false;
+    let _fabDown=false,_fabDragged=false;
+    let _fabSX=0,_fabSY=0,_fabFX=0,_fabFY=0;
     function _pmFabApplyCorner(corner,animate){
       const fab=document.getElementById('pm-fab');const menu=document.getElementById('pm-fab-menu');if(!fab)return;
       const hdrH=(document.querySelector('.header')?.offsetHeight||60)+8;
       const pad=12;const fs=46;const gap=8;
-      // FAB position
-      if(animate){fab.style.transition='top .25s,left .25s,right .25s,bottom .25s,transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';}
-      else{fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';}
+      fab.style.transition=animate?'top .28s cubic-bezier(.34,1.1,.64,1),left .28s cubic-bezier(.34,1.1,.64,1),right .28s cubic-bezier(.34,1.1,.64,1),bottom .28s cubic-bezier(.34,1.1,.64,1),transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s':'transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
       fab.style.top=fab.style.bottom=fab.style.left=fab.style.right='auto';
-      if(corner[0]==='t')fab.style.top=hdrH+'px'; else fab.style.bottom=pad+'px';
-      if(corner[1]==='r')fab.style.right=pad+'px'; else fab.style.left=pad+'px';
+      if(corner[0]==='t')fab.style.top=hdrH+'px';else fab.style.bottom=pad+'px';
+      if(corner[1]==='r')fab.style.right=pad+'px';else fab.style.left=pad+'px';
       if(!menu)return;
       menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';
-      if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px'; else menu.style.bottom=(pad+fs+gap)+'px';
+      if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px';else menu.style.bottom=(pad+fs+gap)+'px';
       if(corner[1]==='r'){menu.style.right=pad+'px';menu.style.alignItems='flex-end';}
       else{menu.style.left=pad+'px';menu.style.alignItems='flex-start';}
     }
     _pmFabApplyCorner(_fabCorner,false);
     function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
     function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.add('pm-fab-open');if(m)m.classList.add('pm-fab-open');}
-    // Drag logic
-    let _fabDragStartX,_fabDragStartY,_fabDragFabX,_fabDragFabY;
-    function _fabOnStart(e){
-      const pt=e.touches?e.touches[0]:e;
-      _fabDragStartX=pt.clientX;_fabDragStartY=pt.clientY;
-      const r=_fab.getBoundingClientRect();_fabDragFabX=r.left;_fabDragFabY=r.top;
-      _fabDragged=false;
-      _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+    if(_fab){
+      _fab.addEventListener('pointerdown',(e)=>{
+        if(e.button>0)return;
+        _fabDown=true;_fabDragged=false;
+        _fabSX=e.clientX;_fabSY=e.clientY;
+        const r=_fab.getBoundingClientRect();_fabFX=r.left;_fabFY=r.top;
+        _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+        try{_fab.setPointerCapture(e.pointerId);}catch(_){}
+      });
+      _fab.addEventListener('pointermove',(e)=>{
+        if(!_fabDown)return;
+        const dx=e.clientX-_fabSX,dy=e.clientY-_fabSY;
+        if(!_fabDragged&&Math.hypot(dx,dy)<10)return;
+        if(!_fabDragged){_fabDragged=true;_pmFabClose();}
+        _fab.style.left=Math.max(4,Math.min(window.innerWidth-50,_fabFX+dx))+'px';
+        _fab.style.top=Math.max(4,Math.min(window.innerHeight-50,_fabFY+dy))+'px';
+        _fab.style.right='auto';_fab.style.bottom='auto';
+      });
+      _fab.addEventListener('pointerup',()=>{
+        if(!_fabDown)return;
+        _fabDown=false;
+        if(!_fabDragged)return;
+        const r=_fab.getBoundingClientRect();
+        _fabCorner=(r.top+23<window.innerHeight/2?'t':'b')+(r.left+23<window.innerWidth/2?'l':'r');
+        localStorage.setItem('pm_fab_corner',_fabCorner);
+        _pmFabApplyCorner(_fabCorner,true);
+      });
+      _fab.addEventListener('pointercancel',()=>{_fabDown=false;if(_fabDragged)_pmFabApplyCorner(_fabCorner,true);_fabDragged=false;});
+      _fab.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        if(_fabDragged){_fabDragged=false;return;}
+        _fab.classList.contains('pm-fab-open')?_pmFabClose():_pmFabOpen();
+      });
     }
-    function _fabOnMove(e){
-      const pt=e.touches?e.touches[0]:e;
-      const dx=pt.clientX-_fabDragStartX,dy=pt.clientY-_fabDragStartY;
-      if(!_fabDragged&&Math.hypot(dx,dy)<8)return;
-      _fabDragged=true;_pmFabClose();
-      const nx=Math.max(4,Math.min(window.innerWidth-50,_fabDragFabX+dx));
-      const ny=Math.max(4,Math.min(window.innerHeight-50,_fabDragFabY+dy));
-      _fab.style.left=nx+'px';_fab.style.top=ny+'px';_fab.style.right='auto';_fab.style.bottom='auto';
-      if(e.cancelable)e.preventDefault();
-    }
-    function _fabOnEnd(){
-      if(!_fabDragged)return;
-      const r=_fab.getBoundingClientRect();
-      const cx=r.left+23,cy=r.top+23;
-      _fabCorner=(cy<window.innerHeight/2?'t':'b')+(cx<window.innerWidth/2?'l':'r');
-      localStorage.setItem('pm_fab_corner',_fabCorner);
-      _pmFabApplyCorner(_fabCorner,true);
-      setTimeout(()=>_fabDragged=false,50);
-    }
-    _fab?.addEventListener('touchstart',_fabOnStart,{passive:true});
-    _fab?.addEventListener('touchmove',_fabOnMove,{passive:false});
-    _fab?.addEventListener('touchend',_fabOnEnd,{passive:true});
-    _fab?.addEventListener('mousedown',_fabOnStart);
-    document.addEventListener('mousemove',_fabOnMove);
-    document.addEventListener('mouseup',_fabOnEnd);
-    _fab?.addEventListener('click',(e)=>{e.stopPropagation();if(_fabDragged)return;const isOpen=_fab.classList.contains('pm-fab-open');if(isOpen)_pmFabClose();else _pmFabOpen();});
     document.addEventListener('click',_pmFabClose,{capture:false});
     // Facedown toggle – re-opens menu after re-render
     document.getElementById('btn-pm-facedown')?.addEventListener('click',(e)=>{
