@@ -8866,6 +8866,39 @@
     const startStack=session.start_stack||100;
     const spielId=session.spiel_id;
 
+    // If there's an open pot (session ended mid-hand), ask how to handle it
+    const _midHandPot=session.pot||0;
+    let _potResolution='none'; // 'none' | 'annul' | 'split'
+    if(_midHandPot>0){
+      const choice=await new Promise(resolve=>{
+        const ov=document.createElement('div');ov.className='modal-overlay open';
+        ov.style.cssText='z-index:9998;align-items:flex-end;padding:0';
+        ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto">
+          <div style="padding:var(--space-md) var(--space-md) 0">
+            <div style="font-size:16px;font-weight:700">Offene Spielrunde</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;line-height:1.5">Es läuft noch eine Spielrunde mit <b>€${_midHandPot.toFixed(2)}</b> im Pot. Wie soll damit verfahren werden?</div>
+          </div>
+          <div style="padding:var(--space-md);display:flex;flex-direction:column;gap:var(--space-sm);max-width:320px;margin:0 auto">
+            <button class="btn btn-secondary" id="btn-mh-annul" style="text-align:left;padding:12px 16px;height:auto;white-space:normal">
+              <div style="font-weight:600;font-size:14px">Spielrunde annullieren</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Jeder Spieler bekommt seine Einsätze zurück – kein Pot wird aufgeteilt.</div>
+            </button>
+            <button class="btn btn-secondary" id="btn-mh-split" style="text-align:left;padding:12px 16px;height:auto;white-space:normal">
+              <div style="font-weight:600;font-size:14px">Pot gleichmässig aufteilen</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">€${_midHandPot.toFixed(2)} werden gleichmässig auf die verbleibenden Spieler aufgeteilt.</div>
+            </button>
+            <button class="btn btn-ghost" id="btn-mh-back" style="font-size:13px">Abbrechen – zurück zum Spiel</button>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        document.getElementById('btn-mh-annul').onclick=()=>{ov.remove();resolve('annul');};
+        document.getElementById('btn-mh-split').onclick=()=>{ov.remove();resolve('split');};
+        document.getElementById('btn-mh-back').onclick=()=>{ov.remove();resolve('cancel');};
+      });
+      if(choice==='cancel')return;
+      _potResolution=choice;
+    }
+
     // Build per-player summary rows
     const rows=seats.filter(s=>s.status!=='sitting_out').map(s=>{
       const buyins=s.buyins||1;
@@ -8874,18 +8907,30 @@
       const net=payout-cost;
       return{seat:s,buyins,cost,payout,net,name:s.spieler?.name||'?',img:s.spieler?.profilbild||''};
     }).sort((a,b)=>b.net-a.net);
-    // If the session ended mid-hand, the pot has not been distributed yet.
-    // Return it to non-folded players equally so no chips are lost.
-    const _midHandPot=session.pot||0;
+
     let _potNote='';
-    if(_midHandPot>0){
+    if(_potResolution==='annul'){
+      // Return each player's invested amount in the current hand from the action log
+      const curHn=session.hand_nr||0;
+      const invested={};
+      for(const a of (_pm.actions||[])){
+        if((a.hand_nr||0)!==curHn)continue;
+        if(!['call','raise','allin','post_sb','post_bb','blind','bet'].includes(a.action))continue;
+        if(a.spieler_id)invested[a.spieler_id]=(invested[a.spieler_id]||0)+(a.amount||0);
+      }
+      rows.forEach(r=>{
+        const refund=Math.round((invested[r.seat.spieler_id]||0)*100)/100;
+        if(refund>0){r.payout=Math.round((r.payout+refund)*100)/100;r.net=Math.round((r.net+refund)*100)/100;}
+      });
+      _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);font-size:13px"><b>Spielrunde annulliert</b> – €${_midHandPot.toFixed(2)} wurden an die jeweiligen Spieler zurückgegeben.</div>`;
+    } else if(_potResolution==='split'){
       const _active=rows.filter(r=>r.seat.status!=='folded');
       if(_active.length>0){
         const _cents=Math.round(_midHandPot*100);
         const _share=Math.floor(_cents/_active.length);
         const _rem=_cents-_share*_active.length;
         _active.forEach((r,i)=>{const add=(_share+(i===0?_rem:0))/100;r.payout=Math.round((r.payout+add)*100)/100;r.net=Math.round((r.net+add)*100)/100;});
-        _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:#fef3c7;color:#92400e;border-radius:var(--radius-md);font-size:13px"><b>Offene Spielrunde</b> – €${_midHandPot.toFixed(2)} im Pot wurden gleichmässig auf die ${_active.length} verbleibenden Spieler aufgeteilt.</div>`;
+        _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:#fef3c7;color:#92400e;border-radius:var(--radius-md);font-size:13px"><b>Pot aufgeteilt</b> – €${_midHandPot.toFixed(2)} wurden gleichmässig auf ${_active.length} Spieler aufgeteilt.</div>`;
       }
     }
 
