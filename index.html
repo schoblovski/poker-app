@@ -1889,8 +1889,8 @@
     // When leaving the table: show drawer; mark AFK only via visibilitychange (not in-app nav)
     if(page!=='online-tisch'){
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
-      if(_pm?.id){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
-      else if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
+      if(_pm?.id&&_pm?.session?.status!=='finished'){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
+      else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='home')loadHome();
@@ -8406,6 +8406,23 @@
       showPage('online-lobby');
     });
     document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
+      const isEmpty=(_pm.session?.hand_nr||0)===0;
+      if(isEmpty){
+        // No hands were played: offer to silently delete the session (no history entry)
+        if(!await confirmAction('Es wurden keine Runden gespielt.\n\nSession löschen? Sie wird nicht in der Historie gespeichert.'))return;
+        const _id=_pm.id;
+        if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+        _pmReleaseWakeLock();_pm=null;_pmDrawerHide();
+        // Delete child rows first (no CASCADE assumed), then the session itself
+        await Promise.all([
+          db.from('online_seats').delete().eq('online_spiel_id',_id),
+          db.from('online_actions').delete().eq('online_spiel_id',_id),
+        ]);
+        const{error:delErr}=await db.from('online_spiele').delete().eq('id',_id);
+        if(delErr)await showAlert('Fehler beim Löschen: '+delErr.message);
+        showPage('online-lobby');
+        return;
+      }
       if(!await confirmAction('Session wirklich beenden?\n\nAlle Spieler werden zurück zur Übersicht geleitet.'))return;
       const{error}=await db.from('online_spiele').update({status:'finished'}).eq('id',_pm.id);
       if(error){await showAlert('Fehler: '+error.message);return;}
@@ -8418,7 +8435,7 @@
         await _pmLoad(); // refresh so _pm.seats has final stacks
         _pmPayoutModal();
       } else {
-        _pm=null;
+        _pm=null;_pmDrawerHide();
         showPage('online-lobby');
       }
     });
@@ -9054,6 +9071,7 @@
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
     _pm=null;
+    _pmDrawerHide();
   }
 
   // ── SHAKE EASTER EGG: Schütteln → Asse-Randomizer ──
