@@ -8211,10 +8211,11 @@
           const totalCards=_pm.myHoleCards?.length||0;
           const actionId=`_look_fd_${hn}_${idx}`;
           if(!_pm.actions.some(a=>a.id===actionId)){
+            // First reveal of this card this hand – log once only
             _pm.actions.push({id:actionId,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
-          }
-          if(currentSpieler?.id){
-            db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards}}).then(()=>{_pmScheduleLoad();});
+            if(currentSpieler?.id){
+              db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards}}).then(()=>{_pmScheduleLoad();});
+            }
           }
           if(_pm._perCardRevealed[hn].size>=totalCards)_pm._revealedHandNr=hn;
         }else{
