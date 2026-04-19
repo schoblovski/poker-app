@@ -133,13 +133,12 @@
     .header-timer-badge[hidden]{display:none;}
     .pm-rt-badge{display:flex;align-items:center;gap:5px;border-radius:14px;padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;font-family:var(--font-sans);white-space:nowrap;}
     .pm-rt-badge[hidden]{display:none;}
+    #pm-rt-badge{display:none!important;}
     .pm-rt-badge.rt-live{background:var(--accent-soft);color:var(--accent-text);}
     .pm-rt-badge.rt-connecting{background:#fef3c7;color:#92400e;}
     .pm-rt-badge.rt-error{background:var(--danger-soft);color:var(--danger);}
-    /* Badge as overlay on the dark SVG table gets semi-transparent dark background */
-    #pm-rt-inline.rt-live{background:rgba(22,163,74,.85);color:#fff;}
-    #pm-rt-inline.rt-connecting{background:rgba(120,90,0,.8);color:#fef3c7;}
-    #pm-rt-inline.rt-error{background:rgba(185,28,28,.85);color:#fff;}
+    /* Inline badge on the table SVG – same style as the expand button */
+    #pm-rt-inline{background:rgba(0,0,0,.45)!important;color:#fff!important;border-radius:6px!important;padding:5px 8px!important;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
     .pm-rt-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
     .pm-rt-badge.rt-live .pm-rt-dot{animation:pm-pulse 1.4s infinite;}
     .header-timer-badge:active{transform:scale(.95);}
@@ -8644,17 +8643,16 @@
     if(_pm)_pm._rtStatus=status;
     const cls=status==='SUBSCRIBED'?'rt-live':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'rt-error':'rt-connecting';
     const label=status==='SUBSCRIBED'?'Live':status==='CHANNEL_ERROR'?'Fehler':status==='TIMED_OUT'?'Timeout':'Verbinde…';
-    const inner=status?`<div class="pm-rt-dot"></div><span>${label}</span>`:'';
-    for(const id of['pm-rt-badge','pm-rt-inline']){
-      const el=document.getElementById(id);
-      if(!el)continue;
-      if(!status){el.hidden=true;continue;}
-      el.hidden=false;
-      el.className=`pm-rt-badge${id==='pm-rt-inline'?' pm-rt-inline':''} ${cls}`;
-      el.innerHTML=inner;
-      el.style.cursor='pointer';
-      el.onclick=_pmShowRtInfo;
-    }
+    const dotColor=status==='SUBSCRIBED'?'#4ade80':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'#f87171':'#fbbf24';
+    const inner=status?`<div class="pm-rt-dot" style="background:${dotColor}"></div><span>${label}</span>`:'';
+    const el=document.getElementById('pm-rt-inline');
+    if(!el)return;
+    if(!status){el.hidden=true;return;}
+    el.hidden=false;
+    el.className=`pm-rt-badge pm-rt-inline ${cls}`;
+    el.innerHTML=inner;
+    el.style.cursor='pointer';
+    el.onclick=_pmShowRtInfo;
   }
 
   function _pmSubscribe(){
