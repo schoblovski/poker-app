@@ -7836,8 +7836,10 @@
       });
       document.querySelectorAll('.pm-new-card').forEach(g=>{
         const ms=parseFloat(g.dataset.delay||0)*1000;
-        setTimeout(()=>{g.style.transition='opacity 0.6s ease';g.style.opacity='1';},ms);
+        const rect=g.querySelector('rect');
+        if(rect){const bx=parseFloat(rect.getAttribute('x'));const by=parseFloat(rect.getAttribute('y'));const ccx=bx+(parseFloat(rect.getAttribute('width'))||30)/2;const ccy=by+(parseFloat(rect.getAttribute('height'))||42)/2;g.style.opacity='1';g.setAttribute('transform',`translate(${ccx},${ccy}) scale(0,1) translate(${-ccx},${-ccy})`);setTimeout(()=>{const t0=performance.now();const dur=300;function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<.7?t/.7*1.12:1.12-(1.12-1)*(t-.7)/.3;g.setAttribute('transform',`translate(${ccx},${ccy}) scale(${sc.toFixed(3)},1) translate(${-ccx},${-ccy})`);if(t<1)requestAnimationFrame(step);else g.removeAttribute('transform');}requestAnimationFrame(step);},ms);}else{setTimeout(()=>{g.style.transition='opacity 0.4s ease';g.style.opacity='1';},ms);}
       });
+      _pmDealAnim();
       document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
         if(!_pm)return;
         const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
@@ -8358,11 +8360,13 @@
   }
 
   function _pmBindEvents(){
-    // Community card reveal animation
+    // Community card reveal animation (flip from center)
     document.querySelectorAll('.pm-new-card').forEach(g=>{
       const ms=parseFloat(g.dataset.delay||0)*1000;
-      setTimeout(()=>{g.style.transition='opacity 0.6s ease';g.style.opacity='1';},ms);
+      const rect=g.querySelector('rect');
+      if(rect){const bx=parseFloat(rect.getAttribute('x'));const by=parseFloat(rect.getAttribute('y'));const ccx=bx+(parseFloat(rect.getAttribute('width'))||30)/2;const ccy=by+(parseFloat(rect.getAttribute('height'))||42)/2;g.style.opacity='1';g.setAttribute('transform',`translate(${ccx},${ccy}) scale(0,1) translate(${-ccx},${-ccy})`);setTimeout(()=>{const t0=performance.now();const dur=300;function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<.7?t/.7*1.12:1.12-(1.12-1)*(t-.7)/.3;g.setAttribute('transform',`translate(${ccx},${ccy}) scale(${sc.toFixed(3)},1) translate(${-ccx},${-ccy})`);if(t<1)requestAnimationFrame(step);else g.removeAttribute('transform');}requestAnimationFrame(step);},ms);}else{setTimeout(()=>{g.style.transition='opacity 0.4s ease';g.style.opacity='1';},ms);}
     });
+    _pmDealAnim();
     // Leerer Platz → Platz nehmen (nur wenn Session nicht beendet)
     if(_pm?.session?.status!=='finished'){
       document.querySelectorAll('.pm-seat-group.empty').forEach(g=>{
@@ -8756,6 +8760,11 @@
     const lastAggAct=(_pm.actions||[]).filter(a=>a.hand_nr===hn&&(a.action==='raise'||a.action==='allin')&&a.spieler_id).at(-1);
     const isLastAggressor=lastAggAct?.spieler_id===myId;
     if(!isWinner&&!isLastAggressor)return;
+    // Exception: winner won by everyone else folding – no showdown, no need to show
+    const _seatsInHand=(_pm.seats||[]).filter(s=>s.spieler_id&&s.status!=='sitting_out');
+    const _foldedIds=new Set((_pm.actions||[]).filter(a=>a.hand_nr===hn&&a.action==='fold').map(a=>a.spieler_id));
+    const _activeAtEnd=_seatsInHand.filter(s=>!_foldedIds.has(s.spieler_id));
+    if(_activeAtEnd.length<=1)return;
     _pm._autoRevealedHandNr=hn;
     await _pmRevealCards();
   }
@@ -9121,6 +9130,49 @@
       if(_allinSelected)await _pmAct('allin');
       else await _pmAct('raise',v);
     };
+  }
+
+  // ── DEAL ANIMATION ────────────────────────────────────────────────────────
+  function _pmFlyCard(svgEl,x0,y0,x1,y1,delayMs){
+    setTimeout(()=>{
+      const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('width','11');rect.setAttribute('height','16');rect.setAttribute('rx','2');
+      rect.setAttribute('fill','#1e3a8a');rect.setAttribute('stroke','rgba(255,255,255,.4)');rect.setAttribute('stroke-width','0.5');
+      svgEl.appendChild(rect);
+      const t0=performance.now();const dur=260;const arc=10;
+      function step(now){
+        const t=Math.min((now-t0)/dur,1);
+        const e=1-Math.pow(1-t,2.5);
+        const x=x0+(x1-x0)*e;const y=y0+(y1-y0)*e-arc*4*e*(1-e);
+        rect.setAttribute('x',(x-5.5).toFixed(1));rect.setAttribute('y',(y-8).toFixed(1));
+        if(t<1)requestAnimationFrame(step);else rect.remove();
+      }
+      requestAnimationFrame(step);
+    },delayMs);
+  }
+  function _pmDealAnim(){
+    if(!_pm?.session||!_pm.seats)return;
+    if(!document.getElementById('page-online-tisch')?.classList.contains('active'))return;
+    const s=_pm.session;const hn=s.hand_nr;
+    if(!hn||(_pm._animHandNr??-1)>=hn)return;
+    _pm._animHandNr=hn;
+    const svgEl=document.querySelector('#pm-s-svg svg');if(!svgEl)return;
+    const angles=[90,50,10,330,290,250,210,170,130];
+    const cx=200,cy=120,rx=148,ry=86;
+    const nCards=s.variante==='holdem'?2:4;
+    const ds=s.dealer_seat;if(!ds)return;
+    const da=angles[ds-1]*Math.PI/180;
+    const dx=Math.round(cx+rx*Math.cos(da));const dy=Math.round(cy-ry*Math.sin(da));
+    const active=(_pm.seats||[]).filter(s=>s.spieler_id&&s.status!=='sitting_out').sort((a,b)=>a.seat-b.seat);
+    if(active.length<2)return;
+    const gap=active.length>5?55:70;
+    for(let c=0;c<nCards;c++){
+      active.forEach((seat,si)=>{
+        const sa=angles[seat.seat-1]*Math.PI/180;
+        const tx=Math.round(cx+rx*Math.cos(sa));const ty=Math.round(cy-ry*Math.sin(sa));
+        _pmFlyCard(svgEl,dx,dy,tx,ty,(c*active.length+si)*gap);
+      });
+    }
   }
 
   function _pmScheduleLoad(){
