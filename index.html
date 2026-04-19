@@ -7748,7 +7748,7 @@
         const _atB=_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop<80;const _svd=_fo.scrollTop;
         _fo.innerHTML=_fn.innerHTML;if(_atB)_fo.scrollTop=_fo.scrollHeight;else _fo.scrollTop=_svd;
         const _mb=document.getElementById('pm-feed-modal-body');
-        if(_mb){const _atBM=_mb.scrollHeight-_mb.clientHeight-_mb.scrollTop<80;_mb.innerHTML=_fn.innerHTML;if(_atBM)_mb.scrollTop=_mb.scrollHeight;}
+        if(_mb){const _atTM=_mb.scrollTop<80;_mb.innerHTML=_fn.innerHTML;if(_atTM)_mb.scrollTop=0;}
       }
       if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     }
@@ -8339,7 +8339,7 @@
       document.body.appendChild(ov);
       ov.querySelector('#btn-pm-feed-modal-close').addEventListener('click',()=>ov.remove());
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
-      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=sc.scrollHeight;});
+      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=0;});
     });
     document.querySelectorAll('.pm-react-btn').forEach(btn=>{
       btn.addEventListener('click',async()=>{
