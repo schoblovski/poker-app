@@ -2626,8 +2626,8 @@
             <div class="item-subtitle">${hasCred?'Aktiviert auf diesem Gerät':'Schnell anmelden ohne Google'}</div>
           </div>
           ${hasCred
-            ?`<button class="btn btn-ghost" id="btn-webauthn-remove" style="font-size:12px;padding:6px 12px;height:auto!important;flex-shrink:0">Entfernen</button>`
-            :`<button class="btn btn-primary" id="btn-webauthn-register" style="font-size:12px;padding:6px 12px;height:auto!important;flex-shrink:0">Aktivieren</button>`
+            ?`<button class="btn btn-ghost" id="btn-webauthn-remove" style="font-size:12px;padding:5px 14px;height:32px!important;min-width:0;width:auto;flex-shrink:0;margin:0">Entfernen</button>`
+            :`<button class="btn btn-primary" id="btn-webauthn-register" style="font-size:12px;padding:5px 14px;height:32px!important;min-width:0;width:auto;flex-shrink:0;margin:0">Aktivieren</button>`
           }
         </div></div>`;
       })()}
@@ -6512,12 +6512,12 @@
 
   // ── MOBILE FEATURES ────────────────────────────────────
 
-  // Toast-Utility
+  // Toast-Utility – erscheint unterhalb Dynamic Island / Notch
   function _showToast(msg,type='info',dur=4000){
     const bg=type==='error'?'var(--danger)':type==='success'?'var(--accent)':'var(--surface)';
     const fg=type==='info'?'var(--text-primary)':'white';
     const el=document.createElement('div');
-    el.style.cssText=`position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+72px);left:50%;transform:translateX(-50%);background:${bg};color:${fg};border:${type==='info'?'1px solid var(--border)':'none'};border-radius:24px;padding:10px 20px;font-size:13px;font-weight:600;z-index:9997;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:calc(100vw - 32px);text-align:center`;
+    el.style.cssText=`position:fixed;top:calc(env(safe-area-inset-top,0px)+12px);left:50%;transform:translateX(-50%);background:${bg};color:${fg};border:${type==='info'?'1px solid var(--border)':'none'};border-radius:24px;padding:10px 20px;font-size:13px;font-weight:600;z-index:10002;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:calc(100vw - 32px);text-align:center;animation:modal-slide-in .25s ease-out both`;
     el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),dur);
   }
 
@@ -6539,9 +6539,10 @@
     }catch(e){}
   }
 
-  // ── NETZWERK-MONITOR ──
-  let _netBanner=null;
+  // ── NETZWERK-MONITOR (einmalig registriert) ──
+  let _netBanner=null,_netMonitorInit=false;
   function _initNetworkMonitor(){
+    if(_netMonitorInit)return;_netMonitorInit=true;
     const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
     function _update(){
       const off=!navigator.onLine;
@@ -6551,7 +6552,8 @@
         if(!_netBanner){
           _netBanner=document.createElement('div');
           _netBanner.id='network-status-banner';
-          _netBanner.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:9995;background:var(--danger);color:white;text-align:center;font-size:12px;font-weight:700;padding:6px 16px;display:flex;align-items:center;justify-content:center;gap:6px';
+          // padding-top verschiebt Text unter Dynamic Island, Banner selbst beginnt bei top:0
+          _netBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9995;background:var(--danger);color:white;text-align:center;font-size:12px;font-weight:700;padding:calc(env(safe-area-inset-top,0px)+6px) 16px 6px;display:flex;align-items:center;justify-content:center;gap:6px';
           document.body.appendChild(_netBanner);
         }
         _netBanner.textContent=off?'Offline – neue Transaktionen werden lokal gespeichert':`Schwache Verbindung (${(et||'').toUpperCase()})`;
@@ -6566,16 +6568,22 @@
   }
 
   // ── OFFLINE-WARTESCHLANGE (nur Transaktionen) ──
+  // _queueProcessing verhindert parallele Ausführung (Race Condition bei mehrfachem online-Event)
+  let _queueProcessing=false;
   async function _processOfflineQueue(){
+    if(_queueProcessing||!navigator.onLine)return;
     const q=JSON.parse(localStorage.getItem('dtks_offline_queue')||'[]');
-    if(!q.length||!navigator.onLine)return;
+    if(!q.length)return;
+    _queueProcessing=true;
+    // Queue sofort leeren bevor async Operationen starten (verhindert Doppel-Inserts)
+    localStorage.removeItem('dtks_offline_queue');
     let ok=0;const failed=[];
     for(const {_id,...data} of q){
       const{error}=await db.from('transaktionen').insert(data);
       if(error)failed.push({_id,...data});else ok++;
     }
     if(failed.length)localStorage.setItem('dtks_offline_queue',JSON.stringify(failed));
-    else localStorage.removeItem('dtks_offline_queue');
+    _queueProcessing=false;
     if(ok>0){
       _showToast(`${ok} offline Transaktion${ok>1?'en':''} synchronisiert`,'success');
       await loadTransaktionen().catch(()=>{});await loadHome().catch(()=>{});
