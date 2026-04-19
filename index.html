@@ -1255,6 +1255,48 @@
         </div>
       </div>
 
+      <!-- Bots -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Bot-Spieler</div>
+          <div style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:20px">Neu</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über das Menü <b>(⋮) → Bot hinzufügen</b> kannst du Computer-Mitspieler an den Tisch setzen. Bots spielen automatisch, wählen ihre Aktionen nach einer kurzen Bedenkzeit (0.5–5 Sekunden) und schreiben gelegentlich einen Kommentar im Chat.</div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:3px">Aggressivität</div>
+            <div style="font-size:13px;color:var(--text-secondary)">Wie oft der Bot erhöht statt nur zu callen. Hoher Wert = viele Raises und Re-Raises. Niedriger Wert = passiv, wartet lieber ab.</div>
+          </div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:3px">Risiko-Bereitschaft</div>
+            <div style="font-size:13px;color:var(--text-secondary)">Wie viel der Bot bereit ist zu riskieren. Niedriger Wert = faltet bei grossen Einsätzen. Hoher Wert = geht auch mit schlechten Karten All-in.</div>
+          </div>
+          <div style="padding:10px 14px">
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:3px">Bluff-Rate</div>
+            <div style="font-size:13px;color:var(--text-secondary)">Wie oft der Bot mit schwachen Karten so tut als hätte er starke. 0% = blufft nie. 60%+ = unberechenbar, blufft ständig.</div>
+          </div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg-secondary)"><div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Spielstil-Presets</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:80px">Nit</div><div style="font-size:13px;color:var(--text-secondary)">Spielt nur Premium-Karten, faltet fast alles. Passiv, vorhersehbar, langweilig — aber gefährlich wenn er doch setzt.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:80px">TAG</div><div style="font-size:13px;color:var(--text-secondary)"><b>Tight-Aggressive</b> — wählt Hände selektiv aus, setzt aber aggressiv wenn er spielt. Solider Standardspieler.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:80px">LAG</div><div style="font-size:13px;color:var(--text-secondary)"><b>Loose-Aggressive</b> — spielt viele Hände, erhöht oft. Schwer zu lesen, viel Druck. Kann auch mit schlechten Karten gewinnen.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:80px">Station</div><div style="font-size:13px;color:var(--text-secondary)"><b>Calling Station</b> — callt fast alles, erhöht kaum. Gibt einem selten Kredit aber verliert langfristig.</div></div>
+          <div style="padding:10px 14px;display:flex;gap:10px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:80px">Maniac</div><div style="font-size:13px;color:var(--text-secondary)">Alles rein, immer. Geht mit fast jeder Hand All-in, blufft ständig. Chaotisch aber gefährlich.</div></div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg-secondary)"><div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Karten zeigen</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Immer</div><div style="font-size:13px;color:var(--text-secondary)">Bot zeigt seine Karten nach jeder Hand</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Bei Showdown</div><div style="font-size:13px;color:var(--text-secondary)">Bot zeigt nur wenn es zum Showdown kommt</div></div>
+          <div style="padding:10px 14px;display:flex;gap:10px"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:110px">Nie</div><div style="font-size:13px;color:var(--text-secondary)">Bot zeigt seine Karten nie — maximale Spannung</div></div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Bot-Avatar antippen → Spieler-Karte öffnet sich. Dort kannst du den Bot <b>entfernen</b> oder seine <b>Parameter anpassen</b></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Ist der Bot als Dealer-Button, deckt er nach dem Falten aller Gegner automatisch die restlichen Gemeinschaftskarten auf</div>
+          <div style="padding:10px 14px;font-size:13px;color:var(--danger)"><b>Wichtig:</b> Sessions mit Bots können nicht in die Statistik übernommen werden — Bots dienen nur zur Unterhaltung</div>
+        </div>
+      </div>
+
       <!-- Tipps -->
       <div style="margin-bottom:8px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tipps</div>
@@ -7329,9 +7371,7 @@
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
-    const hasActive=visibleSessions.some(s=>s.status==='waiting'||s.status==='running');
-    html+=`<div style="margin-bottom:var(--space-md);text-align:center"><button class="btn ${hasActive?'btn-secondary':'btn-primary'}" id="btn-pm-new" style="display:inline-flex;width:auto;padding:0 28px;min-width:180px${hasActive?';opacity:.5;cursor:not-allowed':''}"${hasActive?' disabled':''}>
-      ${hasActive?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`:''}Neue Session</button>${hasActive?`<div style="font-size:12px;color:var(--text-tertiary);margin-top:6px">Eine Session ist bereits aktiv</div>`:''}</div>`;
+    html+=`<div style="margin-bottom:var(--space-md);text-align:center"><button class="btn btn-primary" id="btn-pm-new" style="display:inline-flex;width:auto;padding:0 28px;min-width:180px">Neue Session</button></div>`;
     const active=visibleSessions.filter(s=>s.status!=='finished');
     const done=visibleSessions.filter(s=>s.status==='finished');
     if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
@@ -9677,16 +9717,24 @@
       const name=nameInp?nameInp.value.trim().slice(0,10):existingSeat?.spieler?.name||'Bot';
       if(!name){await showAlert('Bitte einen Namen eingeben.');return;}
       const botCfg={aggressivitaet:vals.aggressivitaet,risiko:vals.risiko,bluff:vals.bluff,karten_zeigen:revealChoice,style:currentPreset};
-      ov.querySelector('#pm-bot-confirm').disabled=true;
-      if(isEdit){await _pmUpdateBotConfig(existingSeat,botCfg);ov.remove();}
-      else{await _pmAddBot(name,botCfg);ov.remove();}
+      const confirmBtn=ov.querySelector('#pm-bot-confirm');
+      confirmBtn.disabled=true;
+      try{
+        if(isEdit){await _pmUpdateBotConfig(existingSeat,botCfg);}
+        else{await _pmAddBot(name,botCfg);}
+        ov.remove();
+      }catch(e){
+        console.error('[Bot]',e);
+        await showAlert('Fehler: '+(e?.message||'Unbekannter Fehler'));
+        confirmBtn.disabled=false;
+      }
     });
     ov.querySelector('#pm-bot-cancel').addEventListener('click',()=>ov.remove());
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }
 
   async function _pmAddBot(name,config){
-    if(!_pm?.id){await showAlert('Keine aktive Session.');return;}
+    if(!_pm?.id) throw new Error('Keine aktive Session');
     const avatar=_pmBotAvatar(name);
     const resp=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
       method:'POST',
@@ -9694,7 +9742,7 @@
       body:JSON.stringify({online_spiel_id:_pm.id,action:'create',name,config:{...config,avatar}}),
     });
     const data=await resp.json().catch(()=>({}));
-    if(!resp.ok||!data.ok){await showAlert('Fehler beim Hinzufügen des Bots: '+(data.error||resp.status));return;}
+    if(!resp.ok||!data.ok) throw new Error(data.error||`HTTP ${resp.status}`);
     _pmScheduleLoad();
   }
 
