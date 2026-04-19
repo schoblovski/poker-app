@@ -345,7 +345,7 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Branch-Naming: `claude/<kurze-beschreibung>` (z.B. `claude/admin-push-notification-view`)
 - Ablauf:
   1. Branch anlegen/auschecken, Änderungen committen, auf Remote pushen (`git push -u origin <branch>`)
-  2. Vercel erzeugt automatisch einen Preview-Deploy unter `https://poker-app-git-<branch>-schoblovskis-projects.vercel.app`
+  2. Vercel erzeugt automatisch einen Preview-Deploy. **Wichtig:** Vercel kürzt lange Branch-Namen und fügt einen Hash an – die URL ist daher **nicht zuverlässig vorhersehbar**. Format bei kurzen Branch-Namen (< ~28 Zeichen nach Normalisierung): `https://poker-app-git-<branch-mit-dash>-schoblovskis-projects.vercel.app` — bei langen Branch-Namen z.B. `https://poker-app-git-claude-fix-ui-displa-ba85da-schoblovskis-projects.vercel.app`. Die exakte URL steht nach dem Push in den Vercel-Deployment-Logs bzw. als Commit-Status auf GitHub. **Keine URL erfinden oder raten.**
   3. Chris testet auf der Preview-URL (Google-Login über Supabase Redirect-URL-Whitelist freigegeben)
   4. Erst nach Freigabe: Version & Changelog bumpen, auf Feature-Branch committen, in `main` mergen und `main` pushen
 - Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
