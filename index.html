@@ -622,14 +622,14 @@
   .eq-result-pct.calc{color:var(--text-tertiary);font-size:13px;font-weight:600;}
   .eq-result-split{font-size:11px;font-weight:600;color:var(--text-tertiary);margin-top:2px;text-align:right;}
   .eq-picker-modal{background:var(--surface);width:100%;max-width:420px;border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg);padding-bottom:max(var(--space-lg),var(--safe-bottom));box-shadow:var(--shadow);animation:slideUp 250ms cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
-  .eq-picker-suits{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:var(--space-md);}
-  .eq-picker-suit{padding:10px;border-radius:var(--radius-md);border:2px solid var(--border);background:var(--bg-secondary);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
-  .eq-picker-suit.selected{border-color:var(--accent);background:var(--accent-soft);}
-  .eq-picker-suit.red{color:#dc2626;}
-  .eq-picker-ranks{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-  .eq-picker-rank{aspect-ratio:3/4;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text-primary);}
-  .eq-picker-rank:disabled{opacity:.25;cursor:not-allowed;}
-  .eq-picker-rank:active:not(:disabled){transform:scale(.92);}
+  .eq-picker-grid{display:grid;grid-template-columns:20px repeat(13,1fr);gap:3px;width:100%;}
+  .eq-grid-rank-hdr{text-align:center;font-size:10px;font-weight:700;color:var(--text-tertiary);line-height:18px;font-family:var(--font-mono);}
+  .eq-grid-suit-lbl{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-primary);}
+  .eq-grid-suit-lbl.red{color:#dc2626;}
+  .eq-grid-card{aspect-ratio:2/3;border-radius:4px;border:1px solid var(--border);background:var(--surface);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;color:var(--text-primary);padding:0;font-family:var(--font-mono);line-height:1;}
+  .eq-grid-card.red{color:#dc2626;}
+  .eq-grid-card:disabled{opacity:.2;cursor:not-allowed;}
+  .eq-grid-card:active:not(:disabled){transform:scale(.88);background:var(--bg-secondary);}
   .eq-progress{height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin:var(--space-sm) 0;}
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
@@ -2970,7 +2970,7 @@
         </div>
       </div>
       <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
-        1 BuyIn kostet den Spieler <strong id="buyin-total-preview">€${((vals['buyin_pot']||5)+(vals['buyin_kassa']||2)).toFixed(2)}</strong> vom Kontostand.
+        1 BuyIn kostet den Spieler <strong id="buyin-total-preview">€${((Number(vals['buyin_pot'])||5)+(Number(vals['buyin_kassa'])||2)).toFixed(2)}</strong> vom Kontostand.
       </div>
       <button class="btn btn-primary" id="btn-einst-speichern" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -5363,54 +5363,40 @@
     function openPicker(onPick, currentCard){
       const used=allUsedCards();
       if(currentCard!==null)used.delete(currentCard);
-      let selSuit=0;
+      const RANKS=[12,11,10,9,8,7,6,5,4,3,2,1,0];
       const modal=document.createElement('div');
       modal.className='modal-overlay open';
+      let gridHtml='<div class="eq-picker-grid"><div></div>';
+      RANKS.forEach(r=>{gridHtml+=`<div class="eq-grid-rank-hdr">${EQ_RANK_LABEL[r]}</div>`;});
+      [0,1,2,3].forEach(s=>{
+        gridHtml+=`<div class="eq-grid-suit-lbl${EQ_SUIT_RED[s]?' red':''}">${EQ_SUIT_CHAR[s]}</div>`;
+        RANKS.forEach(r=>{
+          const cid=r*4+s;
+          const dis=used.has(cid);
+          gridHtml+=`<button class="eq-grid-card${EQ_SUIT_RED[s]?' red':''}" data-cid="${cid}"${dis?' disabled':''}>${EQ_RANK_LABEL[r]}</button>`;
+        });
+      });
+      gridHtml+='</div>';
       modal.innerHTML=`<div class="eq-picker-modal">
         <div class="modal-handle"></div>
-        <div class="modal-title">Karte wählen</div>
-        <div class="eq-picker-suits" id="eq-pick-suits">
-          ${[0,1,2,3].map(s=>`<button class="eq-picker-suit${s===selSuit?' selected':''}${EQ_SUIT_RED[s]?' red':''}" data-s="${s}">${EQ_SUIT_CHAR[s]}</button>`).join('')}
-        </div>
-        <div class="eq-picker-ranks" id="eq-pick-ranks"></div>
+        <div class="modal-title" style="margin-bottom:var(--space-md)">Karte wählen</div>
+        ${gridHtml}
         <div class="modal-actions" style="margin-top:var(--space-md)">
           <button class="btn btn-secondary" id="eq-pick-cancel">Abbrechen</button>
           ${currentCard!==null?`<button class="btn btn-danger" id="eq-pick-clear">Entfernen</button>`:''}
         </div>
       </div>`;
       document.body.appendChild(modal);
-      function renderRanks(){
-        const wrap=modal.querySelector('#eq-pick-ranks');
-        wrap.innerHTML='';
-        for(let r=12;r>=0;r--){
-          const cid=r*4+selSuit;
-          const btn=document.createElement('button');
-          btn.className='eq-picker-rank';
-          btn.textContent=EQ_RANK_LABEL[r];
-          if(used.has(cid))btn.disabled=true;
-          btn.addEventListener('click',()=>{
-            if(btn.disabled)return;
-            close();
-            onPick(cid);
-          });
-          wrap.appendChild(btn);
-        }
-      }
       function close(){modal.remove();document.removeEventListener('keydown',esc);}
       const esc=e=>{if(e.key==='Escape')close();};
       document.addEventListener('keydown',esc);
       modal.addEventListener('click',e=>{if(e.target===modal)close();});
-      modal.querySelectorAll('.eq-picker-suit').forEach(btn=>{
-        btn.addEventListener('click',()=>{
-          selSuit=+btn.dataset.s;
-          modal.querySelectorAll('.eq-picker-suit').forEach(b=>b.classList.toggle('selected',+b.dataset.s===selSuit));
-          renderRanks();
-        });
-      });
       modal.querySelector('#eq-pick-cancel').addEventListener('click',close);
       const clearBtn=modal.querySelector('#eq-pick-clear');
       if(clearBtn)clearBtn.addEventListener('click',()=>{close();onPick(null);});
-      renderRanks();
+      modal.querySelectorAll('.eq-grid-card:not(:disabled)').forEach(btn=>{
+        btn.addEventListener('click',()=>{close();onPick(+btn.dataset.cid);});
+      });
     }
 
     function onChange(){
