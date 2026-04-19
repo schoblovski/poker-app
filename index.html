@@ -691,6 +691,13 @@
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
   .pm-seat-group.away .pm-seat-circle{stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 3}
+  /* Live feed side-drawer */
+  #pm-drawer{position:fixed;top:50%;right:0;transform:translateY(-50%) translateX(calc(100% - 28px));transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:500;display:none;flex-direction:row;border-radius:16px 0 0 16px;box-shadow:-4px 8px 32px rgba(0,0,0,.3);background:var(--surface);width:290px;max-height:65dvh}
+  #pm-drawer.pm-dopen{transform:translateY(-50%) translateX(0)}
+  #pm-drawer.pm-dvis{display:flex}
+  #pm-drawer-handle{width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--accent);border-radius:16px 0 0 16px;padding:18px 0;gap:8px;-webkit-tap-highlight-color:transparent}
+  #pm-drawer-body{width:262px;display:flex;flex-direction:column;overflow:hidden;max-height:65dvh}
+  #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   /* facedown→faceup: left edge lifts first, flip right */
@@ -1877,7 +1884,13 @@
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
-    if(!isOnlinePage){if(typeof _pmSendAway==='function')_pmSendAway();if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}}
+    if(!isOnlinePage){
+      if(typeof _pmSendAway==='function')_pmSendAway();
+      if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
+      // If a session is active, keep the realtime connection and show the side-drawer
+      if(_pm?.id){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
+      else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
+    }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='home')loadHome();
     if(page==='spiel')loadSpiel();
@@ -1889,8 +1902,11 @@
     if(page==='haende'){loadHaende();document.getElementById('btn-neue-hand').onclick=()=>openHandModal(null);}
     if(page==='benachrichtigungen')loadBenachrichtigungen();
     if(page==='online-lobby')loadOnlineLobby();
-    if(page==='online-tisch'){renderOnlineTisch();_pmCheckFullscreen();}
-    else _pmCheckFullscreen();
+    if(page==='online-tisch'){
+      if(typeof _pmDrawerHide==='function')_pmDrawerHide();
+      if(_pm?._isAway&&typeof _pmSendBack==='function')_pmSendBack();
+      renderOnlineTisch();_pmCheckFullscreen();
+    }else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
   }
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
@@ -7142,7 +7158,7 @@
       const react=reactions[seat?.spieler_id];
       const _rDelay=react?(-Math.min((Date.now()-react.ts)/1000,3.9)).toFixed(2):'0';
       const reactEl=react?`<text x="${sx}" y="${sy}" dominant-baseline="central" text-anchor="middle" font-size="34" class="pm-react-emoji" style="animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
-      svgSeats+=`<g class="${cls}" data-seat="${nr}"${!isEmpty?` data-spieler-id="${seat.spieler_id}"`:''}${!isEmpty?` data-spieler-name="${escHtml(seat.spieler?.name||'?')}"`:''}${!isEmpty?` data-spieler-stack="${seat.stack||0}"`:''}${!isEmpty?` data-spieler-status="${seat.status||''}"`:''}${!isEmpty&&seat.spieler?.profilbild?` data-spieler-bild="${seat.spieler.profilbild}"`:''}${!isEmpty&&seat.spieler_id!==myId?' style="cursor:pointer"':''}>
+      svgSeats+=`<g class="${cls}" data-seat="${nr}"${!isEmpty?` data-spieler-id="${seat.spieler_id}"`:''}${!isEmpty?` data-spieler-name="${escHtml(seat.spieler?.name||'?')}"`:''}${!isEmpty?` data-spieler-stack="${seat.stack||0}"`:''}${!isEmpty?` data-spieler-status="${seat.status||''}"`:''}${!isEmpty?` data-spieler-away="${isAway}"`:''}${!isEmpty&&seat.spieler?.profilbild?` data-spieler-bild="${seat.spieler.profilbild}"`:''}${!isEmpty&&seat.spieler_id!==myId?' style="cursor:pointer"':''}>
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
@@ -7454,6 +7470,7 @@
       _pm.myHoleCards=[];
     }
     renderOnlineTisch();
+    _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished')_pmUpdateLiveIndicator();
     _pmCheckSpecialHands();
   }
@@ -8082,9 +8099,14 @@
     const sid=g.dataset.spielerId;const sName=g.dataset.spielerName||'?';
     const sBild=g.dataset.spielerBild||'';const sStack=parseFloat(g.dataset.spielerStack||0);
     const sStatus=g.dataset.spielerStatus||'';
+    const sAway=g.dataset.spielerAway==='true';
     const seat=(_pm?.seats||[]).find(s=>s.spieler_id===sid);
-    const statusLabel=sStatus==='folded'?'Gefoldet':sStatus==='allin'?'All-in':sStatus==='paused'?'Pausiert':sStatus==='sitting_out'?'Zuschauer':'Aktiv';
-    const statusColor=sStatus==='folded'?'var(--danger)':sStatus==='allin'?'#c2410c':sStatus==='paused'?'#d97706':'var(--accent-text)';
+    const isCurrentPlayer=_pm?.session?.current_player_id===sid&&_pm?.session?.status==='running';
+    const statusLabel=sStatus==='folded'?'Gefoldet':sStatus==='allin'?'All-in':sStatus==='paused'?'Pausiert':sStatus==='sitting_out'?'Zuschauer':sAway?'AFK':isCurrentPlayer?'Am Zug':'Am Tisch';
+    const statusColor=sStatus==='folded'?'var(--danger)':sStatus==='allin'?'#c2410c':sStatus==='paused'?'#d97706':sAway?'#64748b':isCurrentPlayer?'#2563eb':'var(--accent-text)';
+    // Feed excerpt: last 10 actions by or about this player
+    const _playerActs=(_pm?.actions||[]).filter(a=>a.spieler_id===sid).slice(-10);
+    const _feedExcerpt=_playerActs.length?`<div style="margin-bottom:16px;background:var(--bg-secondary);border-radius:14px;overflow:hidden;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);padding:10px 14px 4px;font-weight:700">Verlauf</div><div style="font-size:12px;padding:0 4px 6px">${_pmFeedHtml(_playerActs)}</div></div>`:'';
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;touch-action:none';
     ov.innerHTML=`<div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:0 0 calc(24px + env(safe-area-inset-bottom,0px));max-height:82dvh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -8px 40px rgba(0,0,0,.3)">
@@ -8110,13 +8132,18 @@
             <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">${seat?.buyins||1}</div>
           </div>
         </div>
+        ${_feedExcerpt}
         <div id="_pc-kpis"><div class="loading"><div class="spinner"></div></div></div>
         <button id="_pc-to-stats" class="btn btn-secondary" style="margin-top:14px;width:100%;max-width:none;font-size:13px">Spieler-Statistik</button>
       </div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('#_pc-cls').addEventListener('click',()=>ov.remove());
-    ov.querySelector('#_pc-to-stats').addEventListener('click',()=>{ov.remove();showPage('spieler-stats');loadSpielerStats(sid);});
+    ov.querySelector('#_pc-to-stats').addEventListener('click',()=>{
+      const _sp=seat?.spieler||{id:sid,name:sName,profilbild:sBild};
+      ov.remove();
+      showSpielerStats(_sp,'online-tisch');
+    });
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
     try{
       const[{data:stRows},{data:txRows}]=await Promise.all([
@@ -8150,12 +8177,18 @@
     if(!_pm?.mySeat||!currentSpieler?.id)return;
     if(_pm._isAway)return;
     _pm._isAway=true;
+    // Optimistic: update local actions so own render shows AFK badge immediately
+    _pm.actions=(_pm.actions||[]).concat({id:`_away_local_${Date.now()}`,action:'away',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+    renderOnlineTisch();
     try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'away',hand_nr:_pm.session?.hand_nr||0});}catch(_){}
   }
   async function _pmSendBack(){
     if(!_pm?.mySeat||!currentSpieler?.id)return;
     if(!_pm._isAway)return;
     _pm._isAway=false;
+    // Optimistic: clear AFK state immediately without waiting for DB round-trip
+    _pm.actions=(_pm.actions||[]).concat({id:`_back_local_${Date.now()}`,action:'back',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+    renderOnlineTisch();
     try{
       await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'back',hand_nr:_pm.session?.hand_nr||0});
       _pmScheduleLoad();
@@ -8420,6 +8453,9 @@
         _pm.mySeat={..._pm.mySeat,seat:seatNr};
         _pm._lastFp='';
         renderOnlineTisch();
+        // Broadcast so other clients reload immediately (UPDATE events don't reliably trigger
+        // postgres_changes filter without REPLICA IDENTITY FULL on online_seats)
+        _pmChannel?.send({type:'broadcast',event:'reload',payload:{}});
         setTimeout(()=>{if(_pm)_pmLoad();},800);
         return;
       }
@@ -8934,6 +8970,54 @@
     el.onclick=_pmShowRtInfo;
   }
 
+  // ── LIVE FEED SIDE-DRAWER (stays connected when navigating away from table) ──
+  function _pmDrawerUpdateFeed(){
+    const feedEl=document.getElementById('pm-drawer-feed');
+    if(!feedEl||!_pm?.actions)return;
+    const atTop=feedEl.scrollTop<60;
+    feedEl.innerHTML=_pmFeedHtml(_pm.actions);
+    if(atTop)feedEl.scrollTop=0;
+  }
+  function _pmDrawerShow(){
+    let d=document.getElementById('pm-drawer');
+    if(!d){
+      d=document.createElement('div');d.id='pm-drawer';
+      d.innerHTML=`<div id="pm-drawer-handle" title="Verlauf ein-/ausblenden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <svg id="pm-drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;transition:transform .3s"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div id="pm-drawer-body">
+        <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface)">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)">Live-Verlauf</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button id="pm-drawer-back" style="background:var(--accent);border:none;cursor:pointer;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;white-space:nowrap">Zurück zum Tisch</button>
+            <button id="pm-drawer-close" style="background:var(--bg-secondary);border:none;cursor:pointer;color:var(--text-secondary);padding:0;width:24px;height:24px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+          </div>
+        </div>
+        <div id="pm-drawer-feed" class="pm-feed"></div>
+      </div>`;
+      document.body.appendChild(d);
+      d.querySelector('#pm-drawer-handle').addEventListener('click',_pmDrawerToggle);
+      d.querySelector('#pm-drawer-close').addEventListener('click',_pmDrawerToggle);
+      d.querySelector('#pm-drawer-back').addEventListener('click',()=>showPage('online-tisch'));
+    }
+    d.classList.add('pm-dvis');
+    _pmDrawerUpdateFeed();
+    requestAnimationFrame(()=>{const f=document.getElementById('pm-drawer-feed');if(f)f.scrollTop=0;});
+  }
+  function _pmDrawerHide(){
+    const d=document.getElementById('pm-drawer');
+    if(d){d.classList.remove('pm-dvis','pm-dopen');const arr=document.getElementById('pm-drawer-arrow');if(arr)arr.style.transform='';}
+  }
+  function _pmDrawerToggle(){
+    const d=document.getElementById('pm-drawer');if(!d)return;
+    const opening=!d.classList.contains('pm-dopen');
+    d.classList.toggle('pm-dopen',opening);
+    const arr=document.getElementById('pm-drawer-arrow');
+    if(arr)arr.style.transform=opening?'rotate(180deg)':'';
+    if(opening){requestAnimationFrame(()=>{const f=document.getElementById('pm-drawer-feed');if(f)f.scrollTop=0;});}
+  }
+
   function _pmSubscribe(){
     if(!_pm?.id)return;
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
@@ -8942,6 +9026,9 @@
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
+      // Broadcast used for instant cross-client reload when only seat column changes (UPDATE events
+      // don't reliably trigger postgres_changes filter without REPLICA IDENTITY FULL)
+      .on('broadcast',{event:'reload'},()=>_pmScheduleLoad())
       .subscribe((status)=>{_pmUpdateRtBadge(status);});
   }
 
