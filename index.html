@@ -7834,7 +7834,7 @@
         b.addEventListener('click',async()=>{
           if(b.dataset.action==='fold'){
             const _canChk=b.dataset.canCheck==='true';
-            const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?\n\nDu könntest noch callen.';
+            const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?';
             if(!await confirmAction(_msg))return;
           }
           _pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined);
@@ -8329,7 +8329,7 @@
       b.addEventListener('click',async()=>{
         if(b.dataset.action==='fold'){
           const _canChk=b.dataset.canCheck==='true';
-          const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?\n\nDu könntest noch callen.';
+          const _msg=_canChk?'Du kannst noch checken – das kostet nichts!\n\nTrotzdem folden?':'Sicher, dass du folden willst?';
           if(!await confirmAction(_msg))return;
         }
         _pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined);
