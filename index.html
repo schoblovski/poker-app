@@ -7327,11 +7327,7 @@
     if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
       DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
     }
-    if(typeof DeviceOrientationEvent?.requestPermission==='function'){
-      DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')_pmSetupCardPeek();}).catch(()=>{});
-    } else if(typeof DeviceOrientationEvent!=='undefined'){
-      _pmSetupCardPeek();
-    }
+
     await _pmLoad();
     // Insert join action if player is returning to an existing seat after a leave
     // Use a direct targeted query instead of _pm.actions (which is capped at 60 rows)
@@ -7645,7 +7641,7 @@
       if(isRev){const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';const red=c.suit==='h'||c.suit==='d';return`<div class="pt-card ${red?'red':''} big pm-card-ind${hl?' highlight':''}" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;}
       return`<div class="pt-card back big pm-card-ind" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"></div>`;
     }).join('');
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${useFdLayout?'':badgesRow}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div id="pm-hole-cards-wrap" style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${useFdLayout?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span><button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
@@ -8022,47 +8018,58 @@
       // Re-open menu after re-render
       setTimeout(()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='block';},20);
     });
-    // Individual card tap in facedown mode – animated flip per card
-    document.querySelectorAll('.pm-card-ind').forEach(el=>{
-      el.addEventListener('click',()=>{
+    // Event delegation on hole-cards-wrap – surgical DOM swap, no full re-render
+    const _hcWrap=document.getElementById('pm-hole-cards-wrap');
+    if(_hcWrap){
+      _hcWrap.addEventListener('click',(e)=>{
         if(!_pm)return;
-        const idx=parseInt(el.dataset.cardIdx);
+        const cardEl=e.target.closest('.pm-card-ind');
+        if(!cardEl)return;
+        const idx=parseInt(cardEl.dataset.cardIdx);
         const hn=_pm.session?.hand_nr||0;
-        const isBack=el.classList.contains('back');
-        // Animate flip-out on this card
-        el.style.animation='pm-card-flip-out .22s ease-in both';
+        const isBack=cardEl.classList.contains('back');
+        cardEl.style.animation='pm-card-flip-out .22s ease-in both';
         setTimeout(()=>{
           if(!_pm)return;
           if(!_pm._perCardRevealed)_pm._perCardRevealed={};
           if(!_pm._perCardRevealed[hn])_pm._perCardRevealed[hn]=new Set();
           if(isBack){
             _pm._perCardRevealed[hn].add(idx);
-            // Log reveal event per card
             const revealedSoFar=_pm._perCardRevealed[hn].size;
             const totalCards=_pm.myHoleCards?.length||0;
             const actionId=`_look_fd_${hn}_${idx}`;
             if(!_pm.actions.some(a=>a.id===actionId)){
               _pm.actions.push({id:actionId,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
             }
-            // Log to DB on first card reveal
             if(revealedSoFar===1&&currentSpieler?.id&&(_pm._lookedHandNr??-1)!==hn){
               _pm._lookedHandNr=hn;
               db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true,card_idx:idx,revealed:revealedSoFar,total:totalCards}}).then(()=>{_pmScheduleLoad();});
             }
-            // If all cards revealed, set revealedHandNr
             if(_pm._perCardRevealed[hn].size>=totalCards)_pm._revealedHandNr=hn;
           }else{
             _pm._perCardRevealed[hn].delete(idx);
             if(_pm._revealedHandNr===hn)_pm._revealedHandNr=undefined;
           }
-          _pm._flipRevealIdx=idx;
-          _pm._flipReveal=true;
-          _pm._lastStructFp='';_pm._lastFp='';
-          renderOnlineTisch();
-          setTimeout(()=>{_pm._flipReveal=false;_pm._flipRevealIdx=undefined;},320);
+          // Surgical card swap – no full re-render, no scroll/flicker side-effects
+          const c=_pm.myHoleCards?.[idx];
+          if(!c)return;
+          const nowRev=_pm._perCardRevealed[hn]?.has(idx);
+          const newEl=document.createElement('div');
+          if(nowRev){
+            const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';
+            const red=c.suit==='h'||c.suit==='d';
+            newEl.className=`pt-card ${red?'red':''} big pm-card-ind`;
+            newEl.innerHTML=`<span class="pt-rank">${r}</span><span class="pt-suit">${s}</span>`;
+          }else{
+            newEl.className='pt-card back big pm-card-ind';
+          }
+          newEl.dataset.cardIdx=String(idx);
+          newEl.style.cssText='cursor:pointer;animation:pm-card-flip-in .28s cubic-bezier(.34,1.56,.64,1) both';
+          const target=_hcWrap.querySelector(`[data-card-idx="${idx}"]`);
+          if(target)target.replaceWith(newEl);
         },240);
       });
-    });
+    }
     document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
       if(!_pm)return;
       const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
@@ -8633,7 +8640,12 @@
     const [title,desc]=info[status]||['Verbinde…','Echtzeit-Verbindung wird aufgebaut…'];
     const existing=document.getElementById('pm-rt-info-pop');if(existing){existing.remove();return;}
     const pop=document.createElement('div');pop.id='pm-rt-info-pop';
-    pop.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 16px;font-size:13px;z-index:3000;box-shadow:0 4px 24px rgba(0,0,0,.2);max-width:280px;width:max-content;text-align:center';
+    const _badgeEl=document.getElementById('pm-rt-inline');
+    const _br=_badgeEl?_badgeEl.getBoundingClientRect():null;
+    const _popLeft=_br?Math.max(8,_br.left)+'px':'50%';
+    const _popTop=_br?(_br.bottom+6)+'px':'56px';
+    const _tfm=_br?'none':'translateX(-50%)';
+    pop.style.cssText=`position:fixed;top:${_popTop};left:${_popLeft};transform:${_tfm};background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 16px;font-size:13px;z-index:3000;box-shadow:0 4px 24px rgba(0,0,0,.2);max-width:280px;width:max-content;text-align:left`;
     pop.innerHTML=`<div style="font-weight:700;margin-bottom:4px">${title}</div><div style="color:var(--text-secondary);line-height:1.5">${desc}</div>`;
     document.body.appendChild(pop);
     setTimeout(()=>pop.remove(),3500);
@@ -8643,7 +8655,8 @@
     if(_pm)_pm._rtStatus=status;
     const cls=status==='SUBSCRIBED'?'rt-live':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'rt-error':'rt-connecting';
     const label=status==='SUBSCRIBED'?'Live':status==='CHANNEL_ERROR'?'Fehler':status==='TIMED_OUT'?'Timeout':'Verbinde…';
-    const dotColor=status==='SUBSCRIBED'?'#4ade80':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'#f87171':'#fbbf24';
+    const _isCBrt=document.documentElement.getAttribute('data-colorblind')==='true';
+    const dotColor=status==='SUBSCRIBED'?(_isCBrt?'#38bdf8':'#4ade80'):status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'#f87171':'#fbbf24';
     const inner=status?`<div class="pm-rt-dot" style="background:${dotColor}"></div><span>${label}</span>`:'';
     const el=document.getElementById('pm-rt-inline');
     if(!el)return;
@@ -8666,39 +8679,10 @@
       .subscribe((status)=>{_pmUpdateRtBadge(status);});
   }
 
-  // ── DEVICE ORIENTATION EASTER EGG: Karten-Peek beim Kippen ──
-  let _pmOrientHandler=null,_pmPeekActive=false;
-  function _pmShowCardPeek(){
-    document.getElementById('pm-card-peek-overlay')?.remove();
-    const cards=_pm?.myHoleCards||[];if(!cards.length)return;
-    const ov=document.createElement('div');
-    ov.id='pm-card-peek-overlay';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9990;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:pm-fadein .15s ease-out';
-    ov.innerHTML=`<div style="display:flex;gap:20px;transform:scale(2.2)">${cards.map(c=>_pmCard(c,{big:true})).join('')}</div>`;
-    document.body.appendChild(ov);
-    // Auto-dismiss after 5s (pointer-events:none so we can't use click)
-    const _peekAutoTimer=setTimeout(()=>{_pmPeekActive=false;ov.remove();},5000);
-  }
-  function _pmSetupCardPeek(){
-    if(_pmOrientHandler)return;
-    _pmOrientHandler=e=>{
-      if(!_pm?.myHoleCards?.length)return;
-      const beta=e.beta??90;
-      if(beta<65&&!_pmPeekActive){_pmPeekActive=true;_pmShowCardPeek();}
-      else if(beta>75&&_pmPeekActive){_pmPeekActive=false;document.getElementById('pm-card-peek-overlay')?.remove();}
-    };
-    window.addEventListener('deviceorientation',_pmOrientHandler,{passive:true});
-  }
-  function _pmRemoveCardPeek(){
-    if(_pmOrientHandler){window.removeEventListener('deviceorientation',_pmOrientHandler);_pmOrientHandler=null;}
-    _pmPeekActive=false;document.getElementById('pm-card-peek-overlay')?.remove();
-  }
-
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
-    _pmRemoveCardPeek();
     _pm=null;
   }
 
