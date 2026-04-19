@@ -7614,7 +7614,8 @@
     const acts=_pm.actions||[];
     const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
     const ccKey=(s.community_cards||[]).map(c=>`${c.rank}${c.suit}`).join('');
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}`;
+    const presenceKey=(_pm._presence||[]).map(p=>p.spieler_id).sort().join(',');
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${seats.filter(s=>s.status==='sitting_out').length}`;
   }
 
   function renderOnlineTisch(){
