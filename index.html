@@ -7191,30 +7191,37 @@
     }
     const board=session?.community_cards||[];
     const runout=session?.runout_cards||[];
+    const runoutRevCount=_pm?._runoutRevealedCount??runout.length; // default: all revealed
     let communityHtml='';
     const bx0=cx-92,by=cy-20,cw=30,ch=42,cg=6;
     for(let i=0;i<5;i++){
       const bx=bx0+i*(cw+cg);
       const card=board[i]||null;
-      const rc=(!card&&runout[i-board.length]!==undefined)?runout[i-board.length]:null;
-      const c=card||rc;
+      const rcIdx=i-board.length;
+      const rc=((!card&&rcIdx>=0&&rcIdx<runout.length))?runout[rcIdx]:null;
+      const rcRevealed=rc&&rcIdx<runoutRevCount;
+      const rcHidden=rc&&!rcRevealed;
+      const c=card||(rcRevealed?rc:null);
       if(c){
         const red=c.suit==='h'||c.suit==='d';
         const r=_pmRankStr[c.rank]||String(c.rank);
         const s=_pmSuitSymbol[c.suit]||'';
-        const isR=!!rc;
         const isUsed=usedBoardKeys?.has(`${c.rank}${c.suit}`);
         const hlColor=isCB?'#38bdf8':'#22c55e';
-        const stroke=isR?'#f59e0b':isUsed?hlColor:'rgba(255,255,255,.3)';
-        const strokeW=isUsed?2.5:isR?1.5:0.5;
+        const stroke=rcRevealed?'#f59e0b':isUsed?hlColor:'rgba(255,255,255,.3)';
+        const strokeW=isUsed?2.5:rcRevealed?1.5:0.5;
         const cardFill=red?(isCB?'#dbeafe':'#fee2e2'):'white';
         const cardText=red?(isCB?'#1d4ed8':'#dc2626'):'#1c1c1e';
-        const isNew=!isR&&i>=prevBoardCount;
+        const isNew=!rcRevealed&&i>=prevBoardCount;
         const delay=isNew?(i-prevBoardCount)*0.25:0;
         const newAttr=isNew?`class="pm-new-card" style="opacity:0" data-delay="${delay}"`:'';
         communityHtml+=`<g ${newAttr}><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="${cardFill}" stroke="${stroke}" stroke-width="${strokeW}"/>
           <text x="${bx+cw/2}" y="${by+17}" text-anchor="middle" font-size="13" font-weight="700" fill="${cardText}">${r}</text>
           <text x="${bx+cw/2}" y="${by+32}" text-anchor="middle" font-size="15" fill="${cardText}">${s}</text></g>`;
+      }else if(rcHidden){
+        // Face-down runout card – dealer can tap to reveal
+        const isNextToReveal=rcIdx===runoutRevCount;
+        communityHtml+=`<g class="pm-runout-facedown${isNextToReveal?' pm-runout-next':''}" data-runout-idx="${rcIdx}" style="cursor:pointer"><rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="#1e3a8a" stroke="${isNextToReveal?'#f59e0b':'rgba(255,255,255,.25)'}" stroke-width="${isNextToReveal?2:1}"/><rect x="${bx+3}" y="${by+3}" width="${cw-6}" height="${ch-6}" rx="3" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1"/>${isNextToReveal?`<text x="${bx+cw/2}" y="${by+ch/2+5}" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.5)">?</text>`:''}</g>`;
       }else{
         communityHtml+=`<rect x="${bx}" y="${by}" width="${cw}" height="${ch}" rx="4" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
       }
@@ -7455,7 +7462,14 @@
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe','pm_show_equity']),
     ]);
     const einstMap={};(einstRows||[]).forEach(e=>{einstMap[e.key]=e.wert;});
+    // Track runout reveal count: if runout_cards freshly arrives (was null), start at 0 (face-down ceremony)
+    // If already known or loading fresh (DB-loaded state), show all revealed immediately
+    const _prevRunout=_pm.session?.runout_cards;
     _pm.session=session;
+    if(session.runout_cards?.length>0){
+      if(!_prevRunout&&_pm._runoutRevealedCount==null){_pm._runoutRevealedCount=0;}// fresh arrival
+      else if(_pm._runoutRevealedCount==null){_pm._runoutRevealedCount=session.runout_cards.length;} // DB-loaded: show all
+    } else {_pm._runoutRevealedCount=null;}
     _pm.seats=seats||[];
     _pm.actions=(actions||[]).reverse();
     _pm.mySeat=mySeatRow||null;
@@ -7637,7 +7651,11 @@
     const canRunout=session.runout_cards===null&&boardCount>0&&boardCount<5&&isRunning&&!session.current_player_id;
     const mayReveal=canRunout&&(isDealer||(!dealerIsActive&&mySeat&&myStatus!=='paused'&&myStatus!=='sitting_out'));
     const runoutBtn=mayReveal?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button id="btn-pm-runout" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;border:none;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 14px rgba(22,163,74,.4);font-family:var(--font-sans)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Was wäre noch gekommen?</button></div>`:'';
-    const runoutDisplay=(session.runout_cards?.length>0)?`<div style="margin:var(--space-sm) 0;padding:8px 12px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e"><span style="font-weight:700">Was wäre gekommen: </span><span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px">${session.runout_cards.map(c=>_pmCard(c)).join('')}</span></div>`:'';
+    // Runout cards are now shown directly on the SVG table (face-down, tap to reveal)
+    // Show a label strip only once all are revealed
+    const _runoutCount=session.runout_cards?.length||0;
+    const _runoutRevCount=_pm._runoutRevealedCount??_runoutCount;
+    const runoutDisplay=(_runoutCount>0&&_runoutRevCount>0)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e;display:flex;align-items:center;gap:6px"><span style="font-weight:700">Was wäre gekommen</span><span style="opacity:.7">${_runoutRevCount}/${_runoutCount}</span></div>`:(_runoutCount>0&&!isDealer)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:rgba(245,158,11,.12);border-radius:var(--radius-md);font-size:12px;color:#92400e">Dealer deckt auf…</div>`:'';
 
     // Eigene Karten (auch nach Fold sichtbar)
     const myCardsHtml=!!(mySeat&&myHoleCards.length>0);
@@ -7826,7 +7844,8 @@
 
   function _pmRebindSection(id){
     if(id==='pm-s-svg'){
-      if(_pm?.session?.status!=='finished'){
+      const _isFinished=_pm?.session?.status==='finished';
+      if(!_isFinished){
         document.querySelectorAll('.pm-seat-group.empty').forEach(g=>{
           g.addEventListener('click',()=>_pmTakeSeatFlow(parseInt(g.dataset.seat)));
         });
@@ -7834,12 +7853,35 @@
       document.querySelectorAll('.pm-seat-group[data-spieler-id]').forEach(g=>{
         g.addEventListener('click',()=>_pmShowPlayerCard(g));
       });
-      document.querySelectorAll('.pm-new-card').forEach(g=>{
-        const ms=parseFloat(g.dataset.delay||0)*1000;
-        const rect=g.querySelector('rect');
-        if(rect){const bx=parseFloat(rect.getAttribute('x'));const by=parseFloat(rect.getAttribute('y'));const ccx=bx+(parseFloat(rect.getAttribute('width'))||30)/2;const ccy=by+(parseFloat(rect.getAttribute('height'))||42)/2;g.style.opacity='1';g.setAttribute('transform',`translate(${ccx},${ccy}) scale(0,1) translate(${-ccx},${-ccy})`);setTimeout(()=>{const t0=performance.now();const dur=300;function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<.7?t/.7*1.12:1.12-(1.12-1)*(t-.7)/.3;g.setAttribute('transform',`translate(${ccx},${ccy}) scale(${sc.toFixed(3)},1) translate(${-ccx},${-ccy})`);if(t<1)requestAnimationFrame(step);else g.removeAttribute('transform');}requestAnimationFrame(step);},ms);}else{setTimeout(()=>{g.style.transition='opacity 0.4s ease';g.style.opacity='1';},ms);}
+      // Community card flip + deal animation – only on live sessions
+      if(!_isFinished){
+        document.querySelectorAll('.pm-new-card').forEach(g=>{
+          const ms=parseFloat(g.dataset.delay||0)*1000;
+          const rect=g.querySelector('rect');
+          if(rect){const bx=parseFloat(rect.getAttribute('x'));const by=parseFloat(rect.getAttribute('y'));const ccx=bx+(parseFloat(rect.getAttribute('width'))||30)/2;const ccy=by+(parseFloat(rect.getAttribute('height'))||42)/2;g.style.opacity='1';g.setAttribute('transform',`translate(${ccx},${ccy}) scale(0,1) translate(${-ccx},${-ccy})`);setTimeout(()=>{const t0=performance.now();const dur=300;function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<.7?t/.7*1.12:1.12-(1.12-1)*(t-.7)/.3;g.setAttribute('transform',`translate(${ccx},${ccy}) scale(${sc.toFixed(3)},1) translate(${-ccx},${-ccy})`);if(t<1)requestAnimationFrame(step);else g.removeAttribute('transform');}requestAnimationFrame(step);},ms);}else{setTimeout(()=>{g.style.transition='opacity 0.4s ease';g.style.opacity='1';},ms);}
+        });
+        _pmDealAnim();
+      }
+      // Runout face-down cards: dealer taps to reveal one by one
+      const _isDealer=(_pm?.seats||[]).find(s=>s.seat===_pm?.session?.dealer_seat)?.spieler_id===currentSpieler?.id;
+      document.querySelectorAll('.pm-runout-facedown').forEach(g=>{
+        if(!_isDealer)return;
+        g.addEventListener('click',()=>{
+          const rcIdx=parseInt(g.dataset.runoutIdx||'0');
+          if(rcIdx!==(_pm._runoutRevealedCount||0))return; // only reveal the next card in order
+          _pm._runoutRevealedCount=rcIdx+1;
+          _pmChannel?.send({type:'broadcast',event:'runout_reveal',payload:{count:_pm._runoutRevealedCount}});
+          // Flip animation before re-render
+          const rect=g.querySelector('rect');
+          if(rect){
+            const bx=parseFloat(rect.getAttribute('x'));const bw=parseFloat(rect.getAttribute('width')||'30');
+            const cx2=bx+bw/2;const cy2=parseFloat(rect.getAttribute('y'))+(parseFloat(rect.getAttribute('height')||'42'))/2;
+            const t0=performance.now();const dur=260;
+            function step(now){const t=Math.min((now-t0)/dur,1);const sc=t<0.5?1-t*2:0+(t-0.5)*2;g.setAttribute('transform',`translate(${cx2},${cy2}) scale(${sc.toFixed(3)},1) translate(${-cx2},${-cy2})`);if(t<1)requestAnimationFrame(step);else{g.removeAttribute('transform');renderOnlineTisch();}}
+            requestAnimationFrame(step);
+          }else renderOnlineTisch();
+        });
       });
-      _pmDealAnim();
       document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
         if(!_pm)return;
         const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
@@ -7887,17 +7929,16 @@
   }
 
   function _pmStackBarsHtml(seats,myId){
+    // Lobby: players in Realtime Presence but not in seats (not yet joined/seated)
+    const seatedIds=new Set(seats.map(s=>s.spieler_id));
+    const lobbyUsers=(_pm?._presence||[]).filter(p=>p.spieler_id&&!seatedIds.has(p.spieler_id));
+    // Spectators: players in seats with sitting_out status
     const spectators=seats.filter(s=>s.status==='sitting_out');
-    const specHtml=spectators.length>0?(()=>{
-      const pills=spectators.map(s=>{
-        const name=s.spieler?.name||'?';
-        const isMe=s.spieler_id===myId;
-        const av=s.spieler?.profilbild
-          ?`<img src="${s.spieler.profilbild}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-          :`<div style="width:20px;height:20px;border-radius:50%;background:var(--accent-soft);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent-text)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;
-        return`<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 4px;background:var(--bg-secondary);border-radius:20px;border:1px solid var(--border)">${av}<span style="font-size:12px;font-weight:${isMe?'700':'400'};color:${isMe?'var(--text-primary)':'var(--text-secondary)'};white-space:nowrap">${escHtml(name)}</span></div>`;
-      }).join('');
-      return`<div style="margin-bottom:var(--space-md)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Wartebereich</span><span style="font-size:10px;font-weight:700;background:var(--bg-secondary);color:var(--text-secondary);border-radius:20px;padding:1px 6px">${spectators.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:5px">${pills}</div></div>`;
+    const _mkPills=(list,getName,getId,getImg)=>list.map(item=>{const name=getName(item);const isMe=getId(item)===myId;const img=getImg(item);const av=img?`<img src="${img}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:20px;height:20px;border-radius:50%;background:var(--bg-secondary);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-secondary)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;return`<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 4px;background:var(--bg-secondary);border-radius:20px;border:1px solid var(--border)">${av}<span style="font-size:12px;font-weight:${isMe?'700':'400'};color:${isMe?'var(--text-primary)':'var(--text-secondary)'};white-space:nowrap">${escHtml(name)}</span></div>`;}).join('');
+    const specHtml=(lobbyUsers.length>0||spectators.length>0)?(()=>{
+      const lobbyPills=lobbyUsers.length>0?`<div style="margin-bottom:var(--space-sm)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:5px">Im Wartebereich <span style="background:var(--bg-secondary);border-radius:10px;padding:1px 6px">${lobbyUsers.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:5px">${_mkPills(lobbyUsers,u=>u.name||'?',u=>u.spieler_id,u=>u.profilbild||'')}</div></div>`:'';
+      const specPills=spectators.length>0?`<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:5px">Beobachter <span style="background:var(--bg-secondary);border-radius:10px;padding:1px 6px">${spectators.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:5px">${_mkPills(spectators,s=>s.spieler?.name||'?',s=>s.spieler_id,s=>s.spieler?.profilbild||'')}</div></div>`:'';
+      return`<div style="margin-bottom:var(--space-md);padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-md)">${lobbyPills}${specPills}</div>`;
     })():'';
     const players=seats.filter(s=>s.status!=='sitting_out').sort((a,b)=>(b.stack||0)-(a.stack||0));
     if(players.length<2)return specHtml;
@@ -8033,10 +8074,11 @@
     }
     // new_hand entries with no other actions in the window (e.g. very first action of a hand)
     Object.values(newHandMap).forEach(nh=>{if(!placed.has(nh.hand_nr))display.push(nh);});
-    // Deduplicate: only first reveal_cards per spieler_id per hand_nr
+    // Deduplicate reveal_cards: keep only LAST per spieler_id per hand_nr (player may re-update selection)
+    const _latestReveal={};display.forEach(a=>{if(a.action==='reveal_cards')_latestReveal[`${a.spieler_id}|${a.hand_nr}`]=a.id;});
     const revealSeen=new Set();
     const displayDeduped=display.filter(a=>{
-      if(a.action==='reveal_cards'){const key=`${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
+      if(a.action==='reveal_cards'){const key=`${a.spieler_id}|${a.hand_nr}`;if(_latestReveal[key]!==a.id||revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='dealt_blind'){const key=`dealt_blind|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='look'){const key=a.meta?.card_idx!=null?`look|${a.spieler_id}|${a.hand_nr}|${a.meta.card_idx}`:`look|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       return true;
@@ -8101,11 +8143,11 @@
           const hc=a.meta?.hole_cards||[];
           const ck=c=>`${c.rank}${c.suit}`;
           const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
+          if(hc.length===0){text=`<b>${escHtml(n)}</b> versteckt alle Karten`;extra=' facedown-action';break;}
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
           const handName=a.meta?.hand_name;
-          const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}
-</div>`;
-          text=`<b>${escHtml(n)}</b> zeigt Karten${cardRow}`;
+          const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}</div>`;
+          text=`<b>${escHtml(n)}</b> zeigt ${hc.length===1?'eine Karte':'Karten'}${cardRow}`;
           break;
         }
         case'dealt_blind':text=`<b>${escHtml(n)}</b> hat seine Karten blind erhalten`;extra=' facedown-action';break;
@@ -8778,36 +8820,66 @@
     const _activeAtEnd=_seatsInHand.filter(s=>!_foldedIds.has(s.spieler_id));
     if(_activeAtEnd.length<=1)return;
     _pm._autoRevealedHandNr=hn;
-    await _pmRevealCards();
+    await _pmInsertReveal(_pm.myHoleCards||[]); // auto-reveal: all cards, no picker
   }
 
   async function _pmRevealCards(){
-    const btn=document.getElementById('btn-pm-reveal');
-    if(btn)btn.disabled=true;
-    if(!_pm?.session||!currentSpieler?.id)return;
-    const myHC=_pm.myHoleCards||[];
-    if(!myHC.length)return;
-    // Auto-flip face-down cards to visible before sharing with opponents
+    // User-triggered: show picker to choose which cards to reveal
+    const myHC=_pm?.myHoleCards||[];
+    if(!myHC.length||!_pm?.session||!currentSpieler?.id)return;
     const hn=_pm.session.hand_nr;
+    // Find latest existing reveal for this hand (we allow multiple inserts; feed shows latest)
+    const existing=(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler.id&&a.hand_nr===hn).at(-1);
+    const prevShown=new Set((existing?.meta?.hole_cards||[]).map(c=>`${c.rank}${c.suit}`));
+    const selected=new Set(prevShown.size?prevShown:[...myHC.map(c=>`${c.rank}${c.suit}`)]);
+
+    const overlay=document.createElement('div');overlay.className='modal-overlay open';overlay.style.cssText='z-index:9999;align-items:flex-end;padding:0';
+    function buildCards(){return myHC.map(c=>{const ck=`${c.rank}${c.suit}`;const sel=selected.has(ck);return`<div data-ck="${ck}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="border:2.5px solid ${sel?'var(--accent)':'transparent'};border-radius:8px;padding:2px;opacity:${sel?'1':'.35'};transition:.2s">${_pmCard(c)}</div><div style="font-size:10px;font-weight:600;color:${sel?'var(--accent-text)':'var(--text-tertiary)'};transition:.2s">${sel?'Zeigen':'Versteckt'}</div></div>`;}).join('');}
+    overlay.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;padding:var(--space-md)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Karten zeigen</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Tippe auf eine Karte um sie zu zeigen oder zu verstecken. Jederzeit änderbar bis zur nächsten Runde.</div>
+      <div id="pm-cp-cards" style="display:flex;justify-content:center;gap:16px;padding:var(--space-md) 0">${buildCards()}</div>
+      <div style="display:flex;gap:var(--space-sm);flex-direction:column;max-width:320px;margin:0 auto">
+        <button class="btn btn-primary" id="pm-cp-confirm">Bestätigen</button>
+        <button class="btn btn-ghost" id="pm-cp-cancel" style="font-size:13px">Abbrechen</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('pm-cp-cards').addEventListener('click',e=>{
+      const item=e.target.closest('[data-ck]');if(!item)return;
+      const ck=item.dataset.ck;if(selected.has(ck))selected.delete(ck);else selected.add(ck);
+      document.getElementById('pm-cp-cards').innerHTML=buildCards();
+    });
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+    document.getElementById('pm-cp-cancel').onclick=()=>overlay.remove();
+    document.getElementById('pm-cp-confirm').onclick=async()=>{
+      overlay.remove();
+      const shownCards=myHC.filter(c=>selected.has(`${c.rank}${c.suit}`));
+      await _pmInsertReveal(shownCards);
+    };
+  }
+
+  async function _pmInsertReveal(shownCards){
+    if(!_pm?.session||!currentSpieler?.id)return;
+    const hn=_pm.session.hand_nr;
+    // Auto-flip face-down mode
     if(localStorage.getItem('pm_facedown')==='true'&&(_pm._revealedHandNr??-1)!==hn){
-      _pm._revealedHandNr=hn;
-      _pm._lookedHandNr=hn;
-      if(!_pm.actions.some(a=>a.action==='look'&&a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===hn)){
+      _pm._revealedHandNr=hn;_pm._lookedHandNr=hn;
+      if(!(_pm.actions||[]).some(a=>a.action==='look'&&a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===hn)){
         _pm.actions.push({id:'_look_fd_'+hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:hn,meta:{facedown:true},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
         db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:hn,meta:{facedown:true}}).then(()=>{});
       }
     }
-    // Guard: prevent duplicate reveal inserts from rapid taps
-    const alreadyRevealed=(_pm.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler.id&&a.hand_nr===_pm.session.hand_nr);
-    if(alreadyRevealed)return;
     const board=_pm.session.community_cards||[];
-    const best=board.length>=3?_pmBestHandJS(myHC,board,_pm.session.variante):null;
-    await db.from('online_actions').insert({
+    const best=shownCards.length>0&&board.length>=3?_pmBestHandJS(shownCards,board,_pm.session.variante):null;
+    const{data:newA}=await db.from('online_actions').insert({
       online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
-      action:'reveal_cards',street:_pm.session.street,hand_nr:_pm.session.hand_nr,
-      meta:{hole_cards:myHC,used_hole:best?.usedHole||[],used_board:best?.usedBoard||[],hand_name:best?.name||''},
-    });
-    await _pmLoad();
+      action:'reveal_cards',street:_pm.session.street,hand_nr:hn,
+      meta:{hole_cards:shownCards,used_hole:best?.usedHole||[],used_board:best?.usedBoard||[],hand_name:best?.name||''},
+    }).select().single();
+    if(newA)_pm.actions=(_pm.actions||[]).concat({...newA,spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+    renderOnlineTisch();
+    _pmLoad();
   }
 
   async function _pmBuyIn(){
@@ -9227,6 +9299,7 @@
   }
   function _pmDealAnim(){
     if(!_pm?.session||!_pm.seats)return;
+    if(_pm.session.status==='finished')return;
     if(!document.getElementById('page-online-tisch')?.classList.contains('active'))return;
     const s=_pm.session;const hn=s.hand_nr;
     if(!hn||(_pm._animHandNr??-1)>=hn)return;
@@ -9363,10 +9436,15 @@
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;const _rHn2=payload.new.hand_nr||0;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};// Floating animation only if not already triggered locally
 const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}// Add to feed (dedup by spieler_id+hand_nr+emoji to avoid duplicates from local pre-add)
 const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spieler||{name:'?',profilbild:null};if(!(_pm.actions||[]).some(a=>a.action==='react'&&a.spieler_id===_sid&&(a.hand_nr||0)===_rHn2&&a.meta?.emoji===_em)){_pm.actions=(_pm.actions||[]).concat({...payload.new,spieler:_rSp});}renderOnlineTisch();}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
-      // Broadcast used for instant cross-client reload when only seat column changes (UPDATE events
-      // don't reliably trigger postgres_changes filter without REPLICA IDENTITY FULL)
       .on('broadcast',{event:'reload'},()=>_pmScheduleLoad())
-      .subscribe((status)=>{_pmUpdateRtBadge(status);});
+      .on('broadcast',{event:'runout_reveal'},(msg)=>{if(_pm&&typeof msg?.payload?.count==='number'){_pm._runoutRevealedCount=msg.payload.count;renderOnlineTisch();}})
+      .on('presence',{event:'sync'},()=>{if(!_pm)return;const st=_pmChannel.presenceState();_pm._presence=Object.values(st).flat();renderOnlineTisch();})
+      .subscribe((status)=>{
+        _pmUpdateRtBadge(status);
+        if(status==='SUBSCRIBED'&&currentSpieler?.id){
+          _pmChannel.track({spieler_id:currentSpieler.id,name:currentSpieler.name||'?',profilbild:currentSpieler.profilbild||''});
+        }
+      });
   }
 
   function _pmUnsubscribe(){
