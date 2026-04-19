@@ -1945,6 +1945,12 @@
     _initBatteryAlert();
     _initNetworkMonitor();
     _processOfflineQueue();
+    // WebAuthn-Tokens nach jedem Login aktualisieren (hält gespeicherte AT/RT frisch)
+    if(localStorage.getItem('dtks_webauthn')){
+      db.auth.getSession().then(({data:{session:s}})=>{
+        if(s){const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:s.access_token,rt:s.refresh_token}));}
+      });
+    }
     // Biometric offer (einmalig, nur wenn Platform Authenticator verfügbar und noch nicht eingerichtet)
     if(!localStorage.getItem('dtks_webauthn')&&!localStorage.getItem('dtks_webauthn_declined')){
       setTimeout(_showBiometricOffer,5000);
@@ -2677,7 +2683,14 @@
     // Abmelden
     document.getElementById('profil-btn-logout').addEventListener('click',async()=>{
       if(!await confirmAction('Wirklich abmelden?'))return;
-      await db.auth.signOut();
+      if(localStorage.getItem('dtks_webauthn')){
+        // Tokens vorher aktualisieren, dann nur lokal abmelden (RT bleibt serverseitig gültig für Face ID)
+        const{data:{session:s}}=await db.auth.getSession();
+        if(s){const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:s.access_token,rt:s.refresh_token}));}
+        await db.auth.signOut({scope:'local'});
+      } else {
+        await db.auth.signOut();
+      }
       location.reload();
     });
 
@@ -6616,8 +6629,9 @@
           localStorage.setItem('dtks_webauthn',JSON.stringify({...cred,at:s.access_token,rt:s.refresh_token}));
           currentUser=s.user;showApp();
         } else {
-          localStorage.removeItem('dtks_webauthn');
-          await showAlert('Session abgelaufen. Bitte mit Google anmelden – Face ID wird danach neu eingerichtet.');
+          // Credential-ID behalten, nur Tokens leeren – nach Google-Login werden sie automatisch erneuert
+          localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:cred.credentialId,at:'',rt:''}));
+          await showAlert('Session erneuern: Bitte einmal mit Google anmelden. Face ID funktioniert danach wieder automatisch.');
           if(btn){btn.disabled=false;btn.childNodes[btn.childNodes.length-1].textContent=' Mit Face ID / Touch ID anmelden';}
         }
       }
@@ -6654,20 +6668,27 @@
 
   async function _showBiometricOffer(){
     if(!window.PublicKeyCredential)return;
+    if(localStorage.getItem('dtks_webauthn'))return; // bereits eingerichtet
     const avail=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
     if(!avail)return;
     document.getElementById('biometric-offer-sheet')?.remove();
     const sheet=document.createElement('div');
     sheet.id='biometric-offer-sheet';
-    sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:10001;background:var(--surface);border-radius:20px 20px 0 0;padding:20px 24px calc(env(safe-area-inset-bottom,0px)+88px);box-shadow:0 -4px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;animation:modal-slide-in .3s cubic-bezier(.34,1.2,.64,1) both';
+    // Overlay
+    sheet.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;animation:modal-backdrop-in .2s ease-out both';
     sheet.innerHTML=`
-      <div style="width:40px;height:4px;background:var(--border);border-radius:2px"></div>
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="width:44px;height:44px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-      <div style="font-size:17px;font-weight:700">Face ID / Touch ID aktivieren?</div>
-      <div style="font-size:13px;color:var(--text-secondary);max-width:280px;line-height:1.5">Beim nächsten Besuch mit Fingerabdruck oder Face ID anmelden – statt mit Google.</div>
-      <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
-        <button id="biometric-offer-yes" class="btn btn-primary" style="max-width:none;margin:0">Jetzt aktivieren</button>
-        <button id="biometric-offer-no" class="btn btn-ghost" style="max-width:none;margin:0;color:var(--text-tertiary)">Nicht jetzt</button>
+      <div style="background:var(--surface);border-radius:20px;padding:28px 24px 24px;max-width:320px;width:100%;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.28);animation:toast-pop .25s cubic-bezier(.34,1.2,.64,1) both">
+        <div style="width:56px;height:56px;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="1.8" style="width:28px;height:28px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </div>
+        <div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px">Face ID aktivieren?</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.5">Beim nächsten Besuch direkt mit Face ID oder Touch ID anmelden.</div>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px">
+          <button id="biometric-offer-yes" class="btn btn-primary" style="max-width:none;margin:0">Jetzt aktivieren</button>
+          <button id="biometric-offer-no" class="btn btn-ghost" style="max-width:none;margin:0;color:var(--text-tertiary);font-size:13px">Nicht jetzt</button>
+        </div>
       </div>`;
     document.body.appendChild(sheet);
     sheet.querySelector('#biometric-offer-yes').addEventListener('click',async()=>{sheet.remove();await _webAuthnRegister();});
