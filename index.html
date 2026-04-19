@@ -7505,6 +7505,7 @@
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
     _pmCheckSpecialHands();
+    _pmAutoReveal();
   }
 
   function _pmCalcEquity(myCards,boardCards,nOpponents,variante){
@@ -8529,8 +8530,13 @@
         const _emoji=btn.dataset.emoji;
         if(!_pm._reactions)_pm._reactions={};
         _pm._reactions[currentSpieler.id]={emoji:_emoji,ts:Date.now()};
+        // Add to feed immediately (realtime INSERT will dedup via emoji+hand_nr+spieler_id)
+        const _rHn=_pm.session?.hand_nr||0;
+        if(!(_pm.actions||[]).some(a=>a.action==='react'&&a.spieler_id===currentSpieler.id&&(a.hand_nr||0)===_rHn&&a.meta?.emoji===_emoji)){
+          _pm.actions=(_pm.actions||[]).concat({id:`_react_local_${Date.now()}`,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_rHn,meta:{emoji:_emoji},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+        }
         renderOnlineTisch();
-        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_pm.session?.hand_nr||0,meta:{emoji:_emoji}}).then(()=>{});
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'react',hand_nr:_rHn,meta:{emoji:_emoji}}).then(()=>{});
         const _ts2=_pm._reactions[currentSpieler.id].ts;
         setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];renderOnlineTisch();}},4000);
       });
@@ -8734,6 +8740,24 @@
     overlay.querySelectorAll('.pm-pas-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-pas-limit');if(i)i.value=b.dataset.val;
     }));
+  }
+
+  async function _pmAutoReveal(){
+    if(!_pm?.session||_pm.session.current_player_id)return;
+    if(_pm.session.status!=='running')return;
+    const hn=_pm.session.hand_nr;if(!hn)return;
+    const myId=currentSpieler?.id;if(!myId||!_pm.mySeat)return;
+    if(_pm.mySeat.status==='folded'||_pm.mySeat.status==='sitting_out')return;
+    const alrRevealed=(_pm.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===myId&&a.hand_nr===hn);if(alrRevealed)return;
+    if((_pm._autoRevealedHandNr??-1)===hn)return;
+    const myHC=_pm.myHoleCards||[];if(!myHC.length)return;
+    // Winner always reveals; last aggressive player (raise/allin) at showdown also reveals
+    const isWinner=(_pm.actions||[]).some(a=>a.action==='win'&&a.spieler_id===myId&&a.hand_nr===hn);
+    const lastAggAct=(_pm.actions||[]).filter(a=>a.hand_nr===hn&&(a.action==='raise'||a.action==='allin')&&a.spieler_id).at(-1);
+    const isLastAggressor=lastAggAct?.spieler_id===myId;
+    if(!isWinner&&!isLastAggressor)return;
+    _pm._autoRevealedHandNr=hn;
+    await _pmRevealCards();
   }
 
   async function _pmRevealCards(){
@@ -9209,8 +9233,9 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};// Add react to feed immediately with spieler info from seats
-const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spieler||{name:'?',profilbild:null};if(!(_pm.actions||[]).some(a=>a.id===payload.new.id)){_pm.actions=(_pm.actions||[]).concat({...payload.new,spieler:_rSp});}renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;const _rHn2=payload.new.hand_nr||0;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};// Floating animation only if not already triggered locally
+const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};const _ts=_pm._reactions[_sid].ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}// Add to feed (dedup by spieler_id+hand_nr+emoji to avoid duplicates from local pre-add)
+const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spieler||{name:'?',profilbild:null};if(!(_pm.actions||[]).some(a=>a.action==='react'&&a.spieler_id===_sid&&(a.hand_nr||0)===_rHn2&&a.meta?.emoji===_em)){_pm.actions=(_pm.actions||[]).concat({...payload.new,spieler:_rSp});}renderOnlineTisch();}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
       // Broadcast used for instant cross-client reload when only seat column changes (UPDATE events
       // don't reliably trigger postgres_changes filter without REPLICA IDENTITY FULL)
       .on('broadcast',{event:'reload'},()=>_pmScheduleLoad())
