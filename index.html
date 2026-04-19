@@ -1903,6 +1903,7 @@
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
     // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
     if(page!=='online-tisch'){
+      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
@@ -7764,7 +7765,12 @@
     if(_needsFull){
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
+      // Remove existing body-level FAB so the fresh one from _newHtml can take its place
+      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       el.innerHTML=_newHtml;
+      // Move FAB from page DOM to document.body – position:fixed inside a transformed ancestor breaks
+      const _fabEl=el.querySelector('#pm-fab');const _fabMenuEl=el.querySelector('#pm-fab-menu');
+      if(_fabEl&&_fabMenuEl){document.body.appendChild(_fabMenuEl);document.body.appendChild(_fabEl);}
       // Feed is newest-first (top), so scroll to top unless user scrolled down into history
       requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}});
       _pmBindEvents();
