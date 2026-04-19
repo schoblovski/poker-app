@@ -1,4 +1,4 @@
-// DTKS Poker – Edge Function: poker-bot-action v1.1
+// DTKS Poker – Edge Function: poker-bot-action v1.2
 // Executes an AI decision for a bot player (ist_bot=true in spieler table).
 // Called by any human client when current_player_id belongs to a bot.
 //
@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
   }
 
   // ── PLAY action ─────────────────────────────────────────────────────────
-  if (session.status !== 'running') return err('Session läuft nicht');
+  if (session.status !== 'running') return err('Session laeuft nicht');
   if (session.current_player_id !== bot_spieler_id) return err('Nicht dran', 409);
   if (mySeat.status === 'folded' || mySeat.status === 'allin') return json({ ok: true, skipped: true });
 
@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
 
   const decision = botDecide(config, holeCards, board, callAmount, pot, myStack);
 
-  // Execute via poker-action (already uses service role internally, no auth changes needed)
+  // Execute via poker-action
   const resp = await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
@@ -183,8 +183,8 @@ Deno.serve(async (req) => {
   });
   const data = await resp.json().catch(() => ({}));
 
-  // Occasionally add a chat comment (~20% chance)
-  const comment = maybeBotComment(decision.action);
+  // Occasionally add a chat comment (~25% chance)
+  const comment = maybeBotComment(decision.action, config.style);
   if (comment) {
     await db.from('online_chat').insert({
       online_spiel_id,
@@ -206,43 +206,35 @@ function botDecide(
   pot: number,
   myStack: number,
 ): { action: string; amount?: number } {
-  const agg  = config.aggressivitaet ?? 50; // 0–100
-  const risk = config.risiko         ?? 50; // 0–100
-  const bluffRate = config.bluff     ?? 20; // 0–100
+  const agg  = config.aggressivitaet ?? 50;
+  const risk = config.risiko         ?? 50;
+  const bluffRate = config.bluff     ?? 20;
 
   const isPre = board.length === 0;
   const strength = isPre ? preflopStrength(holeCards) : postflopStrength(holeCards, board);
 
-  // Bluff modifier: occasionally boost effective strength
   const bluffing = Math.random() * 100 < bluffRate;
   const effStr = bluffing ? Math.min(100, strength + 28) : strength;
 
-  // Pot odds (as percentage of effective total put in)
   const potOdds = callAmount > 0 ? (callAmount / (pot + callAmount)) * 100 : 0;
-
   const rand = Math.random() * 100;
 
   if (callAmount <= 0) {
-    // No bet to face – check or bet
     if (effStr > 60 && rand < agg) {
-      const betFrac = 0.35 + agg / 250; // 35–75% of pot
+      const betFrac = 0.35 + agg / 250;
       const betAmt = Math.round(Math.min(pot * betFrac, myStack) * 100) / 100;
       if (betAmt > 0) return { action: 'raise', amount: betAmt };
     }
     return { action: 'check' };
   }
 
-  // Facing a bet
   if (effStr > potOdds + 5) {
-    // Strong enough to continue
     if (effStr > 82 && rand < agg * 0.55) {
-      // Re-raise
       const raiseAmt = Math.round(Math.min(callAmount * (2 + agg / 100), myStack) * 100) / 100;
       if (raiseAmt >= myStack * 0.92) return { action: 'allin' };
       if (raiseAmt > callAmount * 1.5) return { action: 'raise', amount: raiseAmt };
     }
     if (callAmount > myStack * (risk / 100) * 0.9) {
-      // Big bet relative to stack + risk tolerance
       if (effStr > 72) return { action: 'allin' };
       return { action: 'fold' };
     }
@@ -260,24 +252,24 @@ function preflopStrength(cards: Card[]): number {
   const h = sorted[0], l = sorted[1];
 
   if (h.rank === l.rank) {
-    if (h.rank >= 12) return 95; // QQ, KK, AA
-    if (h.rank >= 9)  return 80; // 99–JJ
-    if (h.rank >= 6)  return 65; // 66–88
-    return 50;                    // 22–55
+    if (h.rank >= 12) return 95;
+    if (h.rank >= 9)  return 80;
+    if (h.rank >= 6)  return 65;
+    return 50;
   }
 
   const suited = h.suit === l.suit;
   const gap    = h.rank - l.rank;
 
   if (h.rank === 14) {
-    if (l.rank === 13) return suited ? 90 : 85; // AK
-    if (l.rank === 12) return suited ? 78 : 68; // AQ
-    if (l.rank >= 10)  return suited ? 72 : 62; // AT–AJ
-    return suited ? 52 : 40;                     // A2–A9
+    if (l.rank === 13) return suited ? 90 : 85;
+    if (l.rank === 12) return suited ? 78 : 68;
+    if (l.rank >= 10)  return suited ? 72 : 62;
+    return suited ? 52 : 40;
   }
-  if (h.rank === 13 && l.rank === 12) return suited ? 72 : 62; // KQ
-  if (gap <= 1 && l.rank >= 9)        return suited ? 62 : 52; // connectors T+
-  if (gap <= 2 && suited)             return 47;                // suited 1-gappers
+  if (h.rank === 13 && l.rank === 12) return suited ? 72 : 62;
+  if (gap <= 1 && l.rank >= 9)        return suited ? 62 : 52;
+  if (gap <= 2 && suited)             return 47;
   return Math.max(15, 38 - gap * 5 + (suited ? 5 : 0));
 }
 
@@ -286,12 +278,10 @@ function postflopStrength(hole: Card[], board: Card[]): number {
   const ranks = all.map(c => c.rank);
   const suits = all.map(c => c.suit);
 
-  // Flush check
   const sc: Record<string, number> = {};
   suits.forEach(s => sc[s] = (sc[s] ?? 0) + 1);
   const hasFlush = Object.values(sc).some(v => v >= 5);
 
-  // Straight check
   const uniq = [...new Set(ranks)].sort((a, b) => b - a);
   let hasStraight = false;
   for (let i = 0; i <= uniq.length - 5; i++) {
@@ -299,7 +289,6 @@ function postflopStrength(hole: Card[], board: Card[]): number {
   }
   if ([14, 2, 3, 4, 5].every(r => uniq.includes(r))) hasStraight = true;
 
-  // Pair counts
   const rc: Record<number, number> = {};
   ranks.forEach(r => rc[r] = (rc[r] ?? 0) + 1);
   const cnts = Object.values(rc).sort((a, b) => b - a);
@@ -324,15 +313,70 @@ function postflopStrength(hole: Card[], board: Card[]): number {
 // ── BOT CHAT COMMENTS ────────────────────────────────────────────────────────
 
 const BOT_COMMENTS: Record<string, string[]> = {
-  fold:  ['Passt.', 'Nicht heute.', 'Bin raus.', 'Nächstes Mal.', 'Zu heiß.'],
-  check: ['Check.', 'Sehen wir mal.', 'Kein Einsatz von mir.', 'Abgewartet.'],
-  call:  ['Call.', 'Ich bin dabei.', 'Passt schon.', 'Mal schauen.', 'OK.'],
-  raise: ['Erhöhe!', 'Jetzt wird's ernst.', 'Ich gehe höher.', 'Los geht's.', 'Druckmittel.'],
-  allin: ['All-in!', 'Alles rein!', 'YOLO!', 'Jetzt oder nie.', 'Do or die.'],
+  fold: [
+    'Passt.','Nicht heute.','Bin raus.','Naechstes Mal.','Zu heiss.',
+    'Kein Interesse.','Nicht meine Hand.','Ich sehe mich raus.','Nicht wert.','Ciao.',
+    'Weiter.','Zu teuer.','Nope.','Weg damit.','Nicht gut genug.',
+    'Sparmasnahmen.','Nein danke.','Nicht diesmal.','Karten weg.','Ich passe.',
+    'Nicht mit diesen.','Raus hier.','Zu riskant.','Spaeter vielleicht.','Kluge Entscheidung.',
+  ],
+  check: [
+    'Check.','Sehen wir mal.','Kein Einsatz von mir.','Abgewartet.','Ich schaue zu.',
+    'Frei zu mir.','Mal durchatmen.','Nichts von mir.','Check, bitte.','Kostenlos sehen.',
+    'Weiter so.','Ich warte.','Guenstig weitermachen.','Check von mir.','Abwarten.',
+    'Ok, check.','Mal schauen was kommt.','Nichts kostet nichts.','Gratis.','Ich pass erst mal.',
+  ],
+  call: [
+    'Call.','Ich bin dabei.','Passt schon.','Mal schauen.','OK.',
+    'Ich zahle.','Dabei.','Mitmachen.','Geht klar.','Ich komme mit.',
+    'Bin drin.','Ich bleibe dabei.','Geht.','Na gut.','Ja, call.',
+    'Ok, mitmachen.','Weiter.','Bezahl ich.','Call, danke.','Bin dabei.',
+  ],
+  raise: [
+    'Erhoehe!','Jetzt wird es ernst.','Ich gehe hoeher.','Los.','Druckmittel.',
+    'Mehr!','Nicht so guenstig.','Ich erhoehe.','Teurer fuer alle.','Raise von mir.',
+    'Ich mache Druck.','Hoeher.','Hier ist mein Einsatz.','Ich sage: mehr.','Aufgewertet.',
+    'Interessant? Jetzt schon.','Ich komme rein.','Mein Einsatz liegt.','Weiter – aber teurer.','Die Antwort: Raise.',
+    'Ich sage nein zu guenstig.','Raise!','Macht es spannender.','Hoeherer Einsatz.','Ohne mich kein guenstiges Spiel.',
+  ],
+  allin: [
+    'All-in!','Alles rein!','YOLO!','Jetzt oder nie.','Do or die.',
+    'Alles auf eine Karte.','Ganz oder gar nicht.','Stack in die Mitte.','Ich bin all-in.','Alle meine Chips.',
+    'Komplett rein.','All or nothing.','Mein ganzer Stack.','Rein damit.','Alle Chips.',
+    'All-in, ihr.','So ist das jetzt.','Chips alle rein.','Ich bin komplett drin.','Alles riskiert.',
+  ],
 };
 
-function maybeBotComment(action: string): string | null {
-  if (Math.random() > 0.20) return null;
+// Style-specific overrides (mixed in for personality flavour)
+const BOT_COMMENTS_STYLE: Record<string, Partial<Record<string, string[]>>> = {
+  nit: {
+    fold:  ['Zu riskant.','Nicht diese Hand.','Vernunft siegt.','Ich passe.','Nicht mein Spiel.'],
+    check: ['Vorsichtig.','Erstmal schauen.','Check, natuerlich.','Kein Risiko.'],
+    raise: ['Nur wenn ich sicher bin.','Vorsichtiger Raise.','Mit Bedacht.'],
+  },
+  maniac: {
+    fold:  ['Ausnahmsweise.','Nicht mal ich...','Das ist echt schlecht.'],
+    raise: ['MEHR!','Immer raise!','Wer nicht wagt...','Ich bin nicht hier um zu warten.'],
+    allin: ['Natuerlich!','Immer!','Jede Hand!','So spielt man das!','Ohne Zweifel.'],
+    check: ['Nur diesmal.','Widerwillig.','Ich beobachte.'],
+  },
+  lag: {
+    raise: ['Druck.','Ich bestimme das Tempo.','Mein Tisch.','Raise, immer raise.'],
+    bluff_fold: ['Naechstes Mal.','War ein Versuch wert.'],
+  },
+  station: {
+    call:  ['Call, wie immer.','Natuerlich dabei.','Ich zahle das.','Bin doch dabei.','Call, danke.'],
+    fold:  ['Das ist selten.','Ausnahmsfall.'],
+  },
+};
+
+function maybeBotComment(action: string, style?: string): string | null {
+  if (Math.random() > 0.25) return null;
+  // 30% chance to use style-specific comment if available
+  if (style && Math.random() < 0.30) {
+    const stylePool = BOT_COMMENTS_STYLE[style]?.[action];
+    if (stylePool?.length) return stylePool[Math.floor(Math.random() * stylePool.length)];
+  }
   const opts = BOT_COMMENTS[action] ?? BOT_COMMENTS.check;
   return opts[Math.floor(Math.random() * opts.length)];
 }
