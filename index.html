@@ -162,6 +162,7 @@
     .content::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:2px;}
     .content::-webkit-scrollbar-thumb:hover{background:var(--text-secondary);}
     .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:50;}
+    @media (orientation:landscape) and (max-height:500px){.bottom-nav{display:none!important;}.content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}}
     .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);transition:color var(--transition);}
     .nav-btn.active{color:var(--accent);}
     .nav-btn svg{width:22px;height:22px;stroke-width:1.8;}
@@ -698,8 +699,8 @@
   #pm-drawer-handle{width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--accent);border-radius:16px 0 0 16px;padding:18px 0;gap:8px;-webkit-tap-highlight-color:transparent}
   #pm-drawer-body{width:262px;display:flex;flex-direction:column;overflow:hidden;max-height:65dvh}
   #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
-  @keyframes pm-drawer-notify{0%,100%{background:var(--accent);transform:scaleX(1)}25%{background:#f59e0b;transform:scaleX(1.35)}50%{background:var(--accent);transform:scaleX(1)}75%{background:#f59e0b;transform:scaleX(1.35)}}
-  #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .7s ease-in-out 1;transform-origin:left center}
+  @keyframes pm-drawer-notify{0%,100%{filter:none;transform:scaleX(1)}45%{filter:brightness(1.5);transform:scaleX(1.25)}}
+  #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .5s ease-out 2;transform-origin:left center}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   /* facedown→faceup: left edge lifts first, flip right */
@@ -1888,11 +1889,13 @@
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
-    // When leaving the table: show drawer; mark AFK only via visibilitychange (not in-app nav)
+    // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
     if(page!=='online-tisch'){
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
-      if(_pm?.id&&_pm?.session?.status!=='finished'){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
-      else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
+      if(_pm?.id&&_pm?.session?.status!=='finished'){
+        if(typeof _pmDrawerShow==='function')_pmDrawerShow();
+        if(_pm?.mySeat&&typeof _pmSendAway==='function')_pmSendAway();
+      }else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='home')loadHome();
@@ -1907,7 +1910,7 @@
     if(page==='online-lobby')loadOnlineLobby();
     if(page==='online-tisch'){
       if(typeof _pmDrawerHide==='function')_pmDrawerHide();
-      if(_pm?._isAway&&typeof _pmSendBack==='function')_pmSendBack();
+      if(typeof _pmSendBack==='function')_pmSendBack();
       renderOnlineTisch();_pmCheckFullscreen();
     }else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
@@ -7310,6 +7313,7 @@
     _pmLobbyChannel=db.channel('pm-lobby')
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{loadOnlineLobby();_pmUpdateLiveIndicator();})
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby())
+      .on('broadcast',{event:'session_deleted'},()=>loadOnlineLobby())
       .subscribe();
   }
 
@@ -7396,10 +7400,9 @@
         await _pmLoad();
       }
     }
-    // Restore away flag from action log, then send 'back' if player left while marked away
+    // Restore away flag from action log (actual send is driven by showPage, not _pmLoad)
     const _lastAB=(_pm.actions||[]).filter(a=>(a.action==='away'||a.action==='back')&&a.spieler_id===currentSpieler?.id).at(-1);
     _pm._isAway=_lastAB?.action==='away';
-    if(_pm.mySeat)await _pmSendBack();
     // Visibility-change: screen lock / app switch → away/back
     if(_pm._visHandler)document.removeEventListener('visibilitychange',_pm._visHandler);
     _pm._visHandler=()=>{
@@ -8415,6 +8418,8 @@
         const _id=_pm.id;
         if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
         _pmReleaseWakeLock();_pm=null;_pmDrawerHide();
+        // Notify lobby clients before deleting so their realtime picks up the removal
+        try{const _nc=db.channel('pm-lobby');_nc.subscribe(st=>{if(st==='SUBSCRIBED'){_nc.send({type:'broadcast',event:'session_deleted',payload:{id:_id}}).then(()=>setTimeout(()=>db.removeChannel(_nc),500));}});}catch(_){}
         // Delete child rows first (no CASCADE assumed), then the session itself
         await Promise.all([
           db.from('online_seats').delete().eq('online_spiel_id',_id),
