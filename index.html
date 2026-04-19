@@ -7580,9 +7580,11 @@
   }
   function _pmFingerprint(){
     if(!_pm?.session)return'';
+    const s=_pm.session;
     const acts=_pm.actions||[];
     const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}`;
+    const ccKey=(s.community_cards||[]).map(c=>`${c.rank}${c.suit}`).join('');
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}`;
   }
 
   function renderOnlineTisch(){
