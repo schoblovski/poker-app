@@ -698,6 +698,8 @@
   #pm-drawer-handle{width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--accent);border-radius:16px 0 0 16px;padding:18px 0;gap:8px;-webkit-tap-highlight-color:transparent}
   #pm-drawer-body{width:262px;display:flex;flex-direction:column;overflow:hidden;max-height:65dvh}
   #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
+  @keyframes pm-drawer-notify{0%{background:var(--accent)}20%{background:#f59e0b;transform:scale(1.12)}40%{background:var(--accent);transform:scale(1)}60%{background:#f59e0b;transform:scale(1.10)}80%{background:var(--accent);transform:scale(1)}100%{background:var(--accent)}}
+  #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .9s ease-in-out 1;animation-fill-mode:forwards}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   /* facedown→faceup: left edge lifts first, flip right */
@@ -1884,12 +1886,12 @@
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
-    if(!isOnlinePage){
+    // Any page except online-tisch: mark AFK + show drawer (including online-lobby)
+    if(page!=='online-tisch'){
       if(typeof _pmSendAway==='function')_pmSendAway();
-      if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
-      // If a session is active, keep the realtime connection and show the side-drawer
+      if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
-      else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
+      else if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     if(page==='home')loadHome();
@@ -7062,6 +7064,7 @@
   let _pmChannel=null;
   let _pmLoadTimer=null;   // debounce for realtime-triggered reloads
   let _pmActInFlight=false; // prevents double-tap duplicate actions
+  let _pmDrawerLastCount=0; // tracks action count for drawer notification
   let _pmActCooldownUntil=0; // blocks ghost-tap pre-action opening after an action
   let _pmPrevTurn=false;    // tracks turn transitions for vibration
 
@@ -7988,6 +7991,7 @@
         case'resume':text=`<b>${escHtml(n)}</b> ist zurück`;break;
         case'away':text=`<b>${escHtml(n)}</b> ist AFK`;extra=' facedown-action';break;
         case'back':text=`<b>${escHtml(n)}</b> ist zurück (AFK)`;extra=' facedown-action';break;
+        case'seat_change':text=`<b>${escHtml(n)}</b> wechselt auf Platz ${a.amount||''}`;extra=' facedown-action';break;
         case'reveal_runout':{
           const _rsess=_pm?.session;
           const _rCurHand=_rsess&&a.hand_nr===_rsess.hand_nr;
@@ -8453,9 +8457,10 @@
         _pm.mySeat={..._pm.mySeat,seat:seatNr};
         _pm._lastFp='';
         renderOnlineTisch();
-        // Broadcast so other clients reload immediately (UPDATE events don't reliably trigger
-        // postgres_changes filter without REPLICA IDENTITY FULL on online_seats)
+        // Notify other clients: broadcast (fast path) + online_actions INSERT (reliable fallback,
+        // since INSERT events always include the full row so the filter matches)
         _pmChannel?.send({type:'broadcast',event:'reload',payload:{}});
+        db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'seat_change',amount:seatNr,hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
         setTimeout(()=>{if(_pm)_pmLoad();},800);
         return;
       }
@@ -8974,9 +8979,17 @@
   function _pmDrawerUpdateFeed(){
     const feedEl=document.getElementById('pm-drawer-feed');
     if(!feedEl||!_pm?.actions)return;
+    const newCount=(_pm.actions||[]).length;
     const atTop=feedEl.scrollTop<60;
     feedEl.innerHTML=_pmFeedHtml(_pm.actions);
     if(atTop)feedEl.scrollTop=0;
+    // Bounce+blink handle when new entries arrive and drawer is closed
+    const d=document.getElementById('pm-drawer');
+    if(d&&d.classList.contains('pm-dvis')&&!d.classList.contains('pm-dopen')&&newCount>_pmDrawerLastCount){
+      const h=document.getElementById('pm-drawer-handle');
+      if(h){h.classList.remove('pm-dnotify');void h.offsetWidth;h.classList.add('pm-dnotify');h.addEventListener('animationend',()=>h.classList.remove('pm-dnotify'),{once:true});}
+    }
+    _pmDrawerLastCount=newCount;
   }
   function _pmDrawerShow(){
     let d=document.getElementById('pm-drawer');
@@ -9002,6 +9015,7 @@
       d.querySelector('#pm-drawer-back').addEventListener('click',()=>showPage('online-tisch'));
     }
     d.classList.add('pm-dvis');
+    _pmDrawerLastCount=(_pm?.actions||[]).length; // don't pulse for already-seen entries
     _pmDrawerUpdateFeed();
     requestAnimationFrame(()=>{const f=document.getElementById('pm-drawer-feed');if(f)f.scrollTop=0;});
   }
