@@ -9884,8 +9884,8 @@
           <div style="display:flex;gap:8px">${[['immer','Immer'],['showdown','Bei Showdown'],['nie','Nie']].map(([v,l])=>`<button class="pm-bot-reveal${(cfg.karten_zeigen??'showdown')===v?' active':''}" data-reveal="${v}" style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid${(cfg.karten_zeigen??'showdown')===v?' var(--accent)':' var(--border)'};background:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-soft)':'var(--surface)'};color:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer">${l}</button>`).join('')}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
-          <button id="pm-bot-confirm" class="btn btn-primary">${isEdit?'Änderungen speichern':'Bot hinzufügen'}</button>
-          <button id="pm-bot-cancel" class="btn btn-ghost" style="font-size:13px">Abbrechen</button>
+          <button id="pm-bot-confirm" class="btn btn-primary" style="max-width:none;margin:0">${isEdit?'Änderungen speichern':'Bot hinzufügen'}</button>
+          <button id="pm-bot-cancel" class="btn btn-ghost" style="font-size:13px;max-width:none;margin:0">Abbrechen</button>
         </div>
       </div>
     </div>`;
