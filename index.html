@@ -1976,8 +1976,20 @@
     });
   }
   db.auth.onAuthStateChange((ev,session)=>{
-    if(session){currentUser=session.user;showApp(session);}
-    else{currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+    if(session){
+      currentUser=session.user;
+      if(ev==='TOKEN_REFRESHED'){
+        // Nur RT aktualisieren – kein showApp() nötig, App läuft bereits
+        const _wc=localStorage.getItem('dtks_webauthn');
+        if(_wc&&session.refresh_token){const c=JSON.parse(_wc);if(c.credentialId){localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:c.credentialId,at:'',rt:session.refresh_token}));console.log('🔑 WebAuthn RT nach Auto-Refresh aktualisiert');}}
+      } else {
+        showApp(session);
+      }
+    } else {
+      currentUser=null;currentSpieler=null;
+      document.getElementById('login-screen').style.display='flex';
+      document.getElementById('app-screen').style.display='none';
+    }
   });
 
   // ── HOME ───────────────────────────────────────────────
@@ -2683,11 +2695,17 @@
     // Abmelden
     document.getElementById('profil-btn-logout').addEventListener('click',async()=>{
       if(!await confirmAction('Wirklich abmelden?'))return;
-      if(localStorage.getItem('dtks_webauthn')){
-        // Tokens vorher aktualisieren, dann nur lokal abmelden (RT bleibt serverseitig gültig für Face ID)
+      const hasBiometric=!!localStorage.getItem('dtks_webauthn');
+      if(hasBiometric){
+        // RT sichern BEVOR Supabase irgendetwas macht (kein signOut → kein interner RT-Refresh/Rotation)
         const{data:{session:s}}=await db.auth.getSession();
-        if(s){const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');localStorage.setItem('dtks_webauthn',JSON.stringify({...c,at:s.access_token,rt:s.refresh_token}));}
-        await db.auth.signOut({scope:'local'});
+        if(s?.refresh_token){
+          const c=JSON.parse(localStorage.getItem('dtks_webauthn')||'{}');
+          if(c.credentialId)localStorage.setItem('dtks_webauthn',JSON.stringify({credentialId:c.credentialId,at:'',rt:s.refresh_token}));
+        }
+        // Supabase Session manuell aus localStorage entfernen (kein API-Call → RT bleibt serverseitig gültig)
+        const sbKey=Object.keys(localStorage).find(k=>k.startsWith('sb-')&&k.endsWith('-auth-token'));
+        if(sbKey)localStorage.removeItem(sbKey);
       } else {
         await db.auth.signOut();
       }
