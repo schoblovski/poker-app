@@ -337,7 +337,7 @@ async function executePreActionIfSet(
   let autoAction: string | null = null;
 
   switch (effectiveAction) {
-    case 'fold': autoAction = 'fold'; break;
+    case 'fold': autoAction = callAmount > 0 ? 'fold' : 'check'; break;
     case 'check_fold': autoAction = callAmount > 0 ? 'fold' : 'check'; break;
     case 'check': autoAction = callAmount > 0 ? null : 'check'; break;
     case 'call':

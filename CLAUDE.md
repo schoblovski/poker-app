@@ -349,13 +349,9 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
 
 ### Pandemie-Modus – Offene Bugs & Verbesserungen
 
-- **Online-Spiel-Liste unabhängig vom Verlauf** – FK `online_spiele.spiel_id → spiele(id)` ist aktuell `ON DELETE CASCADE`. Stattdessen sollte `ON DELETE SET NULL` verwendet werden, damit beim Löschen eines Spiel-Eintrags im Verlauf die Online-Session in der Lobby erhalten bleibt. Admin soll selbst entscheiden wann eine Session verschwindet.
-- **Verlauf-Container Höhe** – Im Portrait-Modus: `.pm-feed` hat fix `max-height: 280px`. Besser: viewport-relativ (`max-height: calc(50vh - 120px)`) damit auf kleinen Handys mehr Feed-Einträge sichtbar sind.
-- **iPadOS Statusleiste überlappt Kebab-Menü** – Content-Bereich hat bereits `padding-top: env(safe-area-inset-top)` in Landscape, aber der Kebab-Button selbst ist noch nicht positioniert. Braucht separate Anpassung für iPadOS Landscape.
-- **Vorauswahl „Fold" → auto-Check** – Pre-Action `fold` soll nur folden wenn ein Einsatz zu callen ist (`callAmount > 0`). Bei `callAmount === 0` soll automatisch gecheckt werden. Analog zu `check_fold`-Logik die bereits im Server existiert.
-- **Vorauswahl „Chk/Fold"** – Server-seitig implementiert aber nicht in UI exponiert; Option kann aus `poker-action/index.ts` entfernt werden da das neue Fold-Verhalten oben es ersetzt.
-- **„Was wäre gekommen"-Karten im Verlauf** – Nach Runout-Reveal: jeder Spieler der seine Karten offengelegt hat soll im Feed sehen was für ein Blatt er gehabt hätte (z.B. „Du hättest einen Flush gehabt"). Evaluator auf kombinierte Hole Cards + vollständiges Board anwenden.
-- **Flackern bei UI-Updates** – `renderOnlineTisch()` ersetzt bei jedem Update das komplette `el.innerHTML`. Lösung: nur den Feed-Container inkrementell updaten (neue Einträge appenden statt full rebuild); oder CSS `opacity`-Transition beim Re-Render.
+*(Alle bekannten Bugs sind behoben. Neue Issues hier eintragen.)*
+
+- **Vorauswahl „Chk/Fold"** – Server-seitig noch in `poker-action/index.ts` vorhanden, aber in der UI nicht exponiert. Kann bei Gelegenheit aus dem Server entfernt werden (jetzt durch das neue Fold-Verhalten, das bei `callAmount=0` automatisch checkt, ersetzt).
 
 
 ## Pandemie-Modus – Wichtige Implementierungsdetails
