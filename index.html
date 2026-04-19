@@ -9469,9 +9469,47 @@
 
   async function _pmUpdateLiveIndicator(){
     const btn=document.getElementById('pm-live-btn');if(!btn)return;
-    const{data}=await db.from('online_spiele').select('id').in('status',['waiting','running']).limit(1);
-    if(data?.length>0){btn.classList.add('live');btn.onclick=()=>enterOnlineSession(data[0].id);}
-    else btn.classList.remove('live');
+    const{data:sessions}=await db.from('online_spiele').select('id,status,variante,small_blind,start_stack,is_test,hand_nr').in('status',['waiting','running']);
+    const active=(sessions||[]).filter(s=>!(s.hand_nr===0&&s.status==='finished'));
+    if(!active.length){btn.classList.remove('live');return;}
+    btn.classList.add('live');
+    btn.onclick=async()=>{
+      if(active.length===1){enterOnlineSession(active[0].id);return;}
+      // Multiple sessions → show picker sheet
+      const{data:allSeats}=await db.from('online_seats').select('online_spiel_id,seat').in('online_spiel_id',active.map(s=>s.id));
+      const cntMap={};(allSeats||[]).forEach(s=>{cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;});
+      const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+      const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'};
+      const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
+      const statusLabel={waiting:'Offen',running:'Läuft'};
+      const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:flex-end;padding:0';
+      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;padding:var(--space-md)">
+        <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)"></div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:var(--space-md)">Session auswählen</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-md)">
+          ${active.map(s=>{
+            const cnt=cntMap[s.id]||0;
+            const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
+            return`<button data-sid="${s.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg-secondary);cursor:pointer;text-align:left;width:100%">
+              <span style="font-size:22px;color:${varColor[s.variante]||'var(--text-secondary)'};line-height:1;flex-shrink:0">${varIcon[s.variante]||'●'}</span>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                  <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
+                  <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
+          }).join('')}
+        </div>
+        <button id="pm-picker-cancel" class="btn btn-ghost" style="font-size:13px">Abbrechen</button>
+      </div>`;
+      document.body.appendChild(ov);
+      ov.querySelectorAll('[data-sid]').forEach(b=>b.addEventListener('click',()=>{ov.remove();enterOnlineSession(b.dataset.sid);}));
+      document.getElementById('pm-picker-cancel').addEventListener('click',()=>ov.remove());
+      ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+    };
   }
 
   function _pmPauseSheet(){
