@@ -701,6 +701,15 @@
   #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
   @keyframes pm-drawer-notify{0%,100%{filter:none;transform:scaleX(1)}45%{filter:brightness(1.5);transform:scaleX(1.25)}}
   #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .5s ease-out 2;transform-origin:left center}
+  /* FAB */
+  #pm-fab{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);left:16px;width:46px;height:46px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.22);display:none;align-items:center;justify-content:center;cursor:pointer;z-index:150;transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s;-webkit-tap-highlight-color:transparent;color:var(--text-secondary);padding:0}
+  #pm-fab.pm-fab-vis{display:flex}
+  #pm-fab.pm-fab-open{background:var(--bg-secondary);border-color:var(--text-tertiary);transform:rotate(45deg)}
+  #pm-fab-menu{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);left:16px;z-index:149;display:flex;flex-direction:column;gap:7px;pointer-events:none;opacity:0;transform:translateY(12px);transition:opacity .17s,transform .17s}
+  #pm-fab-menu.pm-fab-open{pointer-events:auto;opacity:1;transform:translateY(0)}
+  .pm-fab-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:10px 16px 10px 12px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-primary);box-shadow:0 2px 10px rgba(0,0,0,.14);white-space:nowrap;-webkit-tap-highlight-color:transparent;text-align:left}
+  .pm-fab-item.pm-fab-danger{color:var(--danger)}
+  .pm-fab-item:active{opacity:.7}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   /* facedown→faceup: left edge lifts first, flip right */
@@ -7641,9 +7650,13 @@
       ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
       :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
 
-    // Kebab-Menü (Video-Call + Tisch verlassen + Beenden)
-    const hasMenu=!isFinished;
-    const menuBtn=hasMenu?`<div class="pm-kebab-wrap" style="display:flex;align-items:center;position:relative"><button class="btn btn-ghost pm-kebab-btn" id="pm-kebab-btn" style="padding:5px 10px;width:auto;height:30px!important;margin-top:0!important"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button><div class="pm-kebab-menu" id="pm-kebab-menu" style="display:none;position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:260px;z-index:50;overflow:hidden">${waLink?`<button class="pm-menu-item" id="btn-pm-call" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${callMenuIcon}${callMenuLabel}</button><div style="height:1px;background:var(--border)"></div>`:''  }${mySeat?`<button class="pm-menu-item" id="btn-pm-facedown" style="display:flex;align-items:center;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left"><div style="display:flex;align-items:center;gap:10px;flex:1;font-size:14px;color:var(--text-primary);margin-right:16px">${fdIcon}Neue Karten face-down lassen</div><div style="position:relative;width:42px;height:24px;background:${facedown?'var(--accent)':' var(--bg-secondary)'};border-radius:12px;transition:background .2s;flex-shrink:0"><div style="position:absolute;top:3px;left:${facedown?'21px':'3px'};width:18px;height:18px;background:white;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div></button><div style="height:1px;background:var(--border)"></div>`:''  }<button class="pm-menu-item" id="btn-pm-info" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Spielregeln &amp; Hilfe</button>${(mySeat&&!isFinished)||!isFinished?`<div style="height:1px;background:var(--border)"></div>`:''  }${mySeat&&!isFinished?`<button class="pm-menu-item" id="btn-pm-leave" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-primary)">Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-menu-item" id="btn-pm-finish" style="display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;cursor:pointer;color:var(--danger)">Session beenden</button>`:''}</div></div>`:'';
+    // FAB (Floating Action Button) – ersetzt das Kebab-Menü
+    const _fabIconCall=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.17 9.6 19.79 19.79 0 01.11 1a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 6.1a16 16 0 006 6l.87-.87a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 13.92z"/></svg>`;
+    const _fabIconFd=facedown?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+    const _fabIconInfo=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    const _fabIconLeave=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
+    const _fabIconStop=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
+    const fabHtml=`<div id="pm-fab-menu">${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }<button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button>${mySeat&&!isFinished?`<button class="pm-fab-item" id="btn-pm-leave">${_fabIconLeave}Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`:''  }</div><button id="pm-fab" class="pm-fab-vis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
     const handIsOver=!session.current_player_id;
 
     // Feed
@@ -7742,14 +7755,14 @@
           ${isLandscape?feedSection:''}
         </div>
         ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';
-          const _scrollContent=`<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">${hasMenu?menuBtn:''}</div><div id="pm-s-result">${handResultHtml}</div>${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}<div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>`;
+          const _scrollContent=`<div id="pm-s-result">${handResultHtml}</div>${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}<div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>`;
           if(isLandscape){
             return`<div class="pm-tisch-right" style="overflow-y:hidden"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 4px;border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
           }
           return`<div class="pm-tisch-right" style="border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0">${_scrollContent}${feedSection}${_rStrip}</div>`;
         })()}
       </div>
-    </div>`;
+    </div>${fabHtml}`;
     if(_needsFull){
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
@@ -7818,7 +7831,7 @@
       });
     }else if(id==='pm-s-runout'){
       document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
-      document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
+      document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>_pmNewHand());
     }else if(id==='pm-s-action'){
       document.getElementById('pm-raise-toggle')?.addEventListener('click',_pmRaiseSheet);
       document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
@@ -8322,35 +8335,27 @@
     document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
     document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
-    document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>{document.getElementById('pm-kebab-menu').style.display='none';_pmNewHand();});
+    document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>_pmNewHand());
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
     document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
     document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
-    // Kebab-Menü Toggle
-    document.getElementById('pm-kebab-btn')?.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      const m=document.getElementById('pm-kebab-menu');
-      const btn=e.currentTarget;
-      if(m&&btn){
-        if(m.style.display==='block'){m.style.display='none';}
-        else{
-          const r=btn.getBoundingClientRect();
-          m.style.position='fixed';m.style.top=(r.bottom+4)+'px';m.style.right=(window.innerWidth-r.right)+'px';m.style.left='';m.style.display='block';
-        }
-      }
-    });
-    document.addEventListener('click',()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='none';},{once:false,capture:false});
-    // Facedown toggle
+    // FAB Toggle
+    const _fab=document.getElementById('pm-fab');
+    const _fabMenu=document.getElementById('pm-fab-menu');
+    function _pmFabClose(){if(_fab)_fab.classList.remove('pm-fab-open');if(_fabMenu)_fabMenu.classList.remove('pm-fab-open');}
+    function _pmFabToggle(e){e.stopPropagation();if(!_fab||!_fabMenu)return;const isOpen=_fab.classList.contains('pm-fab-open');if(isOpen){_pmFabClose();}else{_fab.classList.add('pm-fab-open');_fabMenu.classList.add('pm-fab-open');}}
+    _fab?.addEventListener('click',_pmFabToggle);
+    document.addEventListener('click',_pmFabClose,{capture:false});
+    // Facedown toggle (closes FAB, re-renders with new state; re-open handled below)
     document.getElementById('btn-pm-facedown')?.addEventListener('click',(e)=>{
       e.stopPropagation();
       const cur=localStorage.getItem('pm_facedown')==='true';
       localStorage.setItem('pm_facedown',String(!cur));
       renderOnlineTisch();
-      // Re-open menu after re-render
-      setTimeout(()=>{const m=document.getElementById('pm-kebab-menu');if(m)m.style.display='block';},20);
+      setTimeout(()=>{const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f&&m){f.classList.add('pm-fab-open');m.classList.add('pm-fab-open');}},30);
     });
     // Card flip – delegate to named function (avoids stale DOM reference on re-render)
     const _hcWrap=document.getElementById('pm-hole-cards-wrap');
@@ -8395,20 +8400,20 @@
         setTimeout(()=>{if(_pm?._reactions?.[currentSpieler.id]?.ts===_ts2){delete _pm._reactions[currentSpieler.id];renderOnlineTisch();}},4000);
       });
     });
-    document.getElementById('btn-pm-info')?.addEventListener('click',()=>{
-      document.getElementById('pm-kebab-menu').style.display='none';
+    document.getElementById('btn-pm-info')?.addEventListener('click',(e)=>{
+      e.stopPropagation();_pmFabClose();
       document.getElementById('pm-info-modal').style.display='block';
     });
     document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
       document.getElementById('pm-info-modal').style.display='none';
     });
-    document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
+    document.getElementById('btn-pm-leave')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
       if(!_pm?.mySeat)return;
       if(!await confirmAction('Tisch verlassen?\n\nDein Platz und Stack bleiben reserviert. Du kannst jederzeit zurückkehren.'))return;
       await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
       showPage('online-lobby');
     });
-    document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
+    document.getElementById('btn-pm-finish')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
       const isEmpty=(_pm.session?.hand_nr||0)===0;
       if(isEmpty){
         // No hands were played: offer to silently delete the session (no history entry)
@@ -8445,8 +8450,8 @@
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',_pmPayoutModal);
     document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
-    document.getElementById('btn-pm-call')?.addEventListener('click',async()=>{
-      document.getElementById('pm-kebab-menu').style.display='none';
+    document.getElementById('btn-pm-call')?.addEventListener('click',async(e)=>{
+      e.stopPropagation();_pmFabClose();
       const link=_pm._waLink||_pm.session?.video_link||'';
       if(link)window.open(link,'_blank','noopener,noreferrer');
       const current=Array.isArray(_pm.session?.call_teilnehmer)?_pm.session.call_teilnehmer:[];
