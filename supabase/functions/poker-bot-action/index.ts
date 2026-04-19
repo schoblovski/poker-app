@@ -27,15 +27,86 @@ interface BotConfig {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return corsOk();
 
-  let body: { online_spiel_id: string; bot_spieler_id: string; action?: string };
+  let body: { online_spiel_id: string; bot_spieler_id?: string; action?: string; name?: string; config?: BotConfig };
   try { body = await req.json(); }
   catch { return err('Invalid JSON'); }
 
   const { online_spiel_id, bot_spieler_id } = body;
   const actionType = body.action ?? 'play';
-  if (!online_spiel_id || !bot_spieler_id) return err('Fehlende Parameter');
+  if (!online_spiel_id) return err('Fehlende Parameter');
 
   const db = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // ── CREATE action (bot add – requires service role to bypass RLS) ────────
+  if (actionType === 'create') {
+    const { name, config } = body;
+    if (!name) return err('Kein Name angegeben');
+
+    // Find free seat
+    const { data: session } = await db.from('online_spiele').select('*').eq('id', online_spiel_id).single();
+    if (!session) return err('Session nicht gefunden', 404);
+    const { data: takenSeats } = await db.from('online_seats').select('seat').eq('online_spiel_id', online_spiel_id);
+    const taken = new Set((takenSeats ?? []).map((s: any) => s.seat));
+    let freeSeat = -1;
+    for (let i = 1; i <= 9; i++) { if (!taken.has(i)) { freeSeat = i; break; } }
+    if (freeSeat < 0) return err('Kein freier Platz');
+
+    // Create bot spieler row (service role bypasses RLS)
+    const { data: botSpieler, error: e1 } = await db
+      .from('spieler')
+      .insert({ name, profilbild: config?.avatar ?? null, aktiv: false, ist_bot: true, ist_bank: false, ist_admin: false })
+      .select().single();
+    if (e1 || !botSpieler) return err('Bot-Spieler: ' + (e1?.message ?? 'unbekannt'));
+
+    // Create seat
+    const startStack = session.start_stack ?? 100;
+    const { error: e2 } = await db.from('online_seats').insert({
+      online_spiel_id,
+      spieler_id: botSpieler.id,
+      seat: freeSeat,
+      stack: startStack,
+      status: session.status === 'running' ? 'sitting_out' : 'active',
+      buyins: 1,
+      bet_current_round: 0,
+      bot_config: config ?? {},
+    });
+    if (e2) {
+      await db.from('spieler').delete().eq('id', botSpieler.id);
+      return err('Seat-Insert: ' + e2.message);
+    }
+
+    // Mark session as having bots (disables statistics export)
+    await db.from('online_spiele').update({ hat_bots: true }).eq('id', online_spiel_id);
+    return json({ ok: true, bot_spieler_id: botSpieler.id, seat: freeSeat });
+  }
+
+  // ── REMOVE action ────────────────────────────────────────────────────────
+  if (actionType === 'remove') {
+    if (!bot_spieler_id) return err('bot_spieler_id fehlt');
+    // Verify bot
+    const { data: bot } = await db.from('spieler').select('ist_bot').eq('id', bot_spieler_id).single();
+    if (!bot?.ist_bot) return err('Kein Bot', 403);
+    const { data: seats } = await db.from('online_seats').select('*').eq('online_spiel_id', online_spiel_id).eq('spieler_id', bot_spieler_id);
+    const seat = seats?.[0];
+    if (seat) {
+      if (seat.status === 'active') {
+        const { data: sess } = await db.from('online_spiele').select('current_player_id,status').eq('id', online_spiel_id).single();
+        if (sess?.status === 'running' && sess?.current_player_id === bot_spieler_id) {
+          // Bot's turn – fold first
+          await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
+            body: JSON.stringify({ online_spiel_id, spieler_id: bot_spieler_id, action: 'fold' }),
+          });
+        }
+      }
+      await db.from('online_seats').delete().eq('id', seat.id);
+    }
+    await db.from('spieler').delete().eq('id', bot_spieler_id);
+    return json({ ok: true, removed: true });
+  }
+
+  if (!bot_spieler_id) return err('bot_spieler_id fehlt');
 
   // Verify this is actually a bot
   const { data: bot } = await db.from('spieler').select('ist_bot,name').eq('id', bot_spieler_id).single();

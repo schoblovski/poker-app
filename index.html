@@ -7440,11 +7440,7 @@
       const small_blind=parseFloat(document.getElementById('pm-new-sb').value)||1;
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
       const is_test=false;
-      const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Prüfe…';
-      // Prüfen ob bereits eine aktive Session existiert
-      const{data:existing}=await db.from('online_spiele').select('id').in('status',['waiting','running']).limit(1);
-      if(existing?.length>0){btn.disabled=false;btn.textContent='Session erstellen';close();await showAlert('Es gibt bereits eine aktive Session. Bitte diese zuerst beenden.');return;}
-      btn.textContent='Erstelle…';
+      const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
       const spiel_id=null; // created at payout confirmation, not at session start
       const big_blind=parseFloat(document.getElementById('pm-new-bb').value)||small_blind*2;
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
@@ -9691,31 +9687,14 @@
 
   async function _pmAddBot(name,config){
     if(!_pm?.id){await showAlert('Keine aktive Session.');return;}
-    // Find free seat
-    const taken=new Set((_pm.seats||[]).map(s=>s.seat));
-    let freeSeat=-1;
-    for(let i=1;i<=9;i++){if(!taken.has(i)){freeSeat=i;break;}}
-    if(freeSeat<0){await showAlert('Kein freier Platz.');return;}
-    // Create bot spieler entry (aktiv=false so it doesn't appear in home/dropdowns)
     const avatar=_pmBotAvatar(name);
-    const{data:botSpieler,error:e1}=await db.from('spieler').insert({name,profilbild:avatar,aktiv:false,ist_bot:true,ist_bank:false,ist_admin:false}).select().single();
-    if(e1||!botSpieler){await showAlert('Fehler beim Erstellen des Bots: '+(e1?.message||''));return;}
-    const sess=_pm.session;
-    const startStack=sess?.start_stack||100;
-    // Create seat
-    const{error:e2}=await db.from('online_seats').insert({
-      online_spiel_id:_pm.id,
-      spieler_id:botSpieler.id,
-      seat:freeSeat,
-      stack:startStack,
-      status:sess?.status==='running'?'sitting_out':'active', // join mid-hand as observer
-      buyins:1,
-      bet_current_round:0,
-      bot_config:config,
+    const resp=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+      body:JSON.stringify({online_spiel_id:_pm.id,action:'create',name,config:{...config,avatar}}),
     });
-    if(e2){await db.from('spieler').delete().eq('id',botSpieler.id);await showAlert('Fehler beim Setzen des Bots: '+e2.message);return;}
-    // Mark session as having bots (prevents statistics export)
-    await db.from('online_spiele').update({hat_bots:true}).eq('id',_pm.id);
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok||!data.ok){await showAlert('Fehler beim Hinzufügen des Bots: '+(data.error||resp.status));return;}
     _pmScheduleLoad();
   }
 
@@ -9728,22 +9707,11 @@
   async function _pmRemoveBot(spieler_id,name){
     if(!_pm?.id)return;
     if(!await confirmAction(`Bot «${name}» entfernen?\n\nDer Bot foldet bei nächster Gelegenheit und verlässt den Tisch.`))return;
-    const seat=(_pm.seats||[]).find(s=>s.spieler_id===spieler_id);
-    if(!seat)return;
-    // If bot is currently active and it's a running hand, fold immediately then sit_out
-    if(seat.status==='active'&&_pm.session?.status==='running'){
-      if(_pm.session.current_player_id===spieler_id){
-        // It's the bot's turn – fold now
-        await fetch(`${SUPABASE_URL}/functions/v1/poker-action`,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
-          body:JSON.stringify({online_spiel_id:_pm.id,spieler_id,action:'fold'}),
-        });
-      }
-    }
-    // Remove seat + delete bot spieler record
-    await db.from('online_seats').delete().eq('id',seat.id);
-    await db.from('spieler').delete().eq('id',spieler_id);
+    await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+      body:JSON.stringify({online_spiel_id:_pm.id,bot_spieler_id:spieler_id,action:'remove'}),
+    });
     _pmScheduleLoad();
   }
 
