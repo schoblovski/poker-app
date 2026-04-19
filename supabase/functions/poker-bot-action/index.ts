@@ -300,11 +300,12 @@ function postflopStrength(hole: Card[], board: Card[]): number {
   if (hasStraight)                                      return 75;
   if (cnts[0] === 3)                                    return 65;
   if (cnts[0] === 2 && (cnts[1] ?? 0) === 2) {
-    const pairRanks = Object.entries(rc).filter(([, c]) => c >= 2).map(([r]) => +r);
-    return Math.max(...pairRanks) >= 10 ? 55 : 48;
+    const pairRanks = Object.entries(rc).filter(e => e[1] >= 2).map(e => +e[0]);
+    return (pairRanks.length > 0 && Math.max(...pairRanks) >= 10) ? 55 : 48;
   }
   if (cnts[0] === 2) {
-    const pr = +Object.entries(rc).find(([, c]) => c === 2)![0];
+    const prEntry = Object.entries(rc).find(e => e[1] === 2);
+    const pr = prEntry ? +prEntry[0] : 2;
     return pr >= 10 ? 42 : 35;
   }
   return Math.min(25, Math.max(...ranks) - 2);
