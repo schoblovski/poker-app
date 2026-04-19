@@ -34,9 +34,25 @@ Deno.serve(async (req) => {
   const callerSeat = seats?.find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
   if (!callerSeat) return err('Du bist nicht an diesem Tisch', 403);
 
+  // Bots: auto-buyin if stack=0, promote sitting_out bots with chips
+  for (const s of (seats ?? []) as any[]) {
+    if (!s.bot_config) continue;
+    if (s.stack === 0) {
+      await db.from('online_seats').update({
+        stack: session.start_stack ?? 100,
+        buyins: (s.buyins ?? 1) + 1,
+        status: 'active',
+      }).eq('id', s.id);
+      s.stack = session.start_stack ?? 100; s.status = 'active';
+    } else if (s.status === 'sitting_out') {
+      await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);
+      s.status = 'active';
+    }
+  }
+
   // Spieler ohne Stack eliminieren (busted), paused → sitting_out
   const bustsAndPaused = (seats ?? []).filter(
-    (s: { stack: number; status: string }) => s.stack === 0 || s.status === 'paused'
+    (s: { stack: number; status: string; bot_config?: unknown }) => !s.bot_config && (s.stack === 0 || s.status === 'paused')
   );
   const bustIds = new Set(bustsAndPaused.map((s: { id: string }) => s.id));
   for (const s of bustsAndPaused) {
