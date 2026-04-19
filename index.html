@@ -6578,32 +6578,42 @@
         _netBanner?.remove();_netBanner=null;
       }
     }
-    window.addEventListener('online',()=>{_update();_processOfflineQueue();});
+    window.addEventListener('online',()=>{_update();setTimeout(_processOfflineQueue,1500);});
     window.addEventListener('offline',_update);
     if(conn)conn.addEventListener('change',_update);
     _update();
   }
 
   // ── OFFLINE-WARTESCHLANGE (nur Transaktionen) ──
-  // _queueProcessing verhindert parallele Ausführung (Race Condition bei mehrfachem online-Event)
   let _queueProcessing=false;
   async function _processOfflineQueue(){
     if(_queueProcessing||!navigator.onLine)return;
     const q=JSON.parse(localStorage.getItem('dtks_offline_queue')||'[]');
     if(!q.length)return;
     _queueProcessing=true;
-    // Queue sofort leeren bevor async Operationen starten (verhindert Doppel-Inserts)
     localStorage.removeItem('dtks_offline_queue');
     let ok=0;const failed=[];
-    for(const {_id,...data} of q){
-      const{error}=await db.from('transaktionen').insert(data);
-      if(error)failed.push({_id,...data});else ok++;
+    const _insertWithTimeout=(data)=>Promise.race([
+      db.from('transaktionen').insert(data),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000)),
+    ]);
+    try{
+      for(const {_id,...data} of q){
+        try{
+          const{error}=await _insertWithTimeout(data);
+          if(error)failed.push({_id,...data});else ok++;
+        }catch{failed.push({_id:Date.now(),...data});}
+      }
+    }finally{
+      if(failed.length)localStorage.setItem('dtks_offline_queue',JSON.stringify(failed));
+      _queueProcessing=false;
     }
-    if(failed.length)localStorage.setItem('dtks_offline_queue',JSON.stringify(failed));
-    _queueProcessing=false;
     if(ok>0){
       _showToast(`${ok} offline Transaktion${ok>1?'en':''} synchronisiert`,'success');
       await loadTransaktionen().catch(()=>{});await loadHome().catch(()=>{});
+    }
+    if(failed.length){
+      _showToast(`${failed.length} Transaktion${failed.length>1?'en':''} fehlgeschlagen – erneuter Versuch beim nächsten Start`,'error',6000);
     }
   }
 
