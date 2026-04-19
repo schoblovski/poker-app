@@ -1903,6 +1903,7 @@
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
     // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
     if(page!=='online-tisch'){
+      document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
@@ -7385,11 +7386,18 @@
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
-      // Race-condition check: delete our session if another one was just created simultaneously
+      // Race-condition check: if another session exists, keep the one with the larger ID (deterministic)
       const{data:raceCheck}=await db.from('online_spiele').select('id').in('status',['waiting','running']).neq('id',sess.id).limit(1);
       if(raceCheck?.length>0){
-        db.from('online_spiele').delete().eq('id',sess.id).then(()=>{});
-        btn.disabled=false;btn.textContent='Session erstellen';close();await showAlert('Eine andere Session wurde gleichzeitig erstellt. Bitte dieser beitreten.');loadOnlineLobby();return;
+        const otherId=raceCheck[0].id;
+        if(sess.id>otherId){
+          // Our session wins – delete the other (soft: mark finished so lobby updates)
+          db.from('online_spiele').update({status:'finished'}).eq('id',otherId).then(()=>{});
+        }else{
+          // Other session wins – delete ours and join theirs
+          db.from('online_spiele').update({status:'finished'}).eq('id',sess.id).then(()=>{});
+          close();enterOnlineSession(otherId);return;
+        }
       }
       close();enterOnlineSession(sess.id);
     };
@@ -7667,7 +7675,7 @@
     const feedHtml=_pmFeedHtml(actions);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
-    const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished;
+    const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished&&myStatus!=='sitting_out';
     const infoBar=mySeat?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
@@ -7771,9 +7779,14 @@
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
       const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
       el.innerHTML=_newHtml;
-      // FAB stays inside the page content – #page-online-tisch uses opacity-only animation
-      // (pm-page-fade) so no transform stacking context; position:fixed works correctly.
-      // display:none on inactive pages hides FAB automatically, no body-append needed.
+      // Only move FAB to document.body when the tisch page is the active page.
+      // This prevents the FAB appearing on other pages when _pmLoad fires from a realtime event.
+      // When the user navigates back to tisch, showPage sets the page active first, then calls
+      // renderOnlineTisch(), so the FAB correctly goes to body at that point.
+      if(document.getElementById('page-online-tisch')?.classList.contains('active')){
+        const _fabEl=el.querySelector('#pm-fab');const _fabMenuEl=el.querySelector('#pm-fab-menu');
+        if(_fabEl&&_fabMenuEl){document.body.appendChild(_fabMenuEl);document.body.appendChild(_fabEl);}
+      }
       // Feed is newest-first (top), so scroll to top unless user scrolled down into history
       requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}});
       _pmBindEvents();
