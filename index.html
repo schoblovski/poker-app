@@ -7693,8 +7693,8 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
-      ${(()=>{const inv=(mySeat.buyins||1)*(session.start_stack||0);const net=Math.round(((mySeat.stack||0)-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>=0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
-      ${(()=>{const inv=(mySeat.buyins||1)*(session.start_stack||0);const net=Math.round(((mySeat.stack||0)-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>=0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=einstellungen?.buyin_kassa??2;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>=0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=einstellungen?.buyin_kassa??2;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>=0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
       ${(()=>{const bb=(session.small_blind||0.05)*2;const bbs=bb>0?Math.round((mySeat.stack||0)/bb*10)/10:0;return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">BBs</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${bbs}×</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Runde #</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${session.hand_nr||0}</div></div>
       ${(()=>{const bet=mySeat.bet_current_round||0;const bc=bet>0?'var(--text-primary)':'var(--text-tertiary)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Einsatz</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${bc}">€${bet.toFixed(2)}</div></div>`;})()}
@@ -7887,8 +7887,20 @@
   }
 
   function _pmStackBarsHtml(seats,myId){
+    const spectators=seats.filter(s=>s.status==='sitting_out');
+    const specHtml=spectators.length>0?(()=>{
+      const pills=spectators.map(s=>{
+        const name=s.spieler?.name||'?';
+        const isMe=s.spieler_id===myId;
+        const av=s.spieler?.profilbild
+          ?`<img src="${s.spieler.profilbild}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+          :`<div style="width:20px;height:20px;border-radius:50%;background:var(--accent-soft);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent-text)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;
+        return`<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 4px;background:var(--bg-secondary);border-radius:20px;border:1px solid var(--border)">${av}<span style="font-size:12px;font-weight:${isMe?'700':'400'};color:${isMe?'var(--text-primary)':'var(--text-secondary)'};white-space:nowrap">${escHtml(name)}</span></div>`;
+      }).join('');
+      return`<div style="margin-bottom:var(--space-md)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Wartebereich</span><span style="font-size:10px;font-weight:700;background:var(--bg-secondary);color:var(--text-secondary);border-radius:20px;padding:1px 6px">${spectators.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:5px">${pills}</div></div>`;
+    })():'';
     const players=seats.filter(s=>s.status!=='sitting_out').sort((a,b)=>(b.stack||0)-(a.stack||0));
-    if(players.length<2)return'';
+    if(players.length<2)return specHtml;
     const maxStack=Math.max(...players.map(s=>s.stack||0),1);
     const rows=players.map(s=>{
       const isMe=s.spieler_id===myId;
@@ -7915,7 +7927,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;margin-left:auto;color:var(--text-tertiary)"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px">${rows}</div>
-    </div>`;
+    </div>${specHtml}`;
   }
 
   function _pmShowStacksModal(){
@@ -8900,11 +8912,15 @@
     }
 
     // Build per-player summary rows
+    // Normalize chip values to real euros: 1 chip = buyin_pot / start_stack
+    const _bPot=einstellungen?.buyin_pot??5;
+    const _bKassa=einstellungen?.buyin_kassa??2;
+    const _chipToEur=_bPot/(startStack||_bPot);
     const rows=seats.filter(s=>s.status!=='sitting_out').map(s=>{
       const buyins=s.buyins||1;
-      const cost=buyins*startStack;
-      const payout=s.stack||0;
-      const net=payout-cost;
+      const cost=buyins*(_bPot+_bKassa);
+      const payout=Math.round((s.stack||0)*_chipToEur*100)/100;
+      const net=Math.round((payout-cost)*100)/100;
       return{seat:s,buyins,cost,payout,net,name:s.spieler?.name||'?',img:s.spieler?.profilbild||''};
     }).sort((a,b)=>b.net-a.net);
 
@@ -8919,7 +8935,7 @@
         if(a.spieler_id)invested[a.spieler_id]=(invested[a.spieler_id]||0)+(a.amount||0);
       }
       rows.forEach(r=>{
-        const refund=Math.round((invested[r.seat.spieler_id]||0)*100)/100;
+        const refund=Math.round((invested[r.seat.spieler_id]||0)*_chipToEur*100)/100;
         if(refund>0){r.payout=Math.round((r.payout+refund)*100)/100;r.net=Math.round((r.net+refund)*100)/100;}
       });
       _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);font-size:13px"><b>Spielrunde annulliert</b> – €${_midHandPot.toFixed(2)} wurden an die jeweiligen Spieler zurückgegeben.</div>`;
