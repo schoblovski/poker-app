@@ -7486,19 +7486,6 @@
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
-      // Race-condition check: if another session exists, keep the one with the larger ID (deterministic)
-      const{data:raceCheck}=await db.from('online_spiele').select('id').in('status',['waiting','running']).neq('id',sess.id).limit(1);
-      if(raceCheck?.length>0){
-        const otherId=raceCheck[0].id;
-        if(sess.id>otherId){
-          // Our session wins – delete the other (soft: mark finished so lobby updates)
-          db.from('online_spiele').update({status:'finished'}).eq('id',otherId).then(()=>{});
-        }else{
-          // Other session wins – delete ours and join theirs
-          db.from('online_spiele').update({status:'finished'}).eq('id',sess.id).then(()=>{});
-          close();enterOnlineSession(otherId);return;
-        }
-      }
       close();enterOnlineSession(sess.id);
     };
   }
