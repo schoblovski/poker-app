@@ -7727,10 +7727,10 @@
     </div>`;
     if(_needsFull){
       // Full DOM rebuild (only on layout changes: orientation, role, facedown toggle)
-      const _fo=el.querySelector('.pm-feed');const _fbAtB=!_fo||(_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop)<80;const _fbS=_fo?.scrollTop??0;
+      const _fo=el.querySelector('.pm-feed');const _fbAtT=!_fo||_fo.scrollTop<80;const _fbS=_fo?.scrollTop??0;
       el.innerHTML=_newHtml;
-      // Use rAF so the browser lays out the new content before we set scrollTop
-      requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtB)_fn.scrollTop=_fn.scrollHeight;else _fn.scrollTop=_fbS;}});
+      // Feed is newest-first (top), so scroll to top unless user scrolled down into history
+      requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}});
       _pmBindEvents();
       if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     }else{
@@ -7745,8 +7745,8 @@
       // Feed: update with scroll preservation
       const _fo=el.querySelector('.pm-feed');const _fn=_tmp.querySelector('.pm-feed');
       if(_fo&&_fn&&_fo.innerHTML!==_fn.innerHTML){
-        const _atB=_fo.scrollHeight-_fo.clientHeight-_fo.scrollTop<80;const _svd=_fo.scrollTop;
-        _fo.innerHTML=_fn.innerHTML;if(_atB)_fo.scrollTop=_fo.scrollHeight;else _fo.scrollTop=_svd;
+        const _atT=_fo.scrollTop<80;const _svd=_fo.scrollTop;
+        _fo.innerHTML=_fn.innerHTML;if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;
         const _mb=document.getElementById('pm-feed-modal-body');
         if(_mb){const _atTM=_mb.scrollTop<80;_mb.innerHTML=_fn.innerHTML;if(_atTM)_mb.scrollTop=0;}
       }
