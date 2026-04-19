@@ -693,8 +693,12 @@
   .pm-seat-group.away .pm-seat-circle{stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 3}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  /* facedown→faceup: left edge lifts first, flip right */
   @keyframes pm-card-flip-out{0%{transform:perspective(400px) rotateY(0deg)}100%{transform:perspective(400px) rotateY(-90deg)}}
-  @keyframes pm-card-flip-in{0%{transform:perspective(400px) rotateY(90deg)}100%{transform:perspective(400px) rotateY(0deg)}}
+  @keyframes pm-card-flip-in{0%{transform:perspective(400px) rotateY(-90deg)}100%{transform:perspective(400px) rotateY(0deg)}}
+  /* faceup→facedown: right edge lifts first, flip left (opposite) */
+  @keyframes pm-card-flip-out-r{0%{transform:perspective(400px) rotateY(0deg)}100%{transform:perspective(400px) rotateY(90deg)}}
+  @keyframes pm-card-flip-in-r{0%{transform:perspective(400px) rotateY(90deg)}100%{transform:perspective(400px) rotateY(0deg)}}
   .pm-card-ind{backface-visibility:hidden;-webkit-backface-visibility:hidden;}
   .pm-dealer-btn{fill:#f59e0b;font-size:8px;font-weight:700;font-family:'DM Mono',monospace}
   .pm-community{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:var(--space-sm) 0}
@@ -7042,6 +7046,7 @@
   let _pmChannel=null;
   let _pmLoadTimer=null;   // debounce for realtime-triggered reloads
   let _pmActInFlight=false; // prevents double-tap duplicate actions
+  let _pmActCooldownUntil=0; // blocks ghost-tap pre-action opening after an action
   let _pmPrevTurn=false;    // tracks turn transitions for vibration
 
   function _pmCard(card,opts={}){
@@ -7793,7 +7798,7 @@
       document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{
         b.addEventListener('click',()=>_pmAct(b.dataset.action,b.dataset.amount?parseFloat(b.dataset.amount):undefined));
       });
-      document.getElementById('btn-pm-preaction')?.addEventListener('click',_pmPreActionSheet);
+      document.getElementById('btn-pm-preaction')?.addEventListener('click',()=>{if(Date.now()<_pmActCooldownUntil)return;_pmPreActionSheet();});
       document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
       document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
       document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
@@ -8194,7 +8199,8 @@
       const idx=parseInt(cardEl.dataset.cardIdx);
       const hn=_pm.session?.hand_nr||0;
       const isBack=cardEl.classList.contains('back');
-      cardEl.style.animation='pm-card-flip-out .22s ease-in both';
+      // isBack: facedown→faceup (left edge lifts first), else faceup→facedown (right edge lifts)
+      cardEl.style.animation=`${isBack?'pm-card-flip-out':'pm-card-flip-out-r'} .22s ease-in both`;
       setTimeout(()=>{
         if(!_pm)return;
         if(!_pm._perCardRevealed)_pm._perCardRevealed={};
@@ -8231,7 +8237,7 @@
           newEl.className='pt-card back big pm-card-ind';
         }
         newEl.dataset.cardIdx=String(idx);
-        newEl.style.cssText='cursor:pointer;animation:pm-card-flip-in .28s cubic-bezier(.34,1.56,.64,1) both';
+        newEl.style.cssText=`cursor:pointer;animation:${isBack?'pm-card-flip-in':'pm-card-flip-in-r'} .28s cubic-bezier(.34,1.56,.64,1) both`;
         const target=document.getElementById('pm-hole-cards-wrap')?.querySelector(`[data-card-idx="${idx}"]`);
         if(target)target.replaceWith(newEl);
       },240);
@@ -8745,17 +8751,21 @@
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
     _pmActInFlight=true;
+    _pmActCooldownUntil=Date.now()+700; // block ghost-tap Vorauswahl opens for 700 ms
     document.querySelectorAll('.pm-act-btn,.pm-pre-btn,#pm-raise-confirm,#pm-raise-toggle').forEach(b=>{b.disabled=true;});
-    const body={online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action};
-    if(amount!==undefined&&amount>0)body.amount=amount;
-    const resp=await _callFn('poker-action',body);
-    _pmActInFlight=false;
-    if(resp?.error){await showAlert(_pmFriendlyError(resp.error));}
-    await _pmLoad();
-    // Safety net: if the server triggered a next-street asynchronously, the first load might
-    // see an intermediate state. Reload once more if nothing changed within 1.5 s.
-    const _fpSnap=_pm?._lastFp;
-    setTimeout(()=>{if(_pm&&_pm._lastFp===_fpSnap)_pmLoad();},1500);
+    try{
+      const body={online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action};
+      if(amount!==undefined&&amount>0)body.amount=amount;
+      const resp=await _callFn('poker-action',body);
+      if(resp?.error){await showAlert(_pmFriendlyError(resp.error));return;}
+      await _pmLoad();
+      // Safety net: if poker-next-street fires async after poker-action returns, the first
+      // _pmLoad might see intermediate state. Re-check after 1.5 s if nothing changed.
+      const _fpSnap=_pm?._lastFp;
+      setTimeout(()=>{if(_pm&&_pm._lastFp===_fpSnap)_pmLoad();},1500);
+    }finally{
+      _pmActInFlight=false; // always reset, even on exception
+    }
   }
 
   async function _pmSetPreAction(pre,limit){
