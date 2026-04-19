@@ -701,12 +701,12 @@
   #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
   @keyframes pm-drawer-notify{0%,100%{filter:none;transform:scaleX(1)}45%{filter:brightness(1.5);transform:scaleX(1.25)}}
   #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .5s ease-out 2;transform-origin:left center}
-  /* FAB */
-  #pm-fab{position:fixed;top:calc(var(--header-h,60px) + 10px);right:16px;width:46px;height:46px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.22);display:none;align-items:center;justify-content:center;cursor:pointer;z-index:150;transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s;-webkit-tap-highlight-color:transparent;color:var(--text-secondary);padding:0;animation:none}
+  /* FAB – animation:none!important beats #online-tisch-content>* specificity */
+  #pm-fab{position:fixed;width:46px;height:46px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.22);display:none;align-items:center;justify-content:center;cursor:grab;z-index:200;transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s,top .25s,left .25s,right .25s,bottom .25s;-webkit-tap-highlight-color:transparent;color:var(--text-secondary);padding:0;animation:none!important;touch-action:none;user-select:none}
   #pm-fab.pm-fab-vis{display:flex}
-  #pm-fab.pm-fab-open{background:var(--bg-secondary);border-color:var(--text-tertiary);transform:rotate(45deg)}
-  #pm-fab-menu{position:fixed;top:calc(var(--header-h,60px) + 66px);right:16px;z-index:149;display:flex;flex-direction:column;gap:7px;pointer-events:none;opacity:0;transform:translateY(-10px);transition:opacity .17s,transform .17s;animation:none}
-  #pm-fab-menu.pm-fab-open{pointer-events:auto;opacity:1;transform:translateY(0)}
+  #pm-fab.pm-fab-open{background:var(--bg-secondary);border-color:var(--text-tertiary);transform:rotate(45deg);cursor:pointer}
+  #pm-fab-menu{position:fixed;z-index:199;display:flex;flex-direction:column;gap:7px;pointer-events:none;opacity:0;transition:opacity .17s,transform .17s;animation:none!important}
+  #pm-fab-menu.pm-fab-open{pointer-events:auto;opacity:1}
   .pm-fab-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:24px;padding:10px 16px 10px 12px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-primary);box-shadow:0 2px 10px rgba(0,0,0,.14);white-space:nowrap;-webkit-tap-highlight-color:transparent;text-align:left}
   .pm-fab-item.pm-fab-danger{color:var(--danger)}
   .pm-fab-item:active{opacity:.7}
@@ -8342,20 +8342,73 @@
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
     document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
-    // FAB Toggle
+    // FAB – position, drag-to-corner, toggle
     const _fab=document.getElementById('pm-fab');
     const _fabMenu=document.getElementById('pm-fab-menu');
-    function _pmFabClose(){if(_fab)_fab.classList.remove('pm-fab-open');if(_fabMenu)_fabMenu.classList.remove('pm-fab-open');}
-    function _pmFabToggle(e){e.stopPropagation();if(!_fab||!_fabMenu)return;const isOpen=_fab.classList.contains('pm-fab-open');if(isOpen){_pmFabClose();}else{_fab.classList.add('pm-fab-open');_fabMenu.classList.add('pm-fab-open');}}
-    _fab?.addEventListener('click',_pmFabToggle);
+    let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
+    let _fabDragged=false;
+    function _pmFabApplyCorner(corner,animate){
+      const fab=document.getElementById('pm-fab');const menu=document.getElementById('pm-fab-menu');if(!fab)return;
+      const hdrH=(document.querySelector('.header')?.offsetHeight||60)+8;
+      const pad=12;const fs=46;const gap=8;
+      // FAB position
+      if(animate){fab.style.transition='top .25s,left .25s,right .25s,bottom .25s,transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';}
+      else{fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';}
+      fab.style.top=fab.style.bottom=fab.style.left=fab.style.right='auto';
+      if(corner[0]==='t')fab.style.top=hdrH+'px'; else fab.style.bottom=pad+'px';
+      if(corner[1]==='r')fab.style.right=pad+'px'; else fab.style.left=pad+'px';
+      if(!menu)return;
+      menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';
+      if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px'; else menu.style.bottom=(pad+fs+gap)+'px';
+      if(corner[1]==='r'){menu.style.right=pad+'px';menu.style.alignItems='flex-end';}
+      else{menu.style.left=pad+'px';menu.style.alignItems='flex-start';}
+    }
+    _pmFabApplyCorner(_fabCorner,false);
+    function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
+    function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.add('pm-fab-open');if(m)m.classList.add('pm-fab-open');}
+    // Drag logic
+    let _fabDragStartX,_fabDragStartY,_fabDragFabX,_fabDragFabY;
+    function _fabOnStart(e){
+      const pt=e.touches?e.touches[0]:e;
+      _fabDragStartX=pt.clientX;_fabDragStartY=pt.clientY;
+      const r=_fab.getBoundingClientRect();_fabDragFabX=r.left;_fabDragFabY=r.top;
+      _fabDragged=false;
+      _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+    }
+    function _fabOnMove(e){
+      const pt=e.touches?e.touches[0]:e;
+      const dx=pt.clientX-_fabDragStartX,dy=pt.clientY-_fabDragStartY;
+      if(!_fabDragged&&Math.hypot(dx,dy)<8)return;
+      _fabDragged=true;_pmFabClose();
+      const nx=Math.max(4,Math.min(window.innerWidth-50,_fabDragFabX+dx));
+      const ny=Math.max(4,Math.min(window.innerHeight-50,_fabDragFabY+dy));
+      _fab.style.left=nx+'px';_fab.style.top=ny+'px';_fab.style.right='auto';_fab.style.bottom='auto';
+      if(e.cancelable)e.preventDefault();
+    }
+    function _fabOnEnd(){
+      if(!_fabDragged)return;
+      const r=_fab.getBoundingClientRect();
+      const cx=r.left+23,cy=r.top+23;
+      _fabCorner=(cy<window.innerHeight/2?'t':'b')+(cx<window.innerWidth/2?'l':'r');
+      localStorage.setItem('pm_fab_corner',_fabCorner);
+      _pmFabApplyCorner(_fabCorner,true);
+      setTimeout(()=>_fabDragged=false,50);
+    }
+    _fab?.addEventListener('touchstart',_fabOnStart,{passive:true});
+    _fab?.addEventListener('touchmove',_fabOnMove,{passive:false});
+    _fab?.addEventListener('touchend',_fabOnEnd,{passive:true});
+    _fab?.addEventListener('mousedown',_fabOnStart);
+    document.addEventListener('mousemove',_fabOnMove);
+    document.addEventListener('mouseup',_fabOnEnd);
+    _fab?.addEventListener('click',(e)=>{e.stopPropagation();if(_fabDragged)return;const isOpen=_fab.classList.contains('pm-fab-open');if(isOpen)_pmFabClose();else _pmFabOpen();});
     document.addEventListener('click',_pmFabClose,{capture:false});
-    // Facedown toggle (closes FAB, re-renders with new state; re-open handled below)
+    // Facedown toggle – re-opens menu after re-render
     document.getElementById('btn-pm-facedown')?.addEventListener('click',(e)=>{
       e.stopPropagation();
       const cur=localStorage.getItem('pm_facedown')==='true';
       localStorage.setItem('pm_facedown',String(!cur));
       renderOnlineTisch();
-      setTimeout(()=>{const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f&&m){f.classList.add('pm-fab-open');m.classList.add('pm-fab-open');}},30);
+      setTimeout(()=>{_pmFabApplyCorner(_fabCorner,false);_pmFabOpen();},30);
     });
     // Card flip – delegate to named function (avoids stale DOM reference on re-render)
     const _hcWrap=document.getElementById('pm-hole-cards-wrap');
