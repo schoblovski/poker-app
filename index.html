@@ -698,8 +698,8 @@
   #pm-drawer-handle{width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--accent);border-radius:16px 0 0 16px;padding:18px 0;gap:8px;-webkit-tap-highlight-color:transparent}
   #pm-drawer-body{width:262px;display:flex;flex-direction:column;overflow:hidden;max-height:65dvh}
   #pm-drawer-feed{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;font-size:12px;padding:0 4px 8px}
-  @keyframes pm-drawer-notify{0%{background:var(--accent)}20%{background:#f59e0b;transform:scale(1.12)}40%{background:var(--accent);transform:scale(1)}60%{background:#f59e0b;transform:scale(1.10)}80%{background:var(--accent);transform:scale(1)}100%{background:var(--accent)}}
-  #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .9s ease-in-out 1;animation-fill-mode:forwards}
+  @keyframes pm-drawer-notify{0%,100%{background:var(--accent);transform:scaleX(1)}25%{background:#f59e0b;transform:scaleX(1.35)}50%{background:var(--accent);transform:scaleX(1)}75%{background:#f59e0b;transform:scaleX(1.35)}}
+  #pm-drawer-handle.pm-dnotify{animation:pm-drawer-notify .7s ease-in-out 1;transform-origin:left center}
   @keyframes pm-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
   @keyframes pm-card-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   /* facedown→faceup: left edge lifts first, flip right */
@@ -1886,9 +1886,8 @@
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
-    // Any page except online-tisch: mark AFK + show drawer (including online-lobby)
+    // When leaving the table: show drawer; mark AFK only via visibilitychange (not in-app nav)
     if(page!=='online-tisch'){
-      if(typeof _pmSendAway==='function')_pmSendAway();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id){if(typeof _pmDrawerShow==='function')_pmDrawerShow();}
       else if(!isOnlinePage){if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();}
@@ -8976,6 +8975,14 @@
   }
 
   // ── LIVE FEED SIDE-DRAWER (stays connected when navigating away from table) ──
+  function _pmDrawerNotify(){
+    const d=document.getElementById('pm-drawer');
+    if(!d||!d.classList.contains('pm-dvis')||d.classList.contains('pm-dopen'))return;
+    const h=document.getElementById('pm-drawer-handle');
+    if(!h)return;
+    h.classList.remove('pm-dnotify');void h.offsetWidth;h.classList.add('pm-dnotify');
+    h.addEventListener('animationend',()=>h.classList.remove('pm-dnotify'),{once:true});
+  }
   function _pmDrawerUpdateFeed(){
     const feedEl=document.getElementById('pm-drawer-feed');
     if(!feedEl||!_pm?.actions)return;
@@ -8983,12 +8990,7 @@
     const atTop=feedEl.scrollTop<60;
     feedEl.innerHTML=_pmFeedHtml(_pm.actions);
     if(atTop)feedEl.scrollTop=0;
-    // Bounce+blink handle when new entries arrive and drawer is closed
-    const d=document.getElementById('pm-drawer');
-    if(d&&d.classList.contains('pm-dvis')&&!d.classList.contains('pm-dopen')&&newCount>_pmDrawerLastCount){
-      const h=document.getElementById('pm-drawer-handle');
-      if(h){h.classList.remove('pm-dnotify');void h.offsetWidth;h.classList.add('pm-dnotify');h.addEventListener('animationend',()=>h.classList.remove('pm-dnotify'),{once:true});}
-    }
+    if(newCount>_pmDrawerLastCount)_pmDrawerNotify();
     _pmDrawerLastCount=newCount;
   }
   function _pmDrawerShow(){
@@ -9039,7 +9041,7 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmScheduleLoad(payload);}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
       // Broadcast used for instant cross-client reload when only seat column changes (UPDATE events
       // don't reliably trigger postgres_changes filter without REPLICA IDENTITY FULL)
       .on('broadcast',{event:'reload'},()=>_pmScheduleLoad())
