@@ -136,6 +136,10 @@
     .pm-rt-badge.rt-live{background:var(--accent-soft);color:var(--accent-text);}
     .pm-rt-badge.rt-connecting{background:#fef3c7;color:#92400e;}
     .pm-rt-badge.rt-error{background:var(--danger-soft);color:var(--danger);}
+    /* Badge as overlay on the dark SVG table gets semi-transparent dark background */
+    #pm-rt-inline.rt-live{background:rgba(22,163,74,.85);color:#fff;}
+    #pm-rt-inline.rt-connecting{background:rgba(120,90,0,.8);color:#fef3c7;}
+    #pm-rt-inline.rt-error{background:rgba(185,28,28,.85);color:#fff;}
     .pm-rt-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
     .pm-rt-badge.rt-live .pm-rt-dot{animation:pm-pulse 1.4s infinite;}
     .header-timer-badge:active{transform:scale(.95);}
@@ -7648,8 +7652,7 @@
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div style="display:flex;align-items:center;gap:6px;padding:0 4px 4px"><div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden></div></div>
-          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
+          <div style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const svg=_pmSVG(seats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap);_pm._renderedBoardCount=(session.community_cards||[]).length;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
           ${isLandscape?`${runoutDisplay}${runoutBtn}${newHandBtn}`:`<div style="padding:0 var(--space-sm)">${runoutDisplay}${runoutBtn}${newHandBtn}${actionArea}</div>`}
           ${isLandscape?feedSection:''}
         </div>
