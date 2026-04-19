@@ -7625,20 +7625,24 @@
       }
     }
 
+    // showFaceDown: facedown mode active (cards need individual tap to reveal)
+    // useFdLayout: use the facedown card renderer (allows flipping back even after all revealed)
     const showFaceDown=facedown&&myHoleCards.length>0&&myStatus!=='folded'&&_pm._revealedHandNr!==session.hand_nr;
-    const _holeAnim=!showFaceDown&&myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
-    const _holeFlip=!!_pm._flipReveal&&!showFaceDown&&myHoleCards.length>0;
-    if(_holeAnim||_holeFlip||myHoleCards.length===0||showFaceDown)_pm._renderedHoleCount=myHoleCards.length;
+    const useFdLayout=facedown&&myHoleCards.length>0&&myStatus!=='folded';
+    const _holeAnim=!useFdLayout&&myHoleCards.length>0&&(_pm._renderedHoleCount??0)===0;
+    const _holeFlip=!!_pm._flipReveal&&!useFdLayout&&myHoleCards.length>0;
+    if(_holeAnim||_holeFlip||myHoleCards.length===0||useFdLayout)_pm._renderedHoleCount=myHoleCards.length;
     // Per-card reveal state for facedown mode
     const _perCard=(_pm._perCardRevealed&&_pm._perCardRevealed[session.hand_nr])||new Set();
-    const _fdHint=`<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Karten einzeln antippen · nochmal tippen = umdrehen</div>`;
+    const _fdHint=showFaceDown?`<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Karten einzeln antippen · nochmal tippen = umdrehen</div>`:'';
     const _fdCardsHtml=myHoleCards.map((c,i)=>{
       const isRev=_perCard.has(i);const flipIn=_pm._flipReveal&&_pm._flipRevealIdx===i;
       const flipStyle=flipIn?'animation:pm-card-flip-in .28s cubic-bezier(.34,1.56,.64,1) both;':'';
-      if(isRev){const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';const red=c.suit==='h'||c.suit==='d';return`<div class="pt-card ${red?'red':''} big pm-card-ind" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;}
+      const hl=isRev&&usedHoleKeys.has(_cardKey(c));
+      if(isRev){const r=_pmRankStr[c.rank]||String(c.rank);const s=_pmSuitSymbol[c.suit]||'';const red=c.suit==='h'||c.suit==='d';return`<div class="pt-card ${red?'red':''} big pm-card-ind${hl?' highlight':''}" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"><span class="pt-rank">${r}</span><span class="pt-suit">${s}</span></div>`;}
       return`<div class="pt-card back big pm-card-ind" data-card-idx="${i}" style="cursor:pointer;${flipStyle}"></div>`;
     }).join('');
-    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${showFaceDown?`<div style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${showFaceDown?'':badgesRow}</div>`:'';
+    const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${useFdLayout?'':badgesRow}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
     const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span><button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
     el.innerHTML=`${testBanner}<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
@@ -7659,6 +7663,8 @@
       </div>
     </div>`;
     _pmBindEvents();
+    // Re-apply RT badge state after full re-render (element was replaced by innerHTML)
+    if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     requestAnimationFrame(()=>{const _f=el.querySelector('.pm-feed');if(_f)_f.scrollTop=_f.scrollHeight;});
     // Vibrate once when it becomes the player's turn (Android/supported devices)
     if(isMyTurn&&navigator.vibrate){
@@ -7923,9 +7929,9 @@
     const _pauseIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span>`:`${_preIcon}<span>Vorauswahl</span>`;
     return`<div class="pm-action-area">
-      <div style="display:flex;gap:10px;justify-content:center;width:100%">
-        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preBtnLabel}</button>
-        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="flex:1 1 0;min-width:0;white-space:nowrap">${_pauseIcon}<span>Pause</span></button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+        <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="max-width:none;margin:0;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${preBtnLabel}</button>
+        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="max-width:none;margin:0;min-width:0;white-space:nowrap">${_pauseIcon}<span>Pause</span></button>
       </div>
     </div>`;
   }
