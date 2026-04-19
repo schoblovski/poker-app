@@ -8403,11 +8403,8 @@
     });
     document.getElementById('btn-pm-leave')?.addEventListener('click',async()=>{
       if(!_pm?.mySeat)return;
-      const isRunning=_pm.session?.status==='running';
-      const msg=isRunning?'Tisch verlassen?\n\nDein Platz bleibt reserviert. Du kannst jederzeit zurückkehren.':'Platz freigeben und Tisch verlassen?';
-      if(!await confirmAction(msg))return;
+      if(!await confirmAction('Tisch verlassen?\n\nDein Platz und Stack bleiben reserviert. Du kannst jederzeit zurückkehren.'))return;
       await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
-      if(!isRunning)await db.from('online_seats').delete().eq('id',_pm.mySeat.id);
       showPage('online-lobby');
     });
     document.getElementById('btn-pm-finish')?.addEventListener('click',async()=>{
