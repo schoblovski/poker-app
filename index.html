@@ -7979,6 +7979,26 @@
     overlay.querySelector('div[style*="border-radius"]').addEventListener('click',e=>e.stopPropagation());
   }
 
+  const _pmDealerJokes={
+    fold:['Nicht jede Hand ist es wert. Diese offensichtlich nicht.','Sicherheit ist die Mutter der Pokerkasse.','Statistisch: Richtig. Emotional: Langweilig.','Früh falten hält jung.','Der Dealer hat Respekt. Wenn auch wenig.','Die Karten sagten Nein. {name} hörte hin.','Manchmal ist weniger verlieren der grösste Gewinn.','Poker ist auch ein Spiel des Nichtstuns.','Mutig wäre anders gewesen. Aber klug ist auch okay.','Vorsicht walten lassen. Der Dealer notiert es.'],
+    allin:['ALLES. Auf eine Karte. Romantikerinnen.','Keine halben Sachen bei {name}.','Der Moment, wo Poker plötzlich ernst wird.','At this point: poker is a game of skill.','Der Dealer lehnt sich zurück. Das wird interessant.','Die Stille vor dem Ergebnis ist unbezahlbar.','Für diese Entscheidung braucht man starke Nerven – oder gar keine.','Blind All-in und gewinnen? Legende.','Was auch immer passiert: Der Dealer bleibt neutral.','Jetzt bitte keine Ablenkungen.'],
+    win:['Das Geld wandert. Der Dealer notiert es.','Heute schläft jemand besonders gut.','Verdient? Der Dealer enthält sich einer Meinung.','Die Pokerkasse seufzt. Leise. Aber hörbar.','Gute Hände passieren guten Menschen. Und {name}.','Chips wechseln Hände. Gesichter bleiben neutral. Fast.','Kurze Freude, langer Weg. Aber Freude.','Glück? Können? Der Dealer hat keine Meinung dazu.'],
+    win_72:['7-2. Die schlechteste Hand der Welt gewinnt wieder. Der Dealer weint.','7-2 schlägt zu. Gegen alle Vernunft und Wahrscheinlichkeit.','Die Legende lebt. 7-2 – Beweis, dass Poker keinen Sinn ergibt.','Der Dealer bittet um eine kurze Pause zur emotionalen Verarbeitung.','7-2 off-suit. Nochmal. Wirklich.'],
+    raise:['Jemand hat etwas. Oder behauptet es zumindest.','Grosse Einsätze. Grosse Erwartungen.','Der Dealer erhöht die Aufmerksamkeit proportional zum Einsatz.','Alle am Tisch denken dasselbe. Niemand sagt es laut.','Das ist entweder sehr stark oder sehr frech.','Druck aufbauen. Klassisch.','Interessant. Sehr interessant.','{name} setzt ein Zeichen. Was auch immer es bedeutet.'],
+    new_hand:['Neue Runde. Neue Chancen. Gleiche Spieler.','Frische Karten, bewährte Ausreden.','Der Dealer mischt mit ungebrochener Begeisterung.','Das Spiel geht weiter. Wie das Leben.','Nächste Hand. Nächste Möglichkeit, schlechte Entscheidungen zu treffen.','Karten gemischt. Hoffnungen auch.','Eine neue Hand. Die Statistik beginnt von vorne.','Der Dealer ist bereit. Sind alle anderen es auch?'],
+  };
+  const _pmDealerChuck={
+    'Andreas':['Andreas hat Poker nicht gelernt. Poker hat Andreas gelernt.','Wenn Andreas blufft, lügen die Karten.'],
+    'Bolla':['Bolla faltet nicht. Bolla entscheidet, wann die Hand endet.','Bolla braucht keine Pot-Odds. Er braucht Entschlossenheit.'],
+    'Cello':['Cello spielt Poker mit unerklärlichem Instinkt.','Cellos Pokergesicht hat einen eigenen Spitznamen.'],
+    'Chris':['Chris hat diese App gebaut. Die App rächt sich gelegentlich.','Wenn Chris verliert, ist das technisch gesehen ein Feature.'],
+    'Gutsch':['Gutsch analysiert erst. Dann handelt er. Meistens.','Für Gutsch ist Fold Datenerhebung, kein Versagen.'],
+    'Macs':['Macs callt. Macs callt immer. Das nennt man Strategie.','Macs sagt: wer nicht callt, verliert. Das stimmt nicht immer.'],
+    'Markus':['Markus sagt nichts. Er zeigt am Ende.','Markus\' Pokerface hat das Konzept des Pokerfaces erfunden.'],
+    'Peter':['Peter kennt die Wahrscheinlichkeiten. Er ignoriert sie mit Stil.','Peter hat immer einen Plan. Manchmal hat der Plan auch Peter.'],
+  };
+  function _pmStrHash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h);}
+
   function _pmFeedHtml(actions){
     if(!actions?.length)return`<div style="padding:var(--space-md);color:var(--text-tertiary);font-size:13px;text-align:center">Noch keine Aktionen</div>`;
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
@@ -8006,8 +8026,11 @@
       if(a.action==='look'){const key=a.meta?.card_idx!=null?`look|${a.spieler_id}|${a.hand_nr}|${a.meta.card_idx}`:`look|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       return true;
     });
+    // Inject deterministic dealer comments (same seed → same comment on all clients)
+    const _dcMap={};for(const _a of displayDeduped){if(!_a.id||typeof _a.id!=='string'||_a.id.startsWith('_')||_a.action==='dealer_comment')continue;const _h=_pmStrHash(_a.id);if((_h%100)>=20)continue;let _pool=null;const _dn=_a.spieler?.name||'';if(_a.action==='fold')_pool=_pmDealerJokes.fold;else if(_a.action==='allin')_pool=_pmDealerJokes.allin;else if(_a.action==='win'){const _hcs=_a.meta?.hole_cards||[];_pool=(_hcs.some(c=>c.rank===7)&&_hcs.some(c=>c.rank===2))?_pmDealerJokes.win_72:_pmDealerJokes.win;}else if(_a.action==='raise')_pool=_pmDealerJokes.raise;else if(_a.action==='new_hand')_pool=_pmDealerJokes.new_hand;if(!_pool)continue;let _dt=_pool[_pmStrHash(_a.id+'p')%_pool.length].replace('{name}',_dn||'jemand');const _cnP=_pmDealerChuck[_dn];if(_cnP&&(_pmStrHash(_a.id+'cn')%100)<35)_dt=_cnP[_pmStrHash(_a.id+'cnp')%_cnP.length];_dcMap[_a.id]={text:_dt,hand_nr:_a.hand_nr};}
+    const _displayFinal=[];for(const _af of displayDeduped){_displayFinal.push(_af);if(_af.id&&_dcMap[_af.id])_displayFinal.push({id:`_dc_${_af.id}`,action:'dealer_comment',meta:{text:_dcMap[_af.id].text},hand_nr:_af.hand_nr,spieler:null,amount:0,created_at:_af.created_at});}
     const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
-    return displayDeduped.map(a=>{
+    return _displayFinal.map(a=>{
       const n=a.spieler?.name||'?';
       const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
       let text='';let extra='';
@@ -8083,6 +8106,7 @@
           const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
           return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
         }
+        case'dealer_comment':return`<div class="pm-feed-item" style="background:#fef3c7;color:#92400e;gap:6px;font-style:italic"><div style="width:20px;height:20px;flex-shrink:0;background:#92400e;color:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900">D</div><span style="flex:1;min-width:0;font-size:12px">${escHtml(a.meta?.text||'')}</span></div>`;
         default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${_fav(a.spieler)}<span style="flex:1;min-width:0">${text}</span></div>`;
@@ -9053,6 +9077,13 @@
     document.getElementById('pm-rs-cancel').onclick=close;
     overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
     let _allinSelected=false;
+    // Clamp to stack on numpad confirm
+    document.getElementById('pm-rs-input')?.addEventListener('change',()=>{
+      const _ri=document.getElementById('pm-rs-input');if(!_ri)return;
+      const _rv=parseFloat(_ri.value)||0;
+      if(_rv>=myStack){_ri.value=myStack.toFixed(2);_allinSelected=true;document.getElementById('pm-rs-confirm').textContent='All-in bestätigen';}
+      else{_allinSelected=false;document.getElementById('pm-rs-confirm').textContent='Raise bestätigen';}
+    });
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-rs-input');if(i)i.value=parseFloat(b.dataset.amt||0).toFixed(2);
       _allinSelected=!!b.dataset.allin;
@@ -9178,7 +9209,8 @@
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_seats',filter:`online_spiel_id=eq.${_pm.id}`},_pmScheduleLoad)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions',filter:`online_spiel_id=eq.${_pm.id}`},(payload)=>{if(payload.new?.action==='react'){const _sid=payload.new.spieler_id;const _em=payload.new.meta?.emoji;if(_em&&_sid){if(!_pm._reactions)_pm._reactions={};const _alreadyMine=_sid===currentSpieler?.id&&_pm._reactions[_sid];if(!_alreadyMine){_pm._reactions[_sid]={emoji:_em,ts:Date.now()};// Add react to feed immediately with spieler info from seats
+const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spieler||{name:'?',profilbild:null};if(!(_pm.actions||[]).some(a=>a.id===payload.new.id)){_pm.actions=(_pm.actions||[]).concat({...payload.new,spieler:_rSp});}renderOnlineTisch();}const _ts=(_pm._reactions[_sid]||{}).ts;setTimeout(()=>{if(_pm?._reactions?.[_sid]?.ts===_ts){delete _pm._reactions[_sid];renderOnlineTisch();}},4000);}}else{_pmDrawerNotify();_pmScheduleLoad(payload);}})
       // Broadcast used for instant cross-client reload when only seat column changes (UPDATE events
       // don't reliably trigger postgres_changes filter without REPLICA IDENTITY FULL)
       .on('broadcast',{event:'reload'},()=>_pmScheduleLoad())
