@@ -336,7 +336,17 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
 
 ## Aktueller Backlog / TODOs
 1. **Pandemie-Modus Finalisierung** – UI-Polish + Stabilisierung auf Branch `claude/polish-pandemic-mode-ZaJXb` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs bereits implementiert. Offene Punkte: FK SET NULL, Feed-Flackern, Vorauswahl-Fold-Fix, Runout-Handauswertung.
-2. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
+2. **Dealer-Kommentare im Pandemie-Modus** *(spätere Erweiterung, nach v4.0-Freigabe)* – Witzige Dealer-Kommentare erscheinen im Action-Feed, farblich klar vom normalen Spielgeschehen unterschieden (z.B. goldener/lila Hintergrund + Dealer-Icon). Ansatz: lokal hardcoded (kein API-Call, sofort verfügbar), ca. 40–60 Kommentare in Kategorien, ausgelöst durch spezifische Events mit ~20% Wahrscheinlichkeit. Kommentar-Kategorien & Trigger:
+   - **Fold (early):** «Der Dealer reibt sich die Hände. Immer wieder.»
+   - **All-in:** «Alles auf eine Karte. Romantikerinnen.»
+   - **River-Überraschung (bad beat):** «Der River – ein Freund, dem man nicht trauen sollte.»
+   - **Check–Check:** «Spannung pur. Fast wie Schach, nur schlechter.»
+   - **7-2 gewonnen:** «Die Legende lebt. 7-2 schlägt wieder zu.»
+   - **Sehr kleiner Pot:** «Für diesen Einsatz lohnt sich kaum das Kartenmischen.»
+   - **Spieler-spezifisch (via Name):** Kommentare die den aktuellen Spieler namentlich erwähnen, mit Chuck-Norris-Stil-Adaptionen (z.B. «Andreas hat Poker nicht gelernt. Poker hat Andreas gelernt.»)
+   - **Showdown (beste Hand):** Standard-Poker-Kommentatoren-Ton
+   Implementierungs-Details: Dealer-Kommentar als eigener Feed-Eintrag-Typ (`action: 'dealer_comment'`), meta.text enthält den Kommentar. Wird lokal erzeugt (kein DB-Insert), nur clientseitig im Feed angezeigt. Styling: `background: linear-gradient(...)` – AUSNAHME zur Gradient-Regel erlaubt für diesen dekorativen Element, ODER einfach `background: #fef3c7; color: #92400e` (Goldton). Chuck-Norris-Witze angepasst auf Poker + die Runde.
+3. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
    - ✅ Service Worker `sw.js` mit Push-Handler + Deep Link Navigation
