@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="3.16">
+  <meta name="version" content="3.17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -944,7 +944,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
 
-  const VERSION='3.16';
+  const VERSION='3.17';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -5631,6 +5631,15 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'3.17',datum:'April 2026',eintraege:[
+      {typ:'verbessert',text:'Equity-Rechner: Karten-Picker komplett überarbeitet – alle 52 Karten auf einen Blick in einem 13×4-Grid (Werte A→2 als Zeilen, Farben ♠♥♦♣ als Spalten). Karten sehen aus wie echte Spielkarten (Wert + Farbe oben-links, grosses Symbol mittig, gespiegelt unten-rechts)'},
+      {typ:'verbessert',text:'Equity-Rechner: Hole-Cards einer Hand werden jetzt in einem einzigen Modal ausgewählt – Modal bleibt offen bis «Fertig» gedrückt wird. Sticky Status-Zeile zeigt bereits gewählte Karten auch beim Scrollen'},
+      {typ:'fix',text:'Equity-Rechner: «Hand entfernen»-Button öffnet nicht mehr versehentlich den Karten-Picker'},
+      {typ:'fix',text:'Face ID / Touch ID: Aktivierungs-Modal war nicht zentriert auf dem Bildschirm'},
+      {typ:'fix',text:'Face ID / Touch ID: Icon war ein Mikrofon – ersetzt durch Fingerabdruck-Symbol (Login, Profil und Aktivierungs-Modal)'},
+      {typ:'fix',text:'Poker Infos – Hände-Rangfolge: nur die Top 3 (Royal Flush, Straight Flush, Poker) werden grün hervorgehoben; Full House (Rang 4) war fälschlicherweise auch eingefärbt'},
+      {typ:'fix',text:'Einstellungen: Seite hat einen Fehler geworfen (toFixed is not a function) weil buyin_pot und buyin_kassa als Strings aus der DB kamen'},
+    ]},
     {version:'3.16',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Face ID / Touch ID Login – nach einmaliger Aktivierung im Profil kann man sich ohne Google anmelden; Passkey wird sicher auf dem Gerät gespeichert'},
       {typ:'neu',text:'Offline-Modus für Transaktionen – neue Transaktionen werden bei fehlender Verbindung lokal gespeichert und automatisch synchronisiert sobald die Verbindung wieder da ist'},

@@ -241,7 +241,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.12**
+- **Aktuelle Version: 3.17**
 
 ## Login-Provider
 
