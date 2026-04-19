@@ -22,6 +22,7 @@ interface BotConfig {
   bluff?: number;          // 0–100: bluffing frequency
   karten_zeigen?: 'immer' | 'nie' | 'showdown'; // card reveal behavior
   style?: string;          // cosmetic preset name only
+  avatar?: string;         // SVG data URI for bot profile picture
 }
 
 Deno.serve(async (req) => {
