@@ -694,6 +694,7 @@
   .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:4;animation:pm-pulse 1s infinite}
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
+  .pm-seat-group.sitting-out .pm-seat-circle{stroke:rgba(255,255,255,.18);stroke-width:1.5;stroke-dasharray:4 4;fill:rgba(255,255,255,.05)}
   .pm-seat-group.away .pm-seat-circle{stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 3}
   /* Live feed side-drawer */
   #pm-drawer{position:fixed;top:50%;right:0;transform:translateY(-50%) translateX(calc(100% - 28px));transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:500;display:none;flex-direction:row;border-radius:16px 0 0 16px;box-shadow:-4px 8px 32px rgba(0,0,0,.3);background:var(--surface);width:290px;max-height:65dvh}
@@ -803,6 +804,8 @@
   .pm-action-btns{display:flex;gap:6px;align-items:stretch}
   .pm-action-btns .btn{flex:1;min-width:0;height:40px!important;padding:0 6px!important;font-size:13px!important;font-weight:600;margin-top:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
+  .pm-feed-narrator{background:#eef2ff!important;color:#3730a3!important;--pm-narrator-bg:#4f46e5}
+  [data-theme="dark"] .pm-feed-narrator{background:#1e1b4b!important;color:#a5b4fc!important;--pm-narrator-bg:#6366f1}
   .pm-feed-dim{color:var(--text-tertiary)!important;font-size:11px!important;text-align:center!important}
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn.live{display:flex}
@@ -3217,6 +3220,10 @@
             <div class="item-body"><div class="item-title" style="font-size:14px">Pandemie-Modus</div><div class="item-subtitle">Push wenn du am Zug bist (Online-Spiel)</div></div>
             <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="online_spiel" id="push-cat-online"><span class="toggle-slider"></span></label>
           </div>
+          <div class="list-item" style="padding-left:var(--space-lg)">
+            <div class="item-body"><div class="item-title" style="font-size:14px">Session gestartet</div><div class="item-subtitle">Wenn eine neue Online-Pokersession eröffnet wird</div></div>
+            <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="session_start" id="push-cat-session-start"><span class="toggle-slider"></span></label>
+          </div>
         </div>
       </div>
 
@@ -3406,6 +3413,7 @@
       document.getElementById('push-cat-trans').checked=!!e.transaktionen;
       document.getElementById('push-cat-updates').checked=!!e.app_updates;
       document.getElementById('push-cat-online').checked=e.online_spiel!==false;
+      document.getElementById('push-cat-session-start').checked=!!e.session_start;
     }
 
     await loadPushState();
@@ -7143,11 +7151,12 @@
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
   const _BOT_PRESETS={
-    nit:    {label:'Nit (sehr tight)',short:'Nit',desc:'Spielt nur Top-Hände, passt fast immer – kaum Bluffs.',aggressivitaet:10,risiko:15,bluff:3},
-    tag:    {label:'TAG (tight-aggressive)',short:'TAG',desc:'Tight aber aggressiv – bet/raise mit starken Händen.',aggressivitaet:60,risiko:45,bluff:18},
-    lag:    {label:'LAG (loose-aggressive)',short:'LAG',desc:'Viele Hände, viel Druck – unberechenbar und aktiv.',aggressivitaet:72,risiko:65,bluff:35},
-    station:{label:'Calling Station',short:'Station',desc:'Callt fast alles, raised kaum – schwer aus dem Pot zu bringen.',aggressivitaet:8,risiko:80,bluff:4},
-    maniac: {label:'Maniac (alles rein!)',short:'Maniac',desc:'Raised und blufft ständig – pures Chaos am Tisch.',aggressivitaet:92,risiko:92,bluff:62},
+    nit:    {label:'Nit (sehr tight)',short:'Nit',desc:'Spielt nur Top-Hände, passt fast immer – kaum Bluffs.',aggressivitaet:10,risiko:15,bluff:3,gespr:10,reaktion_min:2,reaktion_max:8},
+    tag:    {label:'TAG (tight-aggressive)',short:'TAG',desc:'Tight aber aggressiv – bet/raise mit starken Händen.',aggressivitaet:60,risiko:45,bluff:18,gespr:25,reaktion_min:1,reaktion_max:5},
+    lag:    {label:'LAG (loose-aggressive)',short:'LAG',desc:'Viele Hände, viel Druck – unberechenbar und aktiv.',aggressivitaet:72,risiko:65,bluff:35,gespr:40,reaktion_min:1,reaktion_max:4},
+    station:{label:'Calling Station',short:'Station',desc:'Callt fast alles, raised kaum – schwer aus dem Pot zu bringen.',aggressivitaet:8,risiko:80,bluff:4,gespr:15,reaktion_min:1,reaktion_max:6},
+    maniac: {label:'Maniac (alles rein!)',short:'Maniac',desc:'Raised und blufft ständig – pures Chaos am Tisch.',aggressivitaet:92,risiko:92,bluff:62,gespr:55,reaktion_min:1,reaktion_max:3},
+    custom: {label:'Custom',short:'Custom',desc:'Eigene Einstellungen – alle Parameter frei konfigurierbar.',aggressivitaet:50,risiko:50,bluff:20,gespr:25,reaktion_min:1,reaktion_max:5},
   };
   function _pmBotAvatar(name){
     let h=0;for(const c of(name||''))h=(h*31+c.charCodeAt(0))&0xffffff;
@@ -7234,12 +7243,13 @@
       const isMe=seat&&seat.spieler_id===myId;
       const isFolded=seat&&seat.status==='folded';
       const isPaused=seat&&seat.status==='paused';
+      const isSittingOut=seat&&seat.status==='sitting_out';
       const isActive=seat&&session&&seat.spieler_id===session.current_player_id&&session.status==='running';
       const isDealer=seat&&session&&seat.seat===session.dealer_seat;
-      const isAway=!isEmpty&&!isPaused&&awaySet?.has(seat.spieler_id);
+      const isAway=!isEmpty&&!isPaused&&!isSittingOut&&awaySet?.has(seat.spieler_id);
       let cls='pm-seat-group';
       if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
-      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isActive&&!isFolded)cls+=' active-turn';if(isAway)cls+=' away';
+      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isSittingOut)cls+=' sitting-out';if(isActive&&!isFolded)cls+=' active-turn';if(isAway)cls+=' away';
       const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,10);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
@@ -7259,12 +7269,15 @@
       const betFmt=Number.isInteger(betAmt)?betAmt.toFixed(0):betAmt.toFixed(2);
       const betW=Math.max(26,(betFmt.length+2)*5.8+6);
       const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
-      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isPaused||isAway?0.45:1}"/>`:'';
-      const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:'';
-      const awayBadge=isAway?`<rect x="${sx+10}" y="${sy-28}" width="18" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">AFK</text>`:'';
+      const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isSittingOut?0.35:isPaused||isAway?0.45:1}"/>`:'';
+      const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:isSittingOut?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="11" opacity=".7">👁</text>`:'';
+      const awayBadge=isAway?`<rect x="${sx+10}" y="${sy-28}" width="18" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">AFK</text>`:isSittingOut?`<rect x="${sx-14}" y="${sy-32}" width="28" height="10" rx="5" fill="rgba(100,116,139,.85)"/><text x="${sx}" y="${sy-25}" text-anchor="middle" font-size="6.5" font-weight="700" fill="white">ZUSCH</text>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
+      const _botStyle=seat?.spieler?.ist_bot?seat?.bot_config?.style||'custom':null;
+      const _styleAbbr={nit:'NIT',tag:'TAG',lag:'LAG',station:'CALL',maniac:'MANI',custom:'CUST'};
+      const botStyleBadge=_botStyle?`<rect x="${sx+8}" y="${sy+10}" width="22" height="10" rx="5" fill="rgba(30,0,80,.85)"/><text x="${sx+19}" y="${sy+17}" text-anchor="middle" font-size="6" font-weight="800" fill="#c4b5fd">${_styleAbbr[_botStyle]||_botStyle.toUpperCase().slice(0,4)}</text>`:'';
       const react=reactions[seat?.spieler_id];
       const _rDelay=react?(-Math.min((Date.now()-react.ts)/1000,3.9)).toFixed(2):'0';
       const reactEl=react?`<text x="${sx}" y="${sy}" dominant-baseline="central" text-anchor="middle" font-size="34" class="pm-react-emoji" style="transform-origin:${sx}px ${sy}px;animation-delay:${_rDelay}s">${react.emoji}</text>`:'';
@@ -7272,7 +7285,7 @@
         <circle class="pm-seat-circle" cx="${sx}" cy="${sy}" r="24"/>
         ${isEmpty
           ?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.25)">+</text>`
-          :`${avatarEl}${pauseOverlay}${awayBadge}${namePill}`}
+          :`${avatarEl}${pauseOverlay}${awayBadge}${namePill}${botStyleBadge}`}
         ${betChip}${dealerMark}${reactEl}
         ${(()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return'';const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _n=_rc.length;const _R=34;const _isBot=sy>=cy;return _rc.map((c,i)=>{const _dxC=(i-(_n-1)/2)*(_cW+_cG);const _dyC=Math.sqrt(Math.max(0,_R*_R-_dxC*_dxC));const _x=Math.round(sx+_dxC-_cW/2);const _y=Math.round(sy+(_isBot?-_dyC:_dyC)-_cH/2);const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_y}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_y+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_y+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})()}
       </g>`;
@@ -7340,7 +7353,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:sessions},{data:allSeats},{data:einst}]=await Promise.all([
       db.from('online_spiele').select('*').order('created_at',{ascending:false}).limit(20),
-      db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins'),
+      db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins,spieler(ist_bot)'),
       db.from('einstellungen').select('key,wert'),
     ]);
     // Filter out empty sessions (finished with hand_nr=0 = silently cancelled)
@@ -7369,16 +7382,21 @@
     if(active.length){
       html+=`<div class="section-title">Aktiv</div><div class="card">`;
       active.forEach(s=>{
-        const cnt=(seatsMap[s.id]||[]).length;
+        const sessionSeats=seatsMap[s.id]||[];
+        const cnt=sessionSeats.length;
+        const botCnt=sessionSeats.filter(x=>x.spieler?.ist_bot).length;
+        const humanCnt=cnt-botCnt;
         const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
+        const botBadge=botCnt>0?`<span style="font-size:10px;background:#ede9fe;color:#7c3aed;border-radius:10px;padding:1px 6px;font-weight:700;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCnt} Bot${botCnt!==1?'s':''}</span>`:'';
+        const playerStr=botCnt>0?`${humanCnt} Spieler + ${botCnt} Bot${botCnt!==1?'s':''}`:cnt>0?`${cnt} Spieler`:'Keine Spieler';
         html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
               <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
               <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
-              <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
+              <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}
             </div>
-            <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">${playerStr}/9 · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
           </div>${chevron}
         </div>`;
       });
@@ -7389,6 +7407,8 @@
       done.slice(0,5).forEach(s=>{
         const seatsDone=seatsMap[s.id]||[];
         const cnt=seatsDone.length;
+        const botCntD=seatsDone.filter(x=>x.spieler?.ist_bot).length;
+        const humanCntD=cnt-botCntD;
         const totalBuyins=seatsDone.reduce((sum,seat)=>sum+(seat.buyins||1),0);
         const tm=timeMap[s.id];
         const startDt=tm?.start||(s.created_at?new Date(s.created_at):null);
@@ -7410,7 +7430,9 @@
         const varIcon=varIcons[s.variante]||'';
         const varColor=varColors[s.variante]||'var(--text-secondary)';
         const transferBadge=s.spiel_id?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px;flex-shrink:0">Übertragen</span>`:`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);border-radius:10px;padding:1px 6px;font-weight:600;margin-left:4px;flex-shrink:0">Nicht übertragen</span>`;
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${transferBadge}</div><div style="font-size:12px;color:var(--text-tertiary)">${cnt} Spieler ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
+        const botBadgeD=botCntD>0?`<span style="font-size:10px;background:#ede9fe;color:#7c3aed;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px;flex-shrink:0;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCntD} Bot${botCntD!==1?'s':''}</span>`:'';
+        const playerStrD=botCntD>0?`${humanCntD} Spieler + ${botCntD} Bot${botCntD!==1?'s':''}`:`${cnt} Spieler`;
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary)"><span style="font-size:16px;color:${varColor};line-height:1">${varIcon}</span>${varLabel[s.variante]||s.variante} · ${datum}${transferBadge}${botBadgeD}</div><div style="font-size:12px;color:var(--text-tertiary)">${playerStrD} ${hands}· ${totalBuyins} Buy-Ins${zeitStr?` · ${zeitStr}`:''}</div></div>${chevron}</div>`;
       });
       html+=`</div>`;
     }
@@ -7477,13 +7499,15 @@
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
+      // Push notification: notify all players subscribed to session_start
+      triggerPush({title:'Neue Online-Session! 🃏',body:`${currentSpieler?.name||'Jemand'} hat eine Pokersession gestartet – jetzt joinen!`,kategorie:'session_start',data:{url:'/online-lobby',tag:'session_start'}});
       close();enterOnlineSession(sess.id);
     };
   }
 
   async function enterOnlineSession(sessionId){
     _pmUnsubscribe();
-    _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:''};
+    _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
     showPage('online-tisch');
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
     // Request device motion/orientation permission (iOS 13+) and set up easter eggs
@@ -7491,16 +7515,20 @@
       DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
     }
 
-    await _pmLoad();
-    // Insert join action if player is returning to an existing seat after a leave
-    // Use a direct targeted query instead of _pm.actions (which is capped at 60 rows)
-    if(_pm.mySeat&&currentSpieler?.id){
-      const{data:lastEvt}=await db.from('online_actions').select('action').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).in('action',['join','leave']).order('created_at',{ascending:false}).limit(1).maybeSingle();
-      if(lastEvt?.action==='leave'){
-        await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0});
-        await _pmLoad();
+    // Check for rejoin BEFORE first render to avoid double-build flicker
+    let _needsJoin=false;
+    if(currentSpieler?.id){
+      const{data:_mySeatCheck}=await db.from('online_seats').select('id').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).maybeSingle();
+      if(_mySeatCheck){
+        const{data:lastEvt}=await db.from('online_actions').select('action').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).in('action',['join','leave']).order('created_at',{ascending:false}).limit(1).maybeSingle();
+        if(lastEvt?.action==='leave')_needsJoin=true;
       }
     }
+    if(_needsJoin){
+      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:0});
+    }
+    // Single _pmLoad call — no double render
+    await _pmLoad();
     // Restore away flag from action log (actual send is driven by showPage, not _pmLoad)
     const _lastAB=(_pm.actions||[]).filter(a=>(a.action==='away'||a.action==='back')&&a.spieler_id===currentSpieler?.id).at(-1);
     _pm._isAway=_lastAB?.action==='away';
@@ -7521,7 +7549,7 @@
 
   function _pmReleaseWakeLock(){if(typeof _btReleaseWakeLock==='function')_btReleaseWakeLock();}
 
-  async function _pmLoad(){
+  async function _pmLoad(skipRender=false){
     if(!_pm)return;
     const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einstRows}]=await Promise.all([
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
@@ -7531,6 +7559,13 @@
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
     const einstMap={};(einstRows||[]).forEach(e=>{einstMap[e.key]=e.wert;});
+    // Suppress card animations on the very first load of a running game (initial page arrival).
+    // _pm._initialLoad is set true by showPage; cleared here after we record the current board count.
+    if(_pm._initialLoad){
+      _pm._renderedBoardCount=(session?.community_cards||[]).length;
+      _pm._runoutRevealedCount=(session?.runout_cards||[]).length||null;
+      _pm._initialLoad=false;
+    }
     // Track runout reveal count: if runout_cards freshly arrives (was null), start at 0 (face-down ceremony)
     // If already known or loading fresh (DB-loaded state), show all revealed immediately
     const _prevRunout=_pm.session?.runout_cards;
@@ -7545,10 +7580,14 @@
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=localStorage.getItem('pm_show_equity')==='1';
     if(mySeatRow){
-      // sitting_out players have no active cards (old card rows from previous hands must be ignored)
+      // sitting_out players have no active cards (old card rows from previous hands must be ignored).
+      // Also: players who bought in MID-HAND (not dealt cards for current hand_nr) must not see stale cards.
       const _isSittingOut=mySeatRow.status==='sitting_out';
-      const{data:cardRow}=_isSittingOut?{data:null}:await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
-      _pm.myHoleCards=_isSittingOut?[]:cardRow?.hole_cards||[];
+      const _hn0=session?.hand_nr||0;
+      // Check if player was dealt cards this hand (has blind/look/dealt_blind action for current hand_nr)
+      const _dealtThisHand=!_isSittingOut&&(actions||[]).some(a=>a.spieler_id===currentSpieler?.id&&(a.hand_nr||0)===_hn0&&(a.action==='blind'||a.action==='look'||a.action==='dealt_blind'));
+      const{data:cardRow}=(_isSittingOut||!_dealtThisHand)?{data:null}:await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
+      _pm.myHoleCards=(_isSittingOut||!_dealtThisHand)?[]:cardRow?.hole_cards||[];
       const _fd=localStorage.getItem('pm_facedown')==='true';
       const _hn=session?.hand_nr||0;
       // Restore per-card revealed state from localStorage (survives app close/reopen)
@@ -7565,7 +7604,7 @@
           }catch{}
         }
       }
-      if(_pm.myHoleCards.length>0&&currentSpieler?.id&&!_isSittingOut){
+      if(_pm.myHoleCards.length>0&&currentSpieler?.id&&!_isSittingOut&&_dealtThisHand){
         if(!_fd&&(_pm._lookedHandNr??-1)!==_hn){
           // Non-facedown: auto-look so player isn't marked as blind
           _pm._lookedHandNr=_hn;
@@ -7586,7 +7625,7 @@
     }else{
       _pm.myHoleCards=[];
     }
-    renderOnlineTisch();
+    if(!skipRender)renderOnlineTisch();
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
     _pmCheckSpecialHands();
@@ -8426,7 +8465,7 @@
           const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
           return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
         }
-        case'dealer_comment':return`<div class="pm-feed-item" style="background:#fef3c7;color:#92400e;gap:6px;font-style:italic"><div style="width:20px;height:20px;flex-shrink:0;background:#92400e;color:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900">D</div><span style="flex:1;min-width:0;font-size:12px">${escHtml(a.meta?.text||'')}</span></div>`;
+        case'dealer_comment':return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px"><div style="width:22px;height:22px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:4px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><span style="flex:1;min-width:0;font-size:12px;font-style:italic">${escHtml(a.meta?.text||'')}</span></div>`;
         default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${_fav(a.spieler)}<span style="flex:1;min-width:0">${text}</span></div>`;
@@ -9802,7 +9841,9 @@
     if(key===_pmBotTriggerKey)return; // already scheduled
     _pmClearBotTimer();
     _pmBotTriggerKey=key;
-    const delay=500+Math.random()*4500; // 0.5–5s thinking time
+    const _rMin=(botSeat.bot_config?.reaktion_min??1)*1000;
+    const _rMax=(botSeat.bot_config?.reaktion_max??5)*1000;
+    const delay=_rMin+Math.random()*Math.max(0,_rMax-_rMin);
     _pmBotTimer=setTimeout(async()=>{
       if(_pmBotTriggerKey!==key)return; // stale
       _pmBotTriggerKey=null;
@@ -9823,9 +9864,14 @@
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
         body:JSON.stringify({online_spiel_id:_pm.id,bot_spieler_id:botSeat.spieler_id,action}),
       });
-      if(!resp.ok)console.warn('[bot] action failed:',await resp.text());
+      if(!resp.ok){
+        // 409 = game moved on (no longer bot's turn) — stop retrying
+        if(resp.status===409)return;
+        console.warn('[bot] action failed:',await resp.text());
+      }
     }catch(e){
       console.warn('[bot] error:',e);
+      // Only retry on network errors (Failed to fetch), not on HTTP errors
       if(_retry<2)setTimeout(()=>_pmExecuteBotAction(botSeat,action,_retry+1),3500*(1+_retry));
     }
   }
@@ -9899,21 +9945,22 @@
 
   // ── SLOW-PLAYER SARCASM ───────────────────────────────────────────────────
   const _pmSlowComments=[
-    '{name} denkt noch nach… oder schläft.',
-    'Hat jemand {name} gesagt, dass er dran ist?',
-    '{name} analysiert alle Möglichkeiten. Sehr gründlich.',
-    'Wir warten auf {name}. Völlig entspannt.',
-    '{name} oder Netflix – beides läuft gerade.',
-    'Philosophische Pause von {name}.',
-    '{name} berechnet offenbar alle 52! Permutationen.',
-    'Falls {name} schläft – bitte sanft rütteln.',
-    '{name}, das Spiel wartet auf dich.',
-    'Die anderen Spieler werden langsam alt.',
-    '{name} sucht noch die optimale Strategie. Oder das Handy.',
-    'Die Stille ist ohrenbetäubend. {name} ist schuld.',
-    '{name} hat offenbar ein Event an der Gegenseite offen.',
-    'Tick tock. {name}.',
-    '{name}: Schneller als ein Gletscher, langsamer als alles andere.',
+    'Und wir warten auf {name}… Die Spannung ist greifbar. Oder ist es Schweigen?',
+    '{name} lässt sich Zeit. Weltklasse-Pokerface oder einfach das Handy?',
+    'Nach wie vor kein Zug von {name}. Die Zuschauer halten die Luft an.',
+    'Hier bei DTKS Live: {name} überlegt. Intensiv. Sehr intensiv.',
+    'Das nennt man wohl «Die grosse Denkpause» – {name} in Höchstform.',
+    '{name} analysiert jede mögliche Line. Respekt. Oder Bedenken.',
+    'Die Uhr läuft, {name}. Nicht dass es einen Unterschied macht.',
+    'Was geht in {name} vor? Das fragen sich gerade alle.',
+    'Wir schalten kurz in die Werbepause – {name} ist noch am überlegen.',
+    '{name} nutzt das Bedenkrecht in vollen Zügen. Vollsten Zügen.',
+    'Ein bisschen länger, und wir nennen es Meditation. {name} führt.',
+    'Live bei DTKS Poker: {name} denkt nach. Der Tisch wartet geduldig.',
+    'Philosophen sagen, die besten Entscheidungen brauchen Zeit. {name} testet diese Theorie.',
+    'Noch immer kein Move von {name}. Gentleman-Poker. Oder einfach langsam.',
+    'Die anderen Spieler haben inzwischen einen Kaffee getrunken. {name} denkt noch.',
+    '{name} im Moment: «Fold? Call? Raise? Fold? Call?» – wir beobachten.',
   ];
   function _pmSlowCommentHtml(actions,session,seats){
     const cpId=session?.current_player_id;if(!cpId)return'';
@@ -9925,12 +9972,8 @@
     const name=seat?.spieler?.name||'?';
     const h=_pmStrHash(cpId+(session?.hand_nr||0)+'slow');
     const tmpl=_pmSlowComments[h%_pmSlowComments.length].replace('{name}',name);
-    // Attribute to a bot if present, else dealer
-    const botSeat=(seats||[]).find(s=>s.spieler?.ist_bot&&s.status==='active');
-    const ico=botSeat
-      ?`<img class="pf-av" src="${botSeat.spieler?.profilbild||''}" alt="" style="width:20px;height:20px">`
-      :`<div style="width:20px;height:20px;flex-shrink:0;background:#92400e;color:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900">D</div>`;
-    return`<div class="pm-feed-item" style="background:#fef3c7;color:#92400e;gap:6px;font-style:italic">${ico}<span style="flex:1;min-width:0;font-size:12px">${escHtml(tmpl)}</span></div>`;
+    const micIcon=`<div style="width:22px;height:22px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:4px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>`;
+    return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px">${micIcon}<span style="flex:1;min-width:0;font-size:12px;font-style:italic">${escHtml(tmpl)}</span></div>`;
   }
 
   // ── PLAYER CHAT COMMENTS ──────────────────────────────────────────────────
@@ -9975,7 +10018,7 @@
     const defaultName=isEdit?(existingSeat.spieler?.name||''):(()=>{const n=_pmBotRandomName(usedNames);return n;})();
     const cfg=existingSeat?.bot_config??{};
     let currentPreset=cfg.style||'tag';
-    let vals={aggressivitaet:cfg.aggressivitaet??60,risiko:cfg.risiko??45,bluff:cfg.bluff??18,karten_zeigen:cfg.karten_zeigen??'showdown'};
+    let vals={aggressivitaet:cfg.aggressivitaet??60,risiko:cfg.risiko??45,bluff:cfg.bluff??18,gespr:cfg.gespr??25,reaktion_min:cfg.reaktion_min??1,reaktion_max:cfg.reaktion_max??5,karten_zeigen:cfg.karten_zeigen??'showdown'};
 
     const ov=document.createElement('div');ov.className='modal-overlay open';
     ov.style.cssText='z-index:9998;align-items:flex-end;padding:0';
@@ -10002,6 +10045,8 @@
         </div>
         <div style="margin-bottom:var(--space-md)">
           ${['aggressivitaet','risiko','bluff'].map(k=>{ const labels={aggressivitaet:'Aggressivität',risiko:'Risiko-Bereitschaft',bluff:'Bluff-Rate'}; return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">${labels[k]}</label><span id="pm-bot-lbl-${k}" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals[k]}%</span></div><input id="pm-bot-${k}" type="range" min="0" max="100" value="${vals[k]}" style="width:100%;accent-color:var(--accent)"></div>`;}).join('')}
+          <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Gesprächigkeit</label><span id="pm-bot-lbl-gespr" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals.gespr}%</span></div><input id="pm-bot-gespr" type="range" min="0" max="100" value="${vals.gespr}" style="width:100%;accent-color:var(--accent)"></div>
+          <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Reaktionszeit</label><span id="pm-bot-lbl-reaktion" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals.reaktion_min}–${vals.reaktion_max}s</span></div><div style="display:flex;gap:8px;align-items:center"><input id="pm-bot-reaktion-min" type="range" min="1" max="15" value="${vals.reaktion_min}" style="flex:1;accent-color:var(--accent)"><input id="pm-bot-reaktion-max" type="range" min="1" max="30" value="${vals.reaktion_max}" style="flex:1;accent-color:var(--accent)"></div><div id="pm-bot-reaktion-sub" style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-top:3px"><span>Min: ${vals.reaktion_min}s</span><span>Max: ${vals.reaktion_max}s</span></div></div>
         </div>
         <div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px">Karten zeigen</label>
           <div style="display:flex;gap:8px">${[['immer','Immer'],['showdown','Bei Showdown'],['nie','Nie']].map(([v,l])=>`<button class="pm-bot-reveal${(cfg.karten_zeigen??'showdown')===v?' active':''}" data-reveal="${v}" style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid${(cfg.karten_zeigen??'showdown')===v?' var(--accent)':' var(--border)'};background:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-soft)':'var(--surface)'};color:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer">${l}</button>`).join('')}</div>
@@ -10014,17 +10059,31 @@
     </div>`;
     document.body.appendChild(ov);
 
-    // Bind range labels
+    // Helper: highlight active preset button and update description
+    const _syncPresetBtns=()=>{ov.querySelectorAll('.pm-bot-preset').forEach(b=>{const a=b.dataset.preset===currentPreset;b.style.border=a?'1.5px solid var(--accent)':'1.5px solid var(--border)';b.style.background=a?'var(--accent-soft)':'var(--surface)';b.style.color=a?'var(--accent-text)':'var(--text-secondary)';});const desc=ov.querySelector('#pm-bot-style-desc');if(desc)desc.textContent=_BOT_PRESETS[currentPreset]?.desc||'';};
+    // Auto-switch to 'custom' when any slider is manually changed
+    const _switchToCustom=()=>{if(currentPreset!=='custom'){currentPreset='custom';_syncPresetBtns();}};
+    // Bind range labels (core sliders → auto custom)
     ['aggressivitaet','risiko','bluff'].forEach(k=>{
       const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);
-      inp?.addEventListener('input',()=>{vals[k]=parseInt(inp.value);if(lbl)lbl.textContent=vals[k]+'%';});
+      inp?.addEventListener('input',()=>{vals[k]=parseInt(inp.value);if(lbl)lbl.textContent=vals[k]+'%';_switchToCustom();});
     });
+    // Gesprächigkeit slider
+    ov.querySelector('#pm-bot-gespr')?.addEventListener('input',e=>{vals.gespr=parseInt(e.target.value);const lbl=ov.querySelector('#pm-bot-lbl-gespr');if(lbl)lbl.textContent=vals.gespr+'%';_switchToCustom();});
+    // Reaktionszeit sliders
+    const _syncReak=()=>{if(vals.reaktion_min>vals.reaktion_max)vals.reaktion_max=vals.reaktion_min;const lbl=ov.querySelector('#pm-bot-lbl-reaktion');if(lbl)lbl.textContent=`${vals.reaktion_min}–${vals.reaktion_max}s`;const sub=ov.querySelector('#pm-bot-reaktion-sub');if(sub)sub.innerHTML=`<span>Min: ${vals.reaktion_min}s</span><span>Max: ${vals.reaktion_max}s</span>`;};
+    ov.querySelector('#pm-bot-reaktion-min')?.addEventListener('input',e=>{vals.reaktion_min=parseInt(e.target.value);_syncReak();_switchToCustom();});
+    ov.querySelector('#pm-bot-reaktion-max')?.addEventListener('input',e=>{vals.reaktion_max=parseInt(e.target.value);_syncReak();_switchToCustom();});
     // Preset buttons
     ov.querySelectorAll('.pm-bot-preset').forEach(btn=>{
       btn.addEventListener('click',()=>{
         currentPreset=btn.dataset.preset;const p=_BOT_PRESETS[currentPreset];
-        if(p){['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});const desc=ov.querySelector('#pm-bot-style-desc');if(desc)desc.textContent=p.desc||'';}
-        ov.querySelectorAll('.pm-bot-preset').forEach(b=>{const a=b.dataset.preset===currentPreset;b.style.border=a?'1.5px solid var(--accent)':'1.5px solid var(--border)';b.style.background=a?'var(--accent-soft)':'var(--surface)';b.style.color=a?'var(--accent-text)':'var(--text-secondary)';});
+        if(p&&currentPreset!=='custom'){
+          ['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});
+          vals.gespr=p.gespr;const gInp=ov.querySelector('#pm-bot-gespr');const gLbl=ov.querySelector('#pm-bot-lbl-gespr');if(gInp)gInp.value=p.gespr;if(gLbl)gLbl.textContent=p.gespr+'%';
+          vals.reaktion_min=p.reaktion_min;vals.reaktion_max=p.reaktion_max;const rMin=ov.querySelector('#pm-bot-reaktion-min');const rMax=ov.querySelector('#pm-bot-reaktion-max');if(rMin)rMin.value=p.reaktion_min;if(rMax)rMax.value=p.reaktion_max;_syncReak();
+        }
+        _syncPresetBtns();
       });
     });
     // Reveal buttons
@@ -10051,7 +10110,7 @@
       const nameInp=ov.querySelector('#pm-bot-name');
       const name=nameInp?nameInp.value.trim().slice(0,10):existingSeat?.spieler?.name||'Bot';
       if(!name){await showAlert('Bitte einen Namen eingeben.');return;}
-      const botCfg={aggressivitaet:vals.aggressivitaet,risiko:vals.risiko,bluff:vals.bluff,karten_zeigen:revealChoice,style:currentPreset};
+      const botCfg={aggressivitaet:vals.aggressivitaet,risiko:vals.risiko,bluff:vals.bluff,gespr:vals.gespr,reaktion_min:vals.reaktion_min,reaktion_max:vals.reaktion_max,karten_zeigen:revealChoice,style:currentPreset};
       const confirmBtn=ov.querySelector('#pm-bot-confirm');
       confirmBtn.disabled=true;
       try{
