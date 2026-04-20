@@ -32,6 +32,9 @@ self.addEventListener('push', event => {
 
   event.waitUntil((async () => {
     await self.registration.showNotification(title, options);
+    // Notify open app windows so they refresh the bell badge in-app immediately
+    const clients = await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    clients.forEach(c=>c.postMessage({type:'PUSH_RECEIVED'}));
     // App-Badge hochzählen (zeigt ungelesene Zahl auf dem Icon)
     if (self.navigator && 'setAppBadge' in self.navigator) {
       try {

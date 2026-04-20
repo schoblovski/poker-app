@@ -812,7 +812,8 @@
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn.live{display:flex}
   .pm-live-btn::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pm-pulse 1.4s infinite}
-  .pm-live-count{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;pointer-events:none}
+  .pm-live-btn:has(.pm-live-count)::after{display:none}
+  .pm-live-count{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;pointer-events:none}
   .pm-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)}
   .pm-sheet-overlay{opacity:0;pointer-events:none;transition:opacity .25s}
   .pm-sheet-overlay.open{opacity:1;pointer-events:auto}
@@ -1418,6 +1419,9 @@
       if(e.data?.type==='NAVIGATE'){
         if(currentSpieler)handleDeepLink(e.data.url);
         else _pendingDeepLink=e.data.url;
+      }
+      if(e.data?.type==='PUSH_RECEIVED'){
+        if(typeof refreshBellBadge==='function')refreshBellBadge();
       }
     });
   }
@@ -7161,6 +7165,7 @@
     lag:    {label:'LAG (loose-aggressive)',short:'LAG',desc:'Viele Hände, viel Druck – unberechenbar und aktiv.',aggressivitaet:72,risiko:65,bluff:35,gespr:40,reaktion_min:1,reaktion_max:4},
     station:{label:'Calling Station',short:'Station',desc:'Callt fast alles, raised kaum – schwer aus dem Pot zu bringen.',aggressivitaet:8,risiko:80,bluff:4,gespr:15,reaktion_min:1,reaktion_max:6},
     maniac: {label:'Maniac (alles rein!)',short:'Maniac',desc:'Raised und blufft ständig – pures Chaos am Tisch.',aggressivitaet:92,risiko:92,bluff:62,gespr:55,reaktion_min:1,reaktion_max:3},
+    random: {label:'Random (wild card)',short:'🎲 Random',desc:'Jeder Zug wird mit zufälligen Parametern entschieden – völlig unberechenbar. Reaktionszeit bleibt einstellbar.',aggressivitaet:50,risiko:50,bluff:20,gespr:30,reaktion_min:1,reaktion_max:5},
     custom: {label:'Custom',short:'Custom',desc:'Eigene Einstellungen – alle Parameter frei konfigurierbar.',aggressivitaet:50,risiko:50,bluff:20,gespr:25,reaktion_min:1,reaktion_max:5},
   };
   function _pmBotAvatar(name){
@@ -7391,15 +7396,19 @@
         const cnt=sessionSeats.length;
         const botCnt=sessionSeats.filter(x=>x.spieler?.ist_bot).length;
         const humanCnt=cnt-botCnt;
+        const mySessStatus=sessionSeats.find(x=>x.spieler_id===currentSpieler?.id)?.status;
+        const isCurrent=_pm?.id===s.id;
         const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
         const botBadge=botCnt>0?`<span style="font-size:10px;background:#ede9fe;color:#7c3aed;border-radius:10px;padding:1px 6px;font-weight:700;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCnt} Bot${botCnt!==1?'s':''}</span>`:'';
+        const myBadge=isCurrent?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700">Aktuell</span>`:mySessStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border)">Beobachter</span>`:mySessStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700">Am Tisch</span>`:'';
         const playerStr=botCnt>0?`${humanCnt} Spieler + ${botCnt} Bot${botCnt!==1?'s':''}`:cnt>0?`${cnt} Spieler`:'Keine Spieler';
-        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}">
+        const rowBg=(isCurrent||mySessStatus)?'background:var(--accent-soft);border-left:3px solid var(--accent);':'';
+        html+=`<div class="list-item clickable pm-session-row" data-id="${s.id}" style="${rowBg}">
           <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:2px">
               <span class="pm-badge ${s.status}">${statusLabel[s.status]||s.status}</span>
               <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
-              <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}
+              <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}${myBadge}
             </div>
             <div style="font-size:12px;color:var(--text-secondary)">${playerStr}/9 · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
           </div>${chevron}
@@ -8596,7 +8605,7 @@
           <span style="width:7px;height:7px;border-radius:50%;background:${statusColor};display:inline-block"></span>
           <span style="font-size:12px;font-weight:600;color:${statusColor}">${statusLabel}</span>
         </div>
-        ${(sStatus==='sitting_out'&&sStack<=0)?
+        ${(sStatus==='sitting_out'&&sStack<=0&&!(seat?.buyins>0))?
           `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:20px;padding:6px 16px;margin-bottom:22px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--text-secondary)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
             <span style="font-size:13px;color:var(--text-secondary)">Beobachtet – kein Buy-In</span>
@@ -8663,16 +8672,23 @@
     if(!_pm?.mySeat||!currentSpieler?.id)return;
     if(_pm._isAway)return;
     _pm._isAway=true;
-    // Optimistic: update local actions so own render shows AFK badge immediately
-    _pm.actions=(_pm.actions||[]).concat({id:`_away_local_${Date.now()}`,action:'away',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
-    renderOnlineTisch();
-    try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'away',hand_nr:_pm.session?.hand_nr||0});}catch(_){}
+    _pm._awayAt=Date.now();
+    // Debounce 8s: ignore brief tab-switches that immediately return
+    clearTimeout(_pm._awayTimer);
+    _pm._awayTimer=setTimeout(async()=>{
+      if(!_pm||!_pm._isAway)return; // cancelled by _pmSendBack
+      _pm.actions=(_pm.actions||[]).concat({id:`_away_local_${Date.now()}`,action:'away',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+      renderOnlineTisch();
+      try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'away',hand_nr:_pm.session?.hand_nr||0});}catch(_){}
+    },8000);
   }
   async function _pmSendBack(){
     if(!_pm?.mySeat||!currentSpieler?.id)return;
     if(!_pm._isAway)return;
+    clearTimeout(_pm._awayTimer); // cancel pending debounced away notification
+    const wasTrulyAway=_pm._awayAt&&(Date.now()-_pm._awayAt)>=8000;
     _pm._isAway=false;
-    // Optimistic: clear AFK state immediately without waiting for DB round-trip
+    if(!wasTrulyAway)return; // quick return – no away was logged, nothing to undo
     _pm.actions=(_pm.actions||[]).concat({id:`_back_local_${Date.now()}`,action:'back',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
     renderOnlineTisch();
     try{
@@ -8705,7 +8721,7 @@
       let free=-1;
       for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
       if(free===-1){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Keine freien Plätze.');return;}
-      const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0});
+      const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0,buyins:0});
       if(error){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+error.message);return;}
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await _pmLoad();
@@ -8984,12 +9000,7 @@
     });
     document.getElementById('btn-pm-add-bot')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmAddBotModal();});
     document.getElementById('btn-pm-settings')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmSessionSettingsSheet();});
-    document.getElementById('btn-pm-leave')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
-      if(!_pm?.mySeat)return;
-      if(!await confirmAction('Tisch verlassen?\n\nDein Platz und Stack bleiben reserviert. Du kannst jederzeit zurückkehren.'))return;
-      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
-      showPage('online-lobby');
-    });
+    document.getElementById('btn-pm-leave')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmLeaveSheet();});
     document.getElementById('btn-pm-finish')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
       const isEmpty=(_pm.session?.hand_nr||0)===0;
       if(isEmpty){
@@ -9049,6 +9060,14 @@
       await showAlert('Umsetzen nur zwischen den Runden möglich.');return;
     }
     try{
+      if(!_pm?.mySeat){
+        // Prevent being active in multiple sessions simultaneously
+        const willBeActive=_pm.session.status!=='running';
+        if(willBeActive){
+          const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).neq('online_spiel_id',_pm.id);
+          if(activeElsewhere?.length){await showAlert('Du bist bereits in einer anderen Session aktiv. Verlasse zuerst die andere Session, bevor du dich hier hinsetzt.');return;}
+        }
+      }
       if(_pm?.mySeat){
         // Umsetzen: Platz-Nummer aktualisieren
         const{error}=await db.from('online_seats').update({seat:seatNr}).eq('id',_pm.mySeat.id);
@@ -9265,7 +9284,7 @@
     const btn=document.getElementById('btn-pm-buyin')||document.getElementById('btn-pm-spectate-buyin');
     if(btn)btn.disabled=true;
     const startStack=_pm.session?.start_stack||100;
-    const curBuyins=_pm.mySeat.buyins||1;
+    const curBuyins=_pm.mySeat.buyins??0;
     const curStack=_pm.mySeat.stack||0;
     const addedStack=count*startStack;
     // During a running hand, keep sitting_out so server deals cards next hand
@@ -9624,10 +9643,14 @@
       // Multiple sessions → show picker sheet
       const _sids=active.map(s=>s.id);
       const[{data:allSeats},{data:mySeatsRows}]=await Promise.all([
-        db.from('online_seats').select('online_spiel_id,seat').in('online_spiel_id',_sids),
+        db.from('online_seats').select('online_spiel_id,seat,spieler(ist_bot)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
       ]);
-      const cntMap={};(allSeats||[]).forEach(s=>{cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;});
+      const cntMap={};const botMap={};
+      (allSeats||[]).forEach(s=>{
+        cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;
+        if(s.spieler?.ist_bot)botMap[s.online_spiel_id]=(botMap[s.online_spiel_id]||0)+1;
+      });
       const myStatusMap={};(mySeatsRows||[]).forEach(s=>{myStatusMap[s.online_spiel_id]=s.status;});
       const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
       const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'};
@@ -9653,7 +9676,7 @@
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
@@ -9666,6 +9689,47 @@
       document.getElementById('pm-picker-cancel').addEventListener('click',()=>ov.remove());
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
     };
+  }
+
+  function _pmLeaveSheet(){
+    if(!_pm?.mySeat)return;
+    const sid='pm-leave-sheet';document.getElementById(sid)?.remove();
+    const isRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
+    const ov=document.createElement('div');ov.id=sid;ov.className='pm-sheet-overlay';
+    ov.innerHTML=`<div class="pm-sheet">
+      <div class="pm-sheet-handle"></div>
+      <div class="pm-sheet-title">Tisch verlassen</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:var(--space-md)">
+        <button id="_lv-temp" class="btn btn-secondary" style="text-align:left;padding:14px 16px;height:auto;white-space:normal;max-width:none;margin:0">
+          <div style="font-weight:700;font-size:14px">Temporär verlassen</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Platz und Stack bleiben reserviert. Du siehst weiterhin den Live-Feed und kannst jederzeit zurückkehren.</div>
+        </button>
+        <button id="_lv-perm" class="btn btn-secondary" style="text-align:left;padding:14px 16px;height:auto;white-space:normal;max-width:none;margin:0${isRunning?';opacity:.4;pointer-events:none':''}">
+          <div style="font-weight:700;font-size:14px;color:var(--danger)">Platz freigeben</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">${isRunning?'Nur zwischen den Spielrunden möglich.':'Platz wird frei, deine Stats bleiben im Spiel. Nur zwischen den Spielrunden möglich.'}</div>
+        </button>
+      </div>
+      <button id="_lv-cancel" class="btn btn-ghost" style="width:100%;max-width:none;margin:0">Abbrechen</button>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#_lv-temp').addEventListener('click',async()=>{
+      ov.remove();
+      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
+      showPage('online-lobby');
+    });
+    ov.querySelector('#_lv-perm').addEventListener('click',async()=>{
+      if(isRunning)return;
+      ov.remove();
+      const myId=_pm.mySeat.id;
+      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave_permanent',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      await db.from('online_seats').delete().eq('id',myId);
+      _pm.mySeat=null;
+      _pmUnsubscribe();
+      _pmDrawerHide();
+      showPage('online-lobby');
+    });
+    ov.querySelector('#_lv-cancel').addEventListener('click',()=>ov.remove());
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }
 
   function _pmPauseSheet(){
@@ -10172,10 +10236,15 @@
     </div>`;
     document.body.appendChild(ov);
 
-    // Helper: highlight active preset button and update description
-    const _syncPresetBtns=()=>{ov.querySelectorAll('.pm-bot-preset').forEach(b=>{const a=b.dataset.preset===currentPreset;b.style.border=a?'1.5px solid var(--accent)':'1.5px solid var(--border)';b.style.background=a?'var(--accent-soft)':'var(--surface)';b.style.color=a?'var(--accent-text)':'var(--text-secondary)';});const desc=ov.querySelector('#pm-bot-style-desc');if(desc)desc.textContent=_BOT_PRESETS[currentPreset]?.desc||'';};
-    // Auto-switch to 'custom' when any slider is manually changed
-    const _switchToCustom=()=>{if(currentPreset!=='custom'){currentPreset='custom';_syncPresetBtns();}};
+    // Helper: highlight active preset button, update description, disable sliders for random mode
+    const _syncPresetBtns=()=>{
+      const isRandom=currentPreset==='random';
+      ov.querySelectorAll('.pm-bot-preset').forEach(b=>{const a=b.dataset.preset===currentPreset;b.style.border=a?'1.5px solid var(--accent)':'1.5px solid var(--border)';b.style.background=a?'var(--accent-soft)':'var(--surface)';b.style.color=a?'var(--accent-text)':'var(--text-secondary)';});
+      const desc=ov.querySelector('#pm-bot-style-desc');if(desc)desc.textContent=_BOT_PRESETS[currentPreset]?.desc||'';
+      ['aggressivitaet','risiko','bluff','gespr'].forEach(k=>{const el=ov.querySelector(`#pm-bot-${k}`);if(el){el.disabled=isRandom;el.style.opacity=isRandom?'.35':'1';}});
+    };
+    // Auto-switch to 'custom' when any slider is manually changed (but not from random)
+    const _switchToCustom=()=>{if(currentPreset!=='custom'&&currentPreset!=='random'){currentPreset='custom';_syncPresetBtns();}};
     // Bind range labels (core sliders → auto custom)
     ['aggressivitaet','risiko','bluff'].forEach(k=>{
       const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);
@@ -10190,7 +10259,7 @@
     ov.querySelectorAll('.pm-bot-preset').forEach(btn=>{
       btn.addEventListener('click',()=>{
         currentPreset=btn.dataset.preset;const p=_BOT_PRESETS[currentPreset];
-        if(p&&currentPreset!=='custom'){
+        if(p&&currentPreset!=='custom'&&currentPreset!=='random'){
           ['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});
           vals.gespr=p.gespr;const gInp=ov.querySelector('#pm-bot-gespr');const gLbl=ov.querySelector('#pm-bot-lbl-gespr');if(gInp)gInp.value=p.gespr;if(gLbl)gLbl.textContent=p.gespr+'%';
           vals.reaktion_min=1;vals.reaktion_max=p.reaktion_max;const rMax=ov.querySelector('#pm-bot-reaktion-max');if(rMax)rMax.value=p.reaktion_max;_syncReak();

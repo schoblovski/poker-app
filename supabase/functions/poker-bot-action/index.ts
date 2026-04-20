@@ -233,9 +233,11 @@ function botDecide(
   pot: number,
   myStack: number,
 ): { action: string; amount?: number } {
-  const agg  = config.aggressivitaet ?? 50;
-  const risk = config.risiko         ?? 50;
-  const bluffRate = config.bluff     ?? 20;
+  // Random mode: randomize all parameters on each decision
+  const isRandom = config.style === 'random';
+  const agg  = isRandom ? Math.random() * 100 : (config.aggressivitaet ?? 50);
+  const risk = isRandom ? Math.random() * 100 : (config.risiko         ?? 50);
+  const bluffRate = isRandom ? Math.random() * 60 : (config.bluff      ?? 20);
 
   const isPre = board.length === 0;
   const strength = isPre ? preflopStrength(holeCards) : postflopStrength(holeCards, board);
