@@ -2575,6 +2575,16 @@
     _btInit();
     refreshBellBadge();
     _pmUpdateLiveIndicator();
+    // Auto-rejoin: if player is seated in an active session, show feed drawer on startup
+    setTimeout(async()=>{
+      if(_pm?.id||!currentSpieler?.id)return;
+      const{data:mySeats}=await db.from('online_seats').select('online_spiel_id').eq('spieler_id',currentSpieler.id).neq('status','sitting_out');
+      if(!mySeats?.length||_pm?.id)return;
+      const ids=[...new Set(mySeats.map(s=>s.online_spiel_id))];
+      const{data:sessions}=await db.from('online_spiele').select('id,status').in('id',ids).in('status',['waiting','running']).limit(1);
+      if(!sessions?.length||_pm?.id)return;
+      enterOnlineSession(sessions[0].id,{silent:true});
+    },1500);
     // Globaler Listener: Globe-Indikator von überall in der App aktuell halten
     // Always recreate to ensure fresh spieler_id filter after login/re-login
     if(window._pmGlobalCh){db.removeChannel(window._pmGlobalCh);window._pmGlobalCh=null;}
@@ -7206,6 +7216,29 @@
 
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
+  const _BOT_PHRASES={
+    fold:['Nicht heute.','Passt nicht.','Nächste Hand.','War nix.','Ich bin raus.','Besser sicher.','Zu teuer für mich.','Meine Karten mögen mich nicht.','Ohne mich.','Ich pass.'],
+    check:['Check.','Mal schauen.','Nichts zu sehen hier.','Langsam angehen.','Abwarten.'],
+    call:['Call.','Bin dabei.','Interessant.','Mal sehen.','Warum nicht.','Schauen wir.'],
+    raise:['Jetzt wirds teuer!','Das kostet was.','Ich mach Druck.','Erhöhe den Einsatz.','Zeigt her eure Karten.','So läuft das hier.'],
+    bet:['Das kostet was.','Ich mach Druck.','Wer will mithalten?'],
+    allin:['ALLES REIN!','Jetzt oder nie.','No risk, no fun.','All-in – Ende der Diskussion.','Ich glaub an meine Hand.'],
+    win:['Sehr schön.','Danke, danke.','Das waren meine Chips.','Glück? Können!','Schöne Runde.'],
+    general:['Hmm.','Interessant.','...','Gut gespielt.','Spannend hier.','Was für ein Tisch.'],
+  };
+  async function _pmBotSendComment(botSeat,actionType){
+    const cfg=botSeat.bot_config??{};
+    const gespr=(cfg.gespr??25)/100;
+    if(Math.random()>gespr)return;
+    const pool=_BOT_PHRASES[actionType]||_BOT_PHRASES.general;
+    const text=pool[Math.floor(Math.random()*pool.length)];
+    const delay=500+Math.random()*2000;
+    setTimeout(async()=>{
+      if(!_pm?.id)return;
+      try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:botSeat.spieler_id,action:'chat',hand_nr:_pm.session?.hand_nr??0,meta:{text}});}
+      catch(e){console.warn('[bot] comment error:',e);}
+    },delay);
+  }
   const _BOT_PRESETS={
     nit:    {label:'Nit (sehr tight)',short:'Nit',desc:'Spielt nur Top-Hände, passt fast immer – kaum Bluffs.',aggressivitaet:10,risiko:15,bluff:3,gespr:10,reaktion_min:2,reaktion_max:8},
     tag:    {label:'TAG (tight-aggressive)',short:'TAG',desc:'Tight aber aggressiv – bet/raise mit starken Händen.',aggressivitaet:60,risiko:45,bluff:18,gespr:25,reaktion_min:1,reaktion_max:5},
@@ -7568,7 +7601,7 @@
     };
   }
 
-  async function enterOnlineSession(sessionId){
+  async function enterOnlineSession(sessionId,{silent=false}={}){
     // If already active in a different running session, ask user to confirm switch
     if(_pm?.id&&_pm.id!==sessionId&&_pm?.session?.status==='running'&&_pm?.mySeat&&_pm.mySeat.status!=='sitting_out'){
       const confirmed=await new Promise(resolve=>{
@@ -7584,12 +7617,14 @@
     _pmUnsubscribe();
     document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
-    showPage('online-tisch');
-    if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
-    // Request device motion/orientation permission (iOS 13+) and set up easter eggs
-    if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
-      DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
+    if(!silent){
+      showPage('online-tisch');
+      // Request device motion/orientation permission (iOS 13+) and set up easter eggs
+      if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
+        DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
+      }
     }
+    if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
 
     // Check for rejoin BEFORE first render to avoid double-build flicker
     let _needsJoin=false;
@@ -7617,6 +7652,7 @@
     };
     document.addEventListener('visibilitychange',_pm._visHandler);
     _pmSubscribe();
+    if(silent)_pmDrawerShow();
   }
 
   // Re-request wake-lock when app comes back into focus during an active session
@@ -7901,7 +7937,8 @@
     const feedHtml=(_feedActOnly?'':_pmSlowCommentHtml(actions,session,seats))+_pmFeedHtml(actions);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
-    const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished&&myStatus!=='sitting_out';
+    const _handHasWin=(actions||[]).some(a=>a.hand_nr===session.hand_nr&&a.action==='win');
+    const _canBuyin=(!isRunning||(handIsOver2&&_handHasWin))&&mySeat&&mySeat.stack===0&&!isFinished&&myStatus!=='sitting_out';
     const infoBar=(mySeat&&myStatus!=='sitting_out')?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
@@ -8594,6 +8631,7 @@
           const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
           return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
         }
+        case'chat':{const _av=a.spieler?.profilbild;const _avatarEl=_av?`<img src="${escHtml(_av)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:26px;height:26px;border-radius:50%;background:var(--bg-secondary);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-secondary)">${escHtml((n||'?')[0].toUpperCase())}</div>`;return`<div class="pm-feed-item" style="gap:7px;background:var(--bg-secondary);border-radius:10px;margin:1px 0">${_avatarEl}<span style="flex:1;min-width:0;font-size:12px;font-style:italic;color:var(--text-secondary)">${escHtml(a.meta?.text||'')}</span></div>`;}
         case'dealer_comment':return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px"><div style="width:26px;height:26px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><span style="flex:1;min-width:0;font-size:12px">${escHtml(a.meta?.text||'')}</span></div>`;
         default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
@@ -9464,6 +9502,8 @@
   function _pmShowBrokeModal(){
     if(document.getElementById('pm-broke-overlay'))return;
     if((_pm?.mySeat?.stack??0)>0)return;
+    const _myId=currentSpieler?.id;const _curHnr=_pm?.session?.hand_nr;
+    if(_myId&&_curHnr!=null&&(_pm?.actions||[]).some(a=>a.hand_nr===_curHnr&&a.spieler_id===_myId&&a.action==='win'))return;
     const startStack=_pm?.session?.start_stack||100;
     const overlay=document.createElement('div');
     overlay.id='pm-broke-overlay';
@@ -10206,6 +10246,10 @@
         // 409 = game moved on (no longer bot's turn) — stop retrying
         if(resp.status===409)return;
         console.warn('[bot] action failed:',await resp.text());
+      } else if(action==='play'){
+        // Optionally send a comment based on Gesprächigkeit
+        const result=await resp.json().catch(()=>({}));
+        _pmBotSendComment(botSeat,result?.decision||'general');
       }
     }catch(e){
       console.warn('[bot] error:',e);
@@ -10268,6 +10312,8 @@
     // Only auto-advance when no human has an active stake (all active seats are bots)
     const humanActive=seats.some(s=>!s.spieler?.ist_bot&&s.status!=='sitting_out');
     if(humanActive)return;
+    const hasBots=seats.some(s=>s.spieler?.ist_bot);
+    if(!hasBots)return;
     const key=`next_hand|${sess.hand_nr}|${_pm.id}`;
     if(_pm._botNextHandKey===key)return;
     _pm._botNextHandKey=key;
