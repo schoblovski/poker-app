@@ -2571,6 +2571,9 @@
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>_pmUpdateLiveIndicator())
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'benachrichtigungen',filter:`spieler_id=eq.${currentSpieler.id}`},()=>refreshBellBadge())
       .subscribe();
+    // Polling fallback in case realtime channel drops silently (30s interval)
+    if(window._pmGlobalPoll)clearInterval(window._pmGlobalPoll);
+    window._pmGlobalPoll=setInterval(()=>{if(!document.hidden){_pmUpdateLiveIndicator();refreshBellBadge();}},30000);
     setTimeout(showWhatsNew, 600);
     setTimeout(checkForUpdate, 4000);
     if(_pendingDeepLink){const dl=_pendingDeepLink;_pendingDeepLink=null;setTimeout(()=>handleDeepLink(dl),800);}
@@ -7901,8 +7904,8 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
-      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=einstellungen?.buyin_kassa??2;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>=0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
-      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=einstellungen?.buyin_kassa??2;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>=0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>=0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>=0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
       ${(()=>{const bb=(session.small_blind||0.05)*2;const bbs=bb>0?Math.round((mySeat.stack||0)/bb*10)/10:0;return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">BBs</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${bbs}×</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Runde #</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${session.hand_nr||0}</div></div>
       ${(()=>{const bet=mySeat.bet_current_round||0;const bc=bet>0?'var(--text-primary)':'var(--text-tertiary)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Einsatz</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${bc}">€${bet.toFixed(2)}</div></div>`;})()}
@@ -8109,7 +8112,7 @@
       document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
       document.getElementById('btn-pm-reveal')?.addEventListener('click',_pmRevealCards);
       document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
-      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',_pmBuyInSheet);
+      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn(1);});
       document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
       document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
     }else if(id==='pm-s-cards'){
@@ -8464,7 +8467,7 @@
       if(a.action==='reveal_cards'){const key=`${a.spieler_id}|${a.hand_nr}`;if(_latestReveal[key]!==a.id||revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='dealt_blind'){const key=`dealt_blind|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='look'){const key=a.meta?.card_idx!=null?`look|${a.spieler_id}|${a.hand_nr}|${a.meta.card_idx}`:`look|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
-      if(a.action==='away'||a.action==='back'){const key=`${a.action}|${a.spieler_id}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
+      if(a.action==='away'||a.action==='back'){const key=`afk|${a.spieler_id}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       return true;
     });
     // Inject deterministic dealer comments (suppressed in actions-only mode)
@@ -8548,7 +8551,7 @@
         case'bot_added':{const _bn=a.meta?.bot_name||'Bot';const _so=a.meta?.sitting_out?' · beobachtet zuerst':'';text=`<b>${escHtml(n)}</b> hat Bot <b>${escHtml(_bn)}</b> hinzugefügt${_so}`;extra=' facedown-action';break;}
         case'bot_config_changed':{const _bn=a.meta?.bot_name||n;text=`<b>${escHtml(n)}</b> ändert Einstellungen von Bot <b>${escHtml(_bn)}</b>`;extra=' facedown-action';break;}
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
-        case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
+        case'leave':if(a.meta?.temp){text=`<b>${escHtml(n)}</b> hat den Tisch kurz verlassen – ist gleich zurück`;extra=' facedown-action';}else{text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;}break;
         case'bot_leave':{const _bn=a.spieler?.name||a.meta?.name||n;text=`<b>${escHtml(_bn)}</b> foldet und verlässt den Tisch`;extra=' facedown-action';break;}
         case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt nur`;extra=' facedown-action';break;
         case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
@@ -8572,7 +8575,9 @@
     // sitting_out (observer) check MUST come before mySeat&&isWaiting
     if(myStatus==='sitting_out'){
       if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="min-width:160px;max-width:none;padding:14px 28px">Zur Übersicht</button></div></div>`;
-      return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button></div>`;
+      const _enoughForBots=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;
+      const _canStartForBots=isWaiting&&isAdmin&&_enoughForBots;
+      return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button>${_canStartForBots?`<button class="btn btn-secondary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px">Erste Spielrunde starten</button>`:''}</div>`;
     }
     if(mySeat&&isWaiting){const enoughPlayers=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px"${enoughPlayers?'':' disabled'}>Erste Spielrunde starten</button></div>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Mindestens 2 Spieler mit Buy-In benötigt</div>`:''}</div>`;}
 
@@ -8879,7 +8884,7 @@
     document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
-    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',_pmBuyInSheet);
+    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn(1);});
     // FAB – touch events (reliable on iOS, avoids setPointerCapture bugs)
     const _fab=document.getElementById('pm-fab');
     let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
@@ -9056,7 +9061,8 @@
       const myId=_pm.mySeat.id;
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave_permanent',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await db.from('online_seat_cards').delete().eq('seat_id',myId);
-      await db.from('online_seats').delete().eq('id',myId);
+      const{error:_dlErr}=await db.from('online_seats').delete().eq('id',myId);
+      if(_dlErr)console.error('[PM] Seat delete failed:',_dlErr.message);
       _pm.mySeat=null;_pmUnsubscribe();_pmDrawerHide();
       showPage('online-lobby');
     });
@@ -9123,7 +9129,7 @@
         // Prevent being active in multiple sessions simultaneously
         const willBeActive=_pm.session.status!=='running';
         if(willBeActive){
-          const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).eq('online_spiele.status','running').neq('online_spiel_id',_pm.id);
+          const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).in('online_spiele.status',['waiting','running']).neq('online_spiel_id',_pm.id);
           if(activeElsewhere?.length){await showAlert('Du bist bereits in einer anderen Session aktiv. Verlasse zuerst die andere Session, bevor du dich hier hinsetzt.');return;}
         }
       }
@@ -9350,7 +9356,7 @@
     const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
     // Conflict check: observer buying in → becoming active. Block if active elsewhere.
     if(_pm.mySeat.status==='sitting_out'&&!sessionRunning){
-      const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).eq('online_spiele.status','running').neq('online_spiel_id',_pm.id);
+      const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).in('online_spiele.status',['waiting','running']).neq('online_spiel_id',_pm.id);
       if(activeElsewhere?.length){if(btn)btn.disabled=false;await showAlert('Du bist bereits in einer anderen Session aktiv. Verlasse zuerst die andere Session.');return;}
     }
     const{error}=await db.from('online_seats').update({
@@ -9790,7 +9796,7 @@
     requestAnimationFrame(()=>ov.classList.add('open'));
     ov.querySelector('#_lv-temp').addEventListener('click',async()=>{
       ov.remove();
-      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
+      await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0,meta:{temp:true}});
       showPage('online-lobby');
     });
     ov.querySelector('#_lv-perm').addEventListener('click',async()=>{
@@ -9799,7 +9805,8 @@
       const myId=_pm.mySeat.id;
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave_permanent',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await db.from('online_seat_cards').delete().eq('seat_id',myId);
-      await db.from('online_seats').delete().eq('id',myId);
+      const{error:_dpErr}=await db.from('online_seats').delete().eq('id',myId);
+      if(_dpErr)console.error('[PM] Seat delete failed:',_dpErr.message);
       _pm.mySeat=null;
       _pmUnsubscribe();
       _pmDrawerHide();
