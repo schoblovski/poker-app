@@ -44,6 +44,23 @@ Deno.serve(async (req) => {
   ]);
 
   if (!session) return err('Session nicht gefunden', 404);
+
+  // leave_permanent works in any session state (waiting/running/finished)
+  if (action === 'leave_permanent') {
+    const seat = (seats || []).find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
+    if (seat) {
+      await db.from('online_seat_cards').delete().eq('seat_id', seat.id);
+      await db.from('online_seats').delete().eq('id', seat.id);
+      if ((session.hand_nr ?? 0) > 0) {
+        await db.from('online_actions').insert({
+          online_spiel_id, spieler_id, action: 'leave_permanent',
+          street: session.street ?? null, hand_nr: session.hand_nr ?? 0,
+        });
+      }
+    }
+    return json({ ok: true });
+  }
+
   if (session.status !== 'running') return err('Session läuft nicht');
 
   const mySeat = seats?.find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
