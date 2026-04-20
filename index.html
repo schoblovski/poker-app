@@ -6710,7 +6710,7 @@
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
             titel:'Besondere Hände',
             text:'Erfasse Poker, Straight Flush, Royal Flush und 7-2 Gewinne mit optionalem Beweisfoto. Bei 7-2 werden automatisch Transaktionen (1€ von jedem Mitspieler) erstellt. Der Gewinner erhält eine Push-Benachrichtigung.'},
-          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><line x1="12" y1="13" x2="12" y2="15"/></svg>',
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
             titel:'Online-Modus',
             text:'Spiele echtes Poker online mit der ganzen Runde — ideal bei Pandemien, Reisen oder sonstigen Hindernissen. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'},
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
@@ -7261,7 +7261,7 @@
   }
 
   // ── PANDEMIE-MODUS ─────────────────────────────────────
-  let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;let _pmLobbyTickerInterval=null;
+  let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;let _pmLobbyTickerInterval=null;let _pmLobbyNameCache={};
   const _pmSuitSymbol={s:'♠',h:'♥',d:'♦',c:'♣'};
   const _pmRankStr={14:'A',13:'K',12:'Q',11:'J',10:'10'};
   let _pm=null; // aktiver Session-State
@@ -7509,32 +7509,24 @@
     const waLink=((einst||[]).find(e=>e.key==='video_call_link')||((einst||[]).find(e=>e.key==='whatsapp_gruppe'))||{}).wert||'';
     if(_pm)_pm._waLink=waLink;
     const seatsMap={};(allSeats||[]).forEach(s=>{if(!seatsMap[s.online_spiel_id])seatsMap[s.online_spiel_id]=[];seatsMap[s.online_spiel_id].push(s);});
-    // Build name map from seats for ticker display
+    // Build name map from seats for ticker display; cache globally for quick ticker refresh
     const _lobbyNameMap={};(allSeats||[]).forEach(s=>{if(s.spieler?.name)_lobbyNameMap[s.spieler_id]=s.spieler.name;});
+    _pmLobbyNameCache=_lobbyNameMap;
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
     const statusLabel={waiting:'Offen',running:'Läuft',finished:'Beendet'};
     let html='';
     html+=`<div style="margin-bottom:var(--space-md);text-align:center"><button class="btn btn-primary" id="btn-pm-new" style="display:inline-flex;width:auto;padding:0 28px;min-width:180px">Neue Session</button></div>`;
     const active=visibleSessions.filter(s=>s.status!=='finished');
-    // Fetch latest interesting action per active session for live ticker
+    // Fetch latest interesting action per active session – one query per session in parallel to guarantee coverage
     const _latestActMap={};
     if(active.length){
-      const _actIds=active.map(s=>s.id);
-      const _skipActions='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
-      const{data:_latestActs}=await db.from('online_actions').select('online_spiel_id,spieler_id,action,amount').in('online_spiel_id',_actIds).not('action','in',_skipActions).order('created_at',{ascending:false}).limit(_actIds.length*6);
-      (_latestActs||[]).forEach(a=>{
-        if(_latestActMap[a.online_spiel_id])return;
+      const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+      const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',s.id).not('action','in',_skip).order('created_at',{ascending:false}).limit(1)));
+      _tickerResults.forEach((res,i)=>{
+        const a=res.data?.[0];if(!a)return;
+        const sid=active[i].id;
         const n=_lobbyNameMap[a.spieler_id]||'';
-        const amt=a.amount!=null?` €${parseFloat(a.amount).toFixed(2)}`:'';
-        let txt='';
-        if(a.action==='fold')txt=`${n} foldet`;
-        else if(a.action==='call')txt=`${n} callt${amt}`;
-        else if(a.action==='raise')txt=`${n} erhöht auf${amt}`;
-        else if(a.action==='check')txt=`${n} checkt`;
-        else if(a.action==='allin')txt=`${n} All-in${amt}`;
-        else if(a.action==='blind')txt=`${n} Blind${amt}`;
-        else if(a.action==='win'||a.action==='showdown_win')txt=`${n} gewinnt${amt}`;
-        if(txt)_latestActMap[a.online_spiel_id]=txt;
+        _latestActMap[sid]=_pmFormatTickerAction(a,n);
       });
     }
     const done=visibleSessions.filter(s=>s.status==='finished');
@@ -7624,9 +7616,9 @@
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),400);})
         .subscribe();
-      // Fallback polling for ticker (2.5s) – guarantees updates even if Realtime events are throttled
+      // Fast ticker polling (1s) – lightweight per-session query, no full reload
       if(_pmLobbyTickerInterval)clearInterval(_pmLobbyTickerInterval);
-      _pmLobbyTickerInterval=setInterval(()=>loadOnlineLobby(true),2500);
+      _pmLobbyTickerInterval=setInterval(_pmQuickTickerRefresh,1000);
     }else{
       // Only replace rows whose fingerprint changed – zero flicker
       const _tmp=document.createElement('div');_tmp.innerHTML=html;
@@ -7639,6 +7631,54 @@
       });
     }
     _pmUpdateLiveIndicator();
+  }
+
+  function _pmFormatTickerAction(a,name){
+    if(!a)return'';
+    const n=name||'';
+    const amt=a.amount!=null?` €${parseFloat(a.amount).toFixed(2)}`:'';
+    if(a.action==='fold')return`${n} foldet`;
+    if(a.action==='call')return`${n} callt${amt}`;
+    if(a.action==='raise')return`${n} erhöht auf${amt}`;
+    if(a.action==='check')return`${n} checkt`;
+    if(a.action==='allin')return`${n} All-in${amt}`;
+    if(a.action==='blind')return`${n} Blind${amt}`;
+    if(a.action==='win'||a.action==='showdown_win')return`${n} gewinnt${amt}`;
+    return'';
+  }
+
+  async function _pmQuickTickerRefresh(){
+    const el=document.getElementById('online-lobby-content');
+    if(!el)return;
+    const activeRows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
+    if(!activeRows.length)return;
+    const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+    const results=await Promise.all(activeRows.map(row=>
+      db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',row.dataset.id).not('action','in',_skip).order('created_at',{ascending:false}).limit(1)
+    ));
+    activeRows.forEach((row,i)=>{
+      const a=results[i]?.data?.[0];
+      const newTxt=a?_pmFormatTickerAction(a,_pmLobbyNameCache[a.spieler_id]||''):'';
+      const inner=row.querySelector('div');// first child = content div
+      if(!inner)return;
+      let tickerDiv=row.querySelector('.pm-ticker-line');
+      if(!newTxt){tickerDiv?.remove();return;}
+      if(tickerDiv){
+        const span=tickerDiv.querySelector('span:last-child');
+        if(span&&span.textContent!==newTxt){
+          span.textContent=newTxt;
+          span.style.animation='none';
+          void span.offsetWidth;
+          span.style.animation='pm-ticker-in .3s ease both';
+        }
+      }else{
+        tickerDiv=document.createElement('div');
+        tickerDiv.className='pm-ticker-line';
+        tickerDiv.style.cssText='display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)';
+        tickerDiv.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pm-ticker-in .3s ease both;font-family:var(--font-sans)">${escHtml(newTxt)}</span>`;
+        inner.appendChild(tickerDiv);
+      }
+    });
   }
 
   function _pmNewSessionSheet(){
@@ -9942,17 +9982,21 @@
       const _sids=freshActive.map(s=>s.id);
       // Reassign active so the rest of the picker code uses fresh data
       const active=freshActive;
-      const[{data:allSeats},{data:mySeatsRows}]=await Promise.all([
-        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot)').in('online_spiel_id',_sids),
+      const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+      const[{data:allSeats},{data:mySeatsRows},..._pickerActResults]=await Promise.all([
+        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot,name)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
+        ..._sids.map(sid=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',sid).not('action','in',_skip).order('created_at',{ascending:false}).limit(1)),
       ]);
-      const cntMap={};const botMap={};const buyinMap={};
+      const cntMap={};const botMap={};const buyinMap={};const pickerNameMap={};
       (allSeats||[]).forEach(s=>{
         cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;
         if(s.spieler?.ist_bot)botMap[s.online_spiel_id]=(botMap[s.online_spiel_id]||0)+1;
         buyinMap[s.online_spiel_id]=(buyinMap[s.online_spiel_id]||0)+(s.buyins||1);
+        if(s.spieler?.name)pickerNameMap[s.spieler_id]=s.spieler.name;
       });
       const myStatusMap={};(mySeatsRows||[]).forEach(s=>{myStatusMap[s.online_spiel_id]=s.status;});
+      const pickerTickerMap={};_sids.forEach((sid,i)=>{const a=_pickerActResults[i]?.data?.[0];if(a)pickerTickerMap[sid]=_pmFormatTickerAction(a,pickerNameMap[a.spieler_id]||'');});
       const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
       const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'};
       const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
@@ -9977,6 +10021,7 @@
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
                 <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}`:''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
+                ${pickerTickerMap[s.id]?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(pickerTickerMap[s.id])}</span></div>`:''}
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
