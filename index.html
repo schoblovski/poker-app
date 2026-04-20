@@ -1949,6 +1949,7 @@
     // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
     if(page!=='online-tisch'){
       document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
+      document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(_pm?.id&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
@@ -7507,6 +7508,7 @@
 
   async function enterOnlineSession(sessionId){
     _pmUnsubscribe();
+    document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
     showPage('online-tisch');
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
