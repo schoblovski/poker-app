@@ -2610,6 +2610,7 @@
     _btInit();
     refreshBellBadge();
     _pmUpdateLiveIndicator();
+    _initGlobalBotWatcher();
     // Auto-rejoin: if player is seated in an active session, show feed drawer immediately
     (async()=>{
       if(_pm?.id||!currentSpieler?.id)return;
@@ -2653,7 +2654,7 @@
   let _appInitialized=false;
   db.auth.onAuthStateChange((ev,session)=>{
     if(session){currentUser=session.user;if(!_appInitialized){_appInitialized=true;showApp();}}
-    else{_appInitialized=false;currentUser=null;currentSpieler=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+    else{_appInitialized=false;currentUser=null;currentSpieler=null;if(_globalBotChannel){db.removeChannel(_globalBotChannel);_globalBotChannel=null;}document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
   });
 
   // ── HOME ───────────────────────────────────────────────
@@ -7262,6 +7263,8 @@
 
   // ── PANDEMIE-MODUS ─────────────────────────────────────
   let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;let _pmLobbyTickerInterval=null;let _pmLobbyNameCache={};
+  // Global bot watcher – triggers bots for sessions not currently on-screen
+  let _globalBotChannel=null;let _globalBotFlying=new Set();let _botPlayerIds=new Set();
   const _pmSuitSymbol={s:'♠',h:'♥',d:'♦',c:'♣'};
   const _pmRankStr={14:'A',13:'K',12:'Q',11:'J',10:'10'};
   let _pm=null; // aktiver Session-State
@@ -7713,6 +7716,38 @@
     });
   }
 
+
+  async function _initGlobalBotWatcher(){
+    // Load bot player IDs once (cached in _botPlayerIds Set)
+    const{data:bots}=await db.from('spieler').select('id').eq('ist_bot',true);
+    _botPlayerIds=new Set((bots||[]).map(b=>b.id));
+    if(!_botPlayerIds.size)return; // no bots in this project
+    if(_globalBotChannel){db.removeChannel(_globalBotChannel);_globalBotChannel=null;}
+    _globalBotChannel=db.channel('global-bot-watcher')
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'online_spiele'},(payload)=>{
+        const s=payload.new;
+        if(s.status!=='running'||!s.current_player_id)return;
+        if(!_botPlayerIds.has(s.current_player_id))return;
+        // In-game watcher handles it when user is viewing that session
+        if(_pm?.id===s.id)return;
+        const key=`${s.id}|${s.current_player_id}|${s.hand_nr||0}|${s.street||''}`;
+        if(_globalBotFlying.has(key))return;
+        _globalBotFlying.add(key);
+        setTimeout(async()=>{
+          try{
+            if(_pm?.id===s.id){return;} // user joined in the meantime
+            await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
+              method:'POST',
+              headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+              body:JSON.stringify({online_spiel_id:s.id,bot_spieler_id:s.current_player_id,action:'play'})
+            });
+          }catch(e){console.warn('[global-bot]',e);}
+          finally{setTimeout(()=>_globalBotFlying.delete(key),8000);}
+        },1000+Math.random()*2000);
+      })
+      .subscribe();
+    console.log('[global-bot] watcher ready, bot count:',_botPlayerIds.size);
+  }
 
   function _pmNewSessionSheet(){
     const sid='pm-new-sheet';document.getElementById(sid)?.remove();
