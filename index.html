@@ -1248,6 +1248,22 @@
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein.</div>
       </div>
 
+      <!-- Statistik & KPIs -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Statistik &amp; KPIs</div>
+        <div style="background:var(--surface);border-radius:10px;overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">STACK</div><div style="font-size:13px;color:var(--text-secondary)">Dein aktueller Chip-Kontostand in dieser Session. Wird grün dargestellt wenn er über 0 liegt.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">POTS</div><div style="font-size:13px;color:var(--text-secondary)">Aktueller Pot am Tisch. Bei All-ins entstehen Sidepots: <b>H</b> = Hauptpot, <b>SP</b> = Sidepot. Jeder Sidepot zeigt die berechtigten Spieler.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">BUY-INS</div><div style="font-size:13px;color:var(--text-secondary)">Anzahl deiner bisherigen Rebuys in dieser Session. Beginnt bei 1×.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">STREET</div><div style="font-size:13px;color:var(--text-secondary)">Aktuelle Setzrunde: Preflop → Flop (3 Karten) → Turn (4. Karte) → River (5. Karte).</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">SESSION</div><div style="font-size:13px;color:var(--text-secondary)">Dein Netto-Ergebnis seit Start: <b>Stack − (Buy-Ins × Startstack)</b>. Grün = Gewinn, Rot = Verlust.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">Ø/RUNDE</div><div style="font-size:13px;color:var(--text-secondary)">Durchschnittlicher Gewinn oder Verlust pro Spielrunde. Zeigt wie konstant du spielst.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">BBS</div><div style="font-size:13px;color:var(--text-secondary)">Big Blinds Stack: <b>Stack ÷ Big Blind</b>. Misst wie tief du im Verhältnis zu den Blinds spielst. Unter 20 BB gilt als Short Stack.</div></div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">RUNDE #</div><div style="font-size:13px;color:var(--text-secondary)">Laufende Nummer der aktuellen Spielrunde innerhalb dieser Session.</div></div>
+          <div style="padding:10px 14px;display:flex;gap:12px;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:100px">MEIN EINSATZ</div><div style="font-size:13px;color:var(--text-secondary)">Wie viel du in der aktuellen Spielrunde insgesamt investiert hast – über alle Setzrunden (Preflop, Flop, Turn, River) summiert.</div></div>
+        </div>
+      </div>
+
       <!-- Hände-Rangfolge -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Hände-Rangfolge</div>
@@ -1303,6 +1319,7 @@
         <div style="background:var(--surface);border-radius:10px;overflow:hidden">
           <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Bot-Avatar antippen → Spieler-Karte öffnet sich. Dort kannst du den Bot <b>entfernen</b> oder seine <b>Parameter anpassen</b></div>
           <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Ist der Bot als Dealer-Button, deckt er nach dem Falten aller Gegner automatisch die restlichen Gemeinschaftskarten auf</div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">Mit <b>„Bot Auto-Rebuy"</b> beim Session-Erstellen legst du fest ob Bots nach dem Ausscheiden automatisch nachkaufen (Standard: an) oder den Tisch dauerhaft verlassen</div>
           <div style="padding:10px 14px;font-size:13px;color:var(--danger)"><b>Wichtig:</b> Sessions mit Bots können nicht in die Statistik übernommen werden — Bots dienen nur zur Unterhaltung</div>
         </div>
       </div>
@@ -7228,6 +7245,7 @@
   let _pmPrevTurn=false;    // tracks turn transitions for vibration
   let _pmBotTimer=null;       // pending bot-action timeout
   let _pmBotTriggerKey=null;  // dedup key: spieler_id|hand_nr|street
+  let _pmBotInFlight=new Set(); // in-flight play-keys to block concurrent same-client calls
   let _pmBotHeartbeat=null;   // interval that catches stuck bots
   let _pmBotTurnStart={};     // key → timestamp when bot turn began
 
@@ -7291,6 +7309,7 @@
     (_pm.actions||[]).filter(a=>a.hand_nr===handNr&&betTypes.includes(a.action))
       .forEach(a=>{investedBySeat[a.spieler_id]=(investedBySeat[a.spieler_id]||0)+(a.amount||0);});
     const nonFolded=_pm.seats.filter(s=>s.status!=='folded'&&s.status!=='sitting_out');
+    if(nonFolded.length<=1)return null; // single player remaining – no pot breakdown needed
     const contributions=_pm.seats
       .map(s=>({id:s.id,spieler_id:s.spieler_id,contrib:investedBySeat[s.spieler_id]||s.bet_current_round||0}))
       .filter(c=>c.contrib>0).sort((a,b)=>a.contrib-b.contrib);
@@ -7562,7 +7581,11 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
         <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="none" class="form-input pm-num" data-label="Buy-In Wert"></div>
       </div>
-      <div style="font-size:12px;color:var(--text-secondary);margin:0 0 var(--space-lg);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin:0 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
+      <div class="list-item" style="background:var(--bg-secondary);border-radius:var(--radius-sm);margin:0 0 var(--space-lg);padding:12px 14px">
+        <div class="item-body"><div class="item-title" style="font-size:13px">Bot Auto-Rebuy</div><div class="item-subtitle" style="font-size:11px">Bots kaufen nach dem Ausscheiden automatisch neue Chips</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="pm-new-bot-rebuy" checked><span class="toggle-slider"></span></label>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-new-cancel" style="max-width:none;margin:0">Abbrechen</button>
         <button class="btn btn-primary" id="pm-new-ok" style="max-width:none;margin:0">Session erstellen</button>
@@ -7597,10 +7620,11 @@
       if(big_blind_v<small_blind){await showAlert('Big Blind darf nicht kleiner als Small Blind sein.');return;}
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
       const is_test=false;
+      const bot_auto_rebuy=document.getElementById('pm-new-bot-rebuy')?.checked!==false;
       const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
       const spiel_id=null; // created at payout confirmation, not at session start
       const big_blind=big_blind_v;
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting',bot_auto_rebuy}).select().single();
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       // Push notification: notify all OTHER players subscribed to session_start
       const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
@@ -7667,8 +7691,8 @@
   // Delay is required on iOS: page must be fully visible before wake lock can be acquired
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&_pm)setTimeout(_btRequestWakeLock,300);});
   window.addEventListener('focus',()=>{if(_pm)setTimeout(_btRequestWakeLock,300);});
-  // Periodic heartbeat: re-acquire lock every 30s in case it silently expired
-  setInterval(()=>{if(_pm?.session?.status==='running'&&!document.hidden)_btRequestWakeLock();},30000);
+  // Periodic heartbeat: re-acquire lock every 15s in case it silently expired (covers between-hand gaps too)
+  setInterval(()=>{if(_pm&&!document.hidden)_btRequestWakeLock();},15000);
 
   function _pmReleaseWakeLock(){if(typeof _btReleaseWakeLock==='function')_btReleaseWakeLock();}
 
@@ -10261,12 +10285,16 @@
   function _pmClearBotTimer(){
     if(_pmBotTimer){clearTimeout(_pmBotTimer);_pmBotTimer=null;}
     _pmBotTriggerKey=null;
+    _pmBotInFlight.clear();
     if(_pmBotHeartbeat){clearInterval(_pmBotHeartbeat);_pmBotHeartbeat=null;}
     _pmBotTurnStart={};
   }
 
   async function _pmExecuteBotAction(botSeat,action='play',_retry=0){
     if(!_pm?.id||!botSeat?.spieler_id)return;
+    const _bik=`${botSeat.spieler_id}|${_pm.session?.hand_nr}|${_pm.session?.street}`;
+    if(action==='play'&&_pmBotInFlight.has(_bik))return; // already in flight from this client
+    if(action==='play')_pmBotInFlight.add(_bik);
     try{
       const resp=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
         method:'POST',
@@ -10274,7 +10302,7 @@
         body:JSON.stringify({online_spiel_id:_pm.id,bot_spieler_id:botSeat.spieler_id,action}),
       });
       if(!resp.ok){
-        // 409 = game moved on (no longer bot's turn) — stop retrying
+        // 409 = game moved on or idempotency guard — expected, stop retrying
         if(resp.status===409)return;
         console.warn('[bot] action failed:',await resp.text());
       }
@@ -10282,6 +10310,8 @@
       console.warn('[bot] error:',e);
       // Only retry on network errors (Failed to fetch), not on HTTP errors
       if(_retry<2)setTimeout(()=>_pmExecuteBotAction(botSeat,action,_retry+1),3500*(1+_retry));
+    }finally{
+      if(action==='play')_pmBotInFlight.delete(_bik);
     }
   }
 

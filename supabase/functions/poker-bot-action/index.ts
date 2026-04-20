@@ -186,6 +186,18 @@ Deno.serve(async (req) => {
   if (session.current_player_id !== bot_spieler_id) return err('Nicht dran', 409);
   if (mySeat.status === 'folded' || mySeat.status === 'allin') return json({ ok: true, skipped: true });
 
+  // Idempotency guard: block concurrent requests from multiple clients within 3s window
+  const recentCutoff = new Date(Date.now() - 3000).toISOString();
+  const { data: recentActs } = await db
+    .from('online_actions')
+    .select('id')
+    .eq('online_spiel_id', online_spiel_id)
+    .eq('spieler_id', bot_spieler_id)
+    .in('action', ['fold', 'call', 'raise', 'check', 'allin', 'bet'])
+    .gte('created_at', recentCutoff)
+    .limit(1);
+  if (recentActs && recentActs.length > 0) return err('Bot hat bereits gespielt', 409);
+
   const holeCards: Card[] = botHoleCards;
   const board: Card[] = session.community_cards ?? [];
 
@@ -366,16 +378,16 @@ function postflopStrength(hole: Card[], board: Card[]): number {
 
 const BOT_COMMENTS: Record<string, string[]> = {
   fold: [
-    'Passt.','Nicht heute.','Bin raus.','Naechstes Mal.','Zu heiss.',
+    'Passt.','Nicht heute.','Bin raus.','Nächstes Mal.','Zu heiß.',
     'Kein Interesse.','Nicht meine Hand.','Ich sehe mich raus.','Nicht wert.','Ciao.',
     'Weiter.','Zu teuer.','Nope.','Weg damit.','Nicht gut genug.',
-    'Sparmasnahmen.','Nein danke.','Nicht diesmal.','Karten weg.','Ich passe.',
-    'Nicht mit diesen.','Raus hier.','Zu riskant.','Spaeter vielleicht.','Kluge Entscheidung.',
+    'Sparmaßnahmen.','Nein danke.','Nicht diesmal.','Karten weg.','Ich passe.',
+    'Nicht mit diesen.','Raus hier.','Zu riskant.','Später vielleicht.','Kluge Entscheidung.',
   ],
   check: [
     'Check.','Sehen wir mal.','Kein Einsatz von mir.','Abgewartet.','Ich schaue zu.',
     'Frei zu mir.','Mal durchatmen.','Nichts von mir.','Check, bitte.','Kostenlos sehen.',
-    'Weiter so.','Ich warte.','Guenstig weitermachen.','Check von mir.','Abwarten.',
+    'Weiter so.','Ich warte.','Günstig weitermachen.','Check von mir.','Abwarten.',
     'Ok, check.','Mal schauen was kommt.','Nichts kostet nichts.','Gratis.','Ich pass erst mal.',
   ],
   call: [
@@ -385,11 +397,11 @@ const BOT_COMMENTS: Record<string, string[]> = {
     'Ok, mitmachen.','Weiter.','Bezahl ich.','Call, danke.','Bin dabei.',
   ],
   raise: [
-    'Erhoehe!','Jetzt wird es ernst.','Ich gehe hoeher.','Los.','Druckmittel.',
-    'Mehr!','Nicht so guenstig.','Ich erhoehe.','Teurer fuer alle.','Raise von mir.',
-    'Ich mache Druck.','Hoeher.','Hier ist mein Einsatz.','Ich sage: mehr.','Aufgewertet.',
+    'Erhöhe!','Jetzt wird es ernst.','Ich gehe höher.','Los.','Druckmittel.',
+    'Mehr!','Nicht so günstig.','Ich erhöhe.','Teurer für alle.','Raise von mir.',
+    'Ich mache Druck.','Höher.','Hier ist mein Einsatz.','Ich sage: mehr.','Aufgewertet.',
     'Interessant? Jetzt schon.','Ich komme rein.','Mein Einsatz liegt.','Weiter – aber teurer.','Die Antwort: Raise.',
-    'Ich sage nein zu guenstig.','Raise!','Macht es spannender.','Hoeherer Einsatz.','Ohne mich kein guenstiges Spiel.',
+    'Ich sage nein zu günstig.','Raise!','Macht es spannender.','Höherer Einsatz.','Ohne mich kein günstiges Spiel.',
   ],
   allin: [
     'All-in!','Alles rein!','YOLO!','Jetzt oder nie.','Do or die.',
@@ -417,7 +429,7 @@ const BOT_COMMENTS_STYLE: Record<string, Partial<Record<string, string[]>>> = {
     bluff_fold: ['Naechstes Mal.','War ein Versuch wert.'],
   },
   station: {
-    call:  ['Call, wie immer.','Natuerlich dabei.','Ich zahle das.','Bin doch dabei.','Call, danke.'],
+    call:  ['Call, wie immer.','Natürlich dabei.','Ich zahle das.','Bin doch dabei.','Call, danke.'],
     fold:  ['Das ist selten.','Ausnahmsfall.'],
   },
 };

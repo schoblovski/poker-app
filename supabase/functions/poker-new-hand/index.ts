@@ -34,18 +34,32 @@ Deno.serve(async (req) => {
   const callerSeat = seats?.find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
   if (!callerSeat) return err('Du bist nicht an diesem Tisch', 403);
 
-  // Bots: auto-buyin if stack=0, promote sitting_out bots with chips
+  // Bots: auto-buyin if stack=0 (unless bot_auto_rebuy disabled), promote sitting_out bots with chips
   const promotedBotIds: string[] = [];
   for (const s of (seats ?? []) as any[]) {
     if (!s.bot_config) continue;
     if (s.stack === 0) {
-      await db.from('online_seats').update({
-        stack: session.start_stack ?? 100,
-        buyins: (s.buyins ?? 1) + 1,
-        status: 'active',
-      }).eq('id', s.id);
-      s.stack = session.start_stack ?? 100; s.status = 'active';
-      promotedBotIds.push(s.spieler_id);
+      if (session.bot_auto_rebuy !== false) {
+        await db.from('online_seats').update({
+          stack: session.start_stack ?? 100,
+          buyins: (s.buyins ?? 1) + 1,
+          status: 'active',
+        }).eq('id', s.id);
+        s.stack = session.start_stack ?? 100; s.status = 'active';
+        promotedBotIds.push(s.spieler_id);
+      } else {
+        // Auto-rebuy disabled – remove bot permanently from table
+        await db.from('online_actions').insert({
+          online_spiel_id,
+          spieler_id: s.spieler_id,
+          action: 'bot_leave',
+          street: 'preflop',
+          hand_nr: session.hand_nr ?? 0,
+          meta: { busted: true },
+        }).catch(() => {});
+        await db.from('online_seats').delete().eq('id', s.id);
+        await db.from('spieler').delete().eq('id', s.spieler_id);
+      }
     } else if (s.status === 'sitting_out') {
       await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);
       s.status = 'active';
