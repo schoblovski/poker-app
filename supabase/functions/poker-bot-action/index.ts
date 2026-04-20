@@ -20,13 +20,17 @@ interface BotConfig {
   aggressivitaet?: number; // 0–100: how often raises vs calls
   risiko?: number;         // 0–100: willingness to put chips at risk
   bluff?: number;          // 0–100: bluffing frequency
+  gespr?: number;          // 0–100: chat comment frequency
   karten_zeigen?: 'immer' | 'nie' | 'showdown'; // card reveal behavior
-  style?: string;          // cosmetic preset name only
+  style?: string;          // preset name
   avatar?: string;         // SVG data URI for bot profile picture
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return corsOk();
+
+  // Top-level try/catch: ensures CORS headers are always present even on crash
+  try {
 
   let body: { online_spiel_id: string; bot_spieler_id?: string; action?: string; name?: string; config?: BotConfig };
   try { body = await req.json(); }
@@ -187,10 +191,11 @@ Deno.serve(async (req) => {
       amount: decision.amount,
     }),
   });
-  const data = await resp.json().catch(() => ({}));
+  await resp.json().catch(() => {});
 
-  // Occasionally add a chat comment (~25% chance)
-  const comment = maybeBotComment(decision.action, config.style);
+  // Chat comment — frequency driven by gespr (0–100, default 25)
+  const gespr = config.gespr ?? 25;
+  const comment = gespr > 0 ? maybeBotComment(decision.action, config.style, gespr) : null;
   if (comment) {
     await db.from('online_chat').insert({
       online_spiel_id,
@@ -199,7 +204,12 @@ Deno.serve(async (req) => {
     }).catch(() => {});
   }
 
-  return json({ ok: true, decision, ...data });
+  return json({ ok: true, decision: decision.action });
+
+  } catch (e) {
+    console.error('[poker-bot-action] unhandled error:', String(e));
+    return json({ ok: false, error: 'Internal error' }, 500);
+  }
 });
 
 // ── BOT DECISION ENGINE ─────────────────────────────────────────────────────
@@ -377,8 +387,8 @@ const BOT_COMMENTS_STYLE: Record<string, Partial<Record<string, string[]>>> = {
   },
 };
 
-function maybeBotComment(action: string, style?: string): string | null {
-  if (Math.random() > 0.25) return null;
+function maybeBotComment(action: string, style?: string, gespr = 25): string | null {
+  if (Math.random() * 100 > gespr) return null;
   // 30% chance to use style-specific comment if available
   if (style && Math.random() < 0.30) {
     const stylePool = BOT_COMMENTS_STYLE[style]?.[action];
