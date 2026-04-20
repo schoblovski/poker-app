@@ -8588,7 +8588,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
           <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Stack</div>
-            <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">€${sStack.toFixed(0)}</div>
+            <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">€${Math.max(0,sStack).toFixed(0)}</div>
           </div>
           <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Buy-Ins</div>
