@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
   if (!callerSeat) return err('Du bist nicht an diesem Tisch', 403);
 
   // Bots: auto-buyin if stack=0, promote sitting_out bots with chips
+  const promotedBotIds: string[] = [];
   for (const s of (seats ?? []) as any[]) {
     if (!s.bot_config) continue;
     if (s.stack === 0) {
@@ -44,9 +45,11 @@ Deno.serve(async (req) => {
         status: 'active',
       }).eq('id', s.id);
       s.stack = session.start_stack ?? 100; s.status = 'active';
+      promotedBotIds.push(s.spieler_id);
     } else if (s.status === 'sitting_out') {
       await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);
       s.status = 'active';
+      promotedBotIds.push(s.spieler_id);
     }
   }
 
@@ -85,6 +88,20 @@ Deno.serve(async (req) => {
   }
 
   const newHandNr = (session.hand_nr ?? 0) + 1;
+
+  // Feed: 'join' actions for newly promoted observers and bots (inserted before new_hand divider)
+  const promotedHumans = readyObservers.map((s: any) => s.spieler_id);
+  const allPromoted = [...promotedHumans, ...promotedBotIds];
+  if (allPromoted.length > 0) {
+    await db.from('online_actions').insert(
+      allPromoted.map((pid: string) => ({
+        online_spiel_id,
+        spieler_id: pid,
+        action: 'join',
+        hand_nr: newHandNr,
+      }))
+    );
+  }
 
   // Action-Log zuerst einfügen damit Runden-Trennlinie im Feed vor den Blinds erscheint
   await db.from('online_actions').insert({
