@@ -3468,6 +3468,7 @@
           document.getElementById('push-cat-hand').checked=true;
           document.getElementById('push-cat-trans').checked=true;
           document.getElementById('push-cat-updates').checked=true;
+          document.getElementById('push-cat-session-start').checked=true;
           console.log('✅ Push-Subscription gespeichert');
         }catch(err){
           console.error('Push-Subscribe Fehler',err);
@@ -3505,6 +3506,7 @@
           transaktionen:document.getElementById('push-cat-trans').checked,
           app_updates:document.getElementById('push-cat-updates').checked,
           online_spiel:document.getElementById('push-cat-online').checked,
+          session_start:document.getElementById('push-cat-session-start').checked,
         };
         const{error:catErr}=await db.from('push_subscriptions')
           .update({einstellungen,aktualisiert_am:new Date().toISOString()})
