@@ -86,10 +86,12 @@ Deno.serve(async (req) => {
     // Log feed actions: bot join/spectate + who added them
     const isSittingOut = session.status === 'running';
     const botActionType = isSittingOut ? 'spectate' : 'join';
-    await db.from('online_actions').insert([
-      { online_spiel_id, spieler_id: botSpieler.id, action: botActionType, hand_nr: session.hand_nr ?? 0 },
-      ...(caller_id ? [{ online_spiel_id, spieler_id: caller_id, action: 'bot_added', hand_nr: session.hand_nr ?? 0, meta: { bot_name: name, sitting_out: isSittingOut } }] : []),
-    ]).catch(() => {});
+    try {
+      await db.from('online_actions').insert([
+        { online_spiel_id, spieler_id: botSpieler.id, action: botActionType, hand_nr: session.hand_nr ?? 0 },
+        ...(caller_id ? [{ online_spiel_id, spieler_id: caller_id, action: 'bot_added', hand_nr: session.hand_nr ?? 0, meta: { bot_name: name, sitting_out: isSittingOut } }] : []),
+      ]);
+    } catch { /* feed log is non-critical */ }
 
     return json({ ok: true, bot_spieler_id: botSpieler.id, seat: freeSeat });
   }
@@ -206,11 +208,9 @@ Deno.serve(async (req) => {
   const gespr = config.gespr ?? 25;
   const comment = gespr > 0 ? maybeBotComment(decision.action, config.style, gespr) : null;
   if (comment) {
-    await db.from('online_chat').insert({
-      online_spiel_id,
-      spieler_id: bot_spieler_id,
-      message: comment,
-    }).catch(() => {});
+    try {
+      await db.from('online_chat').insert({ online_spiel_id, spieler_id: bot_spieler_id, message: comment });
+    } catch { /* chat is non-critical */ }
   }
 
   return json({ ok: true, decision: decision.action });
