@@ -8365,9 +8365,12 @@
         case'win':{
           const hand=a.meta?.hand;
           const _rawBest=(a.meta?.best?.length?a.meta.best:a.meta?.hole_cards)||[];const _rankCounts=Object.fromEntries([...new Set(_rawBest.map(c=>c.rank))].map(r=>[r,_rawBest.filter(c=>c.rank===r).length]));const bestCards=[..._rawBest].sort((x,y)=>{const cx=_rankCounts[x.rank]||1,cy=_rankCounts[y.rank]||1;return cx!==cy?cy-cx:y.rank-x.rank;});
-          const hc=bestCards.map(c=>_pmCard(c)).join('');
-          const cardRow=hc?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${hc}</span>${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}
-</div>`:'';
+          const _noKick=!hand||hand.startsWith('Royal')||hand.startsWith('Straight')||hand.startsWith('Flush')||hand.startsWith('Full')||hand.endsWith(' hoch');
+          const _mCards=_noKick?bestCards:bestCards.filter(c=>(_rankCounts[c.rank]||1)>1);
+          const _kCards=_noKick?[]:bestCards.filter(c=>(_rankCounts[c.rank]||1)===1);
+          const hcMain=_mCards.map(c=>_pmCard(c)).join('');
+          const hcKick=_kCards.length?`<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 1px"></span><span style="display:inline-flex;gap:3px;opacity:.6">${_kCards.map(c=>_pmCard(c)).join('')}</span><span style="font-size:9px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-left:1px">K</span></span>`:'';
+          const cardRow=(hcMain||hcKick)?`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:4px"><span style="display:inline-flex;gap:4px">${hcMain}</span>${hcKick}${hand?`<span style="font-size:11px;font-weight:700;opacity:.85">– ${hand}</span>`:''}</div>`:'';
           text=`<b>${escHtml(n)}</b> gewinnt${amt}${cardRow}`;extra=' pm-feed-win';break;
         }
         case'pause':text=`<b>${escHtml(n)}</b> pausiert`;break;
