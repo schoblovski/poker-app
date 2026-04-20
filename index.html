@@ -1992,7 +1992,10 @@
       if(typeof _pmDrawerHide==='function')_pmDrawerHide();
       if(typeof _pmSendBack==='function')_pmSendBack();
       // Force full FAB rebuild on every navigation to tisch so it's always at body level with fresh listeners
-      if(_pm){_pm._lastStructFp='';_pm._lastFp='';}
+      if(_pm){_pm._lastStructFp='';_pm._lastFp='';
+        // Suppress deal animation when returning to table (hand may have started while away)
+        if(_pm.session?.hand_nr)_pm._animHandNr=Math.max(_pm._animHandNr??0,_pm.session.hand_nr);
+      }
       renderOnlineTisch();_pmCheckFullscreen();
     }else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
@@ -8649,7 +8652,9 @@
       const _enoughForBots=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;
       const _canStartForBots=isWaiting&&isAdmin&&_enoughForBots;
       const _sessionRunning=isRunning&&!!session.current_player_id;
-      const _alreadyBoughtInThisHand=_sessionRunning&&(_pm?.actions||[]).some(a=>a.spieler_id===mySeat?.spieler_id&&a.action==='buyin'&&(a.hand_nr||0)===(session.hand_nr||0));
+      const _alreadyBoughtInThisHand=(mySeat?.stack||0)>0||(
+        _sessionRunning&&(_pm?.actions||[]).some(a=>a.spieler_id===mySeat?.spieler_id&&a.action==='buyin'&&(a.hand_nr||0)===(session.hand_nr||0))
+      );
       const _buyinBtn=_alreadyBoughtInThisHand
         ?`<div style="font-size:13px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Bereit für nächste Spielrunde</div>`
         :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button>`;
@@ -9427,6 +9432,8 @@
     const addedStack=count*startStack;
     // During a running hand, keep sitting_out so server deals cards next hand
     const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
+    // Block double buy-in: sitting_out observer already has chips waiting for next hand
+    if(_pm.mySeat.status==='sitting_out'&&(_pm.mySeat.stack||0)>0){if(btn)btn.disabled=false;await showAlert('Du hast bereits einen Buy-In für die nächste Spielrunde vorgemerkt.');return;}
     // One buy-in per hand maximum for sitting_out observers during active hand
     if(sessionRunning&&_pm.mySeat.status==='sitting_out'){
       const alreadyBoughtIn=(_pm.actions||[]).some(a=>a.spieler_id===currentSpieler.id&&a.action==='buyin'&&(a.hand_nr||0)===(_pm.session?.hand_nr||0));
