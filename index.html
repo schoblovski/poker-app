@@ -5476,7 +5476,18 @@
   }
 
   async function _btRequestWakeLock(){
-    try{if('wakeLock' in navigator){_wakeLock=await navigator.wakeLock.request('screen');}}catch{}
+    try{
+      if(!('wakeLock' in navigator))return;
+      if(_wakeLock&&!_wakeLock.released)return; // already held
+      _wakeLock=await navigator.wakeLock.request('screen');
+      _wakeLock.addEventListener('release',()=>{
+        _wakeLock=null;
+        // Auto re-request if PM session running or blind timer running (but only when page is visible)
+        if(!document.hidden&&(_pm?.session?.status==='running'||_btState?.running)){
+          setTimeout(_btRequestWakeLock,300);
+        }
+      },{once:true});
+    }catch{}
   }
   function _btReleaseWakeLock(){try{_wakeLock?.release();_wakeLock=null;}catch{}}
 
@@ -7636,8 +7647,11 @@
   }
 
   // Re-request wake-lock when app comes back into focus during an active session
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&_pm&&typeof _btRequestWakeLock==='function')_btRequestWakeLock();});
-  window.addEventListener('focus',()=>{if(_pm&&typeof _btRequestWakeLock==='function')_btRequestWakeLock();});
+  // Delay is required on iOS: page must be fully visible before wake lock can be acquired
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&_pm)setTimeout(_btRequestWakeLock,300);});
+  window.addEventListener('focus',()=>{if(_pm)setTimeout(_btRequestWakeLock,300);});
+  // Periodic heartbeat: re-acquire lock every 30s in case it silently expired
+  setInterval(()=>{if(_pm?.session?.status==='running'&&!document.hidden)_btRequestWakeLock();},30000);
 
   function _pmReleaseWakeLock(){if(typeof _btReleaseWakeLock==='function')_btReleaseWakeLock();}
 
