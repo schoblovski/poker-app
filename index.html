@@ -9239,7 +9239,7 @@
     if(!raw)return'Unbekannter Fehler';
     // Try to extract JSON message field from HTTP error body like "HTTP 400: {...}"
     const jsonMatch=raw.match(/\{[\s\S]*\}/);
-    if(jsonMatch){try{const o=JSON.parse(jsonMatch[0]);if(o.message)raw=o.message;}catch{}}
+    if(jsonMatch){try{const o=JSON.parse(jsonMatch[0]);if(o.message||o.error)raw=o.message||o.error;}catch{}}
     // Map known server-side error strings to German
     const map=[
       [/not enough.*player|zu wenig.*spieler|need.*player/i,'Zu wenig Spieler am Tisch (mindestens 2 benötigt).'],
@@ -9793,7 +9793,7 @@
         body:JSON.stringify(body),
       });
     }catch(e){return{error:e.message};}
-    if(!res.ok){const t=await res.text().catch(()=>'');return{error:`HTTP ${res.status}: ${t}`};}
+    if(!res.ok){const t=await res.text().catch(()=>'');try{const j=JSON.parse(t);if(j.error||j.message)return{error:j.error||j.message};}catch{}return{error:`HTTP ${res.status}: ${t}`};}
     try{return await res.json();}catch{return{};}
   }
 
