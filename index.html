@@ -7503,6 +7503,7 @@
         const cnt=sessionSeats.length;
         const botCnt=sessionSeats.filter(x=>x.spieler?.ist_bot).length;
         const humanCnt=cnt-botCnt;
+        const totalBuyinsActive=sessionSeats.reduce((sum,seat)=>sum+(seat.buyins||1),0);
         const mySessStatus=sessionSeats.find(x=>x.spieler_id===currentSpieler?.id)?.status;
         const isCurrent=_pm?.id===s.id&&_pm?.mySeat?.status!=='sitting_out';
         const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
@@ -7517,7 +7518,7 @@
               <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}${myBadge}
             </div>
-            <div style="font-size:12px;color:var(--text-secondary)">${playerStr} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">${playerStr} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${totalBuyinsActive>0?` · ${totalBuyinsActive} Buy-In${totalBuyinsActive!==1?'s':''}`:''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
           </div>${chevron}
         </div>`;
       });
