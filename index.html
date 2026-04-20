@@ -8029,7 +8029,9 @@
       const _tmp=document.createElement('div');_tmp.innerHTML=_newHtml;
       for(const _sid of['pm-s-svg','pm-s-runout','pm-s-action','pm-s-result','pm-s-cards','pm-s-info','pm-s-stacks']){
         const _nEl=_tmp.querySelector('#'+_sid);const _oEl=document.getElementById(_sid);
-        if(!_nEl||!_oEl||_nEl.innerHTML===_oEl.innerHTML)continue;
+        if(!_oEl)continue;
+        if(!_nEl){_oEl.innerHTML='';continue;}
+        if(_nEl.innerHTML===_oEl.innerHTML)continue;
         _oEl.innerHTML=_nEl.innerHTML;
         _pmRebindSection(_sid);
       }
@@ -8477,7 +8479,7 @@
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
     const raw=actionsFiltered.slice(-40).reverse();
     const newHandMap={};
-    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look'&&!a.meta?.facedown)return false;return true;});
+    const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look'&&!a.meta?.facedown)return false;if(a.action==='dealt')return false;return true;});
     const placed=new Set();
     const display=[];
     for(let i=0;i<others.length;i++){
@@ -9461,6 +9463,7 @@
 
   function _pmShowBrokeModal(){
     if(document.getElementById('pm-broke-overlay'))return;
+    if((_pm?.mySeat?.stack??0)>0)return;
     const startStack=_pm?.session?.start_stack||100;
     const overlay=document.createElement('div');
     overlay.id='pm-broke-overlay';
