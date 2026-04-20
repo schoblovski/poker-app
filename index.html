@@ -8312,7 +8312,7 @@
         :`<div style="width:28px;height:28px;border-radius:50%;background:var(--bg-secondary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-secondary)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;
       const statusBadge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;background:#fff7ed;padding:1px 5px;border-radius:5px;margin-left:4px">ALLIN</span>`:isFolded?`<span style="font-size:9px;color:var(--text-tertiary);margin-left:4px">gefoldet</span>`:'';
       const youBadge=isMe?`<span style="font-size:9px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:1px 5px;border-radius:5px;margin-left:4px">du</span>`:'';
-      const buyinBadge=`<span style="font-size:9px;color:var(--text-tertiary);margin-left:4px">${s.buyins||1}× Buy-In</span>`;
+      const _bi=s.buyins||1;const buyinBadge=_bi>1?`<span style="font-size:10px;font-weight:700;color:#7c3aed;background:#ede9fe;padding:1px 6px;border-radius:5px;margin-left:4px">${_bi}× Buy-In</span>`:`<span style="font-size:10px;color:var(--text-tertiary);margin-left:4px">1× Buy-In</span>`;
       return`<div style="display:flex;align-items:center;gap:12px;padding:9px 0;${isFolded?'opacity:.4':''}">
         ${av}
         <div style="flex:1;min-width:0">
