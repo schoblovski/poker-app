@@ -7545,8 +7545,10 @@
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=localStorage.getItem('pm_show_equity')==='1';
     if(mySeatRow){
-      const{data:cardRow}=await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
-      _pm.myHoleCards=cardRow?.hole_cards||[];
+      // sitting_out players have no active cards (old card rows from previous hands must be ignored)
+      const _isSittingOut=mySeatRow.status==='sitting_out';
+      const{data:cardRow}=_isSittingOut?{data:null}:await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
+      _pm.myHoleCards=_isSittingOut?[]:cardRow?.hole_cards||[];
       const _fd=localStorage.getItem('pm_facedown')==='true';
       const _hn=session?.hand_nr||0;
       // Restore per-card revealed state from localStorage (survives app close/reopen)
@@ -7563,7 +7565,7 @@
           }catch{}
         }
       }
-      if(_pm.myHoleCards.length>0&&currentSpieler?.id){
+      if(_pm.myHoleCards.length>0&&currentSpieler?.id&&!_isSittingOut){
         if(!_fd&&(_pm._lookedHandNr??-1)!==_hn){
           // Non-facedown: auto-look so player isn't marked as blind
           _pm._lookedHandNr=_hn;
@@ -7769,8 +7771,8 @@
     const fabHtml=`<div id="pm-fab-menu">${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }${!isFinished&&_hasFreeSeats?`<button class="pm-fab-item" id="btn-pm-add-bot">${_fabIconBot}Bot hinzufügen</button>`:''  }<button class="pm-fab-item" id="btn-pm-settings">${_fabIconSettings}Session Einstellungen</button><button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button>${mySeat&&!isFinished?`<button class="pm-fab-item" id="btn-pm-leave">${_fabIconLeave}Tisch verlassen</button>`:''  }${!isFinished?`<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`:''  }</div><button id="pm-fab" class="pm-fab-vis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
     const handIsOver=!session.current_player_id;
 
-    // Feed
-    const feedHtml=_pmFeedHtml(actions);
+    // Feed – with optional slow-player sarcastic comment prepended
+    const feedHtml=_pmSlowCommentHtml(actions,session,seats)+_pmFeedHtml(actions);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
     const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished&&myStatus!=='sitting_out';
@@ -7849,7 +7851,7 @@
     }).join('');
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div id="pm-hole-cards-wrap" style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${(!useFdLayout||_perCard.size>0)?badgesRow:''}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
-    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span><button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
+    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span>${!isFinished?`<button id="btn-pm-feed-chat" title="Kommentar senden" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>`:''}<button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
     // Compute which players are currently "away" (screen locked / left the app)
     const _awayLast={};
     for(const _aa of(_pm.actions||[])){
@@ -8410,6 +8412,7 @@
           text=`<b>${escHtml(n)}</b> zeigt ${hc.length===1?'eine Karte':'Karten'}${cardRow}`;
           break;
         }
+        case'chat':{const _ct=a.meta?.text||'';if(!_ct)return'';text=`<b>${escHtml(n)}</b>: ${escHtml(_ct)}`;extra=' facedown-action';break;}
         case'dealt_blind':text=`<b>${escHtml(n)}</b> hat seine Karten blind erhalten`;extra=' facedown-action';break;
         case'look':{const _ci=a.meta?.card_idx;const _rv=a.meta?.revealed;const _tot=a.meta?.total;text=(_ci!=null&&_rv&&_tot)?`<b>${escHtml(n)}</b> schaut Karte ${_rv} von ${_tot} an`:`<b>${escHtml(n)}</b> hat seine Karten angesehen`;extra=' facedown-action';break;}
         case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
@@ -8851,6 +8854,7 @@
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
       requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=0;});
     });
+    document.getElementById('btn-pm-feed-chat')?.addEventListener('click',()=>{_pmOpenChatInput();});
     document.querySelectorAll('.pm-react-btn').forEach(btn=>{
       btn.addEventListener('click',async()=>{
         if(!_pm||!currentSpieler?.id)return;
@@ -9868,6 +9872,78 @@
     document.getElementById('pm-sess-equity').addEventListener('change',e=>{
       localStorage.setItem('pm_show_equity',e.target.checked?'1':'0');
       if(_pm)_pm._showEquity=e.target.checked;
+    });
+  }
+
+  // ── SLOW-PLAYER SARCASM ───────────────────────────────────────────────────
+  const _pmSlowComments=[
+    '{name} denkt noch nach… oder schläft.',
+    'Hat jemand {name} gesagt, dass er dran ist?',
+    '{name} analysiert alle Möglichkeiten. Sehr gründlich.',
+    'Wir warten auf {name}. Völlig entspannt.',
+    '{name} oder Netflix – beides läuft gerade.',
+    'Philosophische Pause von {name}.',
+    '{name} berechnet offenbar alle 52! Permutationen.',
+    'Falls {name} schläft – bitte sanft rütteln.',
+    '{name}, das Spiel wartet auf dich.',
+    'Die anderen Spieler werden langsam alt.',
+    '{name} sucht noch die optimale Strategie. Oder das Handy.',
+    'Die Stille ist ohrenbetäubend. {name} ist schuld.',
+    '{name} hat offenbar ein Event an der Gegenseite offen.',
+    'Tick tock. {name}.',
+    '{name}: Schneller als ein Gletscher, langsamer als alles andere.',
+  ];
+  function _pmSlowCommentHtml(actions,session,seats){
+    const cpId=session?.current_player_id;if(!cpId)return'';
+    const lastAct=[...(actions||[])].filter(a=>a.created_at&&!['dealer_comment','chat'].includes(a.action)).pop();
+    if(!lastAct?.created_at)return'';
+    const elapsedSec=(Date.now()-new Date(lastAct.created_at).getTime())/1000;
+    if(elapsedSec<150)return'';
+    const seat=(seats||[]).find(s=>s.spieler_id===cpId);
+    const name=seat?.spieler?.name||'?';
+    const h=_pmStrHash(cpId+(session?.hand_nr||0)+'slow');
+    const tmpl=_pmSlowComments[h%_pmSlowComments.length].replace('{name}',name);
+    // Attribute to a bot if present, else dealer
+    const botSeat=(seats||[]).find(s=>s.spieler?.ist_bot&&s.status==='active');
+    const ico=botSeat
+      ?`<img class="pf-av" src="${botSeat.spieler?.profilbild||''}" alt="" style="width:20px;height:20px">`
+      :`<div style="width:20px;height:20px;flex-shrink:0;background:#92400e;color:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900">D</div>`;
+    return`<div class="pm-feed-item" style="background:#fef3c7;color:#92400e;gap:6px;font-style:italic">${ico}<span style="flex:1;min-width:0;font-size:12px">${escHtml(tmpl)}</span></div>`;
+  }
+
+  // ── PLAYER CHAT COMMENTS ──────────────────────────────────────────────────
+  function _pmOpenChatInput(){
+    const sid='pm-chat-input-sheet';document.getElementById(sid)?.remove();
+    const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
+    overlay.innerHTML=`<div class="pm-sheet" style="padding-bottom:0">
+      <div class="pm-sheet-handle"></div>
+      <div class="pm-sheet-title" style="margin-bottom:var(--space-md)">Kommentar im Verlauf</div>
+      <div style="display:flex;gap:8px;align-items:center;padding-bottom:max(env(safe-area-inset-bottom,0px),16px)">
+        <input type="text" id="pm-chat-inp" maxlength="60" placeholder="Was denkst du…" autocomplete="off" autocorrect="on" style="flex:1;height:44px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg-secondary);padding:0 16px;font-size:16px;font-family:var(--font-sans);color:var(--text-primary);outline:none">
+        <button id="pm-chat-send" style="width:44px;height:44px;border-radius:22px;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:16px;height:16px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
+    const close=()=>{overlay.classList.remove('open');setTimeout(()=>overlay.remove(),300);};
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    const inp=document.getElementById('pm-chat-inp');
+    requestAnimationFrame(()=>inp?.focus());
+    document.getElementById('pm-chat-send').onclick=async()=>{
+      const txt=(inp?.value||'').trim();if(!txt)return;
+      close();await _pmSendChatMsg(txt);
+    };
+    inp?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('pm-chat-send')?.click();}});
+  }
+
+  async function _pmSendChatMsg(text){
+    if(!_pm?.id||!currentSpieler?.id)return;
+    const txt=text.trim().slice(0,60);if(!txt)return;
+    await db.from('online_actions').insert({
+      online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
+      action:'chat',street:_pm.session?.street||'preflop',
+      hand_nr:_pm.session?.hand_nr||0,meta:{text:txt},
     });
   }
 

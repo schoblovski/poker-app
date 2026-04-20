@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
   const { data: bot } = await db.from('spieler').select('ist_bot,name').eq('id', bot_spieler_id).single();
   if (!bot?.ist_bot) return err('Kein Bot', 403);
 
-  // Load session + all seats (service role bypasses hole_cards RLS)
+  // Load session + all seats (service role bypasses RLS)
   const [{ data: session }, { data: seats }] = await Promise.all([
     db.from('online_spiele').select('*').eq('id', online_spiel_id).single(),
     db.from('online_seats').select('*').eq('online_spiel_id', online_spiel_id).order('seat'),
@@ -123,12 +123,18 @@ Deno.serve(async (req) => {
   const mySeat = (seats ?? []).find((s: any) => s.spieler_id === bot_spieler_id);
   if (!mySeat) return err('Bot nicht am Tisch', 404);
 
+  // Hole cards are stored in online_seat_cards (separate table with RLS)
+  // Service role bypasses RLS so we can read them here
+  const { data: cardRow } = await db.from('online_seat_cards')
+    .select('hole_cards').eq('seat_id', mySeat.id).maybeSingle();
+  const botHoleCards: Card[] = cardRow?.hole_cards ?? [];
+
   const config: BotConfig = mySeat.bot_config ?? {};
 
   // ── REVEAL action ───────────────────────────────────────────────────────
   if (actionType === 'reveal') {
     if (config.karten_zeigen === 'nie') return json({ ok: true, skipped: true });
-    const holeCards: Card[] = mySeat.hole_cards ?? [];
+    const holeCards: Card[] = botHoleCards;
     if (!holeCards.length) return json({ ok: true, skipped: true });
     await db.from('online_actions').insert({
       online_spiel_id,
@@ -158,7 +164,7 @@ Deno.serve(async (req) => {
   if (session.current_player_id !== bot_spieler_id) return err('Nicht dran', 409);
   if (mySeat.status === 'folded' || mySeat.status === 'allin') return json({ ok: true, skipped: true });
 
-  const holeCards: Card[] = mySeat.hole_cards ?? [];
+  const holeCards: Card[] = botHoleCards;
   const board: Card[] = session.community_cards ?? [];
 
   const maxBet = Math.max(0, ...(seats ?? [])
