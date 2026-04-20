@@ -1577,6 +1577,7 @@
       if(_isIosSafari()||_pwaInstallEvent){showPwaSheet();}
     }
   },1000);
+  let _lastSwipeMs=0; // tracks custom swipe to suppress duplicate popstate on iOS
   window.addEventListener('popstate',()=>{
     // Intercept info modal close before any page navigation
     const _infoModal=document.getElementById('pm-info-modal');
@@ -1585,6 +1586,8 @@
       history.pushState({},'',' ');
       return;
     }
+    // On iOS, native swipe-back fires popstate in addition to touchend – suppress duplicate
+    if(Date.now()-_lastSwipeMs<600){history.pushState({},'',' ');return;}
     if(_pageHistory.length>1){
       _pageHistory.pop();
       const prev=_pageHistory[_pageHistory.length-1];
@@ -1603,6 +1606,7 @@
       const _infoM=document.getElementById('pm-info-modal');
       if(_infoM&&_infoM.style.display!=='none'){_infoM.style.display='none';return;}
       if(_pageHistory.length>1){
+        _lastSwipeMs=Date.now(); // mark so popstate handler skips duplicate iOS event
         _pageHistory.pop();const prev=_pageHistory[_pageHistory.length-1];
         _handlingPopstate=true;showPage(prev);_handlingPopstate=false;
       }
@@ -7523,14 +7527,17 @@
     // Fetch latest interesting action per active session – one query per session in parallel to guarantee coverage
     const _latestActMap={};
     if(active.length){
-      const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
-      const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',s.id).not('action','in',_skip).order('created_at',{ascending:false}).limit(1)));
+      // Whitelist approach: only actions we can display (avoids empty-string from unhandled types like 'bet', 'leave_permanent')
+      const _tickerActions='(fold,call,raise,check,allin,bet,blind,win,showdown_win)';
+      const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',s.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win']).order('created_at',{ascending:false}).limit(1)));
       _tickerResults.forEach((res,i)=>{
         const a=res.data?.[0];if(!a)return;
         const sid=active[i].id;
         const n=_lobbyNameMap[a.spieler_id]||'';
-        _latestActMap[sid]=_pmFormatTickerAction(a,n);
+        const txt=_pmFormatTickerAction(a,n);
+        if(txt)_latestActMap[sid]=txt;
       });
+      console.log('[lobby] latestActMap after build:',JSON.stringify(_latestActMap));
     }
     const done=visibleSessions.filter(s=>s.status==='finished');
     if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
@@ -7605,8 +7612,8 @@
       // Realtime – only set up once per full rebuild
       if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       _pmLobbyChannel=db.channel('pm-lobby')
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{console.log('[lobby-rt] online_spiele change');clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{console.log('[lobby-rt] online_seats change');clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},(payload)=>{
           // Update ticker immediately from payload – no extra DB query needed
           const a=payload.new;
@@ -7633,9 +7640,9 @@
           clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),400);
         })
         .subscribe();
-      // Ticker polling as fallback (in case Realtime payload is not available)
+      // Ticker polling as fallback (2s)
       if(_pmLobbyTickerInterval)clearInterval(_pmLobbyTickerInterval);
-      _pmLobbyTickerInterval=setInterval(_pmLobbyTickerTick,5000);
+      _pmLobbyTickerInterval=setInterval(_pmLobbyTickerTick,2000);
       _pmLobbyTickerTick();
     }else{
       // Only replace rows whose fingerprint changed – zero flicker
@@ -7674,7 +7681,7 @@
     const amt=a.amount!=null?` €${parseFloat(a.amount).toFixed(2)}`:'';
     if(a.action==='fold')return`${n} foldet`;
     if(a.action==='call')return`${n} callt${amt}`;
-    if(a.action==='raise')return`${n} erhöht auf${amt}`;
+    if(a.action==='raise'||a.action==='bet')return`${n} setzt${amt}`;
     if(a.action==='check')return`${n} checkt`;
     if(a.action==='allin')return`${n} All-in${amt}`;
     if(a.action==='blind')return`${n} Blind${amt}`;
@@ -7684,13 +7691,13 @@
 
   async function _pmLobbyTickerTick(){
     const el=document.getElementById('online-lobby-content');
-    if(!el)return;
+    if(!el){console.log('[lobby-tick] no lobby element');return;}
     const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
-    if(!rows.length)return;
-    const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+    if(!rows.length){console.log('[lobby-tick] no active rows');return;}
+    console.log('[lobby-tick] querying',rows.length,'session(s)');
     const results=await Promise.all(rows.map(r=>
       db.from('online_actions').select('spieler_id,action,amount,spieler(name)')
-        .eq('online_spiel_id',r.dataset.id).not('action','in',_skip)
+        .eq('online_spiel_id',r.dataset.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win'])
         .order('created_at',{ascending:false}).limit(1)
     ));
     rows.forEach((row,i)=>{
@@ -7708,6 +7715,7 @@
         content.appendChild(tickerDiv);
       }
       const span=tickerDiv.querySelector('span:last-child');
+      console.log('[lobby-tick] session',row.dataset.id,'db:',newTxt,'dom:',span?.textContent);
       if(span&&span.textContent!==newTxt){
         span.textContent=newTxt;
         span.style.animation='none';void span.offsetWidth;
