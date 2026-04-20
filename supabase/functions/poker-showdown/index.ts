@@ -116,9 +116,13 @@ Deno.serve(async (req) => {
 
     const maxScore = Math.max(...eligible.map(r => r.score));
     const winners = eligible.filter(r => r.score === maxScore);
-    const share = Math.floor(pot.amount / winners.length * 100) / 100;
+    // Floor to cent per winner, give remainder to first winner (official rule: leftmost from dealer)
+    const perWinner = Math.floor(pot.amount / winners.length * 100) / 100;
+    const remainder = Math.round((pot.amount - perWinner * winners.length) * 100) / 100;
 
-    for (const w of winners) {
+    for (let wi = 0; wi < winners.length; wi++) {
+      const w = winners[wi];
+      const share = wi === 0 ? perWinner + remainder : perWinner;
       stackUpdates[w.seatId] = (stackUpdates[w.seatId] ?? 0) + share;
       // Nur umkämpfte Pots (≥2 berechtigte Spieler) als "Gewinn" loggen.
       // Unkontestierter Sidepot = eigenes Geld zurück, kein echter Gewinn.
@@ -197,50 +201,59 @@ Deno.serve(async (req) => {
 
 type SidePot = { amount: number; eligibleSeatIds: string[] };
 
+function r2(n: number): number { return Math.round(n * 100) / 100; }
+
 function calcSidepots(
   seats: { id: string; status: string; bet_current_round: number; stack: number }[],
   totalPot: number,
   investedBySeat: Record<string, number> = {},
 ): SidePot[] {
-  // Vereinfachung: bei keinem All-In → ein Pot für alle
+  // Round totalPot to cents to eliminate floating-point residuals stored in DB
+  const total = r2(totalPot);
+
+  const nonFolded = seats.filter(s => s.status !== 'folded' && s.status !== 'sitting_out');
+
+  // No all-in → single pot for everyone active
   const allins = seats.filter(s => s.status === 'allin');
   if (allins.length === 0) {
-    const eligible = seats.filter(s => s.status !== 'folded' && s.status !== 'sitting_out');
-    return [{ amount: totalPot, eligibleSeatIds: eligible.map(s => s.id) }];
+    return [{ amount: total, eligibleSeatIds: nonFolded.map(s => s.id) }];
   }
 
-  // Sidepot-Berechnung über Einsatzstufen.
-  // Quelle der Wahrheit: investedBySeat aus dem Action-Log (funktioniert auch
-  // wenn bet_current_round nach vorherigen Strassen zurückgesetzt wurde).
-  const nonFolded = seats.filter(s => s.status !== 'folded' && s.status !== 'sitting_out');
+  // contributions: use action-log totals (covers all streets; bet_current_round resets each street)
+  // Fallback to 0 (not bet_current_round) since that value is unreliable after street resets.
   const contributions = seats
-    .map(s => ({ id: s.id, contrib: investedBySeat[s.id] ?? s.bet_current_round }))
+    .map(s => ({ id: s.id, contrib: r2(investedBySeat[s.id] ?? 0) }))
     .filter(c => c.contrib > 0)
     .sort((a, b) => a.contrib - b.contrib);
 
+  // Distinct contribution levels define pot tiers
   const levels = [...new Set(contributions.map(c => c.contrib))].sort((a, b) => a - b);
   const pots: SidePot[] = [];
   let prevLevel = 0;
 
   for (const level of levels) {
-    const diff = level - prevLevel;
-    const eligible = nonFolded.filter(s =>
-      contributions.find(c => c.id === s.id && c.contrib >= level)
-    );
-    const potAmount = diff * contributions.filter(c => c.contrib >= level).length;
+    const diff = r2(level - prevLevel);
+    // Count ALL players (including folded) who contributed at least `level` — their money is in the pot
+    const contributors = contributions.filter(c => c.contrib >= level);
+    const potAmount = r2(diff * contributors.length);
+    // Only non-folded players with sufficient contribution can WIN this tier
+    const eligible = nonFolded.filter(s => contributions.find(c => c.id === s.id && c.contrib >= level));
     if (potAmount > 0 && eligible.length > 0) {
       pots.push({ amount: potAmount, eligibleSeatIds: eligible.map(s => s.id) });
     }
     prevLevel = level;
   }
 
-  // Sicherstellen dass Gesamtpot korrekt ist.
-  // Differenz = Beiträge aus früheren Strassen (bet_current_round wurde zurückgesetzt).
-  // Diese gehören in den Hauptpot (pots[0]), da alle Spieler daran teilgenommen haben.
-  const sumPots = pots.reduce((s, p) => s + p.amount, 0);
-  if (sumPots < totalPot && pots.length > 0) {
-    pots[0].amount += totalPot - sumPots;
+  // Reconcile: if action-log sum differs from session.pot (e.g. earlier streets before log coverage),
+  // the gap belongs to the main pot (widest eligibility).
+  const sumPots = r2(pots.reduce((s, p) => s + p.amount, 0));
+  const diff = r2(total - sumPots);
+  if (diff > 0 && pots.length > 0) {
+    pots[0].amount = r2(pots[0].amount + diff);
+  } else if (diff < 0 && pots.length > 0) {
+    // Floating-point overshoot: trim from last (smallest) pot
+    pots[pots.length - 1].amount = r2(pots[pots.length - 1].amount + diff);
   }
 
-  return pots.length > 0 ? pots : [{ amount: totalPot, eligibleSeatIds: nonFolded.map(s => s.id) }];
+  return pots.length > 0 ? pots : [{ amount: total, eligibleSeatIds: nonFolded.map(s => s.id) }];
 }

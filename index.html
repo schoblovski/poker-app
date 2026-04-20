@@ -740,7 +740,10 @@
   .pt-rank{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;line-height:1;color:var(--text-primary)}
   .pt-suit{font-size:17px;line-height:1;color:var(--text-primary)}
   .pm-hole-wrap{display:flex;gap:10px;justify-content:center;padding:var(--space-sm) 0}
-  @media(min-width:768px){.pm-feed .pt-card{width:54px;height:74px}.pm-feed .pt-rank{font-size:21px}.pm-feed .pt-suit{font-size:20px}}
+  .pm-feed .pt-card:not(.big){width:23px;height:32px;border-radius:4px;gap:0;padding:2px 0}
+  .pm-feed .pt-card:not(.big) .pt-rank{font-size:10px}
+  .pm-feed .pt-card:not(.big) .pt-suit{font-size:9px}
+  @media(min-width:768px){.pm-feed .pt-card:not(.big){width:27px;height:38px}.pm-feed .pt-card:not(.big) .pt-rank{font-size:12px}.pm-feed .pt-card:not(.big) .pt-suit{font-size:11px}}
   @media(max-width:767px){.pt-card:not(.big):not(.back){justify-content:space-between;padding:7px 0;gap:0}.pt-card.community:not(.back){padding:5px 0}.pt-card:not(.big) .pt-rank{font-size:21px}.pt-card:not(.big) .pt-suit{font-size:19px}.pt-card.community .pt-rank{font-size:18px}.pt-card.community .pt-suit{font-size:16px}}
 
   /* Aktions-Buttons */
@@ -1424,7 +1427,7 @@
         if(typeof refreshBellBadge==='function')refreshBellBadge();
       }
       if(e.data?.type==='VIBRATE_TURN'){
-        if(navigator.vibrate&&localStorage.getItem('pm_vibrate_turn')!=='false')navigator.vibrate([80,40,120]);
+        try{if(navigator.vibrate&&localStorage.getItem('pm_vibrate_turn')!=='false')navigator.vibrate([80,40,120]);}catch(_){}
       }
     });
   }
@@ -7330,7 +7333,7 @@
       const isAway=!isEmpty&&!isPaused&&!isSittingOut&&awaySet?.has(seat.spieler_id);
       let cls='pm-seat-group';
       if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
-      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isSittingOut)cls+=' sitting-out';if(isActive&&!isFolded)cls+=' active-turn';if(isAway)cls+=' away';
+      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isSittingOut)cls+=' sitting-out';if(isActive&&!isFolded&&!isPaused)cls+=' active-turn';if(isAway)cls+=' away';
       const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,10);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
@@ -7661,7 +7664,7 @@
     if(!_pm)return;
     const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einstRows}]=await Promise.all([
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
-      db.from('online_seats').select('*,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
+      db.from('online_seats').select('*,bot_config,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
       db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
       db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
@@ -7864,7 +7867,7 @@
     const isAdmin=currentSpieler?.ist_admin;
     const isMyTurn=session.current_player_id===currentSpieler?.id&&session.status==='running';
     if(isMyTurn&&!_pmPrevTurn){
-      if(navigator.vibrate)navigator.vibrate(200);
+      try{if(navigator.vibrate)navigator.vibrate(200);}catch(_){}
       try{const ac=new AudioContext();const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=520;g.gain.setValueAtTime(0.18,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.18);o.start();o.stop(ac.currentTime+0.18);}catch(e){}
     }
     _pmPrevTurn=isMyTurn;
@@ -8018,6 +8021,8 @@
       else if(_aa.action==='new_hand')Object.keys(_awayLast).forEach(k=>delete _awayLast[k]);
     }
     const _awaySet=new Set(Object.entries(_awayLast).filter(([,v])=>v==='away').map(([k])=>k));
+    // Include own local away state so own avatar dims immediately (before DB write)
+    if(_pm._isAway&&currentSpieler?.id)_awaySet.add(currentSpieler.id);
     // Auto-send 'back' if we appear AFK in the loaded actions but are currently at the table
     if(currentSpieler?.id&&_awaySet.has(currentSpieler.id)&&!_pm._clearingAway&&!document.hidden){
       _awaySet.delete(currentSpieler.id);
@@ -8085,7 +8090,7 @@
     // Common post-render
     if(isMyTurn&&navigator.vibrate){
       const _vk=`${session.hand_nr}_${session.current_player_id}`;
-      if((_pm._lastVibTurn??'')!==_vk){_pm._lastVibTurn=_vk;navigator.vibrate([80,40,120]);}
+      if((_pm._lastVibTurn??'')!==_vk){_pm._lastVibTurn=_vk;try{navigator.vibrate([80,40,120]);}catch(_){}}
     }
     if(_canBuyin&&myStatus!=='sitting_out'&&(_pm._buyinPromptedHand??-1)!==session.hand_nr){
       _pm._buyinPromptedHand=session.hand_nr;setTimeout(_pmShowBrokeModal,400);
@@ -8814,7 +8819,7 @@
     if(!_pm?.mySeat||!currentSpieler?.id)return;
     if(!_pm._isAway)return;
     clearTimeout(_pm._awayTimer); // cancel pending debounced away notification
-    const wasTrulyAway=_pm._awayAt&&(Date.now()-_pm._awayAt)>=8000;
+    const wasTrulyAway=_pm._awayAt&&(Date.now()-_pm._awayAt)>=30000;
     _pm._isAway=false;
     if(!wasTrulyAway)return; // quick return – no away was logged, nothing to undo
     _pm.actions=(_pm.actions||[]).concat({id:`_back_local_${Date.now()}`,action:'back',spieler_id:currentSpieler.id,hand_nr:_pm.session?.hand_nr||0,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
@@ -10207,7 +10212,7 @@
     const delay=_rMin+Math.random()*Math.max(0,_rMax-_rMin);
     _pmBotTimer=setTimeout(async()=>{
       if(_pmBotTriggerKey!==key)return; // stale
-      _pmBotTriggerKey=null;
+      // Keep key set until game state changes – prevents duplicate calls from concurrent _pmLoad
       await _pmExecuteBotAction(botSeat,'play');
     },delay);
     // Heartbeat: if after max reaction + 8s the bot still hasn't acted, force a retry
