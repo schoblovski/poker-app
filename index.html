@@ -9895,13 +9895,14 @@
       // Reassign active so the rest of the picker code uses fresh data
       const active=freshActive;
       const[{data:allSeats},{data:mySeatsRows}]=await Promise.all([
-        db.from('online_seats').select('online_spiel_id,seat,spieler(ist_bot)').in('online_spiel_id',_sids),
+        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
       ]);
-      const cntMap={};const botMap={};
+      const cntMap={};const botMap={};const buyinMap={};
       (allSeats||[]).forEach(s=>{
         cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;
         if(s.spieler?.ist_bot)botMap[s.online_spiel_id]=(botMap[s.online_spiel_id]||0)+1;
+        buyinMap[s.online_spiel_id]=(buyinMap[s.online_spiel_id]||0)+(s.buyins||1);
       });
       const myStatusMap={};(mySeatsRows||[]).forEach(s=>{myStatusMap[s.online_spiel_id]=s.status;});
       const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
@@ -9928,7 +9929,7 @@
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}`:''}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
