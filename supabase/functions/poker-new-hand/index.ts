@@ -102,6 +102,13 @@ Deno.serve(async (req) => {
 
   const newHandNr = (session.hand_nr ?? 0) + 1;
 
+  // Idempotency guard: prevent double-start from concurrent button presses (multiple observers, double-click)
+  const { data: existingNewHand } = await db
+    .from('online_actions').select('id')
+    .eq('online_spiel_id', online_spiel_id)
+    .eq('action', 'new_hand').eq('hand_nr', newHandNr).limit(1);
+  if (existingNewHand?.length) return err('Spielrunde läuft bereits', 409);
+
   // Feed: 'join' actions for newly promoted observers and bots (inserted before new_hand divider)
   const promotedHumans = readyObservers.map((s: any) => s.spieler_id);
   const allPromoted = [...promotedHumans, ...promotedBotIds];

@@ -9314,11 +9314,14 @@
   }
 
   async function _pmNewHand(){
-    if(!_pm)return;
+    if(!_pm||_pm._newHandInProgress)return;
+    _pm._newHandInProgress=true;
     const btn=document.getElementById('btn-pm-newhand');if(btn){btn.disabled=true;btn.textContent='…';}
-    const resp=await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
-    if(resp?.error){await showAlert(_pmFriendlyError(resp.error));if(btn){btn.disabled=false;btn.textContent='Nächste Spielrunde';}}
-    else await _pmLoad();
+    try{
+      const resp=await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler.id});
+      if(resp?.error&&resp.status!==409)await showAlert(_pmFriendlyError(resp.error));
+      else await _pmLoad();
+    }finally{if(_pm)_pm._newHandInProgress=false;}
   }
 
   async function _pmRunout(){
@@ -10113,7 +10116,7 @@
     const lastCardDelay=((nCards-1)*active.length+(active.length-1))*gap;
     const totalMs=lastCardDelay+flyDur+200; // +200ms buffer
     _pm._dealAnimUntil=Date.now()+totalMs;
-    setTimeout(()=>{if(_pm){_pm._dealAnimUntil=0;_pm._lastFp='';renderOnlineTisch();}},totalMs);
+    setTimeout(()=>{if(_pm){_pm._dealAnimUntil=0;_pm._animHandNr=Math.max(_pm._animHandNr??0,_pm.session?.hand_nr??0);_pm._lastFp='';renderOnlineTisch();}},totalMs);
     for(let c=0;c<nCards;c++){
       active.forEach((seat,si)=>{
         const sa=angles[seat.seat-1]*Math.PI/180;

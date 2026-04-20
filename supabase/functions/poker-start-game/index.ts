@@ -92,6 +92,27 @@ Deno.serve(async (req) => {
   // Stacks für Blinds abziehen
   const sbStack = Math.max(0, sbSeat.stack - smallBlind);
   const bbStack = Math.max(0, bbSeat.stack - bigBlind);
+  const newHandNr = (session.hand_nr ?? 0) + 1;
+
+  // Optimistic lock: update session first. If hand_nr already advanced (another concurrent call won),
+  // no rows are matched and we return 409 instead of dealing cards twice.
+  const { data: sessionRows, error: sessUpErr } = await db
+    .from('online_spiele').update({
+      status: 'running',
+      street: 'preflop',
+      community_cards: [],
+      runout_cards: null,
+      pot: smallBlind + bigBlind,
+      dealer_seat: dealerSeat,
+      current_player_id: utgSeat.spieler_id,
+      street_last_actor_id: bbSeat.spieler_id,
+      hand_nr: newHandNr,
+    })
+    .eq('id', online_spiel_id)
+    .or(`hand_nr.is.null,hand_nr.lt.${newHandNr}`)
+    .select('id');
+  if (sessUpErr) return err(`DB-Fehler: ${sessUpErr.message}`, 500);
+  if (!sessionRows?.length) return err('Spielrunde bereits gestartet', 409);
 
   // Transaktionen: Deck speichern (service role only)
   const ops = await Promise.all([
@@ -118,26 +139,12 @@ Deno.serve(async (req) => {
         stack,
       }).eq('id', seat.id);
     }),
-
-    // Spielzustand aktualisieren
-    db.from('online_spiele').update({
-      status: 'running',
-      street: 'preflop',
-      community_cards: [],
-      runout_cards: null,
-      pot: smallBlind + bigBlind,
-      dealer_seat: dealerSeat,
-      current_player_id: utgSeat.spieler_id,
-      street_last_actor_id: bbSeat.spieler_id, // BB schließt preflop die Runde (Option)
-      hand_nr: (session.hand_nr ?? 0) + 1,
-    }).eq('id', online_spiel_id),
   ]);
 
   const failed = ops.find(r => r.error);
   if (failed?.error) return err(`DB-Fehler: ${failed.error.message}`, 500);
 
   // Action-Log: Blinds eintragen + dealt-Marker für alle aktiven Spieler
-  const newHandNr = (session.hand_nr ?? 0) + 1;
   const blindIds = new Set([sbSeat.id, bbSeat.id]);
   const dealtActions = seats
     .filter((seat: { id: string }) => !blindIds.has(seat.id))
