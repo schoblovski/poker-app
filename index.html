@@ -2001,6 +2001,7 @@
       if(!isOnlinePage&&_pmLobbyTickerInterval){clearInterval(_pmLobbyTickerInterval);_pmLobbyTickerInterval=null;}
       if(_pm?.id&&_pm?.mySeat&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
+        if(page==='online-lobby'){const _drd=document.getElementById('pm-drawer');if(_drd&&_drd.classList.contains('pm-dvis')&&!_drd.classList.contains('pm-dopen'))_pmDrawerToggle();}
         if(typeof _pmSendAway==='function')_pmSendAway();
       }else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
@@ -7969,6 +7970,7 @@
     if(!skipRender&&_tischActive)renderOnlineTisch();
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
+    else if(!_tischActive&&_pm?.mySeat&&typeof _pmDrawerShow==='function'){_pmDrawerShow();if(document.getElementById('page-online-lobby')?.classList.contains('active')){const _drd2=document.getElementById('pm-drawer');if(_drd2&&_drd2.classList.contains('pm-dvis')&&!_drd2.classList.contains('pm-dopen'))_pmDrawerToggle();}}
     _pmCheckSpecialHands();
     _pmAutoReveal();
     _pmMaybeTriggerBot();

@@ -24,6 +24,8 @@ jobs:
           supabase functions deploy poker-new-hand     --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-reveal-runout --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-bot-action   --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+          supabase functions deploy poker-bot-cron     --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy send-push          --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+          supabase functions deploy weekly-backup      --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
