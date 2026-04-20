@@ -7551,7 +7551,7 @@
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       // Push notification: notify all OTHER players subscribed to session_start
       const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
-      if(_otherPlayers.length)triggerPush({spieler_ids:_otherPlayers,title:'Neue Online-Session! 🃏',body:`${currentSpieler?.name||'Jemand'} hat eine Pokersession gestartet – jetzt joinen!`,kategorie:'session_start',data:{url:`/online-tisch?session=${sess.id}`,tag:'session_start'}});
+      if(_otherPlayers.length)triggerPush({spieler_ids:_otherPlayers,title:'Neue Online-Session! 🃏',body:`${currentSpieler?.name||'Jemand'} hat eine Pokersession gestartet – jetzt joinen!`,kategorie:'session_start',data:{url:`/#online-tisch?session=${sess.id}`,tag:'session_start'}});
       close();enterOnlineSession(sess.id);
     };
   }
@@ -7651,7 +7651,7 @@
       const _isSittingOut=mySeatRow.status==='sitting_out';
       const _hn0=session?.hand_nr||0;
       // Check if player was dealt cards this hand (has blind/look/dealt_blind action for current hand_nr)
-      const _dealtThisHand=!_isSittingOut&&(actions||[]).some(a=>a.spieler_id===currentSpieler?.id&&(a.hand_nr||0)===_hn0&&(a.action==='blind'||a.action==='look'||a.action==='dealt_blind'));
+      const _dealtThisHand=!_isSittingOut&&(actions||[]).some(a=>a.spieler_id===currentSpieler?.id&&(a.hand_nr||0)===_hn0&&(a.action==='blind'||a.action==='look'||a.action==='dealt_blind'||a.action==='dealt'));
       const{data:cardRow}=(_isSittingOut||!_dealtThisHand)?{data:null}:await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
       _pm.myHoleCards=(_isSittingOut||!_dealtThisHand)?[]:cardRow?.hole_cards||[];
       const _fd=localStorage.getItem('pm_facedown')==='true';
@@ -9188,6 +9188,7 @@
       [/not.*turn|wrong.*player/i,'Du bist gerade nicht am Zug.'],
       [/game.*finished|session.*ended/i,'Session ist bereits beendet.'],
       [/not.*admin|admin.*required/i,'Diese Aktion ist nur für Admins.'],
+      [/check nicht möglich|check.*einsatz/i,'Check nicht möglich – es gibt einen Einsatz. Bitte wähle Call oder Fold.'],
     ];
     for(const[re,msg]of map){if(re.test(raw))return msg;}
     return raw;
@@ -9456,6 +9457,8 @@
     overlay.querySelector('#pm-broke-watch').addEventListener('click',async()=>{
       overlay.remove();
       if(_pm?.mySeat&&currentSpieler){
+        _pm.mySeat={..._pm.mySeat,status:'sitting_out'};
+        renderOnlineTisch();
         await db.from('online_seats').update({status:'sitting_out'}).eq('id',_pm.mySeat.id);
         db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
         _pmScheduleLoad();
@@ -9679,6 +9682,12 @@
   const _pmRound05=v=>Math.round(v*20)/20; // rounds to nearest €0.05
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
+    // Client-side check validation: if state drifted and check is no longer valid, reload silently
+    if(action==='check'){
+      const _maxBet=Math.max(0,...(_pm.seats||[]).filter(s=>s.status!=='folded'&&s.status!=='sitting_out').map(s=>s.bet_current_round||0));
+      const _myBet=_pm.mySeat?.bet_current_round||0;
+      if(Math.round((_maxBet-_myBet)*100)>0){await _pmLoad();return;}
+    }
     _pmActInFlight=true;
     _pmActCooldownUntil=Date.now()+700; // block ghost-tap Vorauswahl opens for 700 ms
     document.querySelectorAll('.pm-act-btn,.pm-pre-btn,#pm-raise-confirm,#pm-raise-toggle').forEach(b=>{b.disabled=true;});

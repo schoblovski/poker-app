@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
   const maxBet = Math.max(0, ...(seats ?? [])
     .filter((s: { status: string }) => s.status !== 'folded' && s.status !== 'sitting_out')
     .map((s: { bet_current_round: number }) => s.bet_current_round));
-  const callAmount = maxBet - mySeat.bet_current_round;
+  const callAmount = Math.round((maxBet - mySeat.bet_current_round) * 100) / 100;
 
   // ── Aktion verarbeiten ───────────────────────────────────
   let newStack = mySeat.stack;
@@ -357,7 +357,7 @@ async function executePreActionIfSet(
     .filter(s => s.status !== 'folded' && s.status !== 'sitting_out')
     .map(s => s.bet_current_round));
   const fullSeat = seats.find(s => s.id === seat.id)!;
-  const callAmount = maxBet - fullSeat.bet_current_round;
+  const callAmount = Math.round((maxBet - fullSeat.bet_current_round) * 100) / 100;
 
   let autoAction: string | null = null;
 

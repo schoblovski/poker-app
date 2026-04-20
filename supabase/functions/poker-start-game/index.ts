@@ -136,7 +136,19 @@ Deno.serve(async (req) => {
   const failed = ops.find(r => r.error);
   if (failed?.error) return err(`DB-Fehler: ${failed.error.message}`, 500);
 
-  // Action-Log: Blinds eintragen
+  // Action-Log: Blinds eintragen + dealt-Marker für alle aktiven Spieler
+  const newHandNr = (session.hand_nr ?? 0) + 1;
+  const blindIds = new Set([sbSeat.id, bbSeat.id]);
+  const dealtActions = seats
+    .filter((seat: { id: string }) => !blindIds.has(seat.id))
+    .map((seat: { spieler_id: string }) => ({
+      online_spiel_id,
+      spieler_id: seat.spieler_id,
+      action: 'dealt',
+      amount: null,
+      street: 'preflop',
+      hand_nr: newHandNr,
+    }));
   await db.from('online_actions').insert([
     {
       online_spiel_id,
@@ -144,7 +156,7 @@ Deno.serve(async (req) => {
       action: 'blind',
       amount: smallBlind,
       street: 'preflop',
-      hand_nr: (session.hand_nr ?? 0) + 1,
+      hand_nr: newHandNr,
     },
     {
       online_spiel_id,
@@ -152,8 +164,9 @@ Deno.serve(async (req) => {
       action: 'blind',
       amount: bigBlind,
       street: 'preflop',
-      hand_nr: (session.hand_nr ?? 0) + 1,
+      hand_nr: newHandNr,
     },
+    ...dealtActions,
   ]);
 
   // Push Notification an UTG (erster Spieler nach BB)
