@@ -7944,7 +7944,7 @@
     const infoBar=(mySeat&&myStatus!=='sitting_out')?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
-        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(mySeat.stack||0).toFixed(2)}</div>
+        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:${(mySeat.stack||0)>0?'var(--accent)':'var(--text-primary)'}">€${(mySeat.stack||0).toFixed(2)}</div>
       </div>
       ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px">
