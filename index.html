@@ -7549,7 +7549,7 @@
         const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)';
         const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||'';
         const _tickerTxt=_latestActMap[s.id]||'';
-        const _avatarHtml=humanSeats.length?`<div style="display:flex;align-items:center;margin-bottom:5px">${humanSeats.slice(0,7).map((hs,hi)=>{const pb=hs.spieler?.profilbild;const nm=escHtml((hs.spieler?.name||'?').slice(0,2).toUpperCase());return`<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--surface);margin-left:${hi?'-10px':'0'};flex-shrink:0;background:var(--bg-secondary)">${pb?`<img src="${escHtml(pb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text-tertiary)">${nm}</div>`}</div>`;}).join('')}${humanSeats.length>7?`<div style="width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--surface);margin-left:-10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-secondary)">+${humanSeats.length-7}</div>`:''}</div>`:'';
+        const _avatarHtml=humanSeats.length?`<div style="display:flex;align-items:center;margin-bottom:5px">${humanSeats.slice(0,7).map((hs,hi)=>{const pb=hs.spieler?.profilbild;const nm=escHtml((hs.spieler?.name||'?').slice(0,2).toUpperCase());return`<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--surface);margin-left:${hi?'-12px':'0'};flex-shrink:0;background:var(--bg-secondary)">${pb?`<img src="${escHtml(pb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text-tertiary)">${nm}</div>`}</div>`;}).join('')}${humanSeats.length>7?`<div style="width:40px;height:40px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--surface);margin-left:-12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-secondary)">+${humanSeats.length-7}</div>`:''}</div>`:'';
         const _tickerHtml=_tickerTxt?`<div class="pm-ticker-line" style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pm-ticker-in .3s ease both;font-family:var(--font-sans)">${_tickerTxt}</span></div>`:'';
         const _fpA=`${s.status}|${s.hand_nr||0}|${cnt}|${totalBuyinsActive}|${mySessStatus||''}`;
         html+=`<div class="card clickable pm-session-row" data-id="${s.id}" data-status="${s.status}" data-fp="${_fpA}" style="margin-bottom:8px;${rowBg}"><div class="pm-session-content" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="font-size:22px;color:${varColor};line-height:1;flex-shrink:0">${varIcon}</span><span style="font-size:17px;font-weight:800;color:var(--text-primary);letter-spacing:-.3px;flex:1;min-width:0">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}${chevron}</div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:${humanSeats.length?'5':'0'}px">${playerStr}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}${totalBuyinsActive>0?` · ${totalBuyinsActive} Buy-In${totalBuyinsActive!==1?'s':''}`:''}</div>${_avatarHtml}${_tickerHtml}</div></div>`;
@@ -7643,6 +7643,23 @@
         old.dataset.fp=nw.dataset.fp;
         old.setAttribute('style',nw.getAttribute('style')||'');
         old.innerHTML=nw.innerHTML;
+      });
+      // Always update ticker text (not in fingerprint – changes on every action)
+      _existRows.forEach(old=>{
+        if(old.dataset.status==='finished')return;
+        const newTxt=_latestActMap[old.dataset.id]||'';
+        const content=old.querySelector('.pm-session-content');
+        if(!content)return;
+        let td=content.querySelector('.pm-ticker-line');
+        if(!newTxt){td?.remove();return;}
+        if(!td){
+          td=document.createElement('div');td.className='pm-ticker-line';
+          td.style.cssText='display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)';
+          td.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-sans)"></span>`;
+          content.appendChild(td);
+        }
+        const sp=td.querySelector('span:last-child');
+        if(sp&&sp.textContent!==newTxt){sp.textContent=newTxt;sp.style.animation='none';void sp.offsetWidth;sp.style.animation='pm-ticker-in .3s ease both';}
       });
     }
     _pmUpdateLiveIndicator();
