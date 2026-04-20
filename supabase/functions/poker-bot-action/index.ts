@@ -111,13 +111,15 @@ Deno.serve(async (req) => {
     }
     await Promise.all(ops);
     if (caller_id) {
-      const { data: sess } = await db.from('online_spiele').select('hand_nr').eq('id', online_spiel_id).single();
-      await db.from('online_actions').insert({
-        online_spiel_id, spieler_id: caller_id,
-        action: 'bot_config_changed',
-        hand_nr: sess?.hand_nr ?? 0,
-        meta: { bot_name: name || botInfo.name, new_config: config },
-      }).catch(() => {});
+      try {
+        const { data: sess } = await db.from('online_spiele').select('hand_nr').eq('id', online_spiel_id).single();
+        await db.from('online_actions').insert({
+          online_spiel_id, spieler_id: caller_id,
+          action: 'bot_config_changed',
+          hand_nr: sess?.hand_nr ?? 0,
+          meta: { bot_name: name || botInfo.name, new_config: config },
+        });
+      } catch { /* feed log is non-critical */ }
     }
     return json({ ok: true });
   }

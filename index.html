@@ -787,6 +787,7 @@
   .pm-react-btn:active{transform:scale(.88)!important}
   @keyframes pm-feed-slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pm-ticker-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  @keyframes pm-live-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
   .pm-feed-new{animation:pm-feed-slide-in .22s ease-out both}
   [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
   .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
@@ -1993,12 +1994,14 @@
       document.getElementById('pm-fab')?.remove();document.getElementById('pm-fab-menu')?.remove();
       document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
+      if(!isOnlinePage&&_pmLobbyTickerInterval){clearInterval(_pmLobbyTickerInterval);_pmLobbyTickerInterval=null;}
       if(_pm?.id&&_pm?.mySeat&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
         if(typeof _pmSendAway==='function')_pmSendAway();
       }else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
+    if(page!=='online-lobby'&&_pmLobbyTickerInterval){clearInterval(_pmLobbyTickerInterval);_pmLobbyTickerInterval=null;}
     if(page==='home')loadHome();
     if(page==='spiel')loadSpiel();
     if(page==='verwaltung')loadVerwaltung();
@@ -6708,8 +6711,8 @@
             titel:'Besondere Hände',
             text:'Erfasse Poker, Straight Flush, Royal Flush und 7-2 Gewinne mit optionalem Beweisfoto. Bei 7-2 werden automatisch Transaktionen (1€ von jedem Mitspieler) erstellt. Der Gewinner erhält eine Push-Benachrichtigung.'},
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><line x1="12" y1="13" x2="12" y2="15"/></svg>',
-            titel:'Online-Modus (Pandemie-Modus)',
-            text:'Spiele echtes Poker online mit der ganzen Runde — auch wenn ihr euch nicht physisch treffen könnt. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'},
+            titel:'Online-Modus',
+            text:'Spiele echtes Poker online mit der ganzen Runde — ideal bei Pandemien, Reisen oder sonstigen Hindernissen. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'},
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
             titel:'Push-Benachrichtigungen',
             text:'Aktiviere Benachrichtigungen im Profil. Wähle welche Kategorien du erhalten möchtest: Spielergebnisse, Buy-Ins, Besondere Hände, Transaktionen, App-Updates. Auf iOS muss die App zuerst zum Homescreen hinzugefügt werden.'},
@@ -7258,7 +7261,7 @@
   }
 
   // ── PANDEMIE-MODUS ─────────────────────────────────────
-  let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;
+  let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;let _pmLobbyTickerInterval=null;
   const _pmSuitSymbol={s:'♠',h:'♥',d:'♦',c:'♣'};
   const _pmRankStr={14:'A',13:'K',12:'Q',11:'J',10:'10'};
   let _pm=null; // aktiver Session-State
@@ -7560,7 +7563,7 @@
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}${myBadge}
             </div>
             <div style="font-size:12px;color:var(--text-secondary)">${playerStr} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${totalBuyinsActive>0?` · ${totalBuyinsActive} Buy-In${totalBuyinsActive!==1?'s':''}`:''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
-            ${_tickerTxt?`<div class="pm-ticker-line" style="font-size:11px;color:var(--text-tertiary);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pm-ticker-in .3s ease both">${_tickerTxt}</div>`:''}
+            ${_tickerTxt?`<div class="pm-ticker-line" style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pm-ticker-in .3s ease both;font-family:var(--font-sans)">${_tickerTxt}</span></div>`:''}
           </div>${chevron}
         </div>`;
       });
@@ -7621,6 +7624,9 @@
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),400);})
         .subscribe();
+      // Fallback polling for ticker (2.5s) – guarantees updates even if Realtime events are throttled
+      if(_pmLobbyTickerInterval)clearInterval(_pmLobbyTickerInterval);
+      _pmLobbyTickerInterval=setInterval(()=>loadOnlineLobby(true),2500);
     }else{
       // Only replace rows whose fingerprint changed – zero flicker
       const _tmp=document.createElement('div');_tmp.innerHTML=html;
@@ -9970,7 +9976,7 @@
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}`:''}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}':''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
