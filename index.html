@@ -8884,7 +8884,7 @@
     const statusColor=sStatus==='folded'?'var(--danger)':sStatus==='allin'?'#c2410c':sStatus==='paused'?'#d97706':sAway?'#64748b':isCurrentPlayer?'#2563eb':'var(--accent-text)';
     // Feed excerpt: last 10 actions by or about this player
     const _playerActs=(_pm?.actions||[]).filter(a=>a.spieler_id===sid).slice(-10);
-    const _feedExcerpt=_playerActs.length?`<div style="margin-bottom:16px;background:var(--bg-secondary);border-radius:14px;overflow:hidden;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);padding:10px 14px 4px;font-weight:700">Verlauf</div><div style="font-size:12px;padding:0 4px 6px">${_pmFeedHtml(_playerActs)}</div></div>`:'';
+    const _feedExcerpt=_playerActs.length?`<div style="margin-bottom:16px;background:var(--bg-secondary);border-radius:14px;overflow:hidden;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);padding:10px 14px 4px;font-weight:700">Verlauf</div><div style="font-size:12px;padding:0 4px 6px;max-height:220px;overflow-y:auto;overscroll-behavior:contain">${_pmFeedHtml(_playerActs)}</div></div>`:'';
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;touch-action:none';
     ov.innerHTML=`<div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:0 0 calc(24px + env(safe-area-inset-bottom,0px));max-height:82dvh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -8px 40px rgba(0,0,0,.3)">
