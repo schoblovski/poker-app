@@ -8078,6 +8078,8 @@
       // Incremental section update – only changed sections are replaced, no full DOM rebuild
       const _tmp=document.createElement('div');_tmp.innerHTML=_newHtml;
       for(const _sid of['pm-s-svg','pm-s-runout','pm-s-action','pm-s-result','pm-s-cards','pm-s-info','pm-s-stacks']){
+        // Don't replace SVG while deal animation is running – flying cards live inside it
+        if(_sid==='pm-s-svg'&&_pm?._dealAnimUntil&&Date.now()<_pm._dealAnimUntil)continue;
         const _nEl=_tmp.querySelector('#'+_sid);const _oEl=document.getElementById(_sid);
         if(!_oEl)continue;
         if(!_nEl){_oEl.innerHTML='';continue;}
@@ -10070,6 +10072,12 @@
     const active=(_pm.seats||[]).filter(s=>s.spieler_id&&s.status!=='sitting_out').sort((a,b)=>a.seat-b.seat);
     if(active.length<2)return;
     const gap=active.length>5?120:150;
+    const flyDur=570; // must match dur in _pmFlyCard
+    // Block SVG re-renders for the full deal duration so in-flight cards aren't erased
+    const lastCardDelay=((nCards-1)*active.length+(active.length-1))*gap;
+    const totalMs=lastCardDelay+flyDur+200; // +200ms buffer
+    _pm._dealAnimUntil=Date.now()+totalMs;
+    setTimeout(()=>{if(_pm){_pm._dealAnimUntil=0;_pm._lastFp='';renderOnlineTisch();}},totalMs);
     for(let c=0;c<nCards;c++){
       active.forEach((seat,si)=>{
         const sa=angles[seat.seat-1]*Math.PI/180;
