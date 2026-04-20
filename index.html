@@ -10416,7 +10416,10 @@
     setTimeout(async()=>{
       if(!_pm||_pm._botNextHandKey!==key)return;
       _pm._botNextHandKey=null;
-      try{await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler?.id||''});}
+      // Use a bot's spieler_id – human observer has no seat and poker-new-hand would return 403
+      const _botCaller=(_pm?.seats||[]).find(s=>s.spieler?.ist_bot&&s.status!=='sitting_out');
+      const _callerId=_botCaller?.spieler_id||currentSpieler?.id||'';
+      try{await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:_callerId});}
       catch(e){console.warn('[bot] next-hand error:',e);}
     },3500);
   }
