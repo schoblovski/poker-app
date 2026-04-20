@@ -7581,11 +7581,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)">
         <div style="grid-column:1/-1"><div class="section-title" style="margin:0 0 var(--space-xs)">Buy-In Wert (Pot-Faktor)</div><input type="text" id="pm-new-stack" value="${einstellungen.buyin_pot||5}" inputmode="none" class="form-input pm-num" data-label="Buy-In Wert"></div>
       </div>
-      <div style="font-size:12px;color:var(--text-secondary);margin:0 0 var(--space-md);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
-      <div class="list-item" style="background:var(--bg-secondary);border-radius:var(--radius-sm);margin:0 0 var(--space-lg);padding:12px 14px">
-        <div class="item-body"><div class="item-title" style="font-size:13px">Bot Auto-Rebuy</div><div class="item-subtitle" style="font-size:11px">Bots kaufen nach dem Ausscheiden automatisch neue Chips</div></div>
-        <label class="toggle-switch"><input type="checkbox" id="pm-new-bot-rebuy" checked><span class="toggle-slider"></span></label>
-      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin:0 0 var(--space-lg);padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm)">Pokerkasse-Faktor ist bei Online-Sessions immer €0. Spieler erhalten pro Buy-In Chips im Wert des Pot-Faktors.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-new-cancel" style="max-width:none;margin:0">Abbrechen</button>
         <button class="btn btn-primary" id="pm-new-ok" style="max-width:none;margin:0">Session erstellen</button>
@@ -7620,11 +7616,10 @@
       if(big_blind_v<small_blind){await showAlert('Big Blind darf nicht kleiner als Small Blind sein.');return;}
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
       const is_test=false;
-      const bot_auto_rebuy=document.getElementById('pm-new-bot-rebuy')?.checked!==false;
       const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
       const spiel_id=null; // created at payout confirmation, not at session start
       const big_blind=big_blind_v;
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting',bot_auto_rebuy}).select().single();
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       // Push notification: notify all OTHER players subscribed to session_start
       const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
@@ -10386,6 +10381,8 @@
     const sid='pm-session-settings-sheet';document.getElementById(sid)?.remove();
     const equityOn=localStorage.getItem('pm_show_equity')==='1';
     const actionsOnly=localStorage.getItem('pm_feed_actions_only')==='1';
+    const hasBots=(_pm?.seats||[]).some(s=>s.bot_config);
+    const botRebuy=_pm?.session?.bot_auto_rebuy!==false; // default true
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
@@ -10398,13 +10395,20 @@
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-equity"${equityOn?' checked':''}><span class="toggle-slider"></span></label>
         </div>
-        <div class="setting-row" style="padding:14px 0">
+        <div class="setting-row" style="padding:14px 0${hasBots?';border-bottom:1px solid var(--border)':''}">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Nur Spieler-Aktionen</div>
             <div class="setting-sub" style="font-size:12px">Feed zeigt nur Fold/Call/Raise/Win – keine System-Events, Dealer-Kommentare oder Status-Meldungen</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-actonly"${actionsOnly?' checked':''}><span class="toggle-slider"></span></label>
         </div>
+        ${hasBots?`<div class="setting-row" style="padding:14px 0">
+          <div class="setting-info">
+            <div class="setting-label" style="font-size:14px">Bot Auto-Rebuy</div>
+            <div class="setting-sub" style="font-size:12px">Bots kaufen nach dem Ausscheiden automatisch neue Chips – deaktivieren für permanente Eliminierung</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="pm-sess-botrebuy"${botRebuy?' checked':''}><span class="toggle-slider"></span></label>
+        </div>`:''}
       </div>
       <button class="btn btn-ghost" id="pm-sess-close" style="margin-top:var(--space-md);max-width:none;margin-left:0;margin-right:0">Schließen</button>
     </div>`;
@@ -10419,6 +10423,12 @@
     document.getElementById('pm-sess-actonly').addEventListener('change',e=>{
       localStorage.setItem('pm_feed_actions_only',e.target.checked?'1':'0');
       if(_pm)renderOnlineTisch();
+    });
+    document.getElementById('pm-sess-botrebuy')?.addEventListener('change',async e=>{
+      if(!_pm?.id)return;
+      const v=e.target.checked;
+      await db.from('online_spiele').update({bot_auto_rebuy:v}).eq('id',_pm.id);
+      if(_pm.session)_pm.session.bot_auto_rebuy=v;
     });
   }
 
