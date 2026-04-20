@@ -7300,7 +7300,7 @@
       const diff=lvl-prev;
       const elig=nonFolded.filter(s=>contributions.find(c=>c.id===s.id&&c.contrib>=lvl));
       const amt=Math.round(diff*contributions.filter(c=>c.contrib>=lvl).length*100)/100;
-      if(amt>0&&elig.length>0)pots.push({amount:amt,eligible:elig.length});
+      if(amt>0&&elig.length>0)pots.push({amount:amt,eligible:elig.length,names:elig.map(s=>(s.spieler?.name||'?').split(' ')[0].slice(0,8))});
       prev=lvl;
     }
     const sumPots=Math.round(pots.reduce((s,p)=>s+p.amount,0)*100)/100;
@@ -7946,7 +7946,7 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
         <div style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:${(mySeat.stack||0)>0?'var(--accent)':'var(--text-primary)'}">€${(mySeat.stack||0).toFixed(2)}</div>
       </div>
-      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
+      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div style="margin-bottom:2px"><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}${p.names?.length?`<div style="font-size:8px;font-weight:500;font-family:var(--font-sans);color:var(--text-secondary);margin-top:1px">${p.names.join(' · ')}</div>`:''}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Buy-Ins</div>
         <div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${mySeat.buyins||1}×</div>
