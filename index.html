@@ -3156,6 +3156,18 @@
           'Variante <strong>Omaha Hi-Lo</strong>: Pot wird zwischen bester hoher und bester niedriger Hand gesplittet.',
         ]
       },
+      {
+        titel:'Texahma',
+        badge:'Eigene Erfindung',
+        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5" style="width:18px;height:18px"><rect x="2" y="4" width="12" height="17" rx="2"/><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="10" y="4" width="12" height="17" rx="2"/><path d="M14 8l4 4-4 4" stroke-width="2"/></svg>`,
+        punkte:[
+          '<strong>4 Hole Cards</strong> verdeckt an jeden Spieler.',
+          'Gleich 5 Community Cards wie bei Hold\'em.',
+          'Du kannst <strong>0 bis 4</strong> eigene Karten frei wählen — keine Pflicht, keine Grenze.',
+          'Vierling in der Hand + 1 Community Card? Gültig. Nur Board ohne eigene Karten? Auch gültig.',
+          'Eigene Erfindung der Runde: maximale Flexibilität, maximale Überraschungen.',
+        ]
+      },
     ];
 
     let html=`<button class="back-btn" id="poker-infos-back">${backIcon} Zurück</button>
@@ -3177,8 +3189,9 @@
     html+=`<div class="section-title" style="margin-top:var(--space-lg)">Spielregeln</div>`;
 
     REGELN.forEach(r=>{
+      const badgeHtml=r.badge?`<span style="font-size:10px;font-weight:600;color:#7c3aed;background:#ede9fe;padding:2px 7px;border-radius:20px;margin-left:6px">${r.badge}</span>`:'';
       html+=`<div class="rules-block">
-        <div class="rules-title">${r.icon}${r.titel}</div>
+        <div class="rules-title">${r.icon}${r.titel}${badgeHtml}</div>
         ${r.punkte.map(p=>`<div class="rules-item">${p}</div>`).join('')}
       </div>`;
     });
@@ -6694,6 +6707,9 @@
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
             titel:'Besondere Hände',
             text:'Erfasse Poker, Straight Flush, Royal Flush und 7-2 Gewinne mit optionalem Beweisfoto. Bei 7-2 werden automatisch Transaktionen (1€ von jedem Mitspieler) erstellt. Der Gewinner erhält eine Push-Benachrichtigung.'},
+          {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><line x1="12" y1="13" x2="12" y2="15"/></svg>',
+            titel:'Online-Modus (Pandemie-Modus)',
+            text:'Spiele echtes Poker online mit der ganzen Runde — auch wenn ihr euch nicht physisch treffen könnt. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'},
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
             titel:'Push-Benachrichtigungen',
             text:'Aktiviere Benachrichtigungen im Profil. Wähle welche Kategorien du erhalten möchtest: Spielergebnisse, Buy-Ins, Besondere Hände, Transaktionen, App-Updates. Auf iOS muss die App zuerst zum Homescreen hinzugefügt werden.'},
