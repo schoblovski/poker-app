@@ -31,6 +31,15 @@ self.addEventListener('push', event => {
   };
 
   event.waitUntil((async () => {
+    // If "your turn" and the app is currently visible, just vibrate – no popup
+    if (data.tag === 'online_turn') {
+      const wcs = await self.clients.matchAll({type:'window',includeUncontrolled:true});
+      const visible = wcs.some(c => c.visibilityState === 'visible');
+      if (visible) {
+        wcs.forEach(c => c.postMessage({type:'VIBRATE_TURN'}));
+        return; // skip notification
+      }
+    }
     await self.registration.showNotification(title, options);
     // Notify open app windows so they refresh the bell badge in-app immediately
     const clients = await self.clients.matchAll({type:'window',includeUncontrolled:true});

@@ -136,14 +136,14 @@ Deno.serve(async (req) => {
       // amount = zusätzliche Chips (raise UM, nicht AUF)
       if (!amount || amount <= 0) return err('Raise-Betrag muss positiv sein');
       // Enforce 0.05 step (smallest unit)
-      amount = Math.round(amount * 20) / 20;
-      if (amount > mySeat.stack) return err('Nicht genug Chips');
-      const newTotalBet = mySeat.bet_current_round + amount;
+      const raiseAmt = Math.round(amount * 20) / 20;
+      if (raiseAmt > mySeat.stack) return err('Nicht genug Chips');
+      const newTotalBet = mySeat.bet_current_round + raiseAmt;
       if (newTotalBet <= maxBet) return err('Raise muss höher als aktueller Einsatz sein');
-      newStack -= amount;
+      newStack -= raiseAmt;
       newBet = newTotalBet;
-      newPot += amount;
-      logAmount = amount;
+      newPot += raiseAmt;
+      logAmount = raiseAmt;
       if (newStack === 0) newStatus = 'allin';
       break;
     }
@@ -423,7 +423,7 @@ async function notifyPlayer(db: ReturnType<typeof createClient>, spieler_id: str
         title: 'Du bist dran!',
         body: 'Fold, Call oder Raise – dein Zug.',
         kategorie: 'online_spiel',
-        data: { url: `/online/${online_spiel_id}`, tag: 'online_turn' },
+        data: { url: `online-tisch?session=${online_spiel_id}`, tag: 'online_turn' },
       }),
     });
   } catch { /* nicht kritisch */ }
