@@ -7143,11 +7143,11 @@
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
   const _BOT_PRESETS={
-    nit:    {label:'Nit (sehr tight)',aggressivitaet:10,risiko:15,bluff:3},
-    tag:    {label:'TAG (tight-aggressive)',aggressivitaet:60,risiko:45,bluff:18},
-    lag:    {label:'LAG (loose-aggressive)',aggressivitaet:72,risiko:65,bluff:35},
-    station:{label:'Calling Station',aggressivitaet:8,risiko:80,bluff:4},
-    maniac: {label:'Maniac (alles rein!)',aggressivitaet:92,risiko:92,bluff:62},
+    nit:    {label:'Nit (sehr tight)',short:'Nit',desc:'Spielt nur Top-Hände, passt fast immer – kaum Bluffs.',aggressivitaet:10,risiko:15,bluff:3},
+    tag:    {label:'TAG (tight-aggressive)',short:'TAG',desc:'Tight aber aggressiv – bet/raise mit starken Händen.',aggressivitaet:60,risiko:45,bluff:18},
+    lag:    {label:'LAG (loose-aggressive)',short:'LAG',desc:'Viele Hände, viel Druck – unberechenbar und aktiv.',aggressivitaet:72,risiko:65,bluff:35},
+    station:{label:'Calling Station',short:'Station',desc:'Callt fast alles, raised kaum – schwer aus dem Pot zu bringen.',aggressivitaet:8,risiko:80,bluff:4},
+    maniac: {label:'Maniac (alles rein!)',short:'Maniac',desc:'Raised und blufft ständig – pures Chaos am Tisch.',aggressivitaet:92,risiko:92,bluff:62},
   };
   function _pmBotAvatar(name){
     let h=0;for(const c of(name||''))h=(h*31+c.charCodeAt(0))&0xffffff;
@@ -8845,14 +8845,33 @@
     document.getElementById('btn-pm-feed-expand')?.addEventListener('click',()=>{
       if(!_pm)return;
       const allFeedHtml=_pmFeedHtml(_pm.actions||[]);
+      const isFinished=_pm.session?.status==='finished';
+      const canChat=!isFinished&&!!currentSpieler?.id;
       const ov=document.createElement('div');
       ov.id='pm-feed-modal';
       ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,16px) 16px env(safe-area-inset-bottom,16px);touch-action:none';
-      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.4);width:100%;max-width:480px;height:min(calc(100dvh - 64px),640px);display:flex;flex-direction:column;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:14px;font-weight:700;color:var(--text-primary)">Verlauf</span><button id="btn-pm-feed-modal-close" style="margin-left:auto;background:none;border:none;padding:4px;cursor:pointer;color:var(--text-secondary);font-size:22px;line-height:1">×</button></div><div id="pm-feed-modal-body" style="flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)">${allFeedHtml}</div></div>`;
+      const chatBar=canChat?`<div style="border-top:1px solid var(--border);padding:10px 12px;padding-bottom:max(env(safe-area-inset-bottom,0px),10px);display:flex;gap:8px;align-items:center;background:var(--surface);flex-shrink:0"><input type="text" id="pm-feed-modal-chat-inp" maxlength="60" placeholder="Kommentar schreiben…" autocomplete="off" autocorrect="on" style="flex:1;height:38px;border-radius:19px;border:1.5px solid var(--border);background:var(--bg-secondary);padding:0 14px;font-size:15px;font-family:var(--font-sans);color:var(--text-primary);outline:none"><button id="pm-feed-modal-chat-send" style="width:38px;height:38px;border-radius:50%;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div>`:'';
+      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.4);width:100%;max-width:480px;height:min(calc(100dvh - 64px),640px);display:flex;flex-direction:column;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:14px;font-weight:700;color:var(--text-primary)">Verlauf</span><button id="btn-pm-feed-modal-close" style="margin-left:auto;background:none;border:none;padding:4px;cursor:pointer;color:var(--text-secondary);font-size:22px;line-height:1">×</button></div><div id="pm-feed-modal-body" style="flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)">${allFeedHtml}</div>${chatBar}</div>`;
       document.body.appendChild(ov);
       ov.querySelector('#btn-pm-feed-modal-close').addEventListener('click',()=>ov.remove());
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
-      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=0;});
+      // Scroll to newest (bottom)
+      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=sc.scrollHeight;});
+      if(canChat){
+        const sendModalChat=async()=>{
+          const inp=document.getElementById('pm-feed-modal-chat-inp');
+          const txt=(inp?.value||'').trim().slice(0,60);if(!txt||!_pm?.id||!currentSpieler?.id)return;
+          inp.value='';
+          // Optimistic: append to modal feed immediately
+          const tempEntry={id:`_chat_local_${Date.now()}`,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'chat',hand_nr:_pm.session?.hand_nr||0,meta:{text:txt},created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}};
+          const body=document.getElementById('pm-feed-modal-body');
+          if(body){const tmp=document.createElement('div');tmp.innerHTML=_pmFeedHtml([tempEntry]);Array.from(tmp.children).forEach(el=>body.appendChild(el));body.scrollTop=body.scrollHeight;}
+          inp.focus();
+          await _pmSendChatMsg(txt);
+        };
+        document.getElementById('pm-feed-modal-chat-send')?.addEventListener('click',sendModalChat);
+        document.getElementById('pm-feed-modal-chat-inp')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendModalChat();}});
+      }
     });
     document.getElementById('btn-pm-feed-chat')?.addEventListener('click',()=>{_pmOpenChatInput();});
     document.querySelectorAll('.pm-react-btn').forEach(btn=>{
@@ -9796,7 +9815,7 @@
     _pmBotTriggerKey=null;
   }
 
-  async function _pmExecuteBotAction(botSeat,action='play'){
+  async function _pmExecuteBotAction(botSeat,action='play',_retry=0){
     if(!_pm?.id||!botSeat?.spieler_id)return;
     try{
       const resp=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
@@ -9805,7 +9824,10 @@
         body:JSON.stringify({online_spiel_id:_pm.id,bot_spieler_id:botSeat.spieler_id,action}),
       });
       if(!resp.ok)console.warn('[bot] action failed:',await resp.text());
-    }catch(e){console.warn('[bot] error:',e);}
+    }catch(e){
+      console.warn('[bot] error:',e);
+      if(_retry<2)setTimeout(()=>_pmExecuteBotAction(botSeat,action,_retry+1),3500*(1+_retry));
+    }
   }
 
   function _pmMaybeBotRunout(){
@@ -9957,7 +9979,7 @@
 
     const ov=document.createElement('div');ov.className='modal-overlay open';
     ov.style.cssText='z-index:9998;align-items:flex-end;padding:0';
-    const presetsHtml=Object.entries(_BOT_PRESETS).map(([k,p])=>`<button class="pm-bot-preset${currentPreset===k?' active':''}" data-preset="${k}" style="padding:6px 10px;border-radius:10px;border:1.5px solid${currentPreset===k?' var(--accent)':' var(--border)'};background:${currentPreset===k?'var(--accent-soft)':'var(--surface)'};color:${currentPreset===k?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">${p.label.split(' ')[0]}</button>`).join('');
+    const presetsHtml=Object.entries(_BOT_PRESETS).map(([k,p])=>`<button class="pm-bot-preset${currentPreset===k?' active':''}" data-preset="${k}" style="padding:6px 10px;border-radius:10px;border:1.5px solid${currentPreset===k?' var(--accent)':' var(--border)'};background:${currentPreset===k?'var(--accent-soft)':'var(--surface)'};color:${currentPreset===k?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">${p.short}</button>`).join('');
     const avatarPreview=_pmBotAvatar(defaultName);
     ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;max-height:92dvh;overflow-y:auto">
       <div style="padding:var(--space-md)">
@@ -9968,14 +9990,15 @@
             <div style="font-size:12px;color:var(--text-secondary)">${isEdit?'Ändert das Verhalten des Bots ab der nächsten Spielrunde.':'Bots dienen nur zur Unterhaltung und werden nie in die Statistik übernommen.'}</div>
           </div>
         </div>
-        ${!isEdit?`<div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px">Bot-Name</label>
+        <div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px">Bot-Name</label>
           <div style="display:flex;gap:8px;align-items:center">
             <input id="pm-bot-name" value="${escHtml(defaultName)}" maxlength="10" style="flex:1;height:42px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg-secondary);padding:0 12px;font-size:15px;color:var(--text-primary);font-family:var(--font-mono)">
             <button id="pm-bot-name-rnd" style="height:42px;padding:0 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg-secondary);cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap">Neu</button>
           </div>
-        </div>`:''}
+        </div>
         <div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px">Spielstil</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">${presetsHtml}</div>
+          <div id="pm-bot-style-desc" style="margin-top:7px;font-size:12px;color:var(--text-secondary);min-height:16px;line-height:1.4">${_BOT_PRESETS[currentPreset]?.desc||''}</div>
         </div>
         <div style="margin-bottom:var(--space-md)">
           ${['aggressivitaet','risiko','bluff'].map(k=>{ const labels={aggressivitaet:'Aggressivität',risiko:'Risiko-Bereitschaft',bluff:'Bluff-Rate'}; return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">${labels[k]}</label><span id="pm-bot-lbl-${k}" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals[k]}%</span></div><input id="pm-bot-${k}" type="range" min="0" max="100" value="${vals[k]}" style="width:100%;accent-color:var(--accent)"></div>`;}).join('')}
@@ -10000,7 +10023,7 @@
     ov.querySelectorAll('.pm-bot-preset').forEach(btn=>{
       btn.addEventListener('click',()=>{
         currentPreset=btn.dataset.preset;const p=_BOT_PRESETS[currentPreset];
-        if(p){['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});}
+        if(p){['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});const desc=ov.querySelector('#pm-bot-style-desc');if(desc)desc.textContent=p.desc||'';}
         ov.querySelectorAll('.pm-bot-preset').forEach(b=>{const a=b.dataset.preset===currentPreset;b.style.border=a?'1.5px solid var(--accent)':'1.5px solid var(--border)';b.style.background=a?'var(--accent-soft)':'var(--surface)';b.style.color=a?'var(--accent-text)':'var(--text-secondary)';});
       });
     });
@@ -10032,7 +10055,7 @@
       const confirmBtn=ov.querySelector('#pm-bot-confirm');
       confirmBtn.disabled=true;
       try{
-        if(isEdit){await _pmUpdateBotConfig(existingSeat,botCfg);}
+        if(isEdit){await _pmUpdateBotConfig(existingSeat,botCfg,name);}
         else{await _pmAddBot(name,botCfg);}
         ov.remove();
       }catch(e){
@@ -10058,9 +10081,13 @@
     await _pmLoad();
   }
 
-  async function _pmUpdateBotConfig(seat,config){
+  async function _pmUpdateBotConfig(seat,config,newName){
     if(!seat?.id)return;
-    await db.from('online_seats').update({bot_config:config}).eq('id',seat.id);
+    const ops=[db.from('online_seats').update({bot_config:config}).eq('id',seat.id)];
+    if(newName&&newName!==seat.spieler?.name&&seat.spieler_id){
+      ops.push(db.from('spieler').update({name:newName}).eq('id',seat.spieler_id));
+    }
+    await Promise.all(ops);
     await _pmLoad();
   }
 
