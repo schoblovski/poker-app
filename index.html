@@ -2364,6 +2364,7 @@
     const ungelesen=list.filter(n=>!n.gelesen).map(n=>n.id);
     const head=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)">
         <div style="font-size:13px;color:var(--text-secondary)">${list.length} Benachrichtigung${list.length===1?'':'en'}</div>
+        ${list.length?`<button id="btn-benachr-delete-all" style="font-size:12px;font-weight:600;color:var(--danger);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px">Alle löschen</button>`:''}
       </div>`;
     if(!list.length){el.innerHTML=head+`<div class="empty">Noch keine Benachrichtigungen.</div>`;return;}
     const items=list.map(n=>{
@@ -2389,6 +2390,14 @@
       const url=it.dataset.url;
       if(url)handleDeepLink(url);
     }));
+    document.getElementById('btn-benachr-delete-all')?.addEventListener('click',async()=>{
+      if(!confirm('⚠️ Alle Benachrichtigungen löschen\n\nAlle Benachrichtigungen werden dauerhaft aus der Datenbank entfernt.\n\nDiese Aktion kann nicht rückgängig gemacht werden.'))return;
+      const allIds=list.map(n=>n.id);
+      const{error:delErr}=await db.from('benachrichtigungen').delete().in('id',allIds);
+      if(delErr){console.error('Benachrichtigungen löschen Fehler:',delErr.message||delErr);return;}
+      refreshBellBadge();
+      loadBenachrichtigungen();
+    });
     // Auto-Mark-as-Read: alle ungelesenen sofort als gelesen markieren,
     // visuelles "Neu"-Styling bleibt bis zum nächsten Seitenaufruf erhalten
     if(ungelesen.length){
@@ -8063,7 +8072,7 @@
     const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
+          <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};const _foldedIds=new Set((seats||[]).filter(s=>s.status==='folded').map(s=>s.spieler_id));(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length&&_foldedIds.has(a.spieler_id)).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
           ${isLandscape?`<div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div>`:`<div style="padding:0 var(--space-sm)"><div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}</div><div id="pm-s-action">${actionArea}</div></div>`}
           ${isLandscape?feedSection:''}
         </div>
@@ -8640,8 +8649,17 @@
         case'reveal_cards':{
           const hc=a.meta?.hole_cards||[];
           const ck=c=>`${c.rank}${c.suit}`;
-          const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
           if(hc.length===0){text=`<b>${escHtml(n)}</b> versteckt alle Karten`;extra=' facedown-action';break;}
+          if(a.meta?.was_folded){
+            const _fb=[...(_pm?.session?.community_cards||[]),...(_pm?.session?.runout_cards||[])];
+            const _best=_fb.length>=3?_pmBestHandJS(hc,_fb,_pm?.session?.variante||'holdem'):null;
+            const _bk=new Set((_best?.usedHole||[]).map(ck));
+            const _cards=hc.map(c=>_pmCard(c,{highlight:_bk.has(ck(c))})).join('');
+            const _hRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${_cards}</span>${_best?`<span style="font-size:11px;font-weight:600;color:var(--text-secondary)">– hätte <b style="color:var(--accent-text)">${escHtml(_best.name)}</b></span>`:''}</div>`;
+            text=`<b>${escHtml(n)}</b> zeigt gefoldete Karten${_hRow}`;
+            break;
+          }
+          const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
           const handName=a.meta?.hand_name;
           const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}</div>`;
@@ -9446,7 +9464,7 @@
     const{data:newA}=await db.from('online_actions').insert({
       online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
       action:'reveal_cards',street:_pm.session.street,hand_nr:hn,
-      meta:{hole_cards:shownCards,used_hole:best?.usedHole||[],used_board:best?.usedBoard||[],hand_name:best?.name||''},
+      meta:{hole_cards:shownCards,used_hole:best?.usedHole||[],used_board:best?.usedBoard||[],hand_name:best?.name||'',was_folded:_pm?.mySeat?.status==='folded'},
     }).select().single();
     if(newA)_pm.actions=(_pm.actions||[]).concat({...newA,spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
     renderOnlineTisch();

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         s.stack = session.start_stack ?? 100; s.status = 'active';
         promotedBotIds.push(s.spieler_id);
       } else {
-        // Auto-rebuy disabled – remove bot permanently from table
+        // Auto-rebuy disabled – remove bot seat permanently (keep spieler record: FK refs in online_actions)
         await db.from('online_actions').insert({
           online_spiel_id,
           spieler_id: s.spieler_id,
@@ -58,7 +58,6 @@ Deno.serve(async (req) => {
           meta: { busted: true },
         }).catch(() => {});
         await db.from('online_seats').delete().eq('id', s.id);
-        await db.from('spieler').delete().eq('id', s.spieler_id);
       }
     } else if (s.status === 'sitting_out') {
       await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);
