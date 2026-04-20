@@ -7570,6 +7570,13 @@
       else _pmSendBack();
     };
     document.addEventListener('visibilitychange',_pm._visHandler);
+    // window blur/focus as fallback for mobile (e.g. notification centre, app switch without visibilitychange)
+    if(_pm._blurHandler)window.removeEventListener('blur',_pm._blurHandler);
+    if(_pm._focusHandler)window.removeEventListener('focus',_pm._focusHandler);
+    _pm._blurHandler=()=>{if(_pm?.mySeat)_pmSendAway();};
+    _pm._focusHandler=()=>{if(_pm?.mySeat)_pmSendBack();};
+    window.addEventListener('blur',_pm._blurHandler);
+    window.addEventListener('focus',_pm._focusHandler);
     _pmSubscribe();
   }
 
@@ -7939,7 +7946,7 @@
     }
     const _awaySet=new Set(Object.entries(_awayLast).filter(([,v])=>v==='away').map(([k])=>k));
     // Auto-send 'back' if we appear AFK in the loaded actions but are currently at the table
-    if(currentSpieler?.id&&_awaySet.has(currentSpieler.id)&&!_pm._clearingAway){
+    if(currentSpieler?.id&&_awaySet.has(currentSpieler.id)&&!_pm._clearingAway&&!document.hidden){
       _awaySet.delete(currentSpieler.id);
       _pm._clearingAway=true;_pm._isAway=true;
       _pmSendBack().finally(()=>{if(_pm)delete _pm._clearingAway;});
@@ -8432,6 +8439,7 @@
       if(a.action==='reveal_cards'){const key=`${a.spieler_id}|${a.hand_nr}`;if(_latestReveal[key]!==a.id||revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='dealt_blind'){const key=`dealt_blind|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       if(a.action==='look'){const key=a.meta?.card_idx!=null?`look|${a.spieler_id}|${a.hand_nr}|${a.meta.card_idx}`:`look|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
+      if(a.action==='away'||a.action==='back'){const key=`${a.action}|${a.spieler_id}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       return true;
     });
     // Inject deterministic dealer comments (suppressed in actions-only mode)
@@ -8474,6 +8482,7 @@
         case'resume':text=`<b>${escHtml(n)}</b> ist zurück`;break;
         case'away':text=`<b>${escHtml(n)}</b> ist AFK`;extra=' facedown-action';break;
         case'back':text=`<b>${escHtml(n)}</b> ist zurück (AFK)`;extra=' facedown-action';break;
+        case'leave_permanent':text=`<b>${escHtml(n)}</b> hat den Tisch dauerhaft verlassen`;extra=' facedown-action';break;
         case'seat_change':text=`<b>${escHtml(n)}</b> wechselt auf Platz ${a.amount||''}`;extra=' facedown-action';break;
         case'reveal_runout':{
           const _rsess=_pm?.session;
@@ -9744,6 +9753,7 @@
       ov.remove();
       const myId=_pm.mySeat.id;
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave_permanent',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
+      await db.from('online_seat_cards').delete().eq('seat_id',myId);
       await db.from('online_seats').delete().eq('id',myId);
       _pm.mySeat=null;
       _pmUnsubscribe();
@@ -10441,6 +10451,8 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     if(_pm?._visHandler){document.removeEventListener('visibilitychange',_pm._visHandler);_pm._visHandler=null;}
+    if(_pm?._blurHandler){window.removeEventListener('blur',_pm._blurHandler);_pm._blurHandler=null;}
+    if(_pm?._focusHandler){window.removeEventListener('focus',_pm._focusHandler);_pm._focusHandler=null;}
     _pmClearBotTimer();
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();

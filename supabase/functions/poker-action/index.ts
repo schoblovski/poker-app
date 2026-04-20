@@ -19,6 +19,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return corsOk();
+  try {
 
   const db = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -292,6 +293,11 @@ Deno.serve(async (req) => {
   await notifyPlayer(db, nextPlayer.spieler_id, online_spiel_id);
 
   return json({ ok: true, next_player: nextPlayer.spieler_id });
+
+  } catch (e) {
+    console.error('[poker-action] Unhandled error:', e);
+    return json({ error: 'Internal error: ' + (e as Error).message }, 500);
+  }
 });
 
 // Nächster aktiver Spieler nach fromIdx (im Uhrzeigersinn)
