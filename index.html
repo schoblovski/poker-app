@@ -7582,16 +7582,25 @@
         overlay.querySelectorAll('.pm-var-tile').forEach((x,xi)=>{const on=x===t;x.style.borderColor=on?'var(--accent)':'var(--border)';x.style.background=on?'var(--accent-soft)':'var(--surface)';x.querySelector('div:nth-child(2)').style.color=on?'var(--accent-text)':'var(--text-primary)';});
       });
     });
+    // Auto-round SB/BB to nearest 0.05 on change
+    const _r05inp=el=>{const v=parseFloat(el.value)||0;const c=Math.round(v*100),l=c%10;el.value=(( l<=3?Math.floor(c/10)*10:l<=7?Math.floor(c/10)*10+5:Math.ceil(c/10)*10)/100).toFixed(2);};
+    document.getElementById('pm-new-sb')?.addEventListener('change',function(){_r05inp(this);});
+    document.getElementById('pm-new-bb')?.addEventListener('change',function(){_r05inp(this);});
     document.getElementById('pm-new-ok').onclick=async()=>{
       const variante=_selVar||'holdem';
-      const small_blind=parseFloat(document.getElementById('pm-new-sb').value)||1;
+      const _sbRaw=parseFloat(document.getElementById('pm-new-sb').value)||0;
+      const _bbRaw=parseFloat(document.getElementById('pm-new-bb').value)||0;
+      const small_blind=Math.round(_sbRaw*100)%5===0?_sbRaw:null;
+      const big_blind_v=Math.round(_bbRaw*100)%5===0?_bbRaw:null;
+      if(!small_blind||small_blind<=0){await showAlert('Small Blind muss ein Vielfaches von €0.05 sein (z.B. 0.05, 0.10, 0.25).');return;}
+      if(!big_blind_v||big_blind_v<=0){await showAlert('Big Blind muss ein Vielfaches von €0.05 sein (z.B. 0.10, 0.25, 0.50).');return;}
+      if(big_blind_v<small_blind){await showAlert('Big Blind darf nicht kleiner als Small Blind sein.');return;}
       const start_stack=parseFloat(document.getElementById('pm-new-stack').value)||100;
       const is_test=false;
       const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
       const spiel_id=null; // created at payout confirmation, not at session start
-      const big_blind=parseFloat(document.getElementById('pm-new-bb').value)||small_blind*2;
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
-      if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
+      const big_blind=big_blind_v;
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       // Push notification: notify all OTHER players subscribed to session_start
       const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
