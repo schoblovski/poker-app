@@ -2578,8 +2578,8 @@
     _btInit();
     refreshBellBadge();
     _pmUpdateLiveIndicator();
-    // Auto-rejoin: if player is seated in an active session, show feed drawer on startup
-    setTimeout(async()=>{
+    // Auto-rejoin: if player is seated in an active session, show feed drawer immediately
+    (async()=>{
       if(_pm?.id||!currentSpieler?.id)return;
       const{data:mySeats}=await db.from('online_seats').select('online_spiel_id').eq('spieler_id',currentSpieler.id).neq('status','sitting_out');
       if(!mySeats?.length||_pm?.id)return;
@@ -2587,7 +2587,7 @@
       const{data:sessions}=await db.from('online_spiele').select('id,status').in('id',ids).in('status',['waiting','running']).limit(1);
       if(!sessions?.length||_pm?.id)return;
       enterOnlineSession(sessions[0].id,{silent:true});
-    },1500);
+    })();
     // Globaler Listener: Globe-Indikator von überall in der App aktuell halten
     // Always recreate to ensure fresh spieler_id filter after login/re-login
     if(window._pmGlobalCh){db.removeChannel(window._pmGlobalCh);window._pmGlobalCh=null;}
@@ -7219,29 +7219,6 @@
 
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
-  const _BOT_PHRASES={
-    fold:['Nicht heute.','Passt nicht.','Nächste Hand.','War nix.','Ich bin raus.','Besser sicher.','Zu teuer für mich.','Meine Karten mögen mich nicht.','Ohne mich.','Ich pass.'],
-    check:['Check.','Mal schauen.','Nichts zu sehen hier.','Langsam angehen.','Abwarten.'],
-    call:['Call.','Bin dabei.','Interessant.','Mal sehen.','Warum nicht.','Schauen wir.'],
-    raise:['Jetzt wirds teuer!','Das kostet was.','Ich mach Druck.','Erhöhe den Einsatz.','Zeigt her eure Karten.','So läuft das hier.'],
-    bet:['Das kostet was.','Ich mach Druck.','Wer will mithalten?'],
-    allin:['ALLES REIN!','Jetzt oder nie.','No risk, no fun.','All-in – Ende der Diskussion.','Ich glaub an meine Hand.'],
-    win:['Sehr schön.','Danke, danke.','Das waren meine Chips.','Glück? Können!','Schöne Runde.'],
-    general:['Hmm.','Interessant.','...','Gut gespielt.','Spannend hier.','Was für ein Tisch.'],
-  };
-  async function _pmBotSendComment(botSeat,actionType){
-    const cfg=botSeat.bot_config??{};
-    const gespr=(cfg.gespr??25)/100;
-    if(Math.random()>gespr)return;
-    const pool=_BOT_PHRASES[actionType]||_BOT_PHRASES.general;
-    const text=pool[Math.floor(Math.random()*pool.length)];
-    const delay=500+Math.random()*2000;
-    setTimeout(async()=>{
-      if(!_pm?.id)return;
-      try{await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:botSeat.spieler_id,action:'chat',hand_nr:_pm.session?.hand_nr??0,meta:{text}});}
-      catch(e){console.warn('[bot] comment error:',e);}
-    },delay);
-  }
   const _BOT_PRESETS={
     nit:    {label:'Nit (sehr tight)',short:'Nit',desc:'Spielt nur Top-Hände, passt fast immer – kaum Bluffs.',aggressivitaet:10,risiko:15,bluff:3,gespr:10,reaktion_min:2,reaktion_max:8},
     tag:    {label:'TAG (tight-aggressive)',short:'TAG',desc:'Tight aber aggressiv – bet/raise mit starken Händen.',aggressivitaet:60,risiko:45,bluff:18,gespr:25,reaktion_min:1,reaktion_max:5},
@@ -10153,6 +10130,8 @@
     }
   }
   function _pmDrawerShow(){
+    // Don't overlay the drawer on top of the table itself
+    if(document.getElementById('page-online-tisch')?.classList.contains('active'))return;
     let d=document.getElementById('pm-drawer');
     if(!d){
       d=document.createElement('div');d.id='pm-drawer';
@@ -10253,10 +10232,6 @@
         // 409 = game moved on (no longer bot's turn) — stop retrying
         if(resp.status===409)return;
         console.warn('[bot] action failed:',await resp.text());
-      } else if(action==='play'){
-        // Optionally send a comment based on Gesprächigkeit
-        const result=await resp.json().catch(()=>({}));
-        _pmBotSendComment(botSeat,result?.decision||'general');
       }
     }catch(e){
       console.warn('[bot] error:',e);

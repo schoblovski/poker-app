@@ -216,7 +216,13 @@ Deno.serve(async (req) => {
   const comment = gespr > 0 ? maybeBotComment(decision.action, config.style, gespr) : null;
   if (comment) {
     try {
-      await db.from('online_chat').insert({ online_spiel_id, spieler_id: bot_spieler_id, message: comment });
+      await db.from('online_actions').insert({
+        online_spiel_id,
+        spieler_id: bot_spieler_id,
+        action: 'chat',
+        hand_nr: session.hand_nr ?? 0,
+        meta: { text: comment },
+      });
     } catch { /* chat is non-critical */ }
   }
 
