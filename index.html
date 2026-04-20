@@ -9976,7 +9976,7 @@
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}':''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}`:''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
