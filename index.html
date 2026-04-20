@@ -782,6 +782,8 @@
   .pm-wait-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;height:44px!important;padding:0 20px!important;max-width:none;margin:0;border-radius:22px!important}
   .pm-react-btn:hover{transform:scale(1.2)!important;border-color:var(--accent)!important}
   .pm-react-btn:active{transform:scale(.88)!important}
+  @keyframes pm-feed-slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .pm-feed-new{animation:pm-feed-slide-in .22s ease-out both}
   [data-colorblind="true"] .pm-feed-item.fold-action{background:rgba(56,189,248,.12);color:#0284c7}
   .pm-chat-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
   .pm-chat-msg{padding:5px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:13px}
@@ -7966,11 +7968,15 @@
         _oEl.innerHTML=_nEl.innerHTML;
         _pmRebindSection(_sid);
       }
-      // Feed: update with scroll preservation
+      // Feed: update with scroll preservation + slide-in animation for new entries
       const _fo=el.querySelector('.pm-feed');const _fn=_tmp.querySelector('.pm-feed');
       if(_fo&&_fn&&_fo.innerHTML!==_fn.innerHTML){
+        const _oldCnt=_fo.children.length;
         const _atT=_fo.scrollTop<80;const _svd=_fo.scrollTop;
-        _fo.innerHTML=_fn.innerHTML;if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;
+        _fo.innerHTML=_fn.innerHTML;
+        const _numNew=Math.max(0,_fo.children.length-_oldCnt);
+        if(_numNew>0&&_numNew<=8){Array.from(_fo.children).slice(0,_numNew).forEach((c,i)=>{c.style.animationDelay=`${i*25}ms`;c.classList.add('pm-feed-new');c.addEventListener('animationend',()=>{c.classList.remove('pm-feed-new');c.style.animationDelay='';},{once:true});});}
+        if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;
         const _mb=document.getElementById('pm-feed-modal-body');
         if(_mb){const _atBottom=_mb.scrollTop>=_mb.scrollHeight-_mb.clientHeight-80;_mb.innerHTML=_fn.innerHTML;const _mbItems=[..._mb.children];_mb.innerHTML='';_mbItems.reverse().forEach(el=>_mb.appendChild(el));if(_atBottom)_mb.scrollTop=_mb.scrollHeight;}
       }
