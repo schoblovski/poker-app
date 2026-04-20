@@ -2391,7 +2391,6 @@
       if(url)handleDeepLink(url);
     }));
     document.getElementById('btn-benachr-delete-all')?.addEventListener('click',async()=>{
-      if(!confirm('⚠️ Alle Benachrichtigungen löschen\n\nAlle Benachrichtigungen werden dauerhaft aus der Datenbank entfernt.\n\nDiese Aktion kann nicht rückgängig gemacht werden.'))return;
       const allIds=list.map(n=>n.id);
       const{error:delErr}=await db.from('benachrichtigungen').delete().in('id',allIds);
       if(delErr){console.error('Benachrichtigungen löschen Fehler:',delErr.message||delErr);return;}
