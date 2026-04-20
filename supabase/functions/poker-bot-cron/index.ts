@@ -1,6 +1,7 @@
 // DTKS Poker – Edge Function: poker-bot-cron
 // Fallback bot driver called by pg_cron every ~30s.
-// Finds running sessions where current_player_id is a bot and triggers their action.
+// Finds all running sessions where current_player_id is a bot and triggers their action.
+// Deployed via GitHub Actions (deploy-edge-functions.yml).
 // The client-side global bot watcher handles immediate triggers when someone has the app open.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

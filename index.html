@@ -1999,9 +1999,9 @@
       document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(!isOnlinePage&&_pmLobbyTickerInterval){clearInterval(_pmLobbyTickerInterval);_pmLobbyTickerInterval=null;}
-      if(_pm?.id&&_pm?.mySeat&&_pm?.session?.status!=='finished'){
+      if(_pm?.id&&_pm?.session?.status!=='finished'){
         if(typeof _pmDrawerShow==='function')_pmDrawerShow();
-        if(typeof _pmSendAway==='function')_pmSendAway();
+        if(_pm?.mySeat&&typeof _pmSendAway==='function')_pmSendAway();
       }else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
@@ -7969,7 +7969,7 @@
     if(!skipRender&&_tischActive)renderOnlineTisch();
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
-    else if(!_tischActive&&_pm?.mySeat&&typeof _pmDrawerShow==='function')_pmDrawerShow();
+    else if(!_tischActive&&_pm?.id&&typeof _pmDrawerShow==='function')_pmDrawerShow();
     _pmCheckSpecialHands();
     _pmAutoReveal();
     _pmMaybeTriggerBot();
