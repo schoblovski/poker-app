@@ -157,11 +157,11 @@ Deno.serve(async (req) => {
       if (raiseAmt > mySeat.stack) return err('Nicht genug Chips');
       const newTotalBet = mySeat.bet_current_round + raiseAmt;
       if (newTotalBet <= maxBet) return err('Raise muss höher als aktueller Einsatz sein');
-      newStack -= raiseAmt;
-      newBet = newTotalBet;
-      newPot += raiseAmt;
+      newStack = Math.round((mySeat.stack - raiseAmt) * 100) / 100;
+      newBet = Math.round(newTotalBet * 100) / 100;
+      newPot = Math.round((session.pot + raiseAmt) * 100) / 100;
       logAmount = raiseAmt;
-      if (newStack === 0) newStatus = 'allin';
+      if (newStack <= 0) { newStack = 0; newStatus = 'allin'; }
       break;
     }
 
@@ -177,11 +177,12 @@ Deno.serve(async (req) => {
         : mySeat.bet_current_round + mySeat.stack;
       const effectiveTotalBet = Math.min(mySeat.bet_current_round + mySeat.stack, maxOpponentTotal);
       const effectiveAdditional = Math.max(0, effectiveTotalBet - mySeat.bet_current_round);
-      newBet = effectiveTotalBet;
-      newPot += effectiveAdditional;
-      newStack = mySeat.stack - effectiveAdditional; // Überschuss bleibt im Stack
+      newBet = Math.round(effectiveTotalBet * 100) / 100;
+      newPot = Math.round((session.pot + effectiveAdditional) * 100) / 100;
+      newStack = Math.round((mySeat.stack - effectiveAdditional) * 100) / 100;
+      if (newStack < 0) newStack = 0;
       newStatus = 'allin';
-      logAmount = effectiveAdditional;
+      logAmount = Math.round(effectiveAdditional * 100) / 100;
       break;
     }
 

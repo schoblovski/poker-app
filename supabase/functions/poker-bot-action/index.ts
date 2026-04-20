@@ -270,16 +270,25 @@ function botDecide(
     return { action: 'check' };
   }
 
-  if (effStr > potOdds + 5) {
+  // callThreshold scales with risk: risk=100→ -5 (very loose), risk=50→ 5, risk=0→ 15 (very tight)
+  const callThreshold = 5 - (risk - 50) * 0.2;
+  if (effStr > potOdds + callThreshold) {
     if (effStr > 82 && rand < agg * 0.55) {
       const raiseAmt = Math.round(Math.min(callAmount * (2 + agg / 100), myStack) * 100) / 100;
       if (raiseAmt >= myStack * 0.92) return { action: 'allin' };
       if (raiseAmt > callAmount * 1.5) return { action: 'raise', amount: raiseAmt };
     }
-    if (callAmount > myStack * (risk / 100) * 0.9) {
+    // With high risk, willing to commit more of the stack; low risk folds big bets
+    const stackFraction = 0.5 + (risk / 100) * 0.45; // risk=100→0.95, risk=50→0.725, risk=0→0.5
+    if (callAmount > myStack * stackFraction) {
       if (effStr > 72) return { action: 'allin' };
       return { action: 'fold' };
     }
+    return { action: 'call' };
+  }
+
+  // Even below threshold, high-risk bots sometimes call/bluff instead of folding
+  if (risk > 65 && rand < (risk - 65) * 1.5) {
     return { action: 'call' };
   }
 
