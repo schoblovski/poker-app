@@ -96,6 +96,32 @@ Deno.serve(async (req) => {
     return json({ ok: true, bot_spieler_id: botSpieler.id, seat: freeSeat });
   }
 
+  // ── UPDATE_CONFIG action ─────────────────────────────────────────────────
+  if (actionType === 'update_config') {
+    if (!bot_spieler_id) return err('bot_spieler_id fehlt');
+    const { config, name } = body;
+    if (!config) return err('config fehlt');
+    const { data: botInfo } = await db.from('spieler').select('ist_bot,name').eq('id', bot_spieler_id).single();
+    if (!botInfo?.ist_bot) return err('Kein Bot', 403);
+    const ops: Promise<any>[] = [
+      db.from('online_seats').update({ bot_config: config }).eq('online_spiel_id', online_spiel_id).eq('spieler_id', bot_spieler_id),
+    ];
+    if (name && name !== botInfo.name) {
+      ops.push(db.from('spieler').update({ name }).eq('id', bot_spieler_id));
+    }
+    await Promise.all(ops);
+    if (caller_id) {
+      const { data: sess } = await db.from('online_spiele').select('hand_nr').eq('id', online_spiel_id).single();
+      await db.from('online_actions').insert({
+        online_spiel_id, spieler_id: caller_id,
+        action: 'bot_config_changed',
+        hand_nr: sess?.hand_nr ?? 0,
+        meta: { bot_name: name || botInfo.name, new_config: config },
+      }).catch(() => {});
+    }
+    return json({ ok: true });
+  }
+
   // ── REMOVE action ────────────────────────────────────────────────────────
   if (actionType === 'remove') {
     if (!bot_spieler_id) return err('bot_spieler_id fehlt');
