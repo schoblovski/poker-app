@@ -7373,7 +7373,7 @@
         ${betChip}${dealerMark}${reactEl}
       </g>`;
       // Mini-cards collected separately to render above all seat groups
-      (()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return;const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _n=_rc.length;const _R=34;const _isBot=nr!==1;svgCards+=_rc.map((c,i)=>{const _dxC=(i-(_n-1)/2)*(_cW+_cG);const _dyC=Math.sqrt(Math.max(0,_R*_R-_dxC*_dxC));const _x=Math.round(sx+_dxC-_cW/2);const _y=Math.round(sy+(_isBot?-_dyC:_dyC)-_cH/2);const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_y}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_y+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_y+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})();
+      (()=>{const _rc=(!isEmpty&&revealedCards[seat?.spieler_id])||[];if(!_rc.length)return;const _cW=14,_cH=19,_cG=2,_ss={h:'♥',d:'♦',c:'♣',s:'♠'};const _n=_rc.length;const _R=34;const _isBot=true;svgCards+=_rc.map((c,i)=>{const _dxC=(i-(_n-1)/2)*(_cW+_cG);const _dyC=Math.sqrt(Math.max(0,_R*_R-_dxC*_dxC));const _x=Math.round(sx+_dxC-_cW/2);const _y=Math.round(sy+(_isBot?-_dyC:_dyC)-_cH/2);const _red=c.suit==='h'||c.suit==='d';const _r=_pmRankStr[c.rank]||String(c.rank);const _s=_ss[c.suit]||c.suit;return`<rect x="${_x}" y="${_y}" width="${_cW}" height="${_cH}" rx="2" fill="white" stroke="rgba(0,0,0,.25)" stroke-width=".5"/><text x="${_x+_cW/2}" y="${_y+8}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${_red?'#dc2626':'#111'}">${_r}</text><text x="${_x+_cW/2}" y="${_y+17}" text-anchor="middle" font-size="8" fill="${_red?'#dc2626':'#111'}">${_s}</text>`;}).join('');})();
     }
     const board=session?.community_cards||[];
     const runout=session?.runout_cards||[];
@@ -7418,10 +7418,10 @@
     if(potBreakdown&&potBreakdown.length>1){
       const main=`Haupt: €${potBreakdown[0].amount.toFixed(2)}`;
       const side=potBreakdown.slice(1).map((p,i)=>`SP${potBreakdown.length>2?i+1:''}: €${p.amount.toFixed(2)}`).join(' · ');
-      potSvg=`<text x="${cx}" y="${by-16}" text-anchor="middle" font-size="9.5" font-weight="700" fill="rgba(255,255,255,.8)">${escHtml(main)}</text>`+
-             `<text x="${cx}" y="${by-5}" text-anchor="middle" font-size="9" font-weight="600" fill="#f59e0b">${escHtml(side)}</text>`;
+      potSvg=`<text x="${cx}" y="${by+ch+13}" text-anchor="middle" font-size="9.5" font-weight="700" fill="rgba(255,255,255,.8)">${escHtml(main)}</text>`+
+             `<text x="${cx}" y="${by+ch+24}" text-anchor="middle" font-size="9" font-weight="600" fill="#f59e0b">${escHtml(side)}</text>`;
     } else if(pot>0){
-      potSvg=`<text x="${cx}" y="${by-8}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">Pot: €${pot.toFixed(2)}</text>`;
+      potSvg=`<text x="${cx}" y="${by+ch+14}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">Pot: €${pot.toFixed(2)}</text>`;
     }
     return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;border-radius:var(--radius-lg)">
       <rect x="0" y="0" width="${W}" height="${H}" fill="${feltOuter}"/>
@@ -9766,7 +9766,7 @@
       // Enforce 0.05 step for bet/raise amounts
       if(amount!==undefined&&amount>0)body.amount=(action==='raise'||action==='allin')?_pmRound05(amount):amount;
       const resp=await _callFn('poker-action',body);
-      if(resp?.error){await showAlert(_pmFriendlyError(resp.error));await _pmLoad();return;}
+      if(resp?.error){await showAlert(_pmFriendlyError(resp.error));document.querySelectorAll('.pm-act-btn,.pm-pre-btn,#pm-raise-toggle').forEach(b=>{b.disabled=false;});await _pmLoad();return;}
       await _pmLoad();
       // Safety net: if poker-next-street fires async after poker-action returns, the first
       // _pmLoad might see intermediate state. Re-check after 1.5 s if nothing changed.
@@ -10000,7 +10000,11 @@
     document.getElementById('pm-rs-input')?.addEventListener('change',()=>{
       const _ri=document.getElementById('pm-rs-input');if(!_ri)return;
       const _rv=parseFloat(_ri.value)||0;
-      if(_rv>=myStack){_ri.value=myStack.toFixed(2);_allinSelected=true;document.getElementById('pm-rs-confirm').textContent='All-in bestätigen';}
+      // Custom 0.05-step rounding: digit 0-3→floor, 4-7→.x5, 8-9→ceil (matches poker table)
+      const _rc=Math.round(_rv*100),_rl=_rc%10;
+      const _rrounded=(_rl<=3?Math.floor(_rc/10)*10:_rl<=7?Math.floor(_rc/10)*10+5:Math.ceil(_rc/10)*10)/100;
+      _ri.value=_rrounded.toFixed(2);
+      if(_rrounded>=myStack){_ri.value=myStack.toFixed(2);_allinSelected=true;document.getElementById('pm-rs-confirm').textContent='All-in bestätigen';}
       else{_allinSelected=false;document.getElementById('pm-rs-confirm').textContent='Raise bestätigen';}
     });
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
@@ -10026,7 +10030,7 @@
       rect.setAttribute('width','11');rect.setAttribute('height','16');rect.setAttribute('rx','2');
       rect.setAttribute('fill','#1e3a8a');rect.setAttribute('stroke','rgba(255,255,255,.4)');rect.setAttribute('stroke-width','0.5');
       svgEl.appendChild(rect);
-      const t0=performance.now();const dur=380;const arc=10;
+      const t0=performance.now();const dur=570;const arc=10;
       function step(now){
         const t=Math.min((now-t0)/dur,1);
         const e=1-Math.pow(1-t,2.5);
@@ -10053,7 +10057,7 @@
     const dx=Math.round(cx+rx*Math.cos(da));const dy=Math.round(cy-ry*Math.sin(da));
     const active=(_pm.seats||[]).filter(s=>s.spieler_id&&s.status!=='sitting_out').sort((a,b)=>a.seat-b.seat);
     if(active.length<2)return;
-    const gap=active.length>5?80:100;
+    const gap=active.length>5?120:150;
     for(let c=0;c<nCards;c++){
       active.forEach((seat,si)=>{
         const sa=angles[seat.seat-1]*Math.PI/180;
@@ -10580,6 +10584,7 @@
       ops.push(db.from('spieler').update({name:newName}).eq('id',seat.spieler_id));
     }
     await Promise.all(ops);
+    if(_pm)_pm._lastFp=''; // force SVG re-render so style badge updates immediately
     if(_pm?.id&&currentSpieler?.id){
       db.from('online_actions').insert({
         online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
