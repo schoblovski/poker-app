@@ -7549,10 +7549,10 @@
         const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)';
         const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||'';
         const _tickerTxt=_latestActMap[s.id]||'';
-        const _avatarHtml=humanSeats.length?`<div style="display:flex;align-items:center;margin-bottom:${_tickerTxt?'5':'0'}px">${humanSeats.slice(0,7).map((hs,hi)=>{const pb=hs.spieler?.profilbild;const nm=escHtml((hs.spieler?.name||'?').slice(0,2).toUpperCase());return`<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;border:2px solid var(--surface);margin-left:${hi?'-6px':'0'};flex-shrink:0;background:var(--bg-secondary)">${pb?`<img src="${escHtml(pb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:var(--text-tertiary)">${nm}</div>`}</div>`;}).join('')}${humanSeats.length>7?`<div style="width:22px;height:22px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--surface);margin-left:-6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--text-secondary)">+${humanSeats.length-7}</div>`:''}</div>`:'';
+        const _avatarHtml=humanSeats.length?`<div style="display:flex;align-items:center;margin-bottom:5px">${humanSeats.slice(0,7).map((hs,hi)=>{const pb=hs.spieler?.profilbild;const nm=escHtml((hs.spieler?.name||'?').slice(0,2).toUpperCase());return`<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--surface);margin-left:${hi?'-8px':'0'};flex-shrink:0;background:var(--bg-secondary)">${pb?`<img src="${escHtml(pb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--text-tertiary)">${nm}</div>`}</div>`;}).join('')}${humanSeats.length>7?`<div style="width:28px;height:28px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--surface);margin-left:-8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text-secondary)">+${humanSeats.length-7}</div>`:''}</div>`:'';
         const _tickerHtml=_tickerTxt?`<div class="pm-ticker-line" style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:pm-ticker-in .3s ease both;font-family:var(--font-sans)">${_tickerTxt}</span></div>`:'';
-        const _fpA=`${s.status}|${s.hand_nr||0}|${cnt}|${totalBuyinsActive}|${mySessStatus||''}|${_tickerTxt}`;
-        html+=`<div class="card clickable pm-session-row" data-id="${s.id}" data-status="${s.status}" data-fp="${_fpA}" style="margin-bottom:8px;${rowBg}"><div class="pm-session-content" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="font-size:22px;color:${varColor};line-height:1;flex-shrink:0">${varIcon}</span><span style="font-size:17px;font-weight:800;color:var(--text-primary);letter-spacing:-.3px;flex:1;min-width:0">${varLabel[s.variante]||s.variante}</span><span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${s.status==='running'?'var(--accent)':'var(--text-tertiary)'};display:inline-block${s.status==='running'?';animation:pm-live-dot 2s ease-in-out infinite':''}"></span>${testBadge}${botBadge}${myBadge}${chevron}</div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:${humanSeats.length||_tickerTxt?'5':'0'}px">${playerStr}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}${totalBuyinsActive>0?` · ${totalBuyinsActive} Buy-In${totalBuyinsActive!==1?'s':''}`:''}</div>${_avatarHtml}${_tickerHtml}</div></div>`;
+        const _fpA=`${s.status}|${s.hand_nr||0}|${cnt}|${totalBuyinsActive}|${mySessStatus||''}`;
+        html+=`<div class="card clickable pm-session-row" data-id="${s.id}" data-status="${s.status}" data-fp="${_fpA}" style="margin-bottom:8px;${rowBg}"><div class="pm-session-content" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="font-size:22px;color:${varColor};line-height:1;flex-shrink:0">${varIcon}</span><span style="font-size:17px;font-weight:800;color:var(--text-primary);letter-spacing:-.3px;flex:1;min-width:0">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}${chevron}</div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:${humanSeats.length?'5':'0'}px">${playerStr}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}${totalBuyinsActive>0?` · ${totalBuyinsActive} Buy-In${totalBuyinsActive!==1?'s':''}`:''}</div>${_avatarHtml}${_tickerHtml}</div></div>`;
       });
     }
     if(done.length){
@@ -7606,9 +7606,10 @@
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),400);})
         .subscribe();
-      // Ticker polling: soft-reload every 2s, fingerprint-diff ensures only changed rows update
+      // Ticker polling: directly update only ticker spans every 2s, avoids fingerprint-diff complexity
       if(_pmLobbyTickerInterval)clearInterval(_pmLobbyTickerInterval);
-      _pmLobbyTickerInterval=setInterval(()=>loadOnlineLobby(true),2000);
+      _pmLobbyTickerInterval=setInterval(_pmLobbyTickerTick,2000);
+      _pmLobbyTickerTick();
     }else{
       // Only replace rows whose fingerprint changed – zero flicker
       const _tmp=document.createElement('div');_tmp.innerHTML=html;
@@ -7635,6 +7636,40 @@
     if(a.action==='blind')return`${n} Blind${amt}`;
     if(a.action==='win'||a.action==='showdown_win')return`${n} gewinnt${amt}`;
     return'';
+  }
+
+  async function _pmLobbyTickerTick(){
+    const el=document.getElementById('online-lobby-content');
+    if(!el)return;
+    const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
+    if(!rows.length)return;
+    const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+    const results=await Promise.all(rows.map(r=>
+      db.from('online_actions').select('spieler_id,action,amount,spieler(name)')
+        .eq('online_spiel_id',r.dataset.id).not('action','in',_skip)
+        .order('created_at',{ascending:false}).limit(1)
+    ));
+    rows.forEach((row,i)=>{
+      const a=results[i]?.data?.[0];
+      const newTxt=a?_pmFormatTickerAction(a,a.spieler?.name||_pmLobbyNameCache[a.spieler_id]||''):'';
+      const content=row.querySelector('.pm-session-content');
+      if(!content)return;
+      let tickerDiv=content.querySelector('.pm-ticker-line');
+      if(!newTxt){tickerDiv?.remove();return;}
+      if(!tickerDiv){
+        tickerDiv=document.createElement('div');
+        tickerDiv.className='pm-ticker-line';
+        tickerDiv.style.cssText='display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)';
+        tickerDiv.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-sans)"></span>`;
+        content.appendChild(tickerDiv);
+      }
+      const span=tickerDiv.querySelector('span:last-child');
+      if(span&&span.textContent!==newTxt){
+        span.textContent=newTxt;
+        span.style.animation='none';void span.offsetWidth;
+        span.style.animation='pm-ticker-in .3s ease both';
+      }
+    });
   }
 
 
