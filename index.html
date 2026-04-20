@@ -812,6 +812,7 @@
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn.live{display:flex}
   .pm-live-btn::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pm-pulse 1.4s infinite}
+  .pm-live-count{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;pointer-events:none}
   .pm-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)}
   .pm-sheet-overlay{opacity:0;pointer-events:none;transition:opacity .25s}
   .pm-sheet-overlay.open{opacity:1;pointer-events:auto}
@@ -1973,7 +1974,7 @@
       if(typeof _pmDrawerHide==='function')_pmDrawerHide();
       if(typeof _pmSendBack==='function')_pmSendBack();
       // Force full FAB rebuild on every navigation to tisch so it's always at body level with fresh listeners
-      if(_pm)_pm._lastStructFp='';
+      if(_pm){_pm._lastStructFp='';_pm._lastFp='';}
       renderOnlineTisch();_pmCheckFullscreen();
     }else _pmCheckFullscreen();
     if(typeof _btUpdateHeaderBadge==='function')_btUpdateHeaderBadge();
@@ -2554,6 +2555,7 @@
     if(!window._pmGlobalCh){
       window._pmGlobalCh=db.channel('pm-global-indicator')
         .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>_pmUpdateLiveIndicator())
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'benachrichtigungen',filter:`spieler_id=eq.${currentSpieler.id}`},()=>refreshBellBadge())
         .subscribe();
     }
     setTimeout(showWhatsNew, 600);
@@ -7511,7 +7513,7 @@
 
   async function enterOnlineSession(sessionId){
     // If already active in a different running session, ask user to confirm switch
-    if(_pm?.id&&_pm.id!==sessionId&&_pm?.session?.status==='running'&&_pm?.mySeat){
+    if(_pm?.id&&_pm.id!==sessionId&&_pm?.session?.status==='running'&&_pm?.mySeat&&_pm.mySeat.status!=='sitting_out'){
       const confirmed=await new Promise(resolve=>{
         const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;justify-content:center;padding:20px';
         ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.4)"><div style="font-size:17px;font-weight:700;margin-bottom:8px">Andere Session aktiv</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5">Du bist gerade in einer anderen Session am Tisch. Möchtest du wechseln?</div><div style="display:flex;flex-direction:column;gap:8px"><button id="_sc-ok" class="btn btn-primary" style="max-width:none;margin:0">Wechseln</button><button id="_sc-cancel" class="btn btn-ghost" style="max-width:none;margin:0 auto;width:auto;padding:0 24px">Abbrechen</button></div></div>`;
@@ -7581,6 +7583,8 @@
     if(_pm._initialLoad){
       _pm._renderedBoardCount=(session?.community_cards||[]).length;
       _pm._runoutRevealedCount=(session?.runout_cards||[]).length||null;
+      // Suppress deal animation for hands already in progress when joining
+      if(session?.status==='running')_pm._animHandNr=session.hand_nr;
       _pm._initialLoad=false;
     }
     // Track runout reveal count: if runout_cards freshly arrives (was null), start at 0 (face-down ceremony)
@@ -7642,7 +7646,8 @@
     }else{
       _pm.myHoleCards=[];
     }
-    if(!skipRender)renderOnlineTisch();
+    const _tischActive=document.getElementById('page-online-tisch')?.classList.contains('active');
+    if(!skipRender&&_tischActive)renderOnlineTisch();
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
     _pmCheckSpecialHands();
@@ -8058,8 +8063,8 @@
       document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
       document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
       document.getElementById('btn-pm-reveal')?.addEventListener('click',_pmRevealCards);
-      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
-      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
+      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
+      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',_pmBuyInSheet);
       document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
       document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
     }else if(id==='pm-s-cards'){
@@ -8067,7 +8072,7 @@
     }else if(id==='pm-s-stacks'){
       document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     }else if(id==='pm-s-info'){
-      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
+      document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
     }
   }
 
@@ -8591,16 +8596,21 @@
           <span style="width:7px;height:7px;border-radius:50%;background:${statusColor};display:inline-block"></span>
           <span style="font-size:12px;font-weight:600;color:${statusColor}">${statusLabel}</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-          <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Stack</div>
-            <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">€${Math.max(0,sStack).toFixed(0)}</div>
-          </div>
-          <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Buy-Ins</div>
-            <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">${seat?.buyins||1}</div>
-          </div>
-        </div>
+        ${(sStatus==='sitting_out'&&sStack<=0)?
+          `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:20px;padding:6px 16px;margin-bottom:22px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--text-secondary)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span style="font-size:13px;color:var(--text-secondary)">Beobachtet – kein Buy-In</span>
+          </div>`:
+          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+            <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Stack</div>
+              <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">€${Math.max(0,sStack).toFixed(0)}</div>
+            </div>
+            <div style="background:var(--bg-secondary);border-radius:14px;padding:14px 12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:5px">Buy-Ins</div>
+              <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--text-primary)">${seat?.buyins||1}</div>
+            </div>
+          </div>`}
         ${_feedExcerpt}
         ${seat?.spieler?.ist_bot
           ?`${(()=>{const _bc=seat?.bot_config||{};const _style=_bc.style||'custom';const _p=typeof _BOT_PRESETS!=='undefined'?_BOT_PRESETS[_style]:null;return _p?`<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 14px;margin-bottom:12px;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:4px">Spielstil</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px">${escHtml(_p.label||_style)}</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.4">${escHtml(_p.desc||'')}</div></div>`:'';})()} <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
@@ -8800,11 +8810,11 @@
     document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>_pmNewHand());
     document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
-    document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyIn);
+    document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
     document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
-    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>await _pmBuyIn());
+    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',_pmBuyInSheet);
     // FAB – touch events (reliable on iOS, avoids setPointerCapture bugs)
     const _fab=document.getElementById('pm-fab');
     let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
@@ -9250,17 +9260,19 @@
     _pmLoad();
   }
 
-  async function _pmBuyIn(){
+  async function _pmBuyIn(count=1){
     if(!_pm?.mySeat||!currentSpieler)return;
-    const btn=document.getElementById('btn-pm-buyin');
+    const btn=document.getElementById('btn-pm-buyin')||document.getElementById('btn-pm-spectate-buyin');
     if(btn)btn.disabled=true;
     const startStack=_pm.session?.start_stack||100;
     const curBuyins=_pm.mySeat.buyins||1;
+    const curStack=_pm.mySeat.stack||0;
+    const addedStack=count*startStack;
     // During a running hand, keep sitting_out so server deals cards next hand
     const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
     const{error}=await db.from('online_seats').update({
-      stack:startStack,
-      buyins:curBuyins+1,
+      stack:curStack+addedStack,
+      buyins:curBuyins+count,
       ...(sessionRunning?{}:{status:'active'}),
     }).eq('id',_pm.mySeat.id);
     if(error){if(btn)btn.disabled=false;await showAlert('Fehler: '+error.message);return;}
@@ -9268,11 +9280,56 @@
       online_spiel_id:_pm.id,
       spieler_id:currentSpieler.id,
       action:'buyin',
-      amount:startStack,
+      amount:addedStack,
+      meta:{count},
       street:_pm.session?.street||'preflop',
       hand_nr:_pm.session?.hand_nr||0,
     });
     _pmLoad();
+  }
+
+  function _pmBuyInSheet(){
+    if(!_pm?.mySeat)return;
+    const startStack=_pm.session?.start_stack||100;
+    const bPot=einstellungen?.buyin_pot??5;
+    const bKassa=einstellungen?.buyin_kassa??2;
+    const chipToEur=bPot/(startStack||bPot);
+    const sid='pm-buyin-sheet';document.getElementById(sid)?.remove();
+    let count=1;
+    const ov=document.createElement('div');ov.id=sid;ov.className='pm-sheet-overlay';
+    const render=()=>{
+      const chips=(count*startStack*chipToEur).toFixed(2);
+      const cost=(count*(bPot+bKassa)).toFixed(2);
+      ov.querySelector('#_bi-count').textContent=String(count);
+      ov.querySelector('#_bi-chips').textContent=`€${chips} Chips`;
+      ov.querySelector('#_bi-cost').textContent=`Kosten: €${cost}`;
+      ov.querySelector('#_bi-minus').disabled=count<=1;
+    };
+    ov.innerHTML=`<div class="pm-sheet">
+      <div class="pm-sheet-handle"></div>
+      <div class="pm-sheet-title">Buy-In</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin:var(--space-md) 0">
+        <button id="_bi-minus" class="btn btn-secondary" style="width:44px;height:44px;padding:0;font-size:22px;border-radius:50%">−</button>
+        <div style="text-align:center;min-width:60px">
+          <div id="_bi-count" style="font-size:40px;font-weight:800;font-family:var(--font-mono);line-height:1">1</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Buy-Ins</div>
+        </div>
+        <button id="_bi-plus" class="btn btn-secondary" style="width:44px;height:44px;padding:0;font-size:22px;border-radius:50%">+</button>
+      </div>
+      <div style="text-align:center;margin-bottom:var(--space-lg)">
+        <div id="_bi-chips" style="font-size:16px;font-weight:700;color:var(--text-primary)"></div>
+        <div id="_bi-cost" style="font-size:12px;color:var(--text-secondary);margin-top:3px"></div>
+      </div>
+      <button id="_bi-confirm" class="btn btn-primary" style="width:100%;max-width:none">Kaufen</button>
+      <button id="_bi-cancel" class="btn btn-ghost" style="width:100%;max-width:none;margin-top:8px">Abbrechen</button>
+    </div>`;
+    document.body.appendChild(ov);
+    render();
+    ov.querySelector('#_bi-minus').addEventListener('click',()=>{if(count>1){count--;render();}});
+    ov.querySelector('#_bi-plus').addEventListener('click',()=>{count++;render();});
+    ov.querySelector('#_bi-confirm').addEventListener('click',()=>{ov.remove();_pmBuyIn(count);});
+    ov.querySelector('#_bi-cancel').addEventListener('click',()=>ov.remove());
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }
 
   function _pmShowBrokeModal(){
@@ -9320,10 +9377,13 @@
     const startStack=session.start_stack||100;
     const spielId=session.spiel_id;
 
-    // If there's an open pot (session ended mid-hand), ask how to handle it
+    // Detect bot session – never allow statistics for sessions with bots
+    const _hasBots=(seats||[]).some(s=>s.spieler?.ist_bot);
+
+    // If there's an open pot (session ended mid-hand), ask how to handle it (skip for bot sessions)
     const _midHandPot=session.pot||0;
     let _potResolution='none'; // 'none' | 'annul' | 'split'
-    if(_midHandPot>0){
+    if(_midHandPot>0&&!_hasBots){
       const choice=await new Promise(resolve=>{
         const ov=document.createElement('div');ov.className='modal-overlay open';
         ov.style.cssText='z-index:9998;align-items:flex-end;padding:0';
@@ -9353,8 +9413,6 @@
       _potResolution=choice;
     }
 
-    // Detect bot session – never allow statistics for sessions with bots
-    const _hasBots=(seats||[]).some(s=>s.spieler?.ist_bot);
     // Build per-player summary rows (exclude bots)
     // Normalize chip values to real euros: 1 chip = buyin_pot / start_stack
     const _bPot=einstellungen?.buyin_pot??5;
@@ -9520,7 +9578,7 @@
       // Enforce 0.05 step for bet/raise amounts
       if(amount!==undefined&&amount>0)body.amount=(action==='raise'||action==='allin')?_pmRound05(amount):amount;
       const resp=await _callFn('poker-action',body);
-      if(resp?.error){await showAlert(_pmFriendlyError(resp.error));return;}
+      if(resp?.error){await showAlert(_pmFriendlyError(resp.error));await _pmLoad();return;}
       await _pmLoad();
       // Safety net: if poker-next-street fires async after poker-action returns, the first
       // _pmLoad might see intermediate state. Re-check after 1.5 s if nothing changed.
@@ -9555,13 +9613,22 @@
     const btn=document.getElementById('pm-live-btn');if(!btn)return;
     const{data:sessions}=await db.from('online_spiele').select('id,status,variante,small_blind,start_stack,is_test,hand_nr').in('status',['waiting','running']);
     const active=(sessions||[]).filter(s=>!(s.hand_nr===0&&s.status==='finished'));
-    if(!active.length){btn.classList.remove('live');return;}
+    if(!active.length){btn.classList.remove('live');const ob=btn.querySelector('.pm-live-count');if(ob)ob.remove();return;}
     btn.classList.add('live');
+    // Show count badge when more than one active session
+    let _cb=btn.querySelector('.pm-live-count');
+    if(active.length>1){if(!_cb){_cb=document.createElement('span');_cb.className='pm-live-count';btn.appendChild(_cb);}; _cb.textContent=String(active.length);}
+    else{_cb?.remove();}
     btn.onclick=async()=>{
       if(active.length===1){enterOnlineSession(active[0].id);return;}
       // Multiple sessions → show picker sheet
-      const{data:allSeats}=await db.from('online_seats').select('online_spiel_id,seat').in('online_spiel_id',active.map(s=>s.id));
+      const _sids=active.map(s=>s.id);
+      const[{data:allSeats},{data:mySeatsRows}]=await Promise.all([
+        db.from('online_seats').select('online_spiel_id,seat').in('online_spiel_id',_sids),
+        currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
+      ]);
       const cntMap={};(allSeats||[]).forEach(s=>{cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;});
+      const myStatusMap={};(mySeatsRows||[]).forEach(s=>{myStatusMap[s.online_spiel_id]=s.status;});
       const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
       const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'};
       const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
@@ -9573,13 +9640,18 @@
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-md)">
           ${active.map(s=>{
             const cnt=cntMap[s.id]||0;
+            const myStatus=myStatusMap[s.id];
+            const isCurrent=_pm?.id===s.id;
             const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
-            return`<button data-sid="${s.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg-secondary);cursor:pointer;text-align:left;width:100%">
+            const myBadge=isCurrent?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700;margin-left:4px">Aktuell</span>`:myStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border);margin-left:4px">Beobachter</span>`:myStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700;margin-left:4px">Am Tisch</span>`:'';
+            const btnBorder=(isCurrent||myStatus)?'1.5px solid var(--accent)':'1.5px solid var(--border)';
+            const btnBg=(isCurrent||myStatus)?'var(--accent-soft)':'var(--bg-secondary)';
+            return`<button data-sid="${s.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-md);border:${btnBorder};background:${btnBg};cursor:pointer;text-align:left;width:100%">
               <span style="font-size:22px;color:${varColor[s.variante]||'var(--text-secondary)'};line-height:1;flex-shrink:0">${varIcon[s.variante]||'●'}</span>
               <div style="flex:1;min-width:0">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:2px">
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
-                  <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}
+                  <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
                 <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
               </div>
@@ -9587,7 +9659,7 @@
             </button>`;
           }).join('')}
         </div>
-        <button id="pm-picker-cancel" class="btn btn-ghost" style="font-size:13px">Abbrechen</button>
+        <button id="pm-picker-cancel" class="btn btn-ghost" style="font-size:13px;display:block;margin:0 auto;width:fit-content">Abbrechen</button>
       </div>`;
       document.body.appendChild(ov);
       ov.querySelectorAll('[data-sid]').forEach(b=>b.addEventListener('click',()=>{ov.remove();enterOnlineSession(b.dataset.sid);}));
