@@ -9208,7 +9208,7 @@
     document.getElementById('btn-pm-add-bot')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmAddBotModal();});
     document.getElementById('btn-pm-settings')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmSessionSettingsSheet();});
     document.getElementById('btn-pm-leave')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmLeaveSheet();});
-    document.getElementById('btn-pm-lobby')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();showPage('online-lobby');});
+    document.getElementById('btn-pm-lobby')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();if(!_pm?.mySeat)_pmDrawerHide();showPage('online-lobby');});
     document.getElementById('btn-pm-lobby-leave')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
       if(!_pm?.mySeat)return;
       await _pmLeaveSeatApi();
