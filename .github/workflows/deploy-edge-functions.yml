@@ -17,7 +17,6 @@ jobs:
 
       - name: Deploy Edge Functions
         run: |
-          supabase functions deploy poker-utils       --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-start-game  --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-action       --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-next-street  --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
@@ -25,5 +24,6 @@ jobs:
           supabase functions deploy poker-new-hand     --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-reveal-runout --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
           supabase functions deploy poker-bot-action   --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+          supabase functions deploy send-push          --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
