@@ -50,6 +50,15 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Human observers who bought in during the running hand (stack > 0, sitting_out) → promote to active
+  const readyObservers = (seats ?? []).filter(
+    (s: { stack: number; status: string; bot_config?: unknown }) => !s.bot_config && s.status === 'sitting_out' && s.stack > 0
+  );
+  for (const s of readyObservers as any[]) {
+    await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);
+    s.status = 'active';
+  }
+
   // Spieler ohne Stack eliminieren (busted), paused → sitting_out
   const bustsAndPaused = (seats ?? []).filter(
     (s: { stack: number; status: string; bot_config?: unknown }) => !s.bot_config && (s.stack === 0 || s.status === 'paused')

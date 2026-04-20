@@ -440,7 +440,7 @@ async function notifyPlayer(db: ReturnType<typeof createClient>, spieler_id: str
         title: 'Du bist dran!',
         body: 'Fold, Call oder Raise – dein Zug.',
         kategorie: 'online_spiel',
-        data: { url: `online-tisch?session=${online_spiel_id}`, tag: 'online_turn' },
+        data: { url: `/#online-tisch?session=${online_spiel_id}`, tag: 'online_turn' },
       }),
     });
   } catch { /* nicht kritisch */ }

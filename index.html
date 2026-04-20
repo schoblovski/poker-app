@@ -8596,7 +8596,12 @@
       if(isFinished)return`<div style="text-align:center;padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-sm)">Session beendet</div><div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="min-width:160px;max-width:none;padding:14px 28px">Zur Übersicht</button></div></div>`;
       const _enoughForBots=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;
       const _canStartForBots=isWaiting&&isAdmin&&_enoughForBots;
-      return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div><button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button>${_canStartForBots?`<button class="btn btn-secondary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px">Erste Spielrunde starten</button>`:''}</div>`;
+      const _sessionRunning=isRunning&&!!session.current_player_id;
+      const _alreadyBoughtInThisHand=_sessionRunning&&(_pm?.actions||[]).some(a=>a.spieler_id===mySeat?.spieler_id&&a.action==='buyin'&&(a.hand_nr||0)===(session.hand_nr||0));
+      const _buyinBtn=_alreadyBoughtInThisHand
+        ?`<div style="font-size:13px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Bereit für nächste Spielrunde</div>`
+        :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button>`;
+      return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div>${_buyinBtn}${_canStartForBots?`<button class="btn btn-secondary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px">Erste Spielrunde starten</button>`:''}</div>`;
     }
     if(mySeat&&isWaiting){const enoughPlayers=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:var(--space-sm)">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div><div style="display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-start" style="width:auto;max-width:none;padding:0 28px"${enoughPlayers?'':' disabled'}>Erste Spielrunde starten</button></div>${!enoughPlayers?`<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">Mindestens 2 Spieler mit Buy-In benötigt</div>`:''}</div>`;}
 
@@ -9370,6 +9375,11 @@
     const addedStack=count*startStack;
     // During a running hand, keep sitting_out so server deals cards next hand
     const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
+    // One buy-in per hand maximum for sitting_out observers during active hand
+    if(sessionRunning&&_pm.mySeat.status==='sitting_out'){
+      const alreadyBoughtIn=(_pm.actions||[]).some(a=>a.spieler_id===currentSpieler.id&&a.action==='buyin'&&(a.hand_nr||0)===(_pm.session?.hand_nr||0));
+      if(alreadyBoughtIn){if(btn)btn.disabled=false;await showAlert('Du hast bereits einen Buy-In für die nächste Spielrunde vorgemerkt.');return;}
+    }
     // Conflict check: observer buying in → becoming active. Block if active elsewhere.
     if(_pm.mySeat.status==='sitting_out'&&!sessionRunning){
       const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).in('online_spiele.status',['waiting','running']).neq('online_spiel_id',_pm.id);
@@ -9635,6 +9645,7 @@
       const _botIds=(seats||[]).filter(s=>s.spieler?.ist_bot).map(s=>s.spieler_id);
       if(_botIds.length)(async()=>{
         await db.from('online_actions').delete().in('spieler_id',_botIds);
+        await db.from('online_chat').delete().in('spieler_id',_botIds);
         await db.from('online_seats').delete().in('spieler_id',_botIds);
         await db.from('spieler').delete().in('id',_botIds);
       })().catch(()=>{});
@@ -10211,6 +10222,11 @@
     // Hand ended – look for win action in this hand
     const handOver=actions.some(a=>a.action==='win'&&a.hand_nr===sess.hand_nr);
     if(!handOver)return;
+    // Only reveal at showdown – skip if hand ended by fold (only 1 non-folded player)
+    const _foldIds=new Set(actions.filter(a=>a.hand_nr===sess.hand_nr&&a.action==='fold').map(a=>a.spieler_id));
+    const _seatsInHand=seats.filter(s=>s.status!=='sitting_out');
+    const _activeAtEnd=_seatsInHand.filter(s=>!_foldIds.has(s.spieler_id));
+    if(_activeAtEnd.length<=1)return;
     for(const seat of seats){
       if(!seat.spieler?.ist_bot)continue;
       if(seat.status==='folded'||seat.status==='sitting_out')continue;
