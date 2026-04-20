@@ -116,9 +116,11 @@ Deno.serve(async (req) => {
 
     const maxScore = Math.max(...eligible.map(r => r.score));
     const winners = eligible.filter(r => r.score === maxScore);
-    // Floor to cent per winner, give remainder to first winner (official rule: leftmost from dealer)
-    const perWinner = Math.floor(pot.amount / winners.length * 100) / 100;
-    const remainder = Math.round((pot.amount - perWinner * winners.length) * 100) / 100;
+    // Floor to nearest €0.05 per winner; remainder (always a 0.05 multiple if pot is) to first winner
+    const potCents = Math.round(pot.amount * 100);
+    const per5 = Math.floor(potCents / winners.length / 5) * 5; // in cents, multiple of 5
+    const perWinner = per5 / 100;
+    const remainder = r2(pot.amount - perWinner * winners.length);
 
     for (let wi = 0; wi < winners.length; wi++) {
       const w = winners[wi];
@@ -147,7 +149,10 @@ Deno.serve(async (req) => {
   await Promise.all([
     ...Object.entries(stackUpdates).map(([seatId, amount]) => {
       const seat = seats!.find((s: { id: string }) => s.id === seatId)!;
-      return db.from('online_seats').update({ stack: seat.stack + amount }).eq('id', seatId);
+      // Round final stack to nearest €0.05 to prevent cent-level drift accumulating across hands
+      const rawStack = seat.stack + amount;
+      const newStack = Math.round(rawStack / 0.05) * 0.05;
+      return db.from('online_seats').update({ stack: Math.round(newStack * 100) / 100 }).eq('id', seatId);
     }),
     db.from('online_spiele').update({ pot: 0, current_player_id: null }).eq('id', online_spiel_id),
   ]);
