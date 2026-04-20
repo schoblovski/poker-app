@@ -7410,7 +7410,7 @@
               <span style="font-size:16px;color:${{holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)'};line-height:1">${{holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||''}</span>
               <span style="font-size:13px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${botBadge}${myBadge}
             </div>
-            <div style="font-size:12px;color:var(--text-secondary)">${playerStr}/9 · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">${playerStr} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
           </div>${chevron}
         </div>`;
       });
@@ -7664,6 +7664,7 @@
     _pmMaybeTriggerBot();
     _pmMaybeBotRunout();
     _pmMaybeBotReveal();
+    _pmMaybeBotNextHand();
     // Schedule periodic re-render so slow-player comments appear after 60s idle
     clearTimeout(_pm._slowCommentTimer);
     if(_pm.session?.status==='running'&&_pm.session?.current_player_id){
@@ -8505,6 +8506,7 @@
         case'bot_added':{const _bn=a.meta?.bot_name||'Bot';const _so=a.meta?.sitting_out?' · beobachtet zuerst':'';text=`<b>${escHtml(n)}</b> hat Bot <b>${escHtml(_bn)}</b> hinzugefügt${_so}`;extra=' facedown-action';break;}
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
+        case'bot_leave':{const _bn=a.spieler?.name||a.meta?.name||n;text=`<b>${escHtml(_bn)}</b> foldet und verlässt den Tisch`;extra=' facedown-action';break;}
         case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt nur`;extra=' facedown-action';break;
         case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
         case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
@@ -9064,7 +9066,7 @@
         // Prevent being active in multiple sessions simultaneously
         const willBeActive=_pm.session.status!=='running';
         if(willBeActive){
-          const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).neq('online_spiel_id',_pm.id);
+          const{data:activeElsewhere}=await db.from('online_seats').select('online_spiel_id,online_spiele!inner(status)').eq('spieler_id',currentSpieler.id).in('status',['active','allin','paused']).eq('online_spiele.status','running').neq('online_spiel_id',_pm.id);
           if(activeElsewhere?.length){await showAlert('Du bist bereits in einer anderen Session aktiv. Verlasse zuerst die andere Session, bevor du dich hier hinsetzt.');return;}
         }
       }
@@ -9639,9 +9641,15 @@
     if(active.length>1){if(!_cb){_cb=document.createElement('span');_cb.className='pm-live-count';btn.appendChild(_cb);}; _cb.textContent=String(active.length);}
     else{_cb?.remove();}
     btn.onclick=async()=>{
-      if(active.length===1){enterOnlineSession(active[0].id);return;}
+      // Re-query to avoid stale closure (session may have ended since last update)
+      const{data:freshSessions}=await db.from('online_spiele').select('id,status,variante,small_blind,start_stack,is_test,hand_nr').in('status',['waiting','running']);
+      const freshActive=(freshSessions||[]).filter(s=>!(s.hand_nr===0&&s.status==='finished'));
+      if(!freshActive.length){_pmUpdateLiveIndicator();return;}
+      if(freshActive.length===1){enterOnlineSession(freshActive[0].id);return;}
       // Multiple sessions → show picker sheet
-      const _sids=active.map(s=>s.id);
+      const _sids=freshActive.map(s=>s.id);
+      // Reassign active so the rest of the picker code uses fresh data
+      const active=freshActive;
       const[{data:allSeats},{data:mySeatsRows}]=await Promise.all([
         db.from('online_seats').select('online_spiel_id,seat,spieler(ist_bot)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
@@ -9676,7 +9684,7 @@
                   <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
                   <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt}/9 Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
@@ -10090,6 +10098,27 @@
       const delay=1000+Math.random()*1500;
       setTimeout(()=>_pmExecuteBotAction(seat,'reveal'),delay);
     }
+  }
+
+  function _pmMaybeBotNextHand(){
+    const sess=_pm?.session;const seats=_pm?.seats||[];
+    if(!sess||sess.status!=='running')return;
+    if(sess.current_player_id)return; // hand still going
+    // Hand must be fully settled (win action present)
+    const handSettled=(_pm?.actions||[]).some(a=>a.action==='win'&&a.hand_nr===sess.hand_nr);
+    if(!handSettled)return;
+    // Only auto-advance when no human has an active stake (all active seats are bots)
+    const humanActive=seats.some(s=>!s.spieler?.ist_bot&&s.status!=='sitting_out');
+    if(humanActive)return;
+    const key=`next_hand|${sess.hand_nr}|${_pm.id}`;
+    if(_pm._botNextHandKey===key)return;
+    _pm._botNextHandKey=key;
+    setTimeout(async()=>{
+      if(!_pm||_pm._botNextHandKey!==key)return;
+      _pm._botNextHandKey=null;
+      try{await _callFn('poker-new-hand',{online_spiel_id:_pm.id,spieler_id:currentSpieler?.id||''});}
+      catch(e){console.warn('[bot] next-hand error:',e);}
+    },3500);
   }
 
   function _pmSessionSettingsSheet(){

@@ -99,25 +99,32 @@ Deno.serve(async (req) => {
   // ── REMOVE action ────────────────────────────────────────────────────────
   if (actionType === 'remove') {
     if (!bot_spieler_id) return err('bot_spieler_id fehlt');
-    // Verify bot
-    const { data: bot } = await db.from('spieler').select('ist_bot').eq('id', bot_spieler_id).single();
-    if (!bot?.ist_bot) return err('Kein Bot', 403);
+    // Verify bot and get name before deleting
+    const { data: botInfo } = await db.from('spieler').select('ist_bot,name').eq('id', bot_spieler_id).single();
+    if (!botInfo?.ist_bot) return err('Kein Bot', 403);
     const { data: seats } = await db.from('online_seats').select('*').eq('online_spiel_id', online_spiel_id).eq('spieler_id', bot_spieler_id);
     const seat = seats?.[0];
+    const { data: sess } = await db.from('online_spiele').select('current_player_id,status,street,hand_nr').eq('id', online_spiel_id).single();
     if (seat) {
-      if (seat.status === 'active') {
-        const { data: sess } = await db.from('online_spiele').select('current_player_id,status').eq('id', online_spiel_id).single();
-        if (sess?.status === 'running' && sess?.current_player_id === bot_spieler_id) {
-          // Bot's turn – fold first
-          await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
-            body: JSON.stringify({ online_spiel_id, spieler_id: bot_spieler_id, action: 'fold' }),
-          });
-        }
+      if (seat.status === 'active' && sess?.status === 'running' && sess?.current_player_id === bot_spieler_id) {
+        // Bot's turn – fold first (poker-action inserts the fold feed entry)
+        await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
+          body: JSON.stringify({ online_spiel_id, spieler_id: bot_spieler_id, action: 'fold' }),
+        });
       }
       await db.from('online_seats').delete().eq('id', seat.id);
     }
+    // Insert feed entry before deleting spieler so name is preserved in meta
+    await db.from('online_actions').insert({
+      online_spiel_id,
+      spieler_id: bot_spieler_id,
+      action: 'bot_leave',
+      street: sess?.street ?? 'preflop',
+      hand_nr: sess?.hand_nr ?? 0,
+      meta: { name: botInfo.name },
+    });
     await db.from('spieler').delete().eq('id', bot_spieler_id);
     return json({ ok: true, removed: true });
   }
