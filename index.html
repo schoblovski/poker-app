@@ -7299,13 +7299,16 @@
     for(const lvl of levels){
       const diff=lvl-prev;
       const elig=nonFolded.filter(s=>contributions.find(c=>c.id===s.id&&c.contrib>=lvl));
-      const amt=diff*contributions.filter(c=>c.contrib>=lvl).length;
-      if(amt>0&&elig.length>0)pots.push({amount:Math.round(amt*100)/100,eligible:elig.length});
+      const amt=Math.round(diff*contributions.filter(c=>c.contrib>=lvl).length*100)/100;
+      if(amt>0&&elig.length>0)pots.push({amount:amt,eligible:elig.length});
       prev=lvl;
     }
-    const sumPots=pots.reduce((s,p)=>s+p.amount,0);
-    if(sumPots<totalPot&&pots.length>0)pots[0].amount=Math.round((pots[0].amount+(totalPot-sumPots))*100)/100;
-    return pots.length>1?pots:null;
+    const sumPots=Math.round(pots.reduce((s,p)=>s+p.amount,0)*100)/100;
+    const gap=Math.round((totalPot-sumPots)*100)/100;
+    if(gap>0&&pots.length>0)pots[0].amount=Math.round((pots[0].amount+gap)*100)/100;
+    else if(gap<0&&pots.length>0)pots[pots.length-1].amount=Math.round((pots[pots.length-1].amount+gap)*100)/100;
+    const cleanPots=pots.filter(p=>p.amount>0);
+    return cleanPots.length>1?cleanPots:null;
   }
 
   function _pmSVG(seats,session,myId,usedBoardKeys,prevBoardCount=0,potBreakdown=null,reactions={},revealedCards={},awaySet=null,prevRunoutRevCount=null){
