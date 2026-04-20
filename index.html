@@ -804,8 +804,8 @@
   .pm-action-btns{display:flex;gap:6px;align-items:stretch}
   .pm-action-btns .btn{flex:1;min-width:0;height:40px!important;padding:0 6px!important;font-size:13px!important;font-weight:600;margin-top:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pm-feed-win{background:var(--accent-soft)!important;color:var(--accent-text)!important;font-weight:600!important}
-  .pm-feed-narrator{background:#eef2ff!important;color:#3730a3!important;--pm-narrator-bg:#4f46e5}
-  [data-theme="dark"] .pm-feed-narrator{background:#1e1b4b!important;color:#a5b4fc!important;--pm-narrator-bg:#6366f1}
+  .pm-feed-narrator{background:#eef2ff!important;color:#3730a3!important;--pm-narrator-bg:#4f46e5;border-left:3px solid #4f46e5!important;border-radius:4px 8px 8px 4px!important;font-style:italic}
+  [data-theme="dark"] .pm-feed-narrator{background:#1e1b4b!important;color:#a5b4fc!important;--pm-narrator-bg:#6366f1;border-left-color:#6366f1!important}
   .pm-feed-dim{color:var(--text-tertiary)!important;font-size:11px!important;text-align:center!important}
   .pm-live-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--accent);position:relative}
   .pm-live-btn.live{display:flex}
@@ -932,7 +932,7 @@
         </button>
         <button class="dropdown-item" id="btn-online-poker" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
-          Pandemie-Modus
+          Online-Modus
         </button>
         <div class="dropdown-divider" id="dropdown-admin-divider" style="display:none"></div>
         <div id="dropdown-admin-label" style="display:none;padding:6px var(--space-md) 2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)">Administration</div>
@@ -1107,7 +1107,7 @@
   </div>
 </div>
 
-<!-- Pandemie-Modus Info-Modal -->
+<!-- Online-Modus Info-Modal -->
 <div id="pm-info-modal" style="display:none;position:fixed;inset:0;z-index:400;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="max-width:600px;margin:0 auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)">
     <div style="position:sticky;top:0;background:var(--bg);z-index:1;padding:16px 20px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
@@ -1115,7 +1115,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
       <div>
-        <div style="font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--text-primary)">Pandemie-Modus</div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--text-primary)">Online-Modus</div>
         <div style="font-size:12px;color:var(--text-tertiary);margin-top:1px">Spielregeln & Hilfe</div>
       </div>
     </div>
@@ -1890,7 +1890,7 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────────────
-  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner',benachrichtigungen:'Benachrichtigungen','online-lobby':'Pandemie-Modus','online-tisch':'Pokertisch'};
+  const pageTitles={home:'Übersicht',spiel:'Aktuelles Spiel',verlauf:'Spiel Verlauf',statistik:'Statistik',transaktionen:'Transaktionen',verwaltung:'Spielerverwaltung',einstellungen:'Einstellungen','spieler-detail':'Spieler','spieler-stats':'Statistik',haende:'Besondere Hände','spiel-detail':'Spieldetail',info:'Info & Changelog',console:'Debug: Console',rohdaten:'Debug: Rohdaten',profil:'Mein Profil','poker-infos':'Poker Infos','bankkonto-detail':'Bankkonto','pokerkasse-detail':'Pokerkasse',randomizer:'Asse legen',sidepot:'Sidepot-Rechner',blindtimer:'Blind-Timer',h2h:'Head-to-Head',equity:'Equity-Rechner',benachrichtigungen:'Benachrichtigungen','online-lobby':'Online-Modus','online-tisch':'Pokertisch'};
   const ROOT_PAGES=new Set(['home','spiel','verlauf','statistik','transaktionen','haende']);
   // Blind-Timer Vollbild-Modus: bei Landscape-Rotation auf der Timer-Seite
   // wird Header/Nav ausgeblendet und nur der Countdown gross angezeigt.
@@ -2193,9 +2193,9 @@
         <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
         <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
         <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
-          <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Pandemie-Modus</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Online-Modus</div>
           <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Den Pandemie-Modus findest du jetzt im Avatar-Menü.</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Den Online-Modus findest du jetzt im Avatar-Menü.</div>
         </div>
         <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
       </div>`;
@@ -3218,7 +3218,7 @@
             <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="app_updates" id="push-cat-updates"><span class="toggle-slider"></span></label>
           </div>
           <div class="list-item" style="padding-left:var(--space-lg)">
-            <div class="item-body"><div class="item-title" style="font-size:14px">Pandemie-Modus</div><div class="item-subtitle">Push wenn du am Zug bist (Online-Spiel)</div></div>
+            <div class="item-body"><div class="item-title" style="font-size:14px">Online-Modus</div><div class="item-subtitle">Push wenn du am Zug bist (Online-Spiel)</div></div>
             <label class="toggle-switch"><input type="checkbox" class="push-cat" data-cat="online_spiel" id="push-cat-online"><span class="toggle-slider"></span></label>
           </div>
           <div class="list-item" style="padding-left:var(--space-lg)">
@@ -3590,7 +3590,7 @@
         App-Update Push senden (v${VERSION})
       </button>
 
-      <div class="section-title" style="margin-top:var(--space-xl)">Pandemie-Modus</div>
+      <div class="section-title" style="margin-top:var(--space-xl)">Online-Modus</div>
       <div class="card">
         <div class="setting-row" style="align-items:flex-start;flex-direction:column;gap:var(--space-sm)">
           <div class="setting-info"><div class="setting-label">Video-Call Link</div><div class="setting-sub">Link für Video-Calls während Online-Sessions (z.B. WhatsApp, Zoom, Teams, FaceTime). Wird allen Spielern beim Pokertisch angezeigt.</div></div>
@@ -3599,7 +3599,7 @@
       </div>
       <button class="btn btn-primary" id="btn-videocall-speichern" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Pandemie-Modus Einstellungen speichern
+        Online-Modus Einstellungen speichern
       </button>`;
 
     // Preview aktualisieren
@@ -3726,7 +3726,7 @@
       const link=(document.getElementById('set-videocall').value||'').trim();
       await save(async()=>{
         await db.from('einstellungen').upsert({key:'video_call_link',wert:link},{onConflict:'key'});
-      },'Pandemie-Modus Einstellungen gespeichert');
+      },'Online-Modus Einstellungen gespeichert');
       await showAlert('Einstellungen gespeichert.');
     });
 
@@ -3880,7 +3880,7 @@
       const card=document.getElementById('detail-push-card');
       const{data:subs}=await db.from('push_subscriptions').select('einstellungen,aktualisiert_am,endpoint').eq('spieler_id',s.id).order('aktualisiert_am',{ascending:false});
       if(!subs||subs.length===0){card.innerHTML=`<span style="color:var(--text-tertiary)">Keine Geräte registriert</span>`;return;}
-      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates',online_spiel:'Pandemie-Modus'};
+      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates',online_spiel:'Online-Modus'};
       const catActive=(e,k)=>k==='buyins'||k==='neue_hand'||k==='online_spiel'?e[k]!==false:!!e[k];
       function deviceName(ep){
         if(ep.includes('fcm.googleapis.com'))return'Chrome / Android';
@@ -6185,10 +6185,10 @@
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
     {version:'4.0',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Pandemie-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
+      {typ:'neu',text:'Online-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
       {typ:'fix',text:'Hand-Evaluator: Kategorie-Vergleich korrigiert (Pärchen schlug fälschlicherweise Ass-hoch nicht)'},
-      {typ:'verbessert',text:'Pandemie-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
-      {typ:'verbessert',text:'Nummernblock: eigener Overlay für Betragsfelder im Pandemie-Modus (kein System-Keyboard)'},
+      {typ:'verbessert',text:'Online-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
+      {typ:'verbessert',text:'Nummernblock: eigener Overlay für Betragsfelder im Online-Modus (kein System-Keyboard)'},
     ]},
     {version:'3.15',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
@@ -7272,7 +7272,7 @@
       const betChip=betAmt>0?`<rect x="${bcx-betW/2}" y="${bcy-9}" width="${betW}" height="18" rx="9" fill="var(--accent)" opacity=".95"/><text x="${bcx}" y="${bcy}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="white">€${betFmt}</text>`:'';
       const avatarEl=(!isEmpty&&avatarUrl)?`<clipPath id="avc${nr}"><circle cx="${sx}" cy="${sy}" r="22"/></clipPath><image href="${avatarUrl}" x="${sx-22}" y="${sy-22}" width="44" height="44" clip-path="url(#avc${nr})" preserveAspectRatio="xMidYMid slice" opacity="${isFolded?0.3:isSittingOut?0.35:isPaused||isAway?0.45:1}"/>`:'';
       const pauseOverlay=isPaused?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="13" opacity=".9">⏸</text>`:isSittingOut?`<text x="${sx}" y="${sy+5}" text-anchor="middle" font-size="11" opacity=".7">👁</text>`:'';
-      const awayBadge=isAway?`<rect x="${sx+10}" y="${sy-28}" width="18" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">AFK</text>`:isSittingOut?`<rect x="${sx-14}" y="${sy-32}" width="28" height="10" rx="5" fill="rgba(100,116,139,.85)"/><text x="${sx}" y="${sy-25}" text-anchor="middle" font-size="6.5" font-weight="700" fill="white">ZUSCH</text>`:'';
+      const awayBadge=isAway?`<rect x="${sx+10}" y="${sy-28}" width="18" height="10" rx="5" fill="rgba(0,0,0,.65)"/><text x="${sx+19}" y="${sy-21}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#94a3b8">AFK</text>`:isSittingOut?`<circle cx="${sx-12}" cy="${sy-32}" r="7" fill="rgba(100,116,139,.85)"/><path d="M${sx-16} ${sy-32} Q${sx-12} ${sy-36} ${sx-8} ${sy-32} Q${sx-12} ${sy-28} ${sx-16} ${sy-32}Z" fill="white" opacity=".9"/><circle cx="${sx-12}" cy="${sy-32}" r="2" fill="rgba(100,116,139,.85)"/>`:'';
       // Name pill: dark semi-transparent background below the circle, always readable
       const namePillY=sy+28;const namePillW=Math.min(68,name.length*6.5+10);
       const namePill=isEmpty?'':`<rect x="${sx-namePillW/2}" y="${namePillY-9}" width="${namePillW}" height="14" rx="7" fill="rgba(0,0,0,.72)"/><text x="${sx}" y="${namePillY+1}" text-anchor="middle" font-size="8" font-weight="700" fill="white">${escHtml(name)}</text>`;
@@ -7349,9 +7349,9 @@
     </svg>`;
   }
 
-  async function loadOnlineLobby(){
+  async function loadOnlineLobby(soft=false){
     const el=document.getElementById('online-lobby-content');
-    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
+    if(!soft)el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     const[{data:sessions},{data:allSeats},{data:einst}]=await Promise.all([
       db.from('online_spiele').select('*').order('created_at',{ascending:false}).limit(20),
       db.from('online_seats').select('spieler_id,online_spiel_id,seat,stack,status,buyins,spieler(ist_bot)'),
@@ -7444,8 +7444,8 @@
     // Realtime für Lobby
     if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
     _pmLobbyChannel=db.channel('pm-lobby')
-      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{loadOnlineLobby();_pmUpdateLiveIndicator();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby())
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>loadOnlineLobby(true))
       .subscribe();
   }
 
@@ -7500,13 +7500,26 @@
       const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,start_stack,is_test,status:'waiting'}).select().single();
       if(sess?.id)db.from('online_spiele').update({big_blind}).eq('id',sess.id).then(()=>{});
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
-      // Push notification: notify all players subscribed to session_start
-      triggerPush({title:'Neue Online-Session! 🃏',body:`${currentSpieler?.name||'Jemand'} hat eine Pokersession gestartet – jetzt joinen!`,kategorie:'session_start',data:{url:'/online-lobby',tag:'session_start'}});
+      // Push notification: notify all OTHER players subscribed to session_start
+      const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
+      if(_otherPlayers.length)triggerPush({spieler_ids:_otherPlayers,title:'Neue Online-Session! 🃏',body:`${currentSpieler?.name||'Jemand'} hat eine Pokersession gestartet – jetzt joinen!`,kategorie:'session_start',data:{url:`/online-tisch?session=${sess.id}`,tag:'session_start'}});
       close();enterOnlineSession(sess.id);
     };
   }
 
   async function enterOnlineSession(sessionId){
+    // If already active in a different running session, ask user to confirm switch
+    if(_pm?.id&&_pm.id!==sessionId&&_pm?.session?.status==='running'&&_pm?.mySeat){
+      const confirmed=await new Promise(resolve=>{
+        const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;justify-content:center;padding:20px';
+        ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.4)"><div style="font-size:17px;font-weight:700;margin-bottom:8px">Andere Session aktiv</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5">Du bist gerade in einer anderen Session am Tisch. Möchtest du wechseln?</div><div style="display:flex;flex-direction:column;gap:8px"><button id="_sc-ok" class="btn btn-primary" style="max-width:none;margin:0">Wechseln</button><button id="_sc-cancel" class="btn btn-ghost" style="max-width:none;margin:0 auto;width:auto;padding:0 24px">Abbrechen</button></div></div>`;
+        document.body.appendChild(ov);
+        ov.querySelector('#_sc-ok').onclick=()=>{ov.remove();resolve(true);};
+        ov.querySelector('#_sc-cancel').onclick=()=>{ov.remove();resolve(false);};
+        ov.addEventListener('click',e=>{if(e.target===ov){ov.remove();resolve(false);}});
+      });
+      if(!confirmed)return;
+    }
     _pmUnsubscribe();
     document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
@@ -7635,6 +7648,11 @@
     _pmMaybeTriggerBot();
     _pmMaybeBotRunout();
     _pmMaybeBotReveal();
+    // Schedule periodic re-render so slow-player comments appear after 60s idle
+    clearTimeout(_pm._slowCommentTimer);
+    if(_pm.session?.status==='running'&&_pm.session?.current_player_id){
+      _pm._slowCommentTimer=setTimeout(()=>{if(_pm)renderOnlineTisch();},62000);
+    }
   }
 
   function _pmCalcEquity(myCards,boardCards,nOpponents,variante){
@@ -7900,6 +7918,12 @@
       else if(_aa.action==='new_hand')Object.keys(_awayLast).forEach(k=>delete _awayLast[k]);
     }
     const _awaySet=new Set(Object.entries(_awayLast).filter(([,v])=>v==='away').map(([k])=>k));
+    // Auto-send 'back' if we appear AFK in the loaded actions but are currently at the table
+    if(currentSpieler?.id&&_awaySet.has(currentSpieler.id)&&!_pm._clearingAway){
+      _awaySet.delete(currentSpieler.id);
+      _pm._clearingAway=true;_pm._isAway=true;
+      _pmSendBack().finally(()=>{if(_pm)delete _pm._clearingAway;});
+    }
     const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
@@ -7948,7 +7972,7 @@
         const _atT=_fo.scrollTop<80;const _svd=_fo.scrollTop;
         _fo.innerHTML=_fn.innerHTML;if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;
         const _mb=document.getElementById('pm-feed-modal-body');
-        if(_mb){const _atTM=_mb.scrollTop<80;_mb.innerHTML=_fn.innerHTML;if(_atTM)_mb.scrollTop=0;}
+        if(_mb){const _atBottom=_mb.scrollTop>=_mb.scrollHeight-_mb.clientHeight-80;_mb.innerHTML=_fn.innerHTML;const _mbItems=[..._mb.children];_mb.innerHTML='';_mbItems.reverse().forEach(el=>_mb.appendChild(el));if(_atBottom)_mb.scrollTop=_mb.scrollHeight;}
       }
       if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     }
@@ -8401,7 +8425,8 @@
           const _allinTs=a.created_at?new Date(a.created_at).getTime():Infinity;
           const _lookedBefore=actions.some(b=>(b.action==='look'||b.action==='reveal_cards')&&b.spieler_id===a.spieler_id&&b.hand_nr===a.hand_nr&&new Date(b.created_at||0).getTime()<_allinTs);
           const _selfLookedBefore=a.spieler_id===currentSpieler?.id&&(_pm?._lookedHandNr??-1)>=a.hand_nr&&localStorage.getItem('pm_facedown')!=='true'&&_allinTs===Infinity;
-          text=`<b>${escHtml(n)}</b> ${(_lookedBefore||_selfLookedBefore)?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
+          const _isBot=(_pm?.seats||[]).some(s=>s.spieler_id===a.spieler_id&&s.spieler?.ist_bot);
+          text=`<b>${escHtml(n)}</b> ${(_lookedBefore||_selfLookedBefore||_isBot)?'':'BLIND '}All-in${amt}`;extra=' allin-action';break;}
         case'blind':text=`<b>${escHtml(n)}</b> Blind${amt}`;break;
         case'post_sb':text=`<b>${escHtml(n)}</b> SB${amt}`;break;
         case'post_bb':text=`<b>${escHtml(n)}</b> BB${amt}`;break;
@@ -8457,6 +8482,7 @@
         case'dealt_blind':text=`<b>${escHtml(n)}</b> hat seine Karten blind erhalten`;extra=' facedown-action';break;
         case'look':{const _ci=a.meta?.card_idx;const _rv=a.meta?.revealed;const _tot=a.meta?.total;text=(_ci!=null&&_rv&&_tot)?`<b>${escHtml(n)}</b> schaut Karte ${_rv} von ${_tot} an`:`<b>${escHtml(n)}</b> hat seine Karten angesehen`;extra=' facedown-action';break;}
         case'join':text=`<b>${escHtml(n)}</b> hat sich an den Tisch gesetzt`;break;
+        case'bot_added':{const _bn=a.meta?.bot_name||'Bot';const _so=a.meta?.sitting_out?' · beobachtet zuerst':'';text=`<b>${escHtml(n)}</b> hat Bot <b>${escHtml(_bn)}</b> hinzugefügt${_so}`;extra=' facedown-action';break;}
         case'buyin':text=`<b>${escHtml(n)}</b> kauft einen weiteren Buy-In${amt}`;extra=' pm-feed-win';break;
         case'leave':text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;break;
         case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt nur`;extra=' facedown-action';break;
@@ -8467,7 +8493,7 @@
           const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
           return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
         }
-        case'dealer_comment':return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px"><div style="width:22px;height:22px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:4px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><span style="flex:1;min-width:0;font-size:12px;font-style:italic">${escHtml(a.meta?.text||'')}</span></div>`;
+        case'dealer_comment':return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px"><div style="width:26px;height:26px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><span style="flex:1;min-width:0;font-size:12px">${escHtml(a.meta?.text||'')}</span></div>`;
         default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${_fav(a.spieler)}<span style="flex:1;min-width:0">${text}</span></div>`;
@@ -8504,7 +8530,8 @@
       // Raise nur anzeigen wenn mindestens ein Gegner noch callen könnte (nicht allin/pleite)
       const anyoneCanCall=seats.some(s=>s.spieler_id!==mySeat.spieler_id&&s.status!=='folded'&&s.status!=='sitting_out'&&s.status!=='allin'&&(s.stack||0)>0);
       // Store raise params on _pm for the sheet
-      _pm._raiseParams={halfPot:parseFloat(Math.min(myStack,Math.max(bb,pot*0.5)).toFixed(2)),fullPot:parseFloat(Math.min(myStack,Math.max(bb,pot)).toFixed(2)),myStack,myBet,bb,maxBet};
+      const _rp05=v=>Math.round(v*20)/20;
+      _pm._raiseParams={halfPot:_rp05(Math.min(myStack,Math.max(bb,pot*0.5))),fullPot:_rp05(Math.min(myStack,Math.max(bb,pot))),myStack,myBet,bb,maxBet};
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
@@ -8570,7 +8597,7 @@
         </div>
         ${_feedExcerpt}
         ${seat?.spieler?.ist_bot
-          ?`<div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          ?`${(()=>{const _bc=seat?.bot_config||{};const _style=_bc.style||'custom';const _p=typeof _BOT_PRESETS!=='undefined'?_BOT_PRESETS[_style]:null;return _p?`<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 14px;margin-bottom:12px;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:4px">Spielstil</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px">${escHtml(_p.label||_style)}</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.4">${escHtml(_p.desc||'')}</div></div>`:'';})()} <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
               <button id="_pc-bot-config" class="btn btn-secondary" style="width:100%;max-width:none;font-size:13px">Bot-Parameter anpassen</button>
               <button id="_pc-bot-remove" class="btn" style="width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Bot entfernen</button>
             </div>`
@@ -8896,8 +8923,8 @@
       document.body.appendChild(ov);
       ov.querySelector('#btn-pm-feed-modal-close').addEventListener('click',()=>ov.remove());
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
-      // Scroll to newest (bottom)
-      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(sc)sc.scrollTop=sc.scrollHeight;});
+      // Reverse feed to show oldest-first (newest at bottom) then scroll to bottom
+      requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(!sc)return;const items=[...sc.children];sc.innerHTML='';items.reverse().forEach(el=>sc.appendChild(el));sc.scrollTop=sc.scrollHeight;});
       if(canChat){
         const sendModalChat=async()=>{
           const inp=document.getElementById('pm-feed-modal-chat-inp');
@@ -9223,10 +9250,12 @@
     if(btn)btn.disabled=true;
     const startStack=_pm.session?.start_stack||100;
     const curBuyins=_pm.mySeat.buyins||1;
+    // During a running hand, keep sitting_out so server deals cards next hand
+    const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
     const{error}=await db.from('online_seats').update({
       stack:startStack,
-      status:'active',
       buyins:curBuyins+1,
+      ...(sessionRunning?{}:{status:'active'}),
     }).eq('id',_pm.mySeat.id);
     if(error){if(btn)btn.disabled=false;await showAlert('Fehler: '+error.message);return;}
     await db.from('online_actions').insert({
@@ -9474,6 +9503,7 @@
     }
   }
 
+  const _pmRound05=v=>Math.round(v*20)/20; // rounds to nearest €0.05
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
     _pmActInFlight=true;
@@ -9481,7 +9511,8 @@
     document.querySelectorAll('.pm-act-btn,.pm-pre-btn,#pm-raise-confirm,#pm-raise-toggle').forEach(b=>{b.disabled=true;});
     try{
       const body={online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action};
-      if(amount!==undefined&&amount>0)body.amount=amount;
+      // Enforce 0.05 step for bet/raise amounts
+      if(amount!==undefined&&amount>0)body.amount=(action==='raise'||action==='allin')?_pmRound05(amount):amount;
       const resp=await _callFn('poker-action',body);
       if(resp?.error){await showAlert(_pmFriendlyError(resp.error));return;}
       await _pmLoad();
@@ -9611,7 +9642,8 @@
     if(!_pm)return;
     const p=_pm._raiseParams||{};
     const{halfPot=0,fullPot=0,myStack=0,myBet=0,bb=0.1,maxBet=0}=p;
-    const minRaise=+((Math.max(bb,maxBet-myBet+bb)).toFixed(2));
+    const _r05=v=>Math.round(v*20)/20;
+    const minRaise=_r05(Math.max(bb,maxBet-myBet+bb));
     const allInTotal=myStack;
     const sid='pm-raise-sheet';document.getElementById(sid)?.remove();
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
@@ -9624,7 +9656,7 @@
         <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
-        <input type="text" id="pm-rs-input" class="form-input pm-num" inputmode="none" value="${Math.min(fullPot,myStack).toFixed(2)}" data-label="Raise-Betrag" style="width:100%;font-size:20px;font-weight:700;text-align:center">
+        <input type="text" id="pm-rs-input" class="form-input pm-num" inputmode="none" value="${_r05(Math.min(fullPot,myStack)).toFixed(2)}" data-label="Raise-Betrag" style="width:100%;font-size:20px;font-weight:700;text-align:center">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
@@ -9644,12 +9676,13 @@
       else{_allinSelected=false;document.getElementById('pm-rs-confirm').textContent='Raise bestätigen';}
     });
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
-      const i=document.getElementById('pm-rs-input');if(i)i.value=parseFloat(b.dataset.amt||0).toFixed(2);
+      const i=document.getElementById('pm-rs-input');if(i)i.value=_r05(parseFloat(b.dataset.amt||0)).toFixed(2);
       _allinSelected=!!b.dataset.allin;
       document.getElementById('pm-rs-confirm').textContent=_allinSelected?'All-in bestätigen':'Raise bestätigen';
     }));
     document.getElementById('pm-rs-confirm').onclick=async()=>{
-      const v=parseFloat(document.getElementById('pm-rs-input')?.value||0);
+      const _rawV=parseFloat(document.getElementById('pm-rs-input')?.value||0);
+      const v=_r05(_rawV);
       if(!v||v<=0){await showAlert('Bitte Betrag eingeben.');return;}
       document.getElementById('pm-rs-confirm').disabled=true;
       close();
@@ -9795,7 +9828,7 @@
       d=document.createElement('div');d.id='pm-drawer';
       d.innerHTML=`<div id="pm-drawer-handle" title="Verlauf ein-/ausblenden">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <svg id="pm-drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;transition:transform .3s"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg id="pm-drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;transition:transform .3s"><polyline points="15 18 9 12 15 6"/></svg>
       </div>
       <div id="pm-drawer-body">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface)">
@@ -9969,13 +10002,13 @@
     const lastAct=[...(actions||[])].filter(a=>a.created_at&&!['dealer_comment','chat'].includes(a.action)).pop();
     if(!lastAct?.created_at)return'';
     const elapsedSec=(Date.now()-new Date(lastAct.created_at).getTime())/1000;
-    if(elapsedSec<150)return'';
+    if(elapsedSec<60)return'';
     const seat=(seats||[]).find(s=>s.spieler_id===cpId);
     const name=seat?.spieler?.name||'?';
     const h=_pmStrHash(cpId+(session?.hand_nr||0)+'slow');
     const tmpl=_pmSlowComments[h%_pmSlowComments.length].replace('{name}',name);
-    const micIcon=`<div style="width:22px;height:22px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:4px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>`;
-    return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px">${micIcon}<span style="flex:1;min-width:0;font-size:12px;font-style:italic">${escHtml(tmpl)}</span></div>`;
+    const micIcon=`<div style="width:26px;height:26px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>`;
+    return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px">${micIcon}<span style="flex:1;min-width:0;font-size:12px">${escHtml(tmpl)}</span></div>`;
   }
 
   // ── PLAYER CHAT COMMENTS ──────────────────────────────────────────────────
@@ -10048,7 +10081,7 @@
         <div style="margin-bottom:var(--space-md)">
           ${['aggressivitaet','risiko','bluff'].map(k=>{ const labels={aggressivitaet:'Aggressivität',risiko:'Risiko-Bereitschaft',bluff:'Bluff-Rate'}; return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">${labels[k]}</label><span id="pm-bot-lbl-${k}" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals[k]}%</span></div><input id="pm-bot-${k}" type="range" min="0" max="100" value="${vals[k]}" style="width:100%;accent-color:var(--accent)"></div>`;}).join('')}
           <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Gesprächigkeit</label><span id="pm-bot-lbl-gespr" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals.gespr}%</span></div><input id="pm-bot-gespr" type="range" min="0" max="100" value="${vals.gespr}" style="width:100%;accent-color:var(--accent)"></div>
-          <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Reaktionszeit</label><span id="pm-bot-lbl-reaktion" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals.reaktion_min}–${vals.reaktion_max}s</span></div><div style="display:flex;gap:8px;align-items:center"><input id="pm-bot-reaktion-min" type="range" min="1" max="15" value="${vals.reaktion_min}" style="flex:1;accent-color:var(--accent)"><input id="pm-bot-reaktion-max" type="range" min="1" max="30" value="${vals.reaktion_max}" style="flex:1;accent-color:var(--accent)"></div><div id="pm-bot-reaktion-sub" style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-top:3px"><span>Min: ${vals.reaktion_min}s</span><span>Max: ${vals.reaktion_max}s</span></div></div>
+          <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Reaktionszeit (max)</label><span id="pm-bot-lbl-reaktion" style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">${vals.reaktion_max}s</span></div><input id="pm-bot-reaktion-max" type="range" min="1" max="30" value="${vals.reaktion_max}" style="width:100%;accent-color:var(--accent)"><div id="pm-bot-reaktion-sub" style="font-size:10px;color:var(--text-tertiary);margin-top:3px">Antwortet in 1–${vals.reaktion_max}s</div></div>
         </div>
         <div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px">Karten zeigen</label>
           <div style="display:flex;gap:8px">${[['immer','Immer'],['showdown','Bei Showdown'],['nie','Nie']].map(([v,l])=>`<button class="pm-bot-reveal${(cfg.karten_zeigen??'showdown')===v?' active':''}" data-reveal="${v}" style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid${(cfg.karten_zeigen??'showdown')===v?' var(--accent)':' var(--border)'};background:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-soft)':'var(--surface)'};color:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer">${l}</button>`).join('')}</div>
@@ -10072,9 +10105,8 @@
     });
     // Gesprächigkeit slider
     ov.querySelector('#pm-bot-gespr')?.addEventListener('input',e=>{vals.gespr=parseInt(e.target.value);const lbl=ov.querySelector('#pm-bot-lbl-gespr');if(lbl)lbl.textContent=vals.gespr+'%';_switchToCustom();});
-    // Reaktionszeit sliders
-    const _syncReak=()=>{if(vals.reaktion_min>vals.reaktion_max)vals.reaktion_max=vals.reaktion_min;const lbl=ov.querySelector('#pm-bot-lbl-reaktion');if(lbl)lbl.textContent=`${vals.reaktion_min}–${vals.reaktion_max}s`;const sub=ov.querySelector('#pm-bot-reaktion-sub');if(sub)sub.innerHTML=`<span>Min: ${vals.reaktion_min}s</span><span>Max: ${vals.reaktion_max}s</span>`;};
-    ov.querySelector('#pm-bot-reaktion-min')?.addEventListener('input',e=>{vals.reaktion_min=parseInt(e.target.value);_syncReak();_switchToCustom();});
+    // Reaktionszeit slider (single: sets max, min = 1 fixed)
+    const _syncReak=()=>{vals.reaktion_min=1;const lbl=ov.querySelector('#pm-bot-lbl-reaktion');if(lbl)lbl.textContent=`${vals.reaktion_max}s`;const sub=ov.querySelector('#pm-bot-reaktion-sub');if(sub)sub.textContent=`Antwortet in 1–${vals.reaktion_max}s`;};
     ov.querySelector('#pm-bot-reaktion-max')?.addEventListener('input',e=>{vals.reaktion_max=parseInt(e.target.value);_syncReak();_switchToCustom();});
     // Preset buttons
     ov.querySelectorAll('.pm-bot-preset').forEach(btn=>{
@@ -10083,7 +10115,7 @@
         if(p&&currentPreset!=='custom'){
           ['aggressivitaet','risiko','bluff'].forEach(k=>{vals[k]=p[k];const inp=ov.querySelector(`#pm-bot-${k}`);const lbl=ov.querySelector(`#pm-bot-lbl-${k}`);if(inp)inp.value=p[k];if(lbl)lbl.textContent=p[k]+'%';});
           vals.gespr=p.gespr;const gInp=ov.querySelector('#pm-bot-gespr');const gLbl=ov.querySelector('#pm-bot-lbl-gespr');if(gInp)gInp.value=p.gespr;if(gLbl)gLbl.textContent=p.gespr+'%';
-          vals.reaktion_min=p.reaktion_min;vals.reaktion_max=p.reaktion_max;const rMin=ov.querySelector('#pm-bot-reaktion-min');const rMax=ov.querySelector('#pm-bot-reaktion-max');if(rMin)rMin.value=p.reaktion_min;if(rMax)rMax.value=p.reaktion_max;_syncReak();
+          vals.reaktion_min=1;vals.reaktion_max=p.reaktion_max;const rMax=ov.querySelector('#pm-bot-reaktion-max');if(rMax)rMax.value=p.reaktion_max;_syncReak();
         }
         _syncPresetBtns();
       });
@@ -10135,7 +10167,7 @@
     const resp=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
-      body:JSON.stringify({online_spiel_id:_pm.id,action:'create',name,config:{...config,avatar}}),
+      body:JSON.stringify({online_spiel_id:_pm.id,action:'create',name,config:{...config,avatar},caller_id:currentSpieler?.id}),
     });
     const data=await resp.json().catch(()=>({}));
     if(!resp.ok||!data.ok) throw new Error(data.error||`HTTP ${resp.status}`);

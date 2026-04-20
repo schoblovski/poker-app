@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
   // Top-level try/catch: ensures CORS headers are always present even on crash
   try {
 
-  let body: { online_spiel_id: string; bot_spieler_id?: string; action?: string; name?: string; config?: BotConfig };
+  let body: { online_spiel_id: string; bot_spieler_id?: string; action?: string; name?: string; config?: BotConfig; caller_id?: string };
   try { body = await req.json(); }
   catch { return err('Invalid JSON'); }
 
-  const { online_spiel_id, bot_spieler_id } = body;
+  const { online_spiel_id, bot_spieler_id, caller_id } = body;
   const actionType = body.action ?? 'play';
   if (!online_spiel_id) return err('Fehlende Parameter');
 
@@ -82,6 +82,15 @@ Deno.serve(async (req) => {
 
     // Mark session as having bots (disables statistics export)
     await db.from('online_spiele').update({ hat_bots: true }).eq('id', online_spiel_id);
+
+    // Log feed actions: bot join/spectate + who added them
+    const isSittingOut = session.status === 'running';
+    const botActionType = isSittingOut ? 'spectate' : 'join';
+    await db.from('online_actions').insert([
+      { online_spiel_id, spieler_id: botSpieler.id, action: botActionType, hand_nr: session.hand_nr ?? 0 },
+      ...(caller_id ? [{ online_spiel_id, spieler_id: caller_id, action: 'bot_added', hand_nr: session.hand_nr ?? 0, meta: { bot_name: name, sitting_out: isSittingOut } }] : []),
+    ]).catch(() => {});
+
     return json({ ok: true, bot_spieler_id: botSpieler.id, seat: freeSeat });
   }
 
@@ -207,8 +216,10 @@ Deno.serve(async (req) => {
   return json({ ok: true, decision: decision.action });
 
   } catch (e) {
-    console.error('[poker-bot-action] unhandled error:', String(e));
-    return json({ ok: false, error: 'Internal error' }, 500);
+    const msg = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? (e.stack ?? '') : '';
+    console.error('[poker-bot-action] unhandled error:', msg, stack);
+    return json({ ok: false, error: msg || 'Internal error' }, 500);
   }
 });
 
