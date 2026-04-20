@@ -1339,8 +1339,8 @@
     }
   }
   _clearAppBadge();
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();}});
-  window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
+  window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
   const VERSION='4.0'; // build 20260419
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
@@ -1847,7 +1847,7 @@
       const spiel=spieleMap?.[t.spiel_id];
       if(!spiel) return; // nur abgeschlossene Spiele zählen (schützt vor Leak offener Spiele)
       const bPot=spiel.buyin_pot;
-      const bKassa=(bPot < 5) ? 0 : spiel.buyin_kassa;
+      const bKassa=(spiel.modus==='online')||(bPot < 5) ? 0 : spiel.buyin_kassa;
       ks[t.spieler_id]+=(t.payout||0);
       ks[t.spieler_id]-=(t.buyins||0)*(bPot+bKassa);
     });
@@ -2596,8 +2596,8 @@
     const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot'),
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
-      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true)
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
     ]);
     if(!alleSpielerDB)return;
     // Spieler-Cache populieren (id → {id,name,profilbild,...})
@@ -2736,8 +2736,8 @@
     const [{data:allSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
       db.from('spieler').select('*').order('name'),
       db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
-      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
     const kontostaende=berechneKontostaende(allSpielerDB||[],trans,verlauf,spieleMap);
@@ -2789,11 +2789,11 @@
     showPage('spieler-stats');
 
     const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData}]=await Promise.all([
-      db.from('spiel_teilnehmer').select('*,spiele(id,datum,abgeschlossen,buyin_pot,buyin_kassa)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
+      db.from('spiel_teilnehmer').select('*,spiele(id,datum,abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
-      db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
     ]);
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
@@ -2803,7 +2803,7 @@
     const gPayout=abg.reduce((s,t)=>s+(t.payout||0),0);
     const reingewinne=abg.map(t=>{
       const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-      const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+      const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
       return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
     });
     const gRein=reingewinne.reduce((s,v)=>s+v,0);
@@ -2820,7 +2820,7 @@
     // BuyIn-Kosten: Anzahl BuyIns × (buyin_pot + buyin_kassa) je Spiel
     const gBuyinKosten=abg.reduce((s,t)=>{
       const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-      const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+      const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
       return s+(t.buyins||0)*(bPot+bKassa);
     },0);
     const ks=spieler._ks||0;
@@ -3641,8 +3641,8 @@
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
         db.from('spieler').select('*').eq('aktiv',true),
         db.from('transaktionen').select('*'),
-        db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa)').eq('spiele.abgeschlossen',true),
-        db.from('spiele').select('id,buyin_pot,buyin_kassa').eq('abgeschlossen',true),
+        db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
+        db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
       ]);
       const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
       const ks=berechneKontostaende(spieler||[],trans||[],verlauf||[],spieleMap);
@@ -4273,7 +4273,7 @@
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtBuyIns=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
       const sorted=[...teilnehmer].sort((a,b)=>{
-        const bK=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+        const bK=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
         return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
       });
       const isOnline=spiel.modus==='online';
@@ -4292,7 +4292,7 @@
           <div style="margin-left:var(--space-sm)">${chevron}</div>
         </div>
         ${sorted.map((t,i)=>{
-          const bK=(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
+          const bK=(spiel?.modus==='online')||(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
           const rein=(t.payout||0)-(t.buyins||0)*(bPot+bK);
           const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           return`<div class="list-item">
@@ -4390,7 +4390,7 @@
 
     const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
     const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+    const bKassa=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
     // Teilnehmer aus Cache anreichern (Queries in Verlauf liefern nur spieler_id).
     await _ensureSpielerMap();
     const _smap=_spielerMap||{};
@@ -4491,7 +4491,7 @@
     const _smap=_spielerMap||{};
     const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||_smap[t.spieler_id]||{name:'?'}}));
     const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+    const bKassa=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
 
     // Lokale Kopie zum Editieren
     const editData={};
@@ -4610,7 +4610,7 @@
       const parts=bySpiel[game.id]||{};
       filtSpieler.forEach(s=>{
         const t=parts[s.id];
-        if(t){const bPot=game.buyin_pot;const bKassa=bPot<5?0:(game.buyin_kassa??einstellungen.buyin_kassa);cumSums[s.id]+=(t.payout||0)-(t.buyins||0)*(bPot+bKassa);}
+        if(t){const bPot=game.buyin_pot;const bKassa=(game.modus==='online')||bPot<5?0:(game.buyin_kassa??einstellungen.buyin_kassa);cumSums[s.id]+=(t.payout||0)-(t.buyins||0)*(bPot+bKassa);}
         cumul[s.id].push(cumSums[s.id]);
       });
     });
@@ -4729,10 +4729,10 @@
     await _ensureSpielerMap();
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
       db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).order('name'),
-      db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,datum)').eq('spiele.abgeschlossen',true),
+      db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
-      db.from('spiele').select('id,buyin_pot,buyin_kassa,datum').eq('abgeschlossen',true).order('datum'),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,modus,datum').eq('abgeschlossen',true).order('datum'),
     ]);
     if(!spieler||spieler.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Keine Daten</div></div>`;return;}
 
@@ -4771,13 +4771,13 @@
         const abg=filtVerlauf.filter(t=>t.spieler_id===s.id);
         const gRein=abg.reduce((x,t)=>{
           const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
           return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
         },0);
         const gEinz=filtTrans.filter(t=>t.nach_spieler_id===s.id&&t.von_spieler_id===null).reduce((x,t)=>x+(t.betrag||0),0);
         const gBuyinK=abg.reduce((x,t)=>{
           const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
           return x+(t.buyins||0)*(bPot+bKassa);
         },0);
         return{...s,abg:abg.length,gRein,gEinz,gBuyinK};
@@ -4809,7 +4809,7 @@
         mxSpieler.forEach(s=>{saldoM[s.id]={};});
         Object.values(gameMap).forEach(tList=>{
           const bPot=tList[0].spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(bPot<5)?0:(tList[0].spiele?.buyin_kassa??einstellungen.buyin_kassa);
+          const bKassa=(tList[0].spiele?.modus==='online')||(bPot<5)?0:(tList[0].spiele?.buyin_kassa??einstellungen.buyin_kassa);
           const kb=bPot+bKassa;
           const rein={};
           tList.forEach(t=>{rein[t.spieler_id]=(t.payout||0)-(t.buyins||0)*kb;});
@@ -5575,7 +5575,7 @@
 
     const[{data:teilnehmer},{data:haende}]=await Promise.all([
       db.from('spiel_teilnehmer')
-        .select('spieler_id,buyins,payout,spiel_id,spiele!inner(id,datum,abgeschlossen,buyin_pot,buyin_kassa)')
+        .select('spieler_id,buyins,payout,spiel_id,spiele!inner(id,datum,abgeschlossen,buyin_pot,buyin_kassa,modus)')
         .eq('spiele.abgeschlossen',true),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
     ]);
@@ -5591,7 +5591,7 @@
 
   function _h2hReingewinn(t){
     const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
+    const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
     return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
   }
 
@@ -7154,8 +7154,10 @@
   let _pmDrawerLastCount=0; // tracks action count for drawer notification
   let _pmActCooldownUntil=0; // blocks ghost-tap pre-action opening after an action
   let _pmPrevTurn=false;    // tracks turn transitions for vibration
-  let _pmBotTimer=null;     // pending bot-action timeout
-  let _pmBotTriggerKey=null;// dedup key: spieler_id|hand_nr|street
+  let _pmBotTimer=null;       // pending bot-action timeout
+  let _pmBotTriggerKey=null;  // dedup key: spieler_id|hand_nr|street
+  let _pmBotHeartbeat=null;   // interval that catches stuck bots
+  let _pmBotTurnStart={};     // key → timestamp when bot turn began
 
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
@@ -7848,7 +7850,8 @@
     const handIsOver=!session.current_player_id;
 
     // Feed – with optional slow-player sarcastic comment prepended
-    const feedHtml=_pmSlowCommentHtml(actions,session,seats)+_pmFeedHtml(actions);
+    const _feedActOnly=localStorage.getItem('pm_feed_actions_only')==='1';
+    const feedHtml=(_feedActOnly?'':_pmSlowCommentHtml(actions,session,seats))+_pmFeedHtml(actions);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
     const _canBuyin=(!isRunning||handIsOver2)&&mySeat&&mySeat.stack===0&&!isFinished&&myStatus!=='sitting_out';
@@ -8398,10 +8401,15 @@
   };
   function _pmStrHash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h);}
 
+  const _PM_FEED_PLAYER_ACTIONS=new Set(['fold','check','call','raise','bet','allin','post_sb','post_bb','win','split_pot','buyin','react']);
+
   function _pmFeedHtml(actions){
     if(!actions?.length)return`<div style="padding:var(--space-md);color:var(--text-tertiary);font-size:13px;text-align:center">Noch keine Aktionen</div>`;
+    const _actOnly=localStorage.getItem('pm_feed_actions_only')==='1';
+    // When actions-only mode is on, filter to player actions before further processing
+    const actionsFiltered=_actOnly?actions.filter(a=>_PM_FEED_PLAYER_ACTIONS.has(a.action)):actions;
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
-    const raw=actions.slice(-40).reverse();
+    const raw=actionsFiltered.slice(-40).reverse();
     const newHandMap={};
     const others=raw.filter(a=>{if(a.action==='new_hand'){newHandMap[a.hand_nr]=a;return false;}if(a.action==='look'&&!a.meta?.facedown)return false;return true;});
     const placed=new Set();
@@ -8426,10 +8434,10 @@
       if(a.action==='look'){const key=a.meta?.card_idx!=null?`look|${a.spieler_id}|${a.hand_nr}|${a.meta.card_idx}`:`look|${a.spieler_id}|${a.hand_nr}`;if(revealSeen.has(key))return false;revealSeen.add(key);return true;}
       return true;
     });
-    // Inject deterministic dealer comments (same seed → same comment on all clients)
+    // Inject deterministic dealer comments (suppressed in actions-only mode)
     // Per-action comment probability (% of actions that get a dealer comment)
     const _dcProb={fold:18,allin:52,win:42,win_72:95,raise:20,call:10,check:7,new_hand:12};
-    const _dcMap={};for(const _a of displayDeduped){if(!_a.id||typeof _a.id!=='string'||_a.id.startsWith('_')||_a.action==='dealer_comment')continue;const _h=_pmStrHash(_a.id);let _pool=null;let _thresh=0;const _dn=_a.spieler?.name||'';if(_a.action==='fold'){_pool=_pmDealerJokes.fold;_thresh=_dcProb.fold;}else if(_a.action==='allin'){_pool=_pmDealerJokes.allin;_thresh=_dcProb.allin;}else if(_a.action==='win'){const _hcs=_a.meta?.hole_cards||[];const _is72=_hcs.some((c)=>c.rank===7)&&_hcs.some((c)=>c.rank===2);_pool=_is72?_pmDealerJokes.win_72:_pmDealerJokes.win;_thresh=_is72?_dcProb.win_72:_dcProb.win;}else if(_a.action==='raise'){_pool=_pmDealerJokes.raise;_thresh=_dcProb.raise;}else if(_a.action==='call'){_pool=_pmDealerJokes.call;_thresh=_dcProb.call;}else if(_a.action==='check'){_pool=_pmDealerJokes.check;_thresh=_dcProb.check;}else if(_a.action==='new_hand'){_pool=_pmDealerJokes.new_hand;_thresh=_dcProb.new_hand;}if(!_pool||(_h%100)>=_thresh)continue;let _dt=_pool[_pmStrHash(_a.id+'p')%_pool.length].replace('{name}',_dn||'jemand');const _cnP=_pmDealerChuck[_dn];if(_cnP&&(_pmStrHash(_a.id+'cn')%100)<35)_dt=_cnP[_pmStrHash(_a.id+'cnp')%_cnP.length];_dcMap[_a.id]={text:_dt,hand_nr:_a.hand_nr};}
+    const _dcMap={};if(!_actOnly)for(const _a of displayDeduped){if(!_a.id||typeof _a.id!=='string'||_a.id.startsWith('_')||_a.action==='dealer_comment')continue;const _h=_pmStrHash(_a.id);let _pool=null;let _thresh=0;const _dn=_a.spieler?.name||'';if(_a.action==='fold'){_pool=_pmDealerJokes.fold;_thresh=_dcProb.fold;}else if(_a.action==='allin'){_pool=_pmDealerJokes.allin;_thresh=_dcProb.allin;}else if(_a.action==='win'){const _hcs=_a.meta?.hole_cards||[];const _is72=_hcs.some((c)=>c.rank===7)&&_hcs.some((c)=>c.rank===2);_pool=_is72?_pmDealerJokes.win_72:_pmDealerJokes.win;_thresh=_is72?_dcProb.win_72:_dcProb.win;}else if(_a.action==='raise'){_pool=_pmDealerJokes.raise;_thresh=_dcProb.raise;}else if(_a.action==='call'){_pool=_pmDealerJokes.call;_thresh=_dcProb.call;}else if(_a.action==='check'){_pool=_pmDealerJokes.check;_thresh=_dcProb.check;}else if(_a.action==='new_hand'){_pool=_pmDealerJokes.new_hand;_thresh=_dcProb.new_hand;}if(!_pool||(_h%100)>=_thresh)continue;let _dt=_pool[_pmStrHash(_a.id+'p')%_pool.length].replace('{name}',_dn||'jemand');const _cnP=_pmDealerChuck[_dn];if(_cnP&&(_pmStrHash(_a.id+'cn')%100)<35)_dt=_cnP[_pmStrHash(_a.id+'cnp')%_cnP.length];_dcMap[_a.id]={text:_dt,hand_nr:_a.hand_nr};}
     const _displayFinal=[];for(const _af of displayDeduped){_displayFinal.push(_af);if(_af.id&&_dcMap[_af.id])_displayFinal.push({id:`_dc_${_af.id}`,action:'dealer_comment',meta:{text:_dcMap[_af.id].text},hand_nr:_af.hand_nr,spieler:null,amount:0,created_at:_af.created_at});}
     const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
     return _displayFinal.map(a=>{
@@ -9313,7 +9321,7 @@
     if(!_pm?.mySeat)return;
     const startStack=_pm.session?.start_stack||100;
     const bPot=einstellungen?.buyin_pot??5;
-    const bKassa=einstellungen?.buyin_kassa??2;
+    const bKassa=0; // online sessions: no pokerkasse fee
     const chipToEur=bPot/(startStack||bPot);
     const sid='pm-buyin-sheet';document.getElementById(sid)?.remove();
     let count=1;
@@ -9437,7 +9445,7 @@
     // Build per-player summary rows (exclude bots)
     // Normalize chip values to real euros: 1 chip = buyin_pot / start_stack
     const _bPot=einstellungen?.buyin_pot??5;
-    const _bKassa=einstellungen?.buyin_kassa??2;
+    const _bKassa=0; // online sessions: no pokerkasse fee
     const _chipToEur=_bPot/(startStack||_bPot);
     const rows=seats.filter(s=>s.status!=='sitting_out'&&!s.spieler?.ist_bot).map(s=>{
       const buyins=s.buyins||1;
@@ -9522,7 +9530,7 @@
         const{data:ns,error:nsErr}=await db.from('spiele').insert({
           datum:today,
           buyin_pot:einstellungen?.buyin_pot??5,
-          buyin_kassa:einstellungen?.buyin_kassa??2,
+          buyin_kassa:0,
           modus:'online',
           abgeschlossen:true,
         }).select().single();
@@ -9544,9 +9552,14 @@
       }
 
       overlay.remove();
-      // Clean up bot spieler rows created for this session
+      // Clean up bot spieler rows created for this session.
+      // Must delete online_actions first (FK: spieler_id → spieler.id prevents direct delete).
       const _botIds=(seats||[]).filter(s=>s.spieler?.ist_bot).map(s=>s.spieler_id);
-      if(_botIds.length)db.from('spieler').delete().in('id',_botIds).then(()=>{});
+      if(_botIds.length)(async()=>{
+        await db.from('online_actions').delete().in('spieler_id',_botIds);
+        await db.from('online_seats').delete().in('spieler_id',_botIds);
+        await db.from('spieler').delete().in('id',_botIds);
+      })().catch(()=>{});
       _pmUnsubscribe();
       if(withStats)loadHome(); // refresh balances in background
       showPage('online-lobby');
@@ -9720,6 +9733,7 @@
       <button id="_lv-cancel" class="btn btn-ghost" style="width:100%;max-width:none;margin:0">Abbrechen</button>
     </div>`;
     document.body.appendChild(ov);
+    requestAnimationFrame(()=>ov.classList.add('open'));
     ov.querySelector('#_lv-temp').addEventListener('click',async()=>{
       ov.remove();
       await db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave',hand_nr:_pm.session?.hand_nr||0});
@@ -10026,6 +10040,7 @@
     if(key===_pmBotTriggerKey)return; // already scheduled
     _pmClearBotTimer();
     _pmBotTriggerKey=key;
+    if(!_pmBotTurnStart[key])_pmBotTurnStart[key]=Date.now();
     const _rMin=(botSeat.bot_config?.reaktion_min??1)*1000;
     const _rMax=(botSeat.bot_config?.reaktion_max??5)*1000;
     const delay=_rMin+Math.random()*Math.max(0,_rMax-_rMin);
@@ -10034,11 +10049,30 @@
       _pmBotTriggerKey=null;
       await _pmExecuteBotAction(botSeat,'play');
     },delay);
+    // Heartbeat: if after max reaction + 8s the bot still hasn't acted, force a retry
+    if(!_pmBotHeartbeat){
+      _pmBotHeartbeat=setInterval(()=>{
+        if(!_pm?.session||_pm.session.status!=='running')return;
+        const cpNow=_pm.session.current_player_id;if(!cpNow)return;
+        const bsNow=(_pm.seats||[]).find(s=>s.spieler_id===cpNow&&s.spieler?.ist_bot);
+        if(!bsNow)return;
+        const hbKey=`${cpNow}|${_pm.session.hand_nr}|${_pm.session.street}`;
+        const sinceStart=Date.now()-(_pmBotTurnStart[hbKey]||Date.now());
+        // If turn started > 12s ago and no timer is running, re-trigger
+        if(sinceStart>12000&&!_pmBotTimer){
+          console.warn('[bot] heartbeat re-trigger for stuck bot',hbKey);
+          _pmBotTurnStart[hbKey]=Date.now(); // reset so we don't spam
+          _pmExecuteBotAction(bsNow,'play');
+        }
+      },4000);
+    }
   }
 
   function _pmClearBotTimer(){
     if(_pmBotTimer){clearTimeout(_pmBotTimer);_pmBotTimer=null;}
     _pmBotTriggerKey=null;
+    if(_pmBotHeartbeat){clearInterval(_pmBotHeartbeat);_pmBotHeartbeat=null;}
+    _pmBotTurnStart={};
   }
 
   async function _pmExecuteBotAction(botSeat,action='play',_retry=0){
@@ -10124,6 +10158,7 @@
   function _pmSessionSettingsSheet(){
     const sid='pm-session-settings-sheet';document.getElementById(sid)?.remove();
     const equityOn=localStorage.getItem('pm_show_equity')==='1';
+    const actionsOnly=localStorage.getItem('pm_feed_actions_only')==='1';
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
@@ -10136,6 +10171,13 @@
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-equity"${equityOn?' checked':''}><span class="toggle-slider"></span></label>
         </div>
+        <div class="setting-row" style="padding:14px 0">
+          <div class="setting-info">
+            <div class="setting-label" style="font-size:14px">Nur Spieler-Aktionen</div>
+            <div class="setting-sub" style="font-size:12px">Feed zeigt nur Fold/Call/Raise/Win – keine System-Events, Dealer-Kommentare oder Status-Meldungen</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="pm-sess-actonly"${actionsOnly?' checked':''}><span class="toggle-slider"></span></label>
+        </div>
       </div>
       <button class="btn btn-ghost" id="pm-sess-close" style="margin-top:var(--space-md);max-width:none;margin-left:0;margin-right:0">Schließen</button>
     </div>`;
@@ -10146,6 +10188,10 @@
     document.getElementById('pm-sess-equity').addEventListener('change',e=>{
       localStorage.setItem('pm_show_equity',e.target.checked?'1':'0');
       if(_pm)_pm._showEquity=e.target.checked;
+    });
+    document.getElementById('pm-sess-actonly').addEventListener('change',e=>{
+      localStorage.setItem('pm_feed_actions_only',e.target.checked?'1':'0');
+      if(_pm)renderOnlineTisch();
     });
   }
 
@@ -10395,6 +10441,7 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     if(_pm?._visHandler){document.removeEventListener('visibilitychange',_pm._visHandler);_pm._visHandler=null;}
+    _pmClearBotTimer();
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
     _pm=null;
