@@ -7615,6 +7615,7 @@
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},(payload)=>{
           // Update ticker immediately from payload – no extra DB query needed
+          console.log('[rt-debug] online_actions INSERT:',payload.new?.online_spiel_id?.slice(-6),payload.new?.action);
           const a=payload.new;
           const _rtSkip=['new_hand','dealt','join','bot_leave','pause','resume','reveal_runout','dealer_comment'];
           if(a&&a.online_spiel_id&&!_rtSkip.includes(a.action)){
@@ -7693,11 +7694,13 @@
     if(!el)return;
     const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
     if(!rows.length)return;
+    console.log('[ticker-debug] querying',rows.length,'sessions:',rows.map(r=>r.dataset.id.slice(-6)));
     const results=await Promise.all(rows.map(r=>
       db.from('online_actions').select('spieler_id,action,amount,spieler(name)')
         .eq('online_spiel_id',r.dataset.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win'])
         .order('created_at',{ascending:false}).limit(1)
     ));
+    console.log('[ticker-debug] results:',results.map((r,i)=>({id:rows[i].dataset.id.slice(-6),data:r.data,error:r.error?.message})));
     rows.forEach((row,i)=>{
       const a=results[i]?.data?.[0];
       const newTxt=a?_pmFormatTickerAction(a,a.spieler?.name||_pmLobbyNameCache[a.spieler_id]||''):'';
