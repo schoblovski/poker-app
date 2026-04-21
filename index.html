@@ -7207,7 +7207,7 @@
       const _hfCtx=_pm._handFesthaltenCtx;_pm._handFesthaltenCtx=null;
       const _hfWinner=alleSpieler.find(s=>s.id===document.getElementById('hand-gewinner').value);
       const _hfEntry={id:`_hrec_${Date.now()}`,online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,amount:0,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'},created_at:new Date().toISOString(),spieler:currentSpieler?{name:currentSpieler.name,profilbild:currentSpieler.profilbild}:null};
-      db.from('online_actions').insert({online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'}}).then(()=>{});
+      db.from('online_actions').insert({online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'}}).then(()=>{}).catch(e=>console.warn('hand_recorded insert failed',e));
       if(_pm.actions){_pm.actions=_pm.actions.concat(_hfEntry);renderOnlineTisch();}
     }
     loadHaende();
@@ -9988,46 +9988,6 @@
     if(handStr.includes('Vierling')||handStr.includes('Four of a Kind'))return'Poker';
     if(handStr.includes('7-2'))return'7-2';
     return null;
-  }
-  async function _pmCheckSpecialHands(){
-    if(!_pm?.session||!currentSpieler?.ist_admin)return;
-    const session=_pm.session;
-    const actions=_pm.actions||[];
-    const handNr=session.hand_nr;
-    if(!handNr||session.current_player_id)return;
-    if(!_pm._promptedHands)_pm._promptedHands=new Set();
-    if(_pm._promptedHands.has(handNr))return;
-    const winActs=actions.filter(a=>a.action==='win'&&a.hand_nr===handNr&&a.meta?.hand&&_pmMapSpecialHand(a.meta.hand));
-    if(!winActs.length)return;
-    _pm._promptedHands.add(handNr);
-    // Unique winner+hand, only real players
-    const seen2=new Set();
-    const valids=winActs.filter(act=>{
-      const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
-      if(sp?.spieler?.ist_bot)return false; // skip bots
-      const k=`${act.spieler_id}:${act.meta.hand}`;
-      if(seen2.has(k))return false;
-      seen2.add(k);
-      return true;
-    });
-    if(!valids.length)return;
-    for(const act of valids){
-      const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
-      const name=sp?.spieler?.name||'?';
-      const mappedHand=_pmMapSpecialHand(act.meta.hand);
-      // Open hand modal pre-filled so user can optionally add photo
-      selectedHandType=mappedHand;
-      _editHandGewinnerId=act.spieler_id;
-      editHandID=null;
-      _handFotoBase64=null;_handFotoOriginal=null;
-      _showHandEditMode();
-      document.getElementById('hand-kommentar').value=`Online-Spiel Spielrunde #${handNr}`;
-      document.getElementById('modal-hand').classList.add('open');
-      // Wait for modal to close before processing next
-      await new Promise(resolve=>{
-        const check=setInterval(()=>{if(!document.getElementById('modal-hand').classList.contains('open')){clearInterval(check);resolve();}},300);
-      });
-    }
   }
 
   async function _pmCaptureTableCanvas(){
