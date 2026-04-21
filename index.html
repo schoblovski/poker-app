@@ -10093,12 +10093,12 @@
       const initials=name.slice(0,2).toUpperCase();
       ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
       // Name: OUTSIDE the oval (away from table center), full text
-      const nameY=isTopHalf?sy-seatR-18:sy+seatR+18;
+      const nameY=isTopHalf?sy-seatR-20:sy+seatR+20;
       ctx.fillStyle=isWinner?'#4ade80':'#f3f4f6';
       ctx.font=(isWinner?'bold ':'')+`13px sans-serif`;
       ctx.textAlign='center';ctx.fillText(name,sx,nameY);
-      // Stack: one step further outside
-      const stackY=isTopHalf?nameY-14:nameY+14;
+      // Stack: between name and circle (toward avatar), always visible
+      const stackY=isTopHalf?nameY+13:nameY-13;
       ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='10px monospace';
       ctx.fillText('€'+(seat.stack||0).toFixed(0),sx,stackY);
       // Hole cards: TOWARD center (between avatar and table edge), bigger size
