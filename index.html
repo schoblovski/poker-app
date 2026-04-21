@@ -1244,6 +1244,15 @@
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Drücke jederzeit auf ein Emoji unter dem Stacks-Balken. Deine Reaktion erscheint kurz über deinem Avatar auf dem Tisch und wird im Verlauf für alle sichtbar.</div>
       </div>
 
+      <!-- Hand festhalten -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Hand festhalten</div>
+          <div style="font-size:10px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px">Profi-Tipp</div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Hat jemand eine besondere Hand gewonnen (Royal Flush, Poker, Straight Flush, 7-2)? Drücke im Menü <b>(⋮)</b> auf <b>„Hand festhalten"</b> — der Eintrag erscheint nach dem Ende einer Spielrunde wenn echte Spieler am Tisch sind. Die App erstellt automatisch ein Tischbild als Beweisfoto, füllt den Gewinner vor und wählt falls erkannt den Hand-Typ aus. Du kannst alles noch anpassen bevor du speicherst. Der gespeicherte Eintrag erscheint direkt im Verlauf und wird in den „Besonderen Hände" der Statistik erfasst.</div>
+      </div>
+
       <!-- Abrechnung -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Abrechnung</div>
@@ -7103,6 +7112,7 @@
   });
 
   document.getElementById('hand-schliessen').addEventListener('click',()=>{
+    if(_pm?._handFesthaltenCtx)_pm._handFesthaltenCtx=null;
     document.getElementById('modal-hand').classList.remove('open');
   });
   document.getElementById('hand-bearbeiten-btn').addEventListener('click',()=>{
@@ -7121,6 +7131,7 @@
         beweisfoto:_handFotoBase64};
       _showHandViewMode(h);
     } else {
+      if(_pm?._handFesthaltenCtx)_pm._handFesthaltenCtx=null;
       document.getElementById('modal-hand').classList.remove('open');
     }
   });
@@ -7191,6 +7202,14 @@
 
     document.getElementById('hand-loeschen')?.remove();
     document.getElementById('modal-hand').classList.remove('open');
+    // PM: write feed entry if triggered from "Hand festhalten" FAB
+    if(_pm?._handFesthaltenCtx){
+      const _hfCtx=_pm._handFesthaltenCtx;_pm._handFesthaltenCtx=null;
+      const _hfWinner=alleSpieler.find(s=>s.id===document.getElementById('hand-gewinner').value);
+      const _hfEntry={id:`_hrec_${Date.now()}`,online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,amount:0,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'},created_at:new Date().toISOString(),spieler:currentSpieler?{name:currentSpieler.name,profilbild:currentSpieler.profilbild}:null};
+      db.from('online_actions').insert({online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'}}).then(()=>{});
+      if(_pm.actions){_pm.actions=_pm.actions.concat(_hfEntry);renderOnlineTisch();}
+    }
     loadHaende();
     loadHome();
     // Statistik wird beim nächsten Öffnen des Tabs ohnehin neu geladen – kein Hintergrund-Reload nötig.
@@ -7527,7 +7546,7 @@
     // Fetch latest interesting action per active session – one query per session in parallel to guarantee coverage
     const _latestActMap={};
     if(active.length){
-      const _tickerWhitelist=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
+      const _tickerWhitelist=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment','hand_recorded'];
       const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount,meta').eq('online_spiel_id',s.id).in('action',_tickerWhitelist).order('created_at',{ascending:false}).limit(1)));
       _tickerResults.forEach((res,i)=>{
         const a=res.data?.[0];if(!a)return;
@@ -7685,6 +7704,7 @@
     if(a.action==='win'||a.action==='showdown_win')return`${n} gewinnt${amt}`;
     if(a.action==='chat'){const t=a.meta?.text||'';return t?(n?`${n}: „${t}"`:`„${t}"`):''}
     if(a.action==='dealer_comment')return a.meta?.text||'';
+    if(a.action==='hand_recorded'){const _hw=a.meta?.winner_name||'';const _hh=a.meta?.hand||'';return _hw?(_hh?`${_hw} – ${_hh} festgehalten`:`${_hw} Hand festgehalten`):'Hand festgehalten';}
     return'';
   }
 
@@ -7693,7 +7713,7 @@
     if(!el)return;
     const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
     if(!rows.length)return;
-    const _tw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
+    const _tw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment','hand_recorded'];
     const results=await Promise.all(rows.map(r=>
       db.from('online_actions').select('spieler_id,action,amount,meta,spieler(name)')
         .eq('online_spiel_id',r.dataset.id).in('action',_tw)
@@ -7968,7 +7988,6 @@
     _pmDrawerUpdateFeed();
     if(_pm.session?.status==='finished'){_pmUpdateLiveIndicator();_pmDrawerHide();}
     else if(!_tischActive&&_pm?.id&&typeof _pmDrawerShow==='function')_pmDrawerShow();
-    _pmCheckSpecialHands();
     _pmAutoReveal();
     _pmMaybeTriggerBot();
     _pmMaybeBotRunout();
@@ -8154,7 +8173,9 @@
     const _hasFreeSeats=_seatedCount<9;
     const _fabIconSettings=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`;
     const _fabIconLobby=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0"><polyline points="15 18 9 12 15 6"/></svg>`;
-    const fabHtml=`<div id="pm-fab-menu">${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }${!isFinished&&_hasFreeSeats?`<button class="pm-fab-item" id="btn-pm-add-bot">${_fabIconBot}Bot hinzufügen</button>`:''  }<button class="pm-fab-item" id="btn-pm-settings">${_fabIconSettings}Session Einstellungen</button><button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button>${mySeat&&!isFinished&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-leave">${_fabIconLeave}Tisch verlassen</button>`:''  }${myStatus==='sitting_out'&&!isFinished?`<button class="pm-fab-item" id="btn-pm-lobby-leave">${_fabIconLeave}Lobby verlassen</button>`:''  }${!mySeat&&!isFinished?`<button class="pm-fab-item" id="btn-pm-lobby">${_fabIconLobby}Zur Session-Liste</button>`:''  }${!isFinished?`<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`:''  }</div><button id="pm-fab" class="pm-fab-vis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+    const _fabIconHandRecord=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+    const _hasRealPlayers=(seats||[]).some(s=>!s.spieler?.ist_bot&&s.spieler_id&&s.status!=='sitting_out');
+    const fabHtml=`<div id="pm-fab-menu">${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }${!isFinished&&_hasFreeSeats?`<button class="pm-fab-item" id="btn-pm-add-bot">${_fabIconBot}Bot hinzufügen</button>`:''  }<button class="pm-fab-item" id="btn-pm-settings">${_fabIconSettings}Session Einstellungen</button><button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button>${isRunning&&handIsOver2&&(session.hand_nr||0)>0&&_hasRealPlayers?`<button class="pm-fab-item" id="btn-pm-hand-record">${_fabIconHandRecord}Hand festhalten</button>`:''  }${mySeat&&!isFinished&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-leave">${_fabIconLeave}Tisch verlassen</button>`:''  }${myStatus==='sitting_out'&&!isFinished?`<button class="pm-fab-item" id="btn-pm-lobby-leave">${_fabIconLeave}Lobby verlassen</button>`:''  }${!mySeat&&!isFinished?`<button class="pm-fab-item" id="btn-pm-lobby">${_fabIconLobby}Zur Session-Liste</button>`:''  }${!isFinished?`<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`:''  }</div><button id="pm-fab" class="pm-fab-vis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
     const handIsOver=!session.current_player_id;
 
     // Feed – with optional slow-player sarcastic comment prepended
@@ -8871,6 +8892,7 @@
         }
         case'chat':{const _av=a.spieler?.profilbild;const _avatarEl=_av?`<img src="${escHtml(_av)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:26px;height:26px;border-radius:50%;background:var(--bg-secondary);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-secondary)">${escHtml((n||'?')[0].toUpperCase())}</div>`;return`<div class="pm-feed-item" style="gap:7px;background:var(--bg-secondary);border-radius:10px;margin:1px 0">${_avatarEl}<span style="flex:1;min-width:0;font-size:12px;font-style:italic;color:var(--text-secondary)">${escHtml(a.meta?.text||'')}</span></div>`;}
         case'dealer_comment':return`<div class="pm-feed-item pm-feed-narrator" style="gap:6px"><div style="width:26px;height:26px;flex-shrink:0;background:var(--pm-narrator-bg,#4f46e5);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><span style="flex:1;min-width:0;font-size:12px">${escHtml(a.meta?.text||'')}</span></div>`;
+        case'hand_recorded':{const _hrh=a.meta?.hand?` <b style="color:var(--accent-text)">${escHtml(a.meta.hand)}</b>`:'';const _hrw=a.meta?.winner_name?` von <b>${escHtml(a.meta.winner_name)}</b>`:a.spieler?.name?` (${escHtml(a.spieler.name)})`:'';return`<div class="pm-feed-item pm-feed-win" style="gap:6px"><div style="width:26px;height:26px;flex-shrink:0;background:var(--accent-soft);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="2" style="width:13px;height:13px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div><span style="flex:1;min-width:0;font-size:12px">Besondere Hand festgehalten${_hrh}${_hrw}</span></div>`;}
         default:text=`<b>${escHtml(n)}</b>: ${a.action}`;
       }
       return`<div class="pm-feed-item${extra}">${_fav(a.spieler)}<span style="flex:1;min-width:0">${text}</span></div>`;
@@ -9369,6 +9391,7 @@
       document.getElementById('pm-info-modal').style.display='none';
     });
     document.getElementById('btn-pm-add-bot')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmAddBotModal();});
+    document.getElementById('btn-pm-hand-record')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmHandFesthalten();});
     document.getElementById('btn-pm-settings')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmSessionSettingsSheet();});
     document.getElementById('btn-pm-leave')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmLeaveSheet();});
     document.getElementById('btn-pm-lobby')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();if(!_pm?.mySeat)_pmDrawerHide();showPage('online-lobby');});
@@ -10008,6 +10031,91 @@
     }
   }
 
+  function _pmCaptureTableCanvas(){
+    const W=800,H=520;
+    const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+    const ctx=canvas.getContext('2d');
+    // Background
+    ctx.fillStyle='#0d3d20';ctx.fillRect(0,0,W,H);
+    // Table felt oval
+    ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.44,H*0.40,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
+    ctx.strokeStyle='#b8862a';ctx.lineWidth=7;ctx.stroke();
+    const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
+    const session=_pm?.session;
+    const handNr=session?.hand_nr||0;
+    const cards=session?.community_cards||[];
+    const rankStr={14:'A',13:'K',12:'Q',11:'J',10:'T',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+    const suitStr={s:'♠',h:'♥',d:'♦',c:'♣'};
+    const isRed={h:true,d:true};
+    // Community cards
+    const cW=52,cH=74,cGap=8,numSlots=5;
+    const totalCW=numSlots*cW+(numSlots-1)*cGap;
+    const cX0=(W-totalCW)/2,cY0=H/2-cH/2-8;
+    for(let i=0;i<numSlots;i++){
+      const cx=cX0+i*(cW+cGap),cy=cY0;
+      rrect(cx,cy,cW,cH,6);
+      if(i<cards.length){ctx.fillStyle='#fff';ctx.fill();const c=cards[i];const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;ctx.fillStyle=isRed[c.suit]?'#dc2626':'#1c1c1e';ctx.font='bold 19px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+28);ctx.font='17px serif';ctx.fillText(s,cx+cW/2,cy+52);}
+      else{ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();}
+    }
+    // Pot
+    ctx.fillStyle='#d4a843';ctx.font='bold 14px monospace';ctx.textAlign='center';
+    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,W/2,cY0-12);
+    // Seats
+    const activeSeats=(_pm?.seats||[]).filter(s=>s.status!=='sitting_out');
+    const winActs=(_pm?.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
+    const winnerIds=new Set(winActs.map(a=>a.spieler_id));
+    const n=Math.max(activeSeats.length,1);
+    activeSeats.forEach((seat,idx)=>{
+      const angle=(idx/n)*Math.PI*2-Math.PI/2;
+      const rx=W*0.43,ry=H*0.39;
+      const sx=W/2+rx*Math.cos(angle),sy=H/2+ry*Math.sin(angle);
+      const isWinner=winnerIds.has(seat.spieler_id);
+      const isFolded=seat.status==='folded';
+      const r=28;
+      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);
+      ctx.fillStyle=isWinner?'#16a34a':isFolded?'#4b5563':'#1f2937';ctx.fill();
+      if(isWinner){ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.stroke();}
+      const name=seat.spieler?.name||'?';
+      const initials=name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+      ctx.fillStyle='#fff';ctx.font=`bold 13px sans-serif`;ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
+      ctx.fillStyle=isWinner?'#4ade80':'#9ca3af';ctx.font='10px monospace';ctx.fillText('€'+(seat.stack||0).toFixed(0),sx,sy+r+13);
+      const shortName=name.length>8?name.slice(0,7)+'…':name;
+      ctx.fillStyle=isWinner?'#fff':'#9ca3af';ctx.font=(isWinner?'bold ':'')+`10px sans-serif`;ctx.fillText(shortName,sx,sy+r+25);
+    });
+    // Footer
+    const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='11px sans-serif';ctx.textAlign='left';
+    ctx.fillText(`${varLabel[session?.variante]||session?.variante||''} · Spielrunde #${handNr}`,14,H-10);
+    ctx.textAlign='right';ctx.fillText('DTKS Poker',W-14,H-10);
+    return canvas.toDataURL('image/jpeg',0.85);
+  }
+
+  async function _pmHandFesthalten(){
+    if(!_pm?.session)return;
+    const session=_pm.session;
+    const handNr=session.hand_nr||0;
+    // Generate canvas screenshot
+    const foto=_pmCaptureTableCanvas();
+    // Find winner of last hand (first real non-bot player)
+    const winActs=(_pm.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
+    let winnerId=null,winHand=null;
+    for(const act of winActs){
+      const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
+      if(!sp?.spieler?.ist_bot){winnerId=act.spieler_id;winHand=act.meta?.hand?_pmMapSpecialHand(act.meta.hand):null;break;}
+    }
+    const varLabel={holdem:"Hold'em",omaha:'Omaha',texahma:'Texahma'};
+    const comment=`Online-Spiel · ${varLabel[session.variante]||session.variante} · Spielrunde #${handNr}`;
+    selectedHandType=winHand||null;
+    _editHandGewinnerId=winnerId;
+    editHandID=null;
+    _handFotoBase64=foto;
+    _handFotoOriginal=null;
+    _showHandEditMode();
+    document.getElementById('hand-kommentar').value=comment;
+    _pm._handFesthaltenCtx={hand_nr:handNr,session_id:_pm.id};
+    document.getElementById('modal-hand').classList.add('open');
+  }
+
   const _pmRound05=v=>Math.round(v*20)/20; // rounds to nearest €0.05
   async function _pmAct(action,amount){
     if(!_pm||_pmActInFlight)return;
@@ -10075,7 +10183,7 @@
       // Multiple sessions → show picker sheet
       const _sids=freshActive.map(s=>s.id);
       const active=freshActive;
-      const _ptw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
+      const _ptw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment','hand_recorded'];
       const[{data:allSeats},{data:mySeatsRows},..._pickerActResults]=await Promise.all([
         db.from('online_seats').select('spieler_id,online_spiel_id,seat,buyins,spieler(ist_bot,name,profilbild)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
