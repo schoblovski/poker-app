@@ -10077,7 +10077,7 @@
       const active=freshActive;
       const _ptw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
       const[{data:allSeats},{data:mySeatsRows},..._pickerActResults]=await Promise.all([
-        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot,name,profilbild)').in('online_spiel_id',_sids),
+        db.from('online_seats').select('spieler_id,online_spiel_id,seat,buyins,spieler(ist_bot,name,profilbild)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
         ..._sids.map(sid=>db.from('online_actions').select('spieler_id,action,amount,meta').eq('online_spiel_id',sid).in('action',_ptw).order('created_at',{ascending:false}).limit(1)),
       ]);
