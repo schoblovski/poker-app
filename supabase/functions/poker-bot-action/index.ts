@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
 
   // ── PLAY action ─────────────────────────────────────────────────────────
   if (session.status !== 'running') return err('Session laeuft nicht');
-  if (session.current_player_id !== bot_spieler_id) return err('Nicht dran', 409);
+  if (session.current_player_id !== bot_spieler_id) return json({ ok: true, skipped: true, reason: 'not_turn' });
   if (mySeat.status === 'folded' || mySeat.status === 'allin') return json({ ok: true, skipped: true });
 
   // Idempotency guard: block concurrent requests from multiple clients within 3s window
@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     .in('action', ['fold', 'call', 'raise', 'check', 'allin', 'bet'])
     .gte('created_at', recentCutoff)
     .limit(1);
-  if (recentActs && recentActs.length > 0) return err('Bot hat bereits gespielt', 409);
+  if (recentActs && recentActs.length > 0) return json({ ok: true, skipped: true, reason: 'already_played' });
 
   const holeCards: Card[] = botHoleCards;
   const board: Card[] = session.community_cards ?? [];

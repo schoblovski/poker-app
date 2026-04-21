@@ -7747,7 +7747,7 @@
               headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
               body:JSON.stringify({online_spiel_id:s.id,bot_spieler_id:s.current_player_id,action:'play'})
             });
-            if(!_r.ok&&_r.status!==409)console.warn('[global-bot] unexpected',_r.status);
+            if(!_r.ok)console.warn('[global-bot] unexpected',_r.status);
           }catch(e){console.warn('[global-bot]',e);}
           finally{setTimeout(()=>_globalBotFlying.delete(key),8000);}
         },1000+Math.random()*2000);
