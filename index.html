@@ -10058,7 +10058,7 @@
         const c=cards[i];const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
         ctx.fillStyle=isRed[c.suit]?'#dc2626':'#1c1c1e';
         ctx.font='bold 32px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+40);
-        ctx.font='26px serif';ctx.fillText(s,cx+cW/2,cy+76);
+        ctx.font='34px serif';ctx.fillText(s,cx+cW/2,cy+80);
       } else {
         ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fill();
       }
@@ -10116,7 +10116,7 @@
           const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
           ctx.fillStyle=isRed[c.suit]?'#dc2626':'#111';
           ctx.font='bold 20px monospace';ctx.textAlign='center';ctx.fillText(r,mx+mcW/2,my+26);
-          ctx.font='20px serif';ctx.fillText(s,mx+mcW/2,my+54);
+          ctx.font='26px serif';ctx.fillText(s,mx+mcW/2,my+58);
         });
       }
     });
