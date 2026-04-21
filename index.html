@@ -10047,7 +10047,7 @@
     ctx.strokeStyle='#b8862a';ctx.lineWidth=8;ctx.stroke();
     // Community cards – bigger, vertically centered on table
     const cards=session?.community_cards||[];
-    const cW=68,cH=96,cGap=10,numSlots=5;
+    const cW=72,cH=102,cGap=10,numSlots=5;
     const totalCW=numSlots*cW+(numSlots-1)*cGap;
     const cX0=CX-totalCW/2,cY0=CY-cH/2;
     for(let i=0;i<numSlots;i++){
@@ -10057,8 +10057,8 @@
         ctx.fillStyle='#fff';ctx.fill();
         const c=cards[i];const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
         ctx.fillStyle=isRed[c.suit]?'#dc2626':'#1c1c1e';
-        ctx.font='bold 26px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+36);
-        ctx.font='22px serif';ctx.fillText(s,cx+cW/2,cy+68);
+        ctx.font='bold 32px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+40);
+        ctx.font='26px serif';ctx.fillText(s,cx+cW/2,cy+76);
       } else {
         ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fill();
       }
@@ -10104,20 +10104,19 @@
       // Hole cards: TOWARD center (between avatar and table edge), bigger size
       const hc=_revMap[seat.spieler_id]||[];
       if(hc.length){
-        const mcW=26,mcH=36,mcG=4,mcR=42;
+        const mcW=52,mcH=72,mcG=6,mcR=62;
         hc.forEach((c,i)=>{
           const dxC=(i-(hc.length-1)/2)*(mcW+mcG);
           const dyC=Math.sqrt(Math.max(0,mcR*mcR-dxC*dxC));
-          // isTopHalf → cards below avatar (toward center = downward); else cards above
           const mx=Math.round(sx+dxC-mcW/2);
           const my=Math.round(sy+(isTopHalf?dyC:-dyC)-mcH/2);
-          rrect(mx,my,mcW,mcH,3);
+          rrect(mx,my,mcW,mcH,5);
           ctx.fillStyle='#fff';ctx.fill();
           ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
           const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
           ctx.fillStyle=isRed[c.suit]?'#dc2626':'#111';
-          ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.fillText(r,mx+mcW/2,my+13);
-          ctx.font='11px serif';ctx.fillText(s,mx+mcW/2,my+28);
+          ctx.font='bold 20px monospace';ctx.textAlign='center';ctx.fillText(r,mx+mcW/2,my+26);
+          ctx.font='20px serif';ctx.fillText(s,mx+mcW/2,my+54);
         });
       }
     });
