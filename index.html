@@ -10031,7 +10031,7 @@
   }
 
   function _pmCaptureTableCanvas(){
-    const W=800,H=560;
+    const W=900,H=620;
     const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext('2d');
     const session=_pm?.session;
@@ -10040,90 +10040,92 @@
     const suitStr={s:'♠',h:'♥',d:'♦',c:'♣'};
     const isRed={h:true,d:true};
     const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
-    // Background
+    const CX=W/2,CY=H/2;
+    // Background + table
     ctx.fillStyle='#0d3d20';ctx.fillRect(0,0,W,H);
-    // Table felt oval
-    ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.40,H*0.36,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
-    ctx.strokeStyle='#b8862a';ctx.lineWidth=7;ctx.stroke();
-    // Community cards (slightly above center to leave room for bottom seat labels)
+    ctx.beginPath();ctx.ellipse(CX,CY,W*0.39,H*0.35,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
+    ctx.strokeStyle='#b8862a';ctx.lineWidth=8;ctx.stroke();
+    // Community cards – bigger, vertically centered on table
     const cards=session?.community_cards||[];
-    const cW=52,cH=74,cGap=8,numSlots=5;
+    const cW=68,cH=96,cGap=10,numSlots=5;
     const totalCW=numSlots*cW+(numSlots-1)*cGap;
-    const cX0=(W-totalCW)/2,cY0=H/2-cH/2-10;
+    const cX0=CX-totalCW/2,cY0=CY-cH/2;
     for(let i=0;i<numSlots;i++){
       const cx=cX0+i*(cW+cGap),cy=cY0;
-      rrect(cx,cy,cW,cH,6);
-      if(i<cards.length){ctx.fillStyle='#fff';ctx.fill();const c=cards[i];const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;ctx.fillStyle=isRed[c.suit]?'#dc2626':'#1c1c1e';ctx.font='bold 19px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+28);ctx.font='17px serif';ctx.fillText(s,cx+cW/2,cy+52);}
-      else{ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();}
+      rrect(cx,cy,cW,cH,8);
+      if(i<cards.length){
+        ctx.fillStyle='#fff';ctx.fill();
+        const c=cards[i];const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
+        ctx.fillStyle=isRed[c.suit]?'#dc2626':'#1c1c1e';
+        ctx.font='bold 26px monospace';ctx.textAlign='center';ctx.fillText(r,cx+cW/2,cy+36);
+        ctx.font='22px serif';ctx.fillText(s,cx+cW/2,cy+68);
+      } else {
+        ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fill();
+      }
     }
     // Pot
-    ctx.fillStyle='#d4a843';ctx.font='bold 14px monospace';ctx.textAlign='center';
-    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,W/2,cY0-14);
+    ctx.fillStyle='#d4a843';ctx.font='bold 15px monospace';ctx.textAlign='center';
+    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,CX,cY0-16);
     // Revealed hole cards map
     const _revMap={};
     (_pm?.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===handNr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});
-    // Seats – positioned on outer oval, seats kept inward enough for name labels
+    // Seats
     const activeSeats=(_pm?.seats||[]).filter(s=>s.status!=='sitting_out');
     const winActs=(_pm?.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
     const winnerIds=new Set(winActs.map(a=>a.spieler_id));
     const n=Math.max(activeSeats.length,1);
-    const seatR=28; // avatar circle radius
+    const seatR=30;
     activeSeats.forEach((seat,idx)=>{
       const angle=(idx/n)*Math.PI*2-Math.PI/2;
-      // Seat orbit slightly outside the table edge; clamp so name fits in canvas
-      const rawSx=W/2+W*0.43*Math.cos(angle);
-      const rawSy=H/2+H*0.40*Math.sin(angle);
-      const sx=Math.max(seatR+40,Math.min(W-seatR-40,rawSx));
-      const sy=Math.max(seatR+30,Math.min(H-seatR-40,rawSy));
+      const rawSx=CX+W*0.43*Math.cos(angle);
+      const rawSy=CY+H*0.41*Math.sin(angle);
+      const sx=Math.max(seatR+50,Math.min(W-seatR-50,rawSx));
+      const sy=Math.max(seatR+36,Math.min(H-seatR-48,rawSy));
       const isWinner=winnerIds.has(seat.spieler_id);
       const isFolded=seat.status==='folded';
       const name=seat.spieler?.name||'?';
+      const isTopHalf=rawSy<=CY;
       // Avatar circle
       ctx.beginPath();ctx.arc(sx,sy,seatR,0,Math.PI*2);
       ctx.fillStyle=isWinner?'#16a34a':isFolded?'#4b5563':'#1f2937';ctx.fill();
       if(isWinner){ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.stroke();}
-      // Initials inside circle (first 2 chars of name)
-      const initials=(name.slice(0,2)).toUpperCase();
-      ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
-      ctx.fillText(initials,sx,sy+5);
-      // Name label below/above circle depending on vertical position
-      const nameBelow=sy<H/2;
-      const nameY=nameBelow?sy+seatR+16:sy-seatR-5;
-      const displayName=name.length>10?name.slice(0,9)+'…':name;
-      ctx.fillStyle=isWinner?'#4ade80':'#e5e7eb';
-      ctx.font=(isWinner?'bold ':'')+`12px sans-serif`;
-      ctx.textAlign='center';ctx.fillText(displayName,sx,nameY);
-      // Stack chip below name
-      const stackY=nameBelow?nameY+14:nameY-14;
-      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px monospace';
+      // Initials inside circle
+      const initials=name.slice(0,2).toUpperCase();
+      ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
+      // Name: OUTSIDE the oval (away from table center), full text
+      const nameY=isTopHalf?sy-seatR-18:sy+seatR+18;
+      ctx.fillStyle=isWinner?'#4ade80':'#f3f4f6';
+      ctx.font=(isWinner?'bold ':'')+`13px sans-serif`;
+      ctx.textAlign='center';ctx.fillText(name,sx,nameY);
+      // Stack: one step further outside
+      const stackY=isTopHalf?nameY-14:nameY+14;
+      ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='10px monospace';
       ctx.fillText('€'+(seat.stack||0).toFixed(0),sx,stackY);
-      // Revealed hole cards: arc of mini-cards toward table center
+      // Hole cards: TOWARD center (between avatar and table edge), bigger size
       const hc=_revMap[seat.spieler_id]||[];
       if(hc.length){
-        const mcW=16,mcH=22,mcG=3,mcR=36;
-        const towardCenter=nameBelow; // cards fan toward center
+        const mcW=26,mcH=36,mcG=4,mcR=42;
         hc.forEach((c,i)=>{
           const dxC=(i-(hc.length-1)/2)*(mcW+mcG);
           const dyC=Math.sqrt(Math.max(0,mcR*mcR-dxC*dxC));
+          // isTopHalf → cards below avatar (toward center = downward); else cards above
           const mx=Math.round(sx+dxC-mcW/2);
-          const my=Math.round(sy+(towardCenter?dyC:-dyC)-mcH/2);
-          rrect(mx,my,mcW,mcH,2);
+          const my=Math.round(sy+(isTopHalf?dyC:-dyC)-mcH/2);
+          rrect(mx,my,mcW,mcH,3);
           ctx.fillStyle='#fff';ctx.fill();
-          ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=0.5;ctx.stroke();
+          ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
           const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
-          const red=isRed[c.suit];
-          ctx.fillStyle=red?'#dc2626':'#111';
-          ctx.font='bold 8px monospace';ctx.textAlign='center';
-          ctx.fillText(r,mx+mcW/2,my+9);
-          ctx.font='9px serif';ctx.fillText(s,mx+mcW/2,my+19);
+          ctx.fillStyle=isRed[c.suit]?'#dc2626':'#111';
+          ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.fillText(r,mx+mcW/2,my+13);
+          ctx.font='11px serif';ctx.fillText(s,mx+mcW/2,my+28);
         });
       }
     });
     // Footer
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
-    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='11px sans-serif';ctx.textAlign='left';
-    ctx.fillText(`${varLabel[session?.variante]||session?.variante||''} · Spielrunde #${handNr}`,14,H-10);
-    ctx.textAlign='right';ctx.fillText('DTKS Poker',W-14,H-10);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='12px sans-serif';ctx.textAlign='left';
+    ctx.fillText(`${varLabel[session?.variante]||session?.variante||''} · Spielrunde #${handNr}`,16,H-12);
+    ctx.textAlign='right';ctx.fillText('DTKS Poker',W-16,H-12);
     return canvas.toDataURL('image/jpeg',0.85);
   }
 
