@@ -1250,7 +1250,7 @@
           <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Hand festhalten</div>
           <div style="font-size:10px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px">Profi-Tipp</div>
         </div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Hat jemand eine besondere Hand gewonnen (Royal Flush, Poker, Straight Flush, 7-2)? Drücke im Menü <b>(⋮)</b> auf <b>„Hand festhalten"</b> — der Eintrag erscheint nach dem Ende einer Spielrunde wenn echte Spieler am Tisch sind. Die App erstellt automatisch ein Tischbild als Beweisfoto, füllt den Gewinner vor und wählt falls erkannt den Hand-Typ aus. Du kannst alles noch anpassen bevor du speicherst. Der gespeicherte Eintrag erscheint direkt im Verlauf und wird in den „Besonderen Hände" der Statistik erfasst.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Hat jemand eine besondere Hand gewonnen (Royal Flush, Poker, Straight Flush, 7-2)? Drücke jederzeit im Menü <b>(⋮)</b> auf <b>„Hand festhalten"</b>. Die App erstellt automatisch ein Tischbild als Beweisfoto (inkl. aufgedeckter Karten), füllt den Gewinner vor und wählt falls erkannt den Hand-Typ aus. Du kannst alles noch anpassen bevor du speicherst. Der gespeicherte Eintrag erscheint direkt im Verlauf und wird in den „Besonderen Hände" der Statistik erfasst.</div>
       </div>
 
       <!-- Abrechnung -->
@@ -10031,25 +10031,25 @@
   }
 
   function _pmCaptureTableCanvas(){
-    const W=800,H=520;
+    const W=800,H=560;
     const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext('2d');
-    // Background
-    ctx.fillStyle='#0d3d20';ctx.fillRect(0,0,W,H);
-    // Table felt oval
-    ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.44,H*0.40,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
-    ctx.strokeStyle='#b8862a';ctx.lineWidth=7;ctx.stroke();
-    const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
     const session=_pm?.session;
     const handNr=session?.hand_nr||0;
-    const cards=session?.community_cards||[];
     const rankStr={14:'A',13:'K',12:'Q',11:'J',10:'T',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
     const suitStr={s:'♠',h:'♥',d:'♦',c:'♣'};
     const isRed={h:true,d:true};
-    // Community cards
+    const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
+    // Background
+    ctx.fillStyle='#0d3d20';ctx.fillRect(0,0,W,H);
+    // Table felt oval
+    ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.40,H*0.36,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
+    ctx.strokeStyle='#b8862a';ctx.lineWidth=7;ctx.stroke();
+    // Community cards (slightly above center to leave room for bottom seat labels)
+    const cards=session?.community_cards||[];
     const cW=52,cH=74,cGap=8,numSlots=5;
     const totalCW=numSlots*cW+(numSlots-1)*cGap;
-    const cX0=(W-totalCW)/2,cY0=H/2-cH/2-8;
+    const cX0=(W-totalCW)/2,cY0=H/2-cH/2-10;
     for(let i=0;i<numSlots;i++){
       const cx=cX0+i*(cW+cGap),cy=cY0;
       rrect(cx,cy,cW,cH,6);
@@ -10058,28 +10058,66 @@
     }
     // Pot
     ctx.fillStyle='#d4a843';ctx.font='bold 14px monospace';ctx.textAlign='center';
-    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,W/2,cY0-12);
-    // Seats
+    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,W/2,cY0-14);
+    // Revealed hole cards map
+    const _revMap={};
+    (_pm?.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===handNr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});
+    // Seats – positioned on outer oval, seats kept inward enough for name labels
     const activeSeats=(_pm?.seats||[]).filter(s=>s.status!=='sitting_out');
     const winActs=(_pm?.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
     const winnerIds=new Set(winActs.map(a=>a.spieler_id));
     const n=Math.max(activeSeats.length,1);
+    const seatR=28; // avatar circle radius
     activeSeats.forEach((seat,idx)=>{
       const angle=(idx/n)*Math.PI*2-Math.PI/2;
-      const rx=W*0.43,ry=H*0.39;
-      const sx=W/2+rx*Math.cos(angle),sy=H/2+ry*Math.sin(angle);
+      // Seat orbit slightly outside the table edge; clamp so name fits in canvas
+      const rawSx=W/2+W*0.43*Math.cos(angle);
+      const rawSy=H/2+H*0.40*Math.sin(angle);
+      const sx=Math.max(seatR+40,Math.min(W-seatR-40,rawSx));
+      const sy=Math.max(seatR+30,Math.min(H-seatR-40,rawSy));
       const isWinner=winnerIds.has(seat.spieler_id);
       const isFolded=seat.status==='folded';
-      const r=28;
-      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);
+      const name=seat.spieler?.name||'?';
+      // Avatar circle
+      ctx.beginPath();ctx.arc(sx,sy,seatR,0,Math.PI*2);
       ctx.fillStyle=isWinner?'#16a34a':isFolded?'#4b5563':'#1f2937';ctx.fill();
       if(isWinner){ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.stroke();}
-      const name=seat.spieler?.name||'?';
-      const initials=name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
-      ctx.fillStyle='#fff';ctx.font=`bold 13px sans-serif`;ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
-      ctx.fillStyle=isWinner?'#4ade80':'#9ca3af';ctx.font='10px monospace';ctx.fillText('€'+(seat.stack||0).toFixed(0),sx,sy+r+13);
-      const shortName=name.length>8?name.slice(0,7)+'…':name;
-      ctx.fillStyle=isWinner?'#fff':'#9ca3af';ctx.font=(isWinner?'bold ':'')+`10px sans-serif`;ctx.fillText(shortName,sx,sy+r+25);
+      // Initials inside circle (first 2 chars of name)
+      const initials=(name.slice(0,2)).toUpperCase();
+      ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+      ctx.fillText(initials,sx,sy+5);
+      // Name label below/above circle depending on vertical position
+      const nameBelow=sy<H/2;
+      const nameY=nameBelow?sy+seatR+16:sy-seatR-5;
+      const displayName=name.length>10?name.slice(0,9)+'…':name;
+      ctx.fillStyle=isWinner?'#4ade80':'#e5e7eb';
+      ctx.font=(isWinner?'bold ':'')+`12px sans-serif`;
+      ctx.textAlign='center';ctx.fillText(displayName,sx,nameY);
+      // Stack chip below name
+      const stackY=nameBelow?nameY+14:nameY-14;
+      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px monospace';
+      ctx.fillText('€'+(seat.stack||0).toFixed(0),sx,stackY);
+      // Revealed hole cards: arc of mini-cards toward table center
+      const hc=_revMap[seat.spieler_id]||[];
+      if(hc.length){
+        const mcW=16,mcH=22,mcG=3,mcR=36;
+        const towardCenter=nameBelow; // cards fan toward center
+        hc.forEach((c,i)=>{
+          const dxC=(i-(hc.length-1)/2)*(mcW+mcG);
+          const dyC=Math.sqrt(Math.max(0,mcR*mcR-dxC*dxC));
+          const mx=Math.round(sx+dxC-mcW/2);
+          const my=Math.round(sy+(towardCenter?dyC:-dyC)-mcH/2);
+          rrect(mx,my,mcW,mcH,2);
+          ctx.fillStyle='#fff';ctx.fill();
+          ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=0.5;ctx.stroke();
+          const r=rankStr[c.rank]||String(c.rank);const s=suitStr[c.suit]||c.suit;
+          const red=isRed[c.suit];
+          ctx.fillStyle=red?'#dc2626':'#111';
+          ctx.font='bold 8px monospace';ctx.textAlign='center';
+          ctx.fillText(r,mx+mcW/2,my+9);
+          ctx.font='9px serif';ctx.fillText(s,mx+mcW/2,my+19);
+        });
+      }
     });
     // Footer
     const varLabel={holdem:"Texas Hold'em",omaha:'Omaha',texahma:'Texahma'};
