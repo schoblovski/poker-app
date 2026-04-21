@@ -10030,7 +10030,7 @@
     }
   }
 
-  function _pmCaptureTableCanvas(){
+  async function _pmCaptureTableCanvas(){
     const W=900,H=620;
     const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext('2d');
@@ -10041,6 +10041,19 @@
     const isRed={h:true,d:true};
     const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
     const CX=W/2,CY=H/2;
+    // Pre-load profile pictures (Supabase Storage has CORS: * so crossOrigin works)
+    const activeSeats=(_pm?.seats||[]).filter(s=>s.status!=='sitting_out');
+    const imgMap={};
+    await Promise.all(activeSeats.map(seat=>{
+      const url=seat.spieler?.profilbild;
+      if(!url)return Promise.resolve();
+      return new Promise(resolve=>{
+        const img=new Image();img.crossOrigin='anonymous';
+        img.onload=()=>{imgMap[seat.spieler_id]=img;resolve();};
+        img.onerror=()=>resolve();
+        img.src=url;
+      });
+    }));
     // Background + table
     ctx.fillStyle='#0d3d20';ctx.fillRect(0,0,W,H);
     ctx.beginPath();ctx.ellipse(CX,CY,W*0.39,H*0.35,0,0,Math.PI*2);ctx.fillStyle='#1a6e3d';ctx.fill();
@@ -10070,7 +10083,6 @@
     const _revMap={};
     (_pm?.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===handNr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});
     // Seats
-    const activeSeats=(_pm?.seats||[]).filter(s=>s.status!=='sitting_out');
     const winActs=(_pm?.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
     const winnerIds=new Set(winActs.map(a=>a.spieler_id));
     const n=Math.max(activeSeats.length,1);
@@ -10089,9 +10101,18 @@
       ctx.beginPath();ctx.arc(sx,sy,seatR,0,Math.PI*2);
       ctx.fillStyle=isWinner?'#16a34a':isFolded?'#4b5563':'#1f2937';ctx.fill();
       if(isWinner){ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.stroke();}
-      // Initials inside circle
-      const initials=name.slice(0,2).toUpperCase();
-      ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
+      const profileImg=imgMap[seat.spieler_id];
+      if(profileImg){
+        // Draw profile picture clipped to circle
+        ctx.save();ctx.beginPath();ctx.arc(sx,sy,seatR,0,Math.PI*2);ctx.clip();
+        ctx.drawImage(profileImg,sx-seatR,sy-seatR,seatR*2,seatR*2);
+        ctx.restore();
+        if(isWinner){ctx.beginPath();ctx.arc(sx,sy,seatR,0,Math.PI*2);ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.stroke();}
+      } else {
+        // Initials fallback
+        const initials=name.slice(0,2).toUpperCase();
+        ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText(initials,sx,sy+5);
+      }
       // Name: OUTSIDE the oval (away from table center), full text
       const nameY=isTopHalf?sy-seatR-20:sy+seatR+20;
       ctx.fillStyle=isWinner?'#4ade80':'#f3f4f6';
@@ -10133,7 +10154,7 @@
     const session=_pm.session;
     const handNr=session.hand_nr||0;
     // Generate canvas screenshot
-    const foto=_pmCaptureTableCanvas();
+    const foto=await _pmCaptureTableCanvas();
     // Find winner of last hand (first real non-bot player)
     const winActs=(_pm.actions||[]).filter(a=>a.action==='win'&&a.hand_nr===handNr);
     let winnerId=null,winHand=null;
