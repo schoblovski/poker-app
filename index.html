@@ -7537,7 +7537,6 @@
         const txt=_pmFormatTickerAction(a,n);
         if(txt)_latestActMap[sid]=txt;
       });
-      console.log('[lobby] latestActMap after build:',JSON.stringify(_latestActMap));
     }
     const done=visibleSessions.filter(s=>s.status==='finished');
     if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
@@ -7612,8 +7611,8 @@
       // Realtime – only set up once per full rebuild
       if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       _pmLobbyChannel=db.channel('pm-lobby')
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{console.log('[lobby-rt] online_spiele change');clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{console.log('[lobby-rt] online_seats change');clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},(payload)=>{
           // Update ticker immediately from payload – no extra DB query needed
           const a=payload.new;
@@ -7691,10 +7690,9 @@
 
   async function _pmLobbyTickerTick(){
     const el=document.getElementById('online-lobby-content');
-    if(!el){console.log('[lobby-tick] no lobby element');return;}
+    if(!el)return;
     const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
-    if(!rows.length){console.log('[lobby-tick] no active rows');return;}
-    console.log('[lobby-tick] querying',rows.length,'session(s)');
+    if(!rows.length)return;
     const results=await Promise.all(rows.map(r=>
       db.from('online_actions').select('spieler_id,action,amount,spieler(name)')
         .eq('online_spiel_id',r.dataset.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win'])
@@ -7715,7 +7713,6 @@
         content.appendChild(tickerDiv);
       }
       const span=tickerDiv.querySelector('span:last-child');
-      console.log('[lobby-tick] session',row.dataset.id,'db:',newTxt,'dom:',span?.textContent);
       if(span&&span.textContent!==newTxt){
         span.textContent=newTxt;
         span.style.animation='none';void span.offsetWidth;
@@ -7743,18 +7740,18 @@
         _globalBotFlying.add(key);
         setTimeout(async()=>{
           try{
-            if(_pm?.id===s.id){return;} // user joined in the meantime
-            await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
+            if(_pm?.id===s.id){return;}
+            const _r=await fetch(`${SUPABASE_URL}/functions/v1/poker-bot-action`,{
               method:'POST',
               headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
               body:JSON.stringify({online_spiel_id:s.id,bot_spieler_id:s.current_player_id,action:'play'})
             });
+            if(!_r.ok&&_r.status!==409)console.warn('[global-bot] unexpected',_r.status);
           }catch(e){console.warn('[global-bot]',e);}
           finally{setTimeout(()=>_globalBotFlying.delete(key),8000);}
         },1000+Math.random()*2000);
       })
       .subscribe();
-    console.log('[global-bot] watcher ready, bot count:',_botPlayerIds.size);
   }
 
   function _pmNewSessionSheet(){
