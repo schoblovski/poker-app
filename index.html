@@ -7527,9 +7527,8 @@
     // Fetch latest interesting action per active session – one query per session in parallel to guarantee coverage
     const _latestActMap={};
     if(active.length){
-      // Whitelist approach: only actions we can display (avoids empty-string from unhandled types like 'bet', 'leave_permanent')
-      const _tickerActions='(fold,call,raise,check,allin,bet,blind,win,showdown_win)';
-      const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',s.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win']).order('created_at',{ascending:false}).limit(1)));
+      const _tickerWhitelist=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
+      const _tickerResults=await Promise.all(active.map(s=>db.from('online_actions').select('spieler_id,action,amount,meta').eq('online_spiel_id',s.id).in('action',_tickerWhitelist).order('created_at',{ascending:false}).limit(1)));
       _tickerResults.forEach((res,i)=>{
         const a=res.data?.[0];if(!a)return;
         const sid=active[i].id;
@@ -7614,10 +7613,8 @@
         .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},(payload)=>{
-          // Update ticker immediately from payload – no extra DB query needed
-          console.log('[rt-debug] online_actions INSERT:',payload.new?.online_spiel_id?.slice(-6),payload.new?.action);
           const a=payload.new;
-          const _rtSkip=['new_hand','dealt','join','bot_leave','pause','resume','reveal_runout','dealer_comment'];
+          const _rtSkip=['new_hand','dealt','join','bot_leave','pause','resume','reveal_runout'];
           if(a&&a.online_spiel_id&&!_rtSkip.includes(a.action)){
             const row=document.querySelector(`#online-lobby-content .pm-session-row[data-id="${a.online_spiel_id}"]`);
             const content=row?.querySelector('.pm-session-content');
@@ -7686,6 +7683,8 @@
     if(a.action==='allin')return`${n} All-in${amt}`;
     if(a.action==='blind')return`${n} Blind${amt}`;
     if(a.action==='win'||a.action==='showdown_win')return`${n} gewinnt${amt}`;
+    if(a.action==='chat'){const t=a.meta?.text||'';return t?(n?`${n}: „${t}"`:`„${t}"`):''}
+    if(a.action==='dealer_comment')return a.meta?.text||'';
     return'';
   }
 
@@ -7694,13 +7693,12 @@
     if(!el)return;
     const rows=[...el.querySelectorAll('.pm-session-row')].filter(r=>r.dataset.status==='running'||r.dataset.status==='waiting');
     if(!rows.length)return;
-    console.log('[ticker-debug] querying',rows.length,'sessions:',rows.map(r=>r.dataset.id.slice(-6)));
+    const _tw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
     const results=await Promise.all(rows.map(r=>
-      db.from('online_actions').select('spieler_id,action,amount,spieler(name)')
-        .eq('online_spiel_id',r.dataset.id).in('action',['fold','call','raise','check','allin','bet','blind','win','showdown_win'])
+      db.from('online_actions').select('spieler_id,action,amount,meta,spieler(name)')
+        .eq('online_spiel_id',r.dataset.id).in('action',_tw)
         .order('created_at',{ascending:false}).limit(1)
     ));
-    console.log('[ticker-debug] results:',results.map((r,i)=>({id:rows[i].dataset.id.slice(-6),data:r.data,error:r.error?.message})));
     rows.forEach((row,i)=>{
       const a=results[i]?.data?.[0];
       const newTxt=a?_pmFormatTickerAction(a,a.spieler?.name||_pmLobbyNameCache[a.spieler_id]||''):'';
@@ -9961,33 +9959,52 @@
   }
 
   // Besondere Hände aus Online-Spiel: nach Showdown anbieten, Hand in hand_statistik zu speichern
-  const SPECIAL_HANDS=['7-2','Straight Flush','Royal Flush','Four of a Kind','Vierling'];
+  function _pmMapSpecialHand(handStr){
+    if(!handStr)return null;
+    if(handStr.includes('Royal Flush'))return'Royal Flush';
+    if(handStr.includes('Straight Flush'))return'Straight Flush';
+    if(handStr.includes('Vierling')||handStr.includes('Four of a Kind'))return'Poker';
+    if(handStr.includes('7-2'))return'7-2';
+    return null;
+  }
   async function _pmCheckSpecialHands(){
-    if(!_pm?.session||!currentSpieler?.ist_admin)return; // nur Admin sieht Prompt (macht mehr Sinn)
+    if(!_pm?.session||!currentSpieler?.ist_admin)return;
     const session=_pm.session;
     const actions=_pm.actions||[];
     const handNr=session.hand_nr;
-    if(!handNr||session.current_player_id)return; // nur wenn Hand vorbei
+    if(!handNr||session.current_player_id)return;
     if(!_pm._promptedHands)_pm._promptedHands=new Set();
-    if(_pm._promptedHands.has(handNr))return; // schon mal gefragt
-    const winActs=actions.filter(a=>a.action==='win'&&a.hand_nr===handNr&&a.meta?.hand&&SPECIAL_HANDS.some(h=>a.meta.hand.includes(h)));
+    if(_pm._promptedHands.has(handNr))return;
+    const winActs=actions.filter(a=>a.action==='win'&&a.hand_nr===handNr&&a.meta?.hand&&_pmMapSpecialHand(a.meta.hand));
     if(!winActs.length)return;
     _pm._promptedHands.add(handNr);
-    // Unique winner+hand combos
-    const seen=new Set();
-    const specials=winActs.filter(a=>{const k=`${a.spieler_id}:${a.meta.hand}`;if(seen.has(k))return false;seen.add(k);return true;});
-    for(const act of specials){
+    // Unique winner+hand, only real players
+    const seen2=new Set();
+    const valids=winActs.filter(act=>{
+      const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
+      if(sp?.spieler?.ist_bot)return false; // skip bots
+      const k=`${act.spieler_id}:${act.meta.hand}`;
+      if(seen2.has(k))return false;
+      seen2.add(k);
+      return true;
+    });
+    if(!valids.length)return;
+    for(const act of valids){
       const sp=(_pm.seats||[]).find(s=>s.spieler_id===act.spieler_id);
       const name=sp?.spieler?.name||'?';
-      const hand=act.meta.hand;
-      const save=await confirmAction(`Besondere Hand erkannt!\n\n${name}: ${hand}\n\nIn Besondere Hände eintragen?`);
-      if(!save)continue;
-      const datum=new Date().toISOString().split('T')[0];
-      const entry={datum,gewinner_id:act.spieler_id,hand,kommentar:`Online-Spiel Spielrunde #${handNr}`};
-      if(session.spiel_id)entry.spiel_id=session.spiel_id;
-      const{error}=await db.from('hand_statistik').insert(entry);
-      if(error)await showAlert('Fehler beim Speichern: '+error.message);
-      else console.log('[pm] Besondere Hand gespeichert:',hand,name);
+      const mappedHand=_pmMapSpecialHand(act.meta.hand);
+      // Open hand modal pre-filled so user can optionally add photo
+      selectedHandType=mappedHand;
+      _editHandGewinnerId=act.spieler_id;
+      editHandID=null;
+      _handFotoBase64=null;_handFotoOriginal=null;
+      _showHandEditMode();
+      document.getElementById('hand-kommentar').value=`Online-Spiel Spielrunde #${handNr}`;
+      document.getElementById('modal-hand').classList.add('open');
+      // Wait for modal to close before processing next
+      await new Promise(resolve=>{
+        const check=setInterval(()=>{if(!document.getElementById('modal-hand').classList.contains('open')){clearInterval(check);resolve();}},300);
+      });
     }
   }
 
@@ -10057,20 +10074,21 @@
       if(freshActive.length===1){enterOnlineSession(freshActive[0].id);return;}
       // Multiple sessions → show picker sheet
       const _sids=freshActive.map(s=>s.id);
-      // Reassign active so the rest of the picker code uses fresh data
       const active=freshActive;
-      const _skip='(new_hand,dealt,join,bot_leave,pause,resume,reveal_runout,dealer_comment)';
+      const _ptw=['fold','call','raise','check','allin','bet','blind','win','showdown_win','chat','dealer_comment'];
       const[{data:allSeats},{data:mySeatsRows},..._pickerActResults]=await Promise.all([
-        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot,name)').in('online_spiel_id',_sids),
+        db.from('online_seats').select('online_spiel_id,seat,buyins,spieler(ist_bot,name,profilbild)').in('online_spiel_id',_sids),
         currentSpieler?.id?db.from('online_seats').select('online_spiel_id,status').eq('spieler_id',currentSpieler.id).in('online_spiel_id',_sids):{data:[]},
-        ..._sids.map(sid=>db.from('online_actions').select('spieler_id,action,amount').eq('online_spiel_id',sid).not('action','in',_skip).order('created_at',{ascending:false}).limit(1)),
+        ..._sids.map(sid=>db.from('online_actions').select('spieler_id,action,amount,meta').eq('online_spiel_id',sid).in('action',_ptw).order('created_at',{ascending:false}).limit(1)),
       ]);
-      const cntMap={};const botMap={};const buyinMap={};const pickerNameMap={};
+      const cntMap={};const botMap={};const buyinMap={};const pickerNameMap={};const pickerSeatsMap={};
       (allSeats||[]).forEach(s=>{
         cntMap[s.online_spiel_id]=(cntMap[s.online_spiel_id]||0)+1;
         if(s.spieler?.ist_bot)botMap[s.online_spiel_id]=(botMap[s.online_spiel_id]||0)+1;
         buyinMap[s.online_spiel_id]=(buyinMap[s.online_spiel_id]||0)+(s.buyins||1);
         if(s.spieler?.name)pickerNameMap[s.spieler_id]=s.spieler.name;
+        if(!pickerSeatsMap[s.online_spiel_id])pickerSeatsMap[s.online_spiel_id]=[];
+        pickerSeatsMap[s.online_spiel_id].push(s);
       });
       const myStatusMap={};(mySeatsRows||[]).forEach(s=>{myStatusMap[s.online_spiel_id]=s.status;});
       const pickerTickerMap={};_sids.forEach((sid,i)=>{const a=_pickerActResults[i]?.data?.[0];if(a)pickerTickerMap[sid]=_pmFormatTickerAction(a,pickerNameMap[a.spieler_id]||'');});
@@ -10078,38 +10096,60 @@
       const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'};
       const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'};
       const statusLabel={waiting:'Offen',running:'Läuft'};
+      const chevronSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>`;
+      const _buildPickerRow=s=>{
+        const myStatus=myStatusMap[s.id];
+        const humanSeats=(pickerSeatsMap[s.id]||[]).filter(x=>!x.spieler?.ist_bot);
+        const botCnt=botMap[s.id]||0;const humanCnt=(cntMap[s.id]||0)-botCnt;
+        const totalBuyins=buyinMap[s.id]||0;
+        const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
+        const myBadge=myStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border)">Beobachter</span>`:myStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700">Am Tisch</span>`:'';
+        const rowBg=myStatus?'background:var(--accent-soft);border-left:3px solid var(--accent);':'';
+        const playerStr=botCnt>0?`${humanCnt} Spieler + ${botCnt} Bot${botCnt!==1?'s':''}`:humanCnt>0?`${humanCnt} Spieler`:'Keine Spieler';
+        const _avatarHtml=humanSeats.length?`<div style="display:flex;align-items:center;margin-bottom:5px">${humanSeats.slice(0,5).map((hs,hi)=>{const pb=hs.spieler?.profilbild;const nm=escHtml((hs.spieler?.name||'?').slice(0,2).toUpperCase());return`<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--surface);margin-left:${hi?'-10px':'0'};flex-shrink:0;background:var(--bg-secondary)">${pb?`<img src="${escHtml(pb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text-tertiary)">${nm}</div>`}</div>`;}).join('')}${humanSeats.length>5?`<div style="width:34px;height:34px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--surface);margin-left:-10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-secondary)">+${humanSeats.length-5}</div>`:''}</div>`:'';
+        const _tickerTxt=pickerTickerMap[s.id]||'';
+        const _tickerHtml=_tickerTxt?`<div class="pm-ticker-line" style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span class="pm-picker-tick" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-sans)">${escHtml(_tickerTxt)}</span></div>`:'';
+        return`<div class="card clickable" data-picker-sid="${s.id}" style="margin-bottom:8px;${rowBg}"><div style="padding:14px 16px 14px 14px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+            <span style="font-size:22px;color:${varColor[s.variante]||'var(--text-secondary)'};line-height:1;flex-shrink:0">${varIcon[s.variante]||'●'}</span>
+            <span style="font-size:17px;font-weight:800;color:var(--text-primary);letter-spacing:-.3px;flex:1;min-width:0">${varLabel[s.variante]||s.variante}</span>
+            <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>${testBadge}${myBadge}${chevronSvg}
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:${humanSeats.length?'5':'0'}px">${playerStr}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}${totalBuyins>0?` · ${totalBuyins} Buy-In${totalBuyins!==1?'s':''}`:''}</div>
+          ${_avatarHtml}${_tickerHtml}
+        </div></div>`;
+      };
       const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:flex-end;padding:0';
-      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;padding:var(--space-md)">
+      ov.innerHTML=`<div style="background:var(--bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;padding:var(--space-md) var(--space-md) calc(var(--space-md) + var(--safe-bottom))">
         <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto var(--space-md)"></div>
         <div style="font-size:16px;font-weight:700;margin-bottom:var(--space-md)">Session auswählen</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-md)">
-          ${active.map(s=>{
-            const cnt=cntMap[s.id]||0;
-            const myStatus=myStatusMap[s.id];
-            const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700;margin-left:4px">TEST</span>`:'';
-            const myBadge=myStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border);margin-left:4px">Beobachter</span>`:myStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700;margin-left:4px">Am Tisch</span>`:'';
-            const btnBorder=myStatus?'1.5px solid var(--accent)':'1.5px solid var(--border)';
-            const btnBg=myStatus?'var(--accent-soft)':'var(--bg-secondary)';
-            return`<button data-sid="${s.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-md);border:${btnBorder};background:${btnBg};cursor:pointer;text-align:left;width:100%">
-              <span style="font-size:22px;color:${varColor[s.variante]||'var(--text-secondary)'};line-height:1;flex-shrink:0">${varIcon[s.variante]||'●'}</span>
-              <div style="flex:1;min-width:0">
-                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:2px">
-                  <span class="pm-badge ${s.status}" style="font-size:11px">${statusLabel[s.status]||s.status}</span>
-                  <span style="font-size:14px;font-weight:600">${varLabel[s.variante]||s.variante}</span>${testBadge}${myBadge}
-                </div>
-                <div style="font-size:12px;color:var(--text-secondary)">${cnt} Spieler${botMap[s.id]?` (${botMap[s.id]} Bot${botMap[s.id]>1?'s':''})`:''} · SB €${s.small_blind||1} · Stack €${s.start_stack||100}${buyinMap[s.id]?` · ${buyinMap[s.id]} Buy-In${buyinMap[s.id]!==1?'s':''}`:''}${s.hand_nr>0?` · Runde #${s.hand_nr}`:''}</div>
-                ${pickerTickerMap[s.id]?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(pickerTickerMap[s.id])}</span></div>`:''}
-              </div>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>`;
-          }).join('')}
-        </div>
-        <button id="pm-picker-cancel" class="btn btn-ghost" style="font-size:13px;display:block;margin:0 auto;width:fit-content">Abbrechen</button>
+        <div id="pm-picker-rows">${active.map(_buildPickerRow).join('')}</div>
+        <button id="pm-picker-cancel" class="btn btn-ghost" style="font-size:13px;display:block;margin:var(--space-sm) auto 0;width:fit-content">Abbrechen</button>
       </div>`;
       document.body.appendChild(ov);
-      ov.querySelectorAll('[data-sid]').forEach(b=>b.addEventListener('click',()=>{ov.remove();enterOnlineSession(b.dataset.sid);}));
-      document.getElementById('pm-picker-cancel').addEventListener('click',()=>ov.remove());
-      ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+      ov.querySelectorAll('[data-picker-sid]').forEach(b=>b.addEventListener('click',()=>{clearInterval(_pickerPoll);ov.remove();enterOnlineSession(b.dataset.pickerSid);}));
+      // Live ticker while picker is open
+      const _pickerPoll=setInterval(async()=>{
+        if(!ov.isConnected){clearInterval(_pickerPoll);return;}
+        const _pr=await Promise.all(_sids.map(sid=>db.from('online_actions').select('spieler_id,action,amount,meta').eq('online_spiel_id',sid).in('action',_ptw).order('created_at',{ascending:false}).limit(1)));
+        _pr.forEach((res,i)=>{
+          const a=res.data?.[0];if(!a)return;
+          const txt=_pmFormatTickerAction(a,pickerNameMap[a.spieler_id]||'');if(!txt)return;
+          pickerTickerMap[_sids[i]]=txt;
+          const row=ov.querySelector(`[data-picker-sid="${_sids[i]}"]`);if(!row)return;
+          let tl=row.querySelector('.pm-ticker-line');
+          if(!tl){
+            tl=document.createElement('div');tl.className='pm-ticker-line';
+            tl.style.cssText='display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border)';
+            tl.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pm-live-dot 2s ease-in-out infinite"></span><span class="pm-picker-tick" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-sans)"></span>`;
+            row.querySelector('div>div')?.appendChild(tl);
+          }
+          const sp=tl.querySelector('.pm-picker-tick');
+          if(sp&&sp.textContent!==txt){sp.textContent=txt;sp.style.animation='none';void sp.offsetWidth;sp.style.animation='pm-ticker-in .3s ease both';}
+        });
+      },2000);
+      document.getElementById('pm-picker-cancel').addEventListener('click',()=>{clearInterval(_pickerPoll);ov.remove();});
+      ov.addEventListener('click',e=>{if(e.target===ov){clearInterval(_pickerPoll);ov.remove();}});
     };
   }
 
