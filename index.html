@@ -8344,14 +8344,18 @@
     if(_canBuyin&&myStatus!=='sitting_out'&&(_pm._buyinPromptedHand??-1)!==session.hand_nr){
       _pm._buyinPromptedHand=session.hand_nr;setTimeout(_pmShowBrokeModal,400);
     }
-    // Live-update stacks modal if open
+    // Live-update stacks modal if open (fingerprint-guarded to avoid unnecessary DOM rebuild)
     const _smo=document.getElementById('pm-stacks-modal-overlay');
     if(_smo&&_pm?.seats&&_pm?.session){
-      const _rmr=document.getElementById('pm-stacks-modal-rows');
-      if(_rmr)_rmr.innerHTML=_pmStacksModalRows(_pm.seats,_pm.session,currentSpieler?.id);
-      const _rms=document.getElementById('pm-stacks-modal-subtitle');
       const _tc2=(_pm.seats||[]).filter(s=>s.status!=='sitting_out').reduce((s,p)=>s+(p.stack||0),0)+(_pm.session?.pot||0);
-      if(_rms)_rms.textContent=`Runde #${_pm.session?.hand_nr||0} · Gesamtchips €${_tc2.toFixed(2)}`;
+      const _sfp=(_pm.seats||[]).map(s=>`${s.spieler_id}:${s.stack}:${s.status}:${s.buyins}:${s.bet_current_round}`).join('|')+'|pot:'+(_pm.session?.pot||0)+'|hand:'+(_pm.session?.hand_nr||0);
+      if(_sfp!==(_pm._stacksModalFp||'')){
+        _pm._stacksModalFp=_sfp;
+        const _rmr=document.getElementById('pm-stacks-modal-rows');
+        if(_rmr)_rmr.innerHTML=_pmStacksModalRows(_pm.seats,_pm.session,currentSpieler?.id);
+        const _rms=document.getElementById('pm-stacks-modal-subtitle');
+        if(_rms)_rms.textContent=`Runde #${_pm.session?.hand_nr||0} · Gesamtchips €${_tc2.toFixed(2)}`;
+      }
     }
   }
 
@@ -9869,10 +9873,11 @@
         await db.from('online_seats').delete().eq('online_spiel_id',sessionId);
         if(botIds.length)await db.from('benachrichtigungen').delete().in('spieler_id',botIds);
         await db.from('online_spiele').delete().eq('id',sessionId);
-        // Delete bot spieler rows (all FKs gone after online_spiele deleted)
-        // Safety: only delete where ist_bot=true – NEVER real players
-        if(botIds.length)await db.from('spieler').delete().in('id',botIds).eq('ist_bot',true);
-      })().catch(e=>console.warn('[delete-session]',e));
+        // Deactivate bot spieler (can't DELETE: other sessions' FK refs may still exist)
+        if(botIds.length)await db.from('spieler').update({aktiv:false}).in('id',botIds).eq('ist_bot',true);
+        // Refresh lobby (Realtime event may be missed during channel reconnect)
+        loadOnlineLobby(true);
+      })().catch(e=>{console.warn('[delete-session]',e);loadOnlineLobby(true);});
     });
   }
 
