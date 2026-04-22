@@ -9251,7 +9251,7 @@
         ${seat?.spieler?.ist_bot
           ?`${(()=>{const _bc=seat?.bot_config||{};const _style=_bc.style||'custom';const _p=typeof _BOT_PRESETS!=='undefined'?_BOT_PRESETS[_style]:null;return _p?`<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 14px;margin-bottom:12px;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:4px">Spielstil</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px">${escHtml(_p.label||_style)}</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.4">${escHtml(_p.desc||'')}</div></div>`:'';})()} <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
               <button id="_pc-bot-config" class="btn btn-secondary" style="width:100%;max-width:none;font-size:13px">Bot-Parameter anpassen</button>
-              <button id="_pc-bot-remove" class="btn" style="width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Bot entfernen</button>
+              ${_pm?.session?.status==='finished'?'':`<button id="_pc-bot-remove" class="btn" style="width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Bot entfernen</button>`}
             </div>`
           :`<div id="_pc-kpis"><div class="loading"><div class="spinner"></div></div></div>
             <button id="_pc-to-stats" class="btn btn-secondary" style="margin-top:14px;width:100%;max-width:none;font-size:13px">Spieler-Statistik</button>`}
@@ -11470,6 +11470,7 @@
 
   async function _pmAddBotModal(existingSeat=null){
     const isEdit=!!existingSeat;
+    const isReadOnly=isEdit&&_pm?.session?.status==='finished';
     if(!isEdit){
       const freeSeats=9-(_pm?.seats||[]).length;
       if(freeSeats<=0){await showAlert('Kein freier Platz – alle 9 Plätze sind belegt.');return;}
@@ -11489,8 +11490,8 @@
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:var(--space-md)">
           <img id="pm-bot-avatar-preview" src="${avatarPreview}" style="width:52px;height:52px;border-radius:10px;flex-shrink:0">
           <div style="flex:1">
-            <div style="font-size:16px;font-weight:700;margin-bottom:4px">${isEdit?'Bot-Parameter anpassen':'Bot hinzufügen'}</div>
-            <div style="font-size:12px;color:var(--text-secondary)">${isEdit?'Ändert das Verhalten des Bots ab der nächsten Spielrunde.':'Bots dienen nur zur Unterhaltung und werden nie in die Statistik übernommen.'}</div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">${isReadOnly?'Bot-Parameter (Nur-Ansicht)':isEdit?'Bot-Parameter anpassen':'Bot hinzufügen'}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">${isReadOnly?'Diese Session ist beendet – Parameter sind schreibgeschützt.':isEdit?'Ändert das Verhalten des Bots ab der nächsten Spielrunde.':'Bots dienen nur zur Unterhaltung und werden nie in die Statistik übernommen.'}</div>
           </div>
         </div>
         <div style="margin-bottom:var(--space-md)"><label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px">Bot-Name</label>
@@ -11512,12 +11513,18 @@
           <div style="display:flex;gap:8px">${[['immer','Immer'],['showdown','Bei Showdown'],['nie','Nie']].map(([v,l])=>`<button class="pm-bot-reveal${(cfg.karten_zeigen??'showdown')===v?' active':''}" data-reveal="${v}" style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid${(cfg.karten_zeigen??'showdown')===v?' var(--accent)':' var(--border)'};background:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-soft)':'var(--surface)'};color:${(cfg.karten_zeigen??'showdown')===v?'var(--accent-text)':'var(--text-secondary)'};font-size:12px;font-weight:600;cursor:pointer">${l}</button>`).join('')}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
-          <button id="pm-bot-confirm" class="btn btn-primary" style="max-width:none;margin:0">${isEdit?'Änderungen speichern':'Bot hinzufügen'}</button>
+          ${isReadOnly?'':`<button id="pm-bot-confirm" class="btn btn-primary" style="max-width:none;margin:0">${isEdit?'Änderungen speichern':'Bot hinzufügen'}</button>`}
           <button id="pm-bot-cancel" class="btn btn-ghost" style="font-size:13px;max-width:none;margin:0">Abbrechen</button>
         </div>
       </div>
     </div>`;
     document.body.appendChild(ov);
+
+    // Read-only mode for finished sessions
+    if(isReadOnly){
+      ov.querySelectorAll('input,button:not(#pm-bot-cancel)').forEach(el=>{el.disabled=true;el.style.opacity='.5';el.style.cursor='default';if(el.tagName==='INPUT')el.style.pointerEvents='none';});
+      const nameRnd=ov.querySelector('#pm-bot-name-rnd');if(nameRnd)nameRnd.style.display='none';
+    }
 
     // Helper: highlight active preset button, update description, disable sliders for random mode
     const _syncPresetBtns=()=>{
