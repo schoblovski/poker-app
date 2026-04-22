@@ -116,6 +116,22 @@ Deno.serve(async (req) => {
 
   if (firstToAct) {
     await notifyPlayer(db, firstToAct.spieler_id, online_spiel_id);
+
+    // If first to act is paused, trigger their pause auto-action.
+    // On a new street all bets are reset to 0, so callAmount is always 0 here.
+    if (firstToAct.status === 'paused') {
+      const paa = (firstToAct as { pause_auto_action?: string }).pause_auto_action;
+      let autoAct: string | null = null;
+      if (paa === 'fold') autoAct = 'fold';
+      else if (paa === 'check' || paa === 'call_limit' || paa === 'call_any') autoAct = 'check';
+      if (autoAct) {
+        await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}` },
+          body: JSON.stringify({ online_spiel_id, spieler_id: firstToAct.spieler_id, action: autoAct }),
+        });
+      }
+    }
   }
 
   return json({ ok: true, street: nextStreet, new_cards: newCards });

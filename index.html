@@ -698,6 +698,7 @@
   .pm-seat-group.active-turn .pm-seat-circle{stroke:var(--accent);stroke-width:4;animation:pm-pulse 1s infinite}
   .pm-seat-group.folded{opacity:.45}
   .pm-seat-group.paused .pm-seat-circle{stroke:#f59e0b;stroke-width:2}
+  .pm-seat-group.paused.active-turn .pm-seat-circle{stroke:#f59e0b;stroke-width:4;animation:pm-pulse 1s infinite}
   .pm-seat-group.sitting-out .pm-seat-circle{stroke:rgba(255,255,255,.18);stroke-width:1.5;stroke-dasharray:4 4;fill:rgba(255,255,255,.05)}
   .pm-seat-group.away .pm-seat-circle{stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 3}
   /* Live feed side-drawer */
@@ -7370,6 +7371,8 @@
   let _pmBotInFlight=new Set(); // in-flight play-keys to block concurrent same-client calls
   let _pmBotHeartbeat=null;   // interval that catches stuck bots
   let _pmBotTurnStart={};     // key → timestamp when bot turn began
+  let _pmPauseTimer=null;     // pending pause-auto-action timeout
+  let _pmPauseTriggerKey=null;// dedup key: pause|spieler_id|hand_nr|street
 
   // ── BOT CONSTANTS ─────────────────────────────────────────────────────────
   const _BOT_NAMES=['DeadFish','BoomMike','CrazyJoe','IronBob','SlickRay','MadDogg','ZapQuinn','BoldSam','GrimLucy','SlyTom','FatChuck','HotTina','NutsPete','WildKate','DimBenny','IcePaul','GrumpAce','ClownMax','StiffFred','SpinEva','LuckyHans','BluffKing','FoldMary','BetterBob','PokeRita'];
@@ -7477,7 +7480,7 @@
       const isAway=!isEmpty&&!isPaused&&!isSittingOut&&awaySet?.has(seat.spieler_id);
       let cls='pm-seat-group';
       if(isEmpty)cls+=' empty';else if(isMe)cls+=' me';else cls+=' occupied';
-      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isSittingOut)cls+=' sitting-out';if(isActive&&!isFolded&&!isPaused)cls+=' active-turn';if(isAway)cls+=' away';
+      if(isFolded)cls+=' folded';if(isPaused)cls+=' paused';if(isSittingOut)cls+=' sitting-out';if(isActive&&!isFolded)cls+=' active-turn';if(isAway)cls+=' away';
       const name=isEmpty?'Frei':(seat.spieler?.name||'?').slice(0,10);
       const stackTxt=seat?`€${(seat.stack||0).toFixed(0)}`:'';
       const betAmt=seat&&seat.bet_current_round>0?seat.bet_current_round:0;
@@ -8068,6 +8071,7 @@
     if(!_pmKeydownRegistered){_pmKeydownRegistered=true;window.addEventListener('keydown',_pmOnKeydown);}
     _pmAutoReveal();
     _pmMaybeTriggerBot();
+    _pmMaybeTriggerPauseAction();
     _pmMaybeBotRunout();
     _pmMaybeBotReveal();
     _pmMaybeBotNextHand();
@@ -10857,6 +10861,49 @@
     _pmBotInFlight.clear();
     if(_pmBotHeartbeat){clearInterval(_pmBotHeartbeat);_pmBotHeartbeat=null;}
     _pmBotTurnStart={};
+  }
+
+  function _pmMaybeTriggerPauseAction(){
+    const sess=_pm?.session;const seats=_pm?.seats||[];
+    if(!sess||sess.status!=='running'){_pmClearPauseTimer();return;}
+    const cpId=sess.current_player_id;if(!cpId){_pmClearPauseTimer();return;}
+    const cpSeat=seats.find(s=>s.spieler_id===cpId&&s.status==='paused'&&!s.spieler?.ist_bot);
+    if(!cpSeat){_pmClearPauseTimer();return;}
+    const key=`pause|${cpId}|${sess.hand_nr}|${sess.street}`;
+    if(key===_pmPauseTriggerKey)return; // already scheduled for this turn
+    _pmClearPauseTimer();
+    _pmPauseTriggerKey=key;
+    _pmPauseTimer=setTimeout(async()=>{
+      if(_pmPauseTriggerKey!==key)return; // stale
+      const s2=_pm?.seats||[];
+      const seat2=s2.find(s=>s.spieler_id===cpId);
+      if(!seat2||seat2.status!=='paused')return;
+      const maxBet=Math.max(0,...s2.filter(s=>s.status!=='folded'&&s.status!=='sitting_out').map(s=>s.bet_current_round||0));
+      const toCall=Math.min(seat2.stack||0,Math.round((maxBet-(seat2.bet_current_round||0))*100)/100);
+      const canCheck=toCall<=0;
+      const paa=seat2.pause_auto_action;
+      const lim=seat2.pause_call_limit!=null?parseFloat(seat2.pause_call_limit):null;
+      let action,amount;
+      switch(paa){
+        case'fold':   action=canCheck?'check':'fold';break;
+        case'check':  action=canCheck?'check':'fold';break;
+        case'call_limit':
+          if(canCheck){action='check';}
+          else if(lim!==null&&toCall>lim){_pmPauseTriggerKey=null;return;} // wait for player
+          else{action='call';amount=toCall;}
+          break;
+        case'call_any': action=canCheck?'check':'call';if(!canCheck)amount=toCall;break;
+        default:_pmClearPauseTimer();return;
+      }
+      try{await _callFn('poker-action',{online_spiel_id:_pm.id,spieler_id:cpId,action,...(amount!=null?{amount}:{})});}
+      catch(e){console.warn('[pause-auto] error:',e);}
+      _pmClearPauseTimer();
+    },1800);
+  }
+
+  function _pmClearPauseTimer(){
+    if(_pmPauseTimer){clearTimeout(_pmPauseTimer);_pmPauseTimer=null;}
+    _pmPauseTriggerKey=null;
   }
 
   async function _pmExecuteBotAction(botSeat,action='play',_retry=0){

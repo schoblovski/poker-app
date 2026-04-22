@@ -380,12 +380,16 @@ async function executePreActionIfSet(
   switch (effectiveAction) {
     case 'fold': autoAction = callAmount > 0 ? 'fold' : 'check'; break;
     case 'check_fold': autoAction = callAmount > 0 ? 'fold' : 'check'; break;
-    case 'check': autoAction = callAmount > 0 ? null : 'check'; break;
+    case 'check':
+      // Paused players: fold if there's a bet (they chose "nur checken" = no call).
+      // Active pre-action players: keep control (null = let them decide).
+      autoAction = callAmount > 0 ? (seat.status === 'paused' ? 'fold' : null) : 'check';
+      break;
     case 'call':
     case 'call_limit': {
       if (effectiveLimit !== null && callAmount > effectiveLimit) {
-        // Paused players can't manually act → fold. Active players keep control.
-        autoAction = seat.status === 'paused' ? 'fold' : null;
+        // Bet exceeds limit: game waits for paused player to return and decide manually.
+        autoAction = null;
       } else {
         autoAction = 'call';
       }
@@ -396,7 +400,7 @@ async function executePreActionIfSet(
 
   if (!autoAction) return;
 
-  await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
+  const autoRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -408,6 +412,7 @@ async function executePreActionIfSet(
       action: autoAction,
     }),
   });
+  if (!autoRes.ok) console.error('[auto-action] failed:', seat.spieler_id, autoAction, await autoRes.text().catch(() => ''));
 }
 
 async function handleAutoAction(
@@ -425,7 +430,8 @@ async function handleAutoAction(
   let action = autoAction;
 
   if (autoAction === 'call_limit' && callLimit !== undefined && callAmount > callLimit) {
-    action = 'fold';
+    // Bet exceeds the chosen call limit while pausing at own turn: game waits for player to return.
+    return json({ ok: true, paused: true, waiting: true });
   } else if (autoAction === 'call_limit') {
     action = 'call';
   } else if (autoAction === 'check' && callAmount > 0) {
