@@ -9966,20 +9966,16 @@
       }
 
       overlay.remove();
-      // Clean up bot spieler rows created for this session.
-      // Must clear all FKs before deleting spieler (FK constraint violation = 409).
+      // Clean up bot data for this session. FK constraints on spieler.id prevent reliable DELETE,
+      // so we deactivate bots instead (aktiv=false) – they won't appear anywhere in the app.
       const _botIds=(seats||[]).filter(s=>s.spieler?.ist_bot).map(s=>s.spieler_id);
       if(_botIds.length)(async()=>{
-        // Clear ALL online_spiele references to bots (not just current session – old sessions may still reference)
         await db.from('online_spiele').update({current_player_id:null}).in('current_player_id',_botIds);
-        await db.from('online_spiele').update({street_last_actor_id:null}).in('street_last_actor_id',_botIds);
         await db.from('online_actions').delete().in('spieler_id',_botIds);
         await db.from('online_chat').delete().in('spieler_id',_botIds);
         await db.from('online_seats').delete().in('spieler_id',_botIds);
         await db.from('benachrichtigungen').delete().in('spieler_id',_botIds);
-        const{error:_delErr}=await db.from('spieler').delete().in('id',_botIds);
-        // Fallback: if FK still blocks delete, deactivate instead of deleting
-        if(_delErr)await db.from('spieler').update({aktiv:false}).in('id',_botIds);
+        await db.from('spieler').update({aktiv:false}).in('id',_botIds);
       })().catch(()=>{});
       _pmUnsubscribe();
       if(withStats)loadHome(); // refresh balances in background
