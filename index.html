@@ -9880,21 +9880,17 @@
       const botIds=botSeats.map(s=>s.spieler_id);
       ov.remove();
       _pmUnsubscribe();
+      // Hide the session in DB BEFORE navigating so the lobby renders it as gone immediately
+      await db.from('online_spiele').update({status:'finished',hand_nr:0,current_player_id:null}).eq('id',sessionId);
       showPage('online-lobby');
+      // Background cleanup (doesn't affect lobby visibility – session already hidden above)
       (async()=>{
-        // Mark as hidden first (status=finished + hand_nr=0 → filtered from lobby by loadOnlineLobby)
-        // Note: DELETE on online_spiele may be silently blocked by RLS; UPDATE is always allowed
-        await db.from('online_spiele').update({status:'finished',hand_nr:0,current_player_id:null}).eq('id',sessionId);
-        // Clean up related data
         await db.from('online_actions').delete().eq('online_spiel_id',sessionId);
         await db.from('online_chat').delete().eq('online_spiel_id',sessionId);
         await db.from('online_seats').delete().eq('online_spiel_id',sessionId);
         if(botIds.length)await db.from('benachrichtigungen').delete().in('spieler_id',botIds);
-        // Deactivate bot spieler (can't DELETE: other sessions' FK refs may still exist)
         if(botIds.length)await db.from('spieler').update({aktiv:false}).in('id',botIds).eq('ist_bot',true);
-        // Force lobby refresh
-        loadOnlineLobby(true);
-      })().catch(e=>{console.warn('[delete-session]',e);loadOnlineLobby(true);});
+      })().catch(e=>console.warn('[delete-session cleanup]',e));
     });
   }
 
