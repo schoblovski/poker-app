@@ -1,0 +1,10 @@
+# Migrationsskript enthält Service Role Key – niemals einchecken
+migrate_poker.py
+
+# Python
+__pycache__/
+*.pyc
+
+# Lokale Umgebung
+.env
+.env.local
