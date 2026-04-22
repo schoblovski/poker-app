@@ -9476,19 +9476,18 @@
         // No hands were played: offer to silently delete the session (no history entry)
         if(!await confirmAction('Es wurden keine Runden gespielt.\n\nSession löschen? Sie wird nicht in der Historie gespeichert.'))return;
         const _id=_pm.id;
-        const _botIds2=(_pm.seats||[]).filter(s=>s.spieler?.ist_bot).map(s=>s.spieler_id);
         if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
         _pmReleaseWakeLock();_pm=null;_pmDrawerHide();
-        // UPDATE to 'finished' triggers postgres_changes for all lobby clients reliably
-        // hand_nr=0 + finished = empty/cancelled session, filtered out in loadOnlineLobby
-        const{error:delErr}=await db.from('online_spiele').update({status:'finished'}).eq('id',_id);
-        if(delErr){await showAlert('Fehler beim Löschen: '+delErr.message);}
-        // Hard-delete asynchronously (cleanup, not critical for UX)
-        db.from('online_seats').delete().eq('online_spiel_id',_id).then(()=>{});
-        db.from('online_actions').delete().eq('online_spiel_id',_id).then(()=>{});
-        db.from('online_spiele').delete().eq('id',_id).then(()=>{});
-        if(_botIds2.length)db.from('spieler').update({aktiv:false}).in('id',_botIds2).then(()=>{});
+        // Mark as hidden immediately so lobby shows correct state
+        await db.from('online_spiele').update({status:'finished',hand_nr:0,current_player_id:null}).eq('id',_id);
         showPage('online-lobby');
+        // Full cleanup via Edge Function (service role bypasses RLS)
+        const _tok=(await db.auth.getSession()).data.session?.access_token;
+        fetch(`${SUPABASE_URL}/functions/v1/poker-delete-session`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${_tok}`},
+          body:JSON.stringify({online_spiel_id:_id}),
+        }).then(r=>r.json()).then(r=>{if(!r.ok)console.warn('[delete-session]',r);}).catch(e=>console.warn('[delete-session]',e));
         return;
       }
       if(!await confirmAction('Session wirklich beenden?\n\nAlle Spieler werden zurück zur Übersicht geleitet.'))return;
