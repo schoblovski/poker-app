@@ -56,3 +56,7 @@ jobs:
       - name: Deploy weekly-backup
         continue-on-error: true
         run: supabase functions deploy weekly-backup --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+
+      - name: Deploy poker-delete-session
+        continue-on-error: true
+        run: supabase functions deploy poker-delete-session --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt

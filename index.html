@@ -8425,6 +8425,7 @@
     }else if(id==='pm-s-runout'){
       document.getElementById('btn-pm-runout')?.addEventListener('click',_pmRunout);
       document.getElementById('btn-pm-newhand')?.addEventListener('click',()=>_pmNewHand());
+      document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
     }else if(id==='pm-s-action'){
       document.getElementById('pm-raise-toggle')?.addEventListener('click',_pmRaiseSheet);
       document.querySelectorAll('.pm-act-btn[data-action]').forEach(b=>{

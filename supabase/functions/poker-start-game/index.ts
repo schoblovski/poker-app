@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       street: 'preflop',
       community_cards: [],
       runout_cards: null,
-      pot: smallBlind + bigBlind,
+      pot: Math.round((smallBlind + bigBlind) * 100) / 100,
       dealer_seat: dealerSeat,
       current_player_id: utgSeat.spieler_id,
       street_last_actor_id: bbSeat.spieler_id,
