@@ -9682,7 +9682,7 @@
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:2px">
-        ${pre?`<button class="btn btn-ghost" id="pm-pas-clear" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0;color:var(--danger)">Annulieren</button>`:''}
+        ${pre?`<button class="btn btn-ghost" id="pm-pas-clear" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0;color:var(--danger)">Annulieren<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[A]</span></button>`:''}
         <button class="btn btn-secondary" id="pm-pas-close" style="flex:1;font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">Fertig</button>
       </div>
     </div>`;
@@ -10572,7 +10572,7 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
-        <button class="btn btn-primary" id="pm-rs-confirm" style="max-width:none;margin:0">Raise bestätigen</button>
+        <button class="btn btn-primary" id="pm-rs-confirm" style="max-width:none;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span id="pm-rs-confirm-label">Raise bestätigen</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
       </div>
     </div>`;
     document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
@@ -10588,13 +10588,13 @@
       const _rc=Math.round(_rv*100),_rl=_rc%10;
       const _rrounded=(_rl<=3?Math.floor(_rc/10)*10:_rl<=7?Math.floor(_rc/10)*10+5:Math.ceil(_rc/10)*10)/100;
       _ri.value=_rrounded.toFixed(2);
-      if(_rrounded>=myStack){_ri.value=myStack.toFixed(2);_allinSelected=true;document.getElementById('pm-rs-confirm').textContent='All-in bestätigen';}
-      else{_allinSelected=false;document.getElementById('pm-rs-confirm').textContent='Raise bestätigen';}
+      if(_rrounded>=myStack){_ri.value=myStack.toFixed(2);_allinSelected=true;document.getElementById('pm-rs-confirm-label').textContent='All-in bestätigen';}
+      else{_allinSelected=false;document.getElementById('pm-rs-confirm-label').textContent='Raise bestätigen';}
     });
     overlay.querySelectorAll('.pm-rs-preset').forEach(b=>b.addEventListener('click',()=>{
       const i=document.getElementById('pm-rs-input');if(i)i.value=_r05(parseFloat(b.dataset.amt||0)).toFixed(2);
       _allinSelected=!!b.dataset.allin;
-      document.getElementById('pm-rs-confirm').textContent=_allinSelected?'All-in bestätigen':'Raise bestätigen';
+      document.getElementById('pm-rs-confirm-label').textContent=_allinSelected?'All-in bestätigen':'Raise bestätigen';
     }));
     document.getElementById('pm-rs-confirm').onclick=async()=>{
       const _rawV=parseFloat(document.getElementById('pm-rs-input')?.value||0);
@@ -10916,7 +10916,7 @@
           const _pb=_pas.querySelector(`.pm-pas-btn[data-pre="${_v}"]`);
           if(_pb){_pb.classList.remove('btn-ghost');_pb.classList.add('btn-primary');}
           const _lr=document.getElementById('pm-pas-limit-row');if(_lr)_lr.style.display=_v==='call'?'block':'none';
-          document.getElementById('pm-pas-close')?.click();
+          if(_v==='call'){const _li=document.getElementById('pm-pas-limit');if(_li)_li.focus();}else{document.getElementById('pm-pas-close')?.click();}
         }
         e.preventDefault();return;
       }
@@ -10933,7 +10933,7 @@
       case'M':document.getElementById('btn-pm-feed-chat')?.click();e.preventDefault();break;
       case'H':document.getElementById('btn-pm-hand-record')?.click();e.preventDefault();break;
       case'B':document.getElementById('btn-pm-facedown')?.click();e.preventDefault();break;
-      case'A':{const _rb=document.getElementById('btn-pm-reveal');if(_rb&&!_rb.disabled){_rb.click();e.preventDefault();}break;}
+      case'A':{if(document.getElementById('pm-preaction-sheet')){document.getElementById('pm-pas-clear')?.click();e.preventDefault();break;}const _rb=document.getElementById('btn-pm-reveal');if(_rb&&!_rb.disabled){_rb.click();e.preventDefault();}break;}
       case'N':{const _nb=document.getElementById('btn-pm-newhand');if(_nb&&!_nb.disabled){_nb.click();e.preventDefault();}break;}
       case'P':document.getElementById('btn-pm-pause')?.click();e.preventDefault();break;
       case'V':document.getElementById('btn-pm-preaction')?.click();e.preventDefault();break;
