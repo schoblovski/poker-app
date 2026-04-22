@@ -10767,7 +10767,10 @@
       document.body.appendChild(d);
       d.querySelector('#pm-drawer-handle').addEventListener('click',_pmDrawerToggle);
       d.querySelector('#pm-drawer-close').addEventListener('click',_pmDrawerToggle);
-      d.querySelector('#pm-drawer-back').addEventListener('click',()=>showPage('online-tisch'));
+      d.querySelector('#pm-drawer-back').addEventListener('click',()=>{
+        const _im=document.getElementById('pm-info-modal');if(_im)_im.style.display='none';
+        showPage('online-tisch');
+      });
     }
     d.classList.add('pm-dvis');
     _pmDrawerLastCount=(_pm?.actions||[]).length; // don't pulse for already-seen entries
