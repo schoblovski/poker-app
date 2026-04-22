@@ -9497,7 +9497,7 @@
       e.stopPropagation();_pmFabClose();
       document.getElementById('pm-info-modal').style.display='block';
       history.pushState({},'',' '); // so back-gesture closes the modal
-      if(_pm?.mySeat&&_pm.session?.status!=='finished')_pmDrawerShow();
+      if(_pm?.id&&_pm.session?.status!=='finished')_pmDrawerShow();
     });
     document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
       document.getElementById('pm-info-modal').style.display='none';
@@ -10743,8 +10743,9 @@
     }
   }
   function _pmDrawerShow(){
-    // Don't overlay the drawer on top of the table itself
-    if(document.getElementById('page-online-tisch')?.classList.contains('active'))return;
+    // Don't overlay the drawer on top of the table itself — except when the info modal is open as overlay
+    const _infoOpen=document.getElementById('pm-info-modal')?.style.display==='block';
+    if(!_infoOpen&&document.getElementById('page-online-tisch')?.classList.contains('active'))return;
     let d=document.getElementById('pm-drawer');
     if(!d){
       d=document.createElement('div');d.id='pm-drawer';
