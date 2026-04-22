@@ -663,14 +663,18 @@
   .eq-result-pct.calc{color:var(--text-tertiary);font-size:13px;font-weight:600;}
   .eq-result-split{font-size:11px;font-weight:600;color:var(--text-tertiary);margin-top:2px;text-align:right;}
   .eq-picker-modal{background:var(--surface);width:100%;max-width:420px;border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg);padding-bottom:max(var(--space-lg),var(--safe-bottom));box-shadow:var(--shadow);animation:slideUp 250ms cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
-  .eq-picker-suit-headers{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;position:sticky;top:0;background:var(--surface);padding:4px 0 8px;z-index:1;}
-  .eq-picker-suit-header{text-align:center;font-size:22px;font-weight:700;padding:6px 4px;background:var(--bg-secondary);border-radius:var(--radius-md);}
-  .eq-picker-suit-header.red{color:#dc2626;}
-  .eq-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:var(--space-md);}
-  .eq-picker-card{aspect-ratio:3/4;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 180ms ease,background 180ms ease,transform 180ms cubic-bezier(.34,1.56,.64,1),box-shadow 180ms ease;user-select:none;}
+  .eq-pick-sticky{position:sticky;top:0;background:var(--surface);z-index:1;padding-bottom:var(--space-md);margin-bottom:2px;}
+  .eq-pick-sel-row{display:flex;gap:8px;align-items:center;margin-top:var(--space-sm);}
+  .eq-pick-sel-card{width:38px;height:54px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;transition:all 200ms cubic-bezier(.34,1.56,.64,1);}
+  .eq-pick-sel-card.filled{background:var(--surface);box-shadow:var(--shadow);}
+  .eq-pick-sel-card.filled.red{color:#dc2626;}
+  .eq-pick-sel-card .eq-picker-card-rank{font-size:14px;}
+  .eq-pick-sel-card .eq-picker-card-suit{font-size:12px;margin-top:2px;}
+  .eq-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--space-md);}
+  .eq-picker-card{aspect-ratio:3/4;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 180ms ease,background 180ms ease,transform 180ms cubic-bezier(.34,1.56,.64,1),box-shadow 180ms ease;user-select:none;}
   .eq-picker-card.red{color:#dc2626;}
   .eq-picker-card.sel{border-color:var(--accent);border-width:2px;background:var(--accent-soft);transform:scale(.93);box-shadow:0 0 0 3px var(--accent-soft);}
-  .eq-picker-card.used{opacity:.22;cursor:not-allowed;pointer-events:none;}
+  .eq-picker-card.used{opacity:.22;cursor:not-allowed;pointer-events:none;box-shadow:none;}
   .eq-picker-card:active:not(.used):not(.sel){transform:scale(.90);}
   .eq-picker-card-rank{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.3px;}
   .eq-picker-card-suit{font-size:17px;line-height:1;margin-top:4px;}
@@ -6218,9 +6222,9 @@
       modal.className='modal-overlay open';
       modal.innerHTML=`<div class="eq-picker-modal">
         <div class="modal-handle"></div>
-        <div class="modal-title">${label} <span id="eq-pick-count">(${selected.size}/${maxCards})</span></div>
-        <div class="eq-picker-suit-headers">
-          ${[0,1,2,3].map(s=>`<div class="eq-picker-suit-header${EQ_SUIT_RED[s]?' red':''}">${EQ_SUIT_CHAR[s]}</div>`).join('')}
+        <div class="eq-pick-sticky">
+          <div class="modal-title" style="margin-bottom:0">${label} <span id="eq-pick-count">(${selected.size}/${maxCards})</span></div>
+          <div class="eq-pick-sel-row" id="eq-pick-sel"></div>
         </div>
         <div class="eq-picker-grid" id="eq-pick-grid"></div>
         <div class="modal-actions" style="margin-top:var(--space-md)">
@@ -6229,7 +6233,24 @@
         </div>
       </div>`;
       document.body.appendChild(modal);
-      function updateCount(){modal.querySelector('#eq-pick-count').textContent=`(${selected.size}/${maxCards})`;}
+      function updateSelected(){
+        const row=modal.querySelector('#eq-pick-sel');
+        row.innerHTML='';
+        const cards=Array.from(selected);
+        for(let i=0;i<maxCards;i++){
+          const cid=cards[i]??null;
+          const el=document.createElement('div');
+          if(cid!==null){
+            const r=cid>>2,s=cid&3;
+            el.className=`eq-pick-sel-card filled${EQ_SUIT_RED[s]?' red':''}`;
+            el.innerHTML=`<span class="eq-picker-card-rank">${EQ_RANK_LABEL[r]}</span><span class="eq-picker-card-suit">${EQ_SUIT_CHAR[s]}</span>`;
+          } else {
+            el.className='eq-pick-sel-card';
+          }
+          row.appendChild(el);
+        }
+      }
+      function updateCount(){modal.querySelector('#eq-pick-count').textContent=`(${selected.size}/${maxCards})`;updateSelected();}
       function renderGrid(){
         const grid=modal.querySelector('#eq-pick-grid');
         grid.innerHTML='';
@@ -6252,6 +6273,7 @@
           }
         }
       }
+      updateSelected();
       renderGrid();
       function close(){modal.remove();document.removeEventListener('keydown',esc);}
       const esc=e=>{if(e.key==='Escape')close();};
