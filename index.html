@@ -10512,7 +10512,7 @@
       <div class="pm-sheet-title">Pause – Auto-Aktion</div>
       <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Was passiert automatisch wenn du dran bist?</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-lg)">
-        ${[['fold','Sofort folden','Wird sofort gefoldet'],['check','Nur checken','Checkt wenn möglich, sonst Fold'],['call_limit','Bis Betrag callen','Callt bis zu einem Betrag'],['call_any','Alles callen','Callt jeden Einsatz']].map(([v,l,s],i)=>`<label class="pm-auto-option"><input type="radio" name="pm-auto" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div></label>`).join('')}
+        ${[['fold','Sofort folden','Wird sofort gefoldet'],['check','Nur checken','Checkt wenn möglich, sonst Fold'],['call_limit','Bis Betrag callen','Callt bis zu einem Betrag'],['call_any','Alles callen','Callt jeden Einsatz']].map(([v,l,s],i)=>`<label class="pm-auto-option"><input type="radio" name="pm-auto" value="${v}"${i===0?' checked':''} style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0"><div style="flex:1"><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text-secondary)">${s}</div></div><span style="font-size:10px;font-family:var(--font-mono);opacity:.35;flex-shrink:0;margin-left:8px">[${i+1}]</span></label>`).join('')}
       </div>
       <div id="pm-pause-limit-row" style="display:none;margin-bottom:var(--space-lg)">
         <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Maximalbetrag</div>
@@ -10524,8 +10524,8 @@
         </div>
       </div>
       <div class="btn-row-2">
-        <button class="btn btn-secondary" id="pm-pause-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="pm-pause-confirm">Pause starten</button>
+        <button class="btn btn-secondary" id="pm-pause-cancel">Abbrechen<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[Esc]</span></button>
+        <button class="btn btn-primary" id="pm-pause-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Pause starten</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
       </div>
     </div>`;
     document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
@@ -10894,6 +10894,7 @@
     if(K==='Enter'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-ok')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-cp-confirm')){document.getElementById('pm-cp-confirm')?.click();e.preventDefault();return;}
+      if(document.getElementById('pm-pause-sheet')){document.getElementById('pm-pause-confirm')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-raise-sheet')){document.getElementById('pm-rs-confirm')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-preaction-sheet')){document.getElementById('pm-pas-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
@@ -10922,6 +10923,8 @@
         }
         e.preventDefault();return;
       }
+      const _psh2=document.getElementById('pm-pause-sheet');
+      if(_psh2){const _pVals=['fold','check','call_limit','call_any'];const _pv=_pVals[parseInt(K)-1];if(_pv){const _pr=_psh2.querySelector(`[name="pm-auto"][value="${_pv}"]`);if(_pr){_pr.checked=true;_pr.dispatchEvent(new Event('change'));if(_pv==='call_limit'){const _pl=document.getElementById('pm-pause-limit');if(_pl)_pl.focus();}}}e.preventDefault();return;}
       const _cpc=document.getElementById('pm-cp-cards');
       if(_cpc){const _cpcItems=[..._cpc.querySelectorAll('[data-ck]')];const _cpcItem=_cpcItems[parseInt(K)-1];if(_cpcItem)_cpcItem.click();e.preventDefault();return;}
       document.querySelector(`.pm-card-ind[data-card-idx="${parseInt(K)-1}"]`)?.click();e.preventDefault();return;
