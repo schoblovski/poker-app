@@ -7892,9 +7892,11 @@
     // Check for rejoin BEFORE first render to avoid double-build flicker
     let _needsJoin=false;
     if(currentSpieler?.id){
-      const{data:_mySeatCheck}=await db.from('online_seats').select('id').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).maybeSingle();
+      const{data:_mySeatArr}=await db.from('online_seats').select('id').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).limit(1);
+      const _mySeatCheck=_mySeatArr?.[0]||null;
       if(_mySeatCheck){
-        const{data:lastEvt}=await db.from('online_actions').select('action').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).in('action',['join','leave']).order('created_at',{ascending:false}).limit(1).maybeSingle();
+        const{data:_lastEvtArr}=await db.from('online_actions').select('action').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).in('action',['join','leave']).order('created_at',{ascending:false}).limit(1);
+        const lastEvt=_lastEvtArr?.[0]||null;
         if(lastEvt?.action==='leave')_needsJoin=true;
       }
     }
@@ -7958,7 +7960,7 @@
     } else {_pm._runoutRevealedCount=null;_pm._renderedRunoutCount=null;}
     _pm.seats=seats||[];
     _pm.actions=(actions||[]).reverse();
-    _pm.mySeat=mySeatRow||null;
+    _pm.mySeat=mySeatRow||(seats||[]).find(s=>s.spieler_id===currentSpieler?.id&&!s.spieler?.ist_bot)||null;
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=localStorage.getItem('pm_show_equity')==='1';
     // Cleanup: silently remove duplicate observer seats in this session (stale from test runs)
