@@ -7630,7 +7630,11 @@
       if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       _pmLobbyChannel=db.channel('pm-lobby')
         .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},(payload)=>{
+          // Only reload on join/leave – stack/bet updates happen too frequently and don't need a full lobby rebuild
+          if(payload.eventType==='UPDATE')return;
+          clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),200);
+        })
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'online_actions'},(payload)=>{
           const a=payload.new;
           const _rtSkip=['new_hand','dealt','join','bot_leave','pause','resume','reveal_runout'];
@@ -7653,7 +7657,7 @@
               }
             }
           }
-          clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>loadOnlineLobby(true),400);
+          // No full reload here – online_spiele UPDATE already fires when hand_nr changes
         })
         .subscribe();
       // Ticker polling as fallback (2s)
@@ -9865,17 +9869,17 @@
       _pmUnsubscribe();
       showPage('online-lobby');
       (async()=>{
-        // Clear current_player_id before deleting (safety for FK)
-        await db.from('online_spiele').update({current_player_id:null}).eq('id',sessionId);
-        // Delete session-related data
+        // Mark as hidden first (status=finished + hand_nr=0 → filtered from lobby by loadOnlineLobby)
+        // Note: DELETE on online_spiele may be silently blocked by RLS; UPDATE is always allowed
+        await db.from('online_spiele').update({status:'finished',hand_nr:0,current_player_id:null}).eq('id',sessionId);
+        // Clean up related data
         await db.from('online_actions').delete().eq('online_spiel_id',sessionId);
         await db.from('online_chat').delete().eq('online_spiel_id',sessionId);
         await db.from('online_seats').delete().eq('online_spiel_id',sessionId);
         if(botIds.length)await db.from('benachrichtigungen').delete().in('spieler_id',botIds);
-        await db.from('online_spiele').delete().eq('id',sessionId);
         // Deactivate bot spieler (can't DELETE: other sessions' FK refs may still exist)
         if(botIds.length)await db.from('spieler').update({aktiv:false}).in('id',botIds).eq('ist_bot',true);
-        // Refresh lobby (Realtime event may be missed during channel reconnect)
+        // Force lobby refresh
         loadOnlineLobby(true);
       })().catch(e=>{console.warn('[delete-session]',e);loadOnlineLobby(true);});
     });
