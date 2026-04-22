@@ -9381,6 +9381,15 @@
       const cur=localStorage.getItem('pm_facedown')==='true';
       const newFd=!cur;
       localStorage.setItem('pm_facedown',String(newFd));
+      // Turning OFF facedown mid-hand → record "look" so feed shows "hat seine Karten angesehen"
+      if(cur&&!newFd&&_pm?.myHoleCards?.length>0&&currentSpieler?.id){
+        const _hn=_pm.session?.hand_nr||0;
+        _pm._lookedHandNr=_hn;
+        if(!_pm.actions.some(a=>a.action==='look'&&!a.meta?.facedown&&a.spieler_id===currentSpieler.id&&a.hand_nr===_hn)){
+          _pm.actions.push({id:'_look_fd_'+_hn,online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',amount:0,hand_nr:_hn,meta:null,created_at:new Date().toISOString(),spieler:{name:currentSpieler.name,profilbild:currentSpieler.profilbild}});
+          db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'look',hand_nr:_hn}).then(()=>{});
+        }
+      }
       const _fdBtn=document.getElementById('btn-pm-facedown');
       if(_fdBtn){
         const _ico=newFd
