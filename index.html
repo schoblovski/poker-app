@@ -10863,9 +10863,12 @@
 
   function _pmOnKeydown(e){
     if(!document.getElementById('page-online-tisch')?.classList.contains('active'))return;
-    const tag=(e.target?.tagName||'').toUpperCase();
-    if(tag==='INPUT'||tag==='TEXTAREA'||e.target?.isContentEditable)return;
     const K=e.key;
+    // Esc always works even when an input is focused (e.g. chat sheet auto-focuses its input)
+    if(K!=='Escape'){
+      const tag=(e.target?.tagName||'').toUpperCase();
+      if(tag==='INPUT'||tag==='TEXTAREA'||e.target?.isContentEditable)return;
+    }
     // Esc: close topmost overlay/modal
     if(K==='Escape'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-cancel')?.click();e.preventDefault();return;}
