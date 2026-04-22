@@ -9323,9 +9323,9 @@
       if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px';
       else if(corner[0]==='m')menu.style.bottom=Math.round(window.innerHeight/2+fs/2+gap)+'px';
       else menu.style.bottom=(pad+fs+gap)+'px';
-      if(corner[1]==='m'){menu.style.left='50%';menu.style.transform='translateX(-50%)';menu.style.alignItems='center';}
-      else if(corner[1]==='r'){menu.style.right=pad+'px';menu.style.alignItems='flex-end';}
-      else{menu.style.left=pad+'px';menu.style.alignItems='flex-start';}
+      if(corner[1]==='m'){menu.style.left='50%';menu.style.transform='translateX(-50%)';}
+      else if(corner[1]==='r')menu.style.right=pad+'px';
+      else menu.style.left=pad+'px';
     }
     _pmFabApplyCorner(_fabCorner,false);
     function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
