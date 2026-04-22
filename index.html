@@ -8543,7 +8543,7 @@
       const specPills=spectators.length>0?`<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:5px">Beobachter <span style="background:var(--bg-secondary);border-radius:10px;padding:1px 6px">${spectators.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:5px">${_mkPills(spectators,s=>s.spieler?.name||'?',s=>s.spieler_id,s=>s.spieler?.profilbild||'')}</div></div>`:'';
       return`<div style="margin-bottom:var(--space-md);padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-md)">${lobbyPills}${specPills}</div>`;
     })():'';
-    const players=seats.filter(s=>s.status!=='sitting_out').sort((a,b)=>(b.stack||0)-(a.stack||0));
+    const players=seats.filter(s=>s.status!=='sitting_out').sort((a,b)=>(a.seat||0)-(b.seat||0));
     if(players.length<2)return specHtml;
     const maxStack=Math.max(...players.map(s=>s.stack||0),1);
     const rows=players.map(s=>{
@@ -8576,7 +8576,7 @@
   }
 
   function _pmStacksModalRows(seats,session,myId){
-    const players=(seats||[]).filter(s=>s.status!=='sitting_out').sort((a,b)=>(b.stack||0)-(a.stack||0));
+    const players=(seats||[]).filter(s=>s.status!=='sitting_out').sort((a,b)=>(a.seat||0)-(b.seat||0));
     if(!players.length)return'';
     const maxStack=Math.max(...players.map(s=>s.stack||0),1);
     const totalChips=players.reduce((s,p)=>s+(p.stack||0),0)+(session?.pot||0);
