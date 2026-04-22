@@ -9752,14 +9752,14 @@
     const selected=new Set(prevShown.size?prevShown:[...myHC.map(c=>`${c.rank}${c.suit}`)]);
 
     const overlay=document.createElement('div');overlay.className='modal-overlay open';overlay.style.cssText='z-index:9999;align-items:flex-end;padding:0';
-    function buildCards(){return myHC.map(c=>{const ck=`${c.rank}${c.suit}`;const sel=selected.has(ck);return`<div data-ck="${ck}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="border:2.5px solid ${sel?'var(--accent)':'transparent'};border-radius:8px;padding:2px;opacity:${sel?'1':'.35'};transition:.2s">${_pmCard(c)}</div><div style="font-size:10px;font-weight:600;color:${sel?'var(--accent-text)':'var(--text-tertiary)'};transition:.2s">${sel?'Zeigen':'Versteckt'}</div></div>`;}).join('');}
+    function buildCards(){return myHC.map((c,i)=>{const ck=`${c.rank}${c.suit}`;const sel=selected.has(ck);return`<div data-ck="${ck}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="border:2.5px solid ${sel?'var(--accent)':'transparent'};border-radius:8px;padding:2px;opacity:${sel?'1':'.35'};transition:.2s">${_pmCard(c)}</div><div style="font-size:10px;font-weight:600;color:${sel?'var(--accent-text)':'var(--text-tertiary)'};transition:.2s">${sel?'Zeigen':'Versteckt'}</div><div style="font-size:9px;font-family:var(--font-mono);opacity:.35;margin-top:1px">[${i+1}]</div></div>`;}).join('');}
     overlay.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto;padding:var(--space-md)">
       <div style="font-size:15px;font-weight:700;margin-bottom:4px">Karten zeigen</div>
       <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Tippe auf eine Karte um sie zu zeigen oder zu verstecken. Jederzeit änderbar bis zur nächsten Runde.</div>
       <div id="pm-cp-cards" style="display:flex;justify-content:center;gap:16px;padding:var(--space-md) 0">${buildCards()}</div>
       <div style="display:flex;gap:var(--space-sm);flex-direction:column;max-width:320px;margin:0 auto">
-        <button class="btn btn-primary" id="pm-cp-confirm">Bestätigen</button>
-        <button class="btn btn-ghost" id="pm-cp-cancel" style="font-size:13px">Abbrechen</button>
+        <button class="btn btn-primary" id="pm-cp-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Bestätigen</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
+        <button class="btn btn-ghost" id="pm-cp-cancel" style="font-size:13px">Abbrechen<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[Esc]</span></button>
       </div>
     </div>`;
     document.body.appendChild(overlay);
@@ -10878,6 +10878,7 @@
     if(K==='Escape'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-cancel')?.click();e.preventDefault();return;}
       if(document.getElementById('modal-hand')?.classList.contains('open')){document.getElementById('hand-abbrechen')?.click();e.preventDefault();return;}
+      if(document.getElementById('pm-cp-confirm')){document.getElementById('pm-cp-cancel')?.click();e.preventDefault();return;}
       const cis=document.getElementById('pm-chat-input-sheet');if(cis){cis.click();e.preventDefault();return;}
       const pas=document.getElementById('pm-preaction-sheet');if(pas){pas.click();e.preventDefault();return;}
       const psh=document.getElementById('pm-pause-sheet');if(psh){psh.click();e.preventDefault();return;}
@@ -10892,6 +10893,7 @@
     // Enter: confirm active modal or close read-only overlays
     if(K==='Enter'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-ok')?.click();e.preventDefault();return;}
+      if(document.getElementById('pm-cp-confirm')){document.getElementById('pm-cp-confirm')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-raise-sheet')){document.getElementById('pm-rs-confirm')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-preaction-sheet')){document.getElementById('pm-pas-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
@@ -10920,6 +10922,8 @@
         }
         e.preventDefault();return;
       }
+      const _cpc=document.getElementById('pm-cp-cards');
+      if(_cpc){const _cpcItems=[..._cpc.querySelectorAll('[data-ck]')];const _cpcItem=_cpcItems[parseInt(K)-1];if(_cpcItem)_cpcItem.click();e.preventDefault();return;}
       document.querySelector(`.pm-card-ind[data-card-idx="${parseInt(K)-1}"]`)?.click();e.preventDefault();return;
     }
     switch(K.toUpperCase()){
