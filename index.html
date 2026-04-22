@@ -10785,6 +10785,7 @@
 
   async function _pmExecuteBotAction(botSeat,action='play',_retry=0){
     if(!_pm?.id||!botSeat?.spieler_id)return;
+    if(botSeat.online_spiel_id&&botSeat.online_spiel_id!==_pm.id)return; // stale: session changed
     const _bik=`${botSeat.spieler_id}|${_pm.session?.hand_nr}|${_pm.session?.street}`;
     if(action==='play'&&_pmBotInFlight.has(_bik))return; // already in flight from this client
     if(action==='play')_pmBotInFlight.add(_bik);
@@ -10819,7 +10820,7 @@
     const key=`runout|${sess.hand_nr}|${_pm.id}`;
     if(_pm._botRunoutKey===key)return;
     _pm._botRunoutKey=key;
-    setTimeout(()=>_pmExecuteBotAction(dealerSeat,'runout'),1800);
+    const _rSid=_pm.id;setTimeout(()=>{if(_pm?.id!==_rSid)return;_pmExecuteBotAction(dealerSeat,'runout');},1800);
   }
 
   function _pmMaybeBotReveal(){
@@ -10848,7 +10849,7 @@
       const alreadyRevealed=actions.some(a=>a.action==='reveal_cards'&&a.spieler_id===seat.spieler_id&&a.hand_nr===sess.hand_nr);
       if(alreadyRevealed)continue;
       const delay=1000+Math.random()*1500;
-      setTimeout(()=>_pmExecuteBotAction(seat,'reveal'),delay);
+      const _rvSid=_pm.id;setTimeout(()=>{if(_pm?.id!==_rvSid)return;_pmExecuteBotAction(seat,'reveal');},delay);
     }
   }
 
