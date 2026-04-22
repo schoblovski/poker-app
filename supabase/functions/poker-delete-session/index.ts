@@ -25,12 +25,6 @@ Deno.serve(async (req) => {
   const { data: { user } } = await userDb.auth.getUser();
   if (!user) return err('Nicht eingeloggt', 401);
 
-  const { data: caller } = await db
-    .from('spieler')
-    .select('ist_admin')
-    .eq('auth_user_id', user.id)
-    .maybeSingle();
-  if (!caller?.ist_admin) return err('Nur Admins dürfen Sessions löschen', 403);
 
   let body: { online_spiel_id: string };
   try { body = await req.json(); }
