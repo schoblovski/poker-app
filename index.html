@@ -2207,14 +2207,27 @@
   }
   function _showV4Modal(){
     const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
+    const _feat=(icon,text)=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px;flex-shrink:0;margin-top:1px">${icon}</span>
+      <span style="font-size:13px;color:var(--text-primary);line-height:1.45">${text}</span>
+    </div>`;
     ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:440px;padding:var(--space-xl) var(--space-lg);text-align:center;overflow-y:auto;max-height:90vh">
       <div style="font-size:48px;margin-bottom:var(--space-md)">🎉</div>
       <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Richtig!</div>
       <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
-      <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
-      <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
-        <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Online-Modus</div>
-        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
+      <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-lg);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
+      <div style="text-align:left;margin-bottom:var(--space-xl)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">Was dich erwartet</div>
+        <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:0 var(--space-md)">
+          ${_feat('🃏','<b>3 Varianten:</b> Texas Hold\'em, Omaha und Texahma – Karten werden serverseitig gemischt, kein Schummeln möglich')}
+          ${_feat('🤖','<b>KI-Bots:</b> Plätze mit konfigurierbaren Bots füllen – Spielstil (TAG/LAG/NIT), Aggressivität, Bluff-Rate und Gesprächigkeit einstellbar')}
+          ${_feat('⏱️','<b>Blind-Timer:</b> Automatische Blind-Erhöhungen nach Zeitplan – Levels, Dauer und Beträge frei konfigurierbar')}
+          ${_feat('⏸️','<b>Pause & Pre-Action:</b> Kurz weg? Auto-Aktion hinterlegen. Beim Zurückkommen siehst du alles was du verpasst hast')}
+          ${_feat('🔀','<b>Was wäre noch gekommen?</b> Nach einem Fold das restliche Board aufdecken – rein informell, kein Einfluss aufs Ergebnis')}
+          ${_feat('📱','<b>Mehrere Sessions:</b> Verschiedene Tische parallel möglich – z.B. Test-Session und echte Runde gleichzeitig')}
+          ${_feat('💰','<b>Sidepots & All-in:</b> Vollautomatische Sidepot-Berechnung, auch bei mehreren All-ins gleichzeitig')}
+          ${_feat('📊','<b>Statistik-Integration:</b> Ergebnisse fliessen direkt in Kontostand, Verlauf und Rangliste ein')}
+        </div>
       </div>
       <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
     </div>`;
