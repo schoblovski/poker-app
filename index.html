@@ -1161,7 +1161,7 @@
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Spielablauf</div>
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text-secondary)">Admin startet die erste Spielrunde</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text-secondary)">Dealer-Spieler startet die erste Spielrunde</div></div>
           <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text-secondary)">Du siehst deine Karten und wählst deine Aktion (Fold / Call / Raise / All-in)</div></div>
           <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text-secondary)">Nach jeder Setzrunde kommen neue Gemeinschaftskarten: Flop (3), Turn (1), River (1)</div></div>
           <div style="display:flex;gap:10px;align-items:flex-start"><div style="width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div style="font-size:13px;color:var(--text-secondary)">Showdown — die beste Hand gewinnt den Pot</div></div>
@@ -1596,6 +1596,7 @@
     const _infoModal=document.getElementById('pm-info-modal');
     if(_infoModal&&_infoModal.style.display!=='none'){
       _infoModal.style.display='none';
+      if(typeof _pmDrawerHide==='function')_pmDrawerHide();
       history.pushState({},'',' ');
       return;
     }
@@ -1617,7 +1618,7 @@
     const dx=e.changedTouches[0].clientX-_swipeX,dy=e.changedTouches[0].clientY-_swipeY;
     if(_swipeX<40&&dx>80&&Math.abs(dy)<80){
       const _infoM=document.getElementById('pm-info-modal');
-      if(_infoM&&_infoM.style.display!=='none'){_infoM.style.display='none';return;}
+      if(_infoM&&_infoM.style.display!=='none'){_infoM.style.display='none';if(typeof _pmDrawerHide==='function')_pmDrawerHide();return;}
       if(_pageHistory.length>1){
         _lastSwipeMs=Date.now(); // mark so popstate handler skips duplicate iOS event
         _pageHistory.pop();const prev=_pageHistory[_pageHistory.length-1];
@@ -9456,9 +9457,12 @@
     document.getElementById('btn-pm-info')?.addEventListener('click',(e)=>{
       e.stopPropagation();_pmFabClose();
       document.getElementById('pm-info-modal').style.display='block';
+      history.pushState({},'',' '); // so back-gesture closes the modal
+      if(_pm?.mySeat&&_pm.session?.status!=='finished')_pmDrawerShow();
     });
     document.getElementById('btn-pm-info-close')?.addEventListener('click',()=>{
       document.getElementById('pm-info-modal').style.display='none';
+      _pmDrawerHide();
     });
     document.getElementById('btn-pm-add-bot')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmAddBotModal();});
     document.getElementById('btn-pm-hand-record')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmHandFesthalten();});
