@@ -45,6 +45,21 @@ Deno.serve(async (req) => {
 
   if (!session) return err('Session nicht gefunden', 404);
 
+  // leave_spectate: remove a sitting_out (observer) seat – works in any session state
+  if (action === 'leave_spectate') {
+    const seat = (seats || []).find((s: { spieler_id: string; status: string }) =>
+      s.spieler_id === spieler_id && s.status === 'sitting_out'
+    );
+    if (seat) {
+      await db.from('online_seats').delete().eq('id', seat.id);
+      await db.from('online_actions').insert({
+        online_spiel_id, spieler_id, action: 'unspectate',
+        street: session.street ?? null, hand_nr: session.hand_nr ?? 0,
+      });
+    }
+    return json({ ok: true });
+  }
+
   // leave_permanent works in any session state (waiting/running/finished)
   if (action === 'leave_permanent') {
     const seat = (seats || []).find((s: { spieler_id: string }) => s.spieler_id === spieler_id);

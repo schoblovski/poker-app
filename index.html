@@ -7936,7 +7936,7 @@
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,bot_config,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
       db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
-      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').order('created_at',{ascending:true}).limit(1).then(({data,error})=>({data:data?.[0]??null,error})),
+      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').limit(1).then(({data,error})=>({data:data?.[0]??null,error})),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
     if(!_pm)return; // guard: user navigated away while DB queries were in flight
@@ -9465,10 +9465,9 @@
     document.getElementById('btn-pm-lobby')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();if(!_pm?.mySeat)_pmDrawerHide();showPage('online-lobby');});
     document.getElementById('btn-pm-stop-observe')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
       if(!_pm?.id||!currentSpieler?.id)return;
-      // Delete ALL observer seats for this player (handles stale duplicates too)
-      await db.from('online_seats').delete().eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).eq('status','sitting_out');
-      db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'unspectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       _pm.mySeat=null;
+      // Use Edge Function (service role) to delete sitting_out seat + insert unspectate action
+      await db.functions.invoke('poker-action',{body:{online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'leave_spectate'}});
       await _pmLoad();
     });
     document.getElementById('btn-pm-finish')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
