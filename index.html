@@ -7620,16 +7620,23 @@
     const _needsFull=!soft||!_existRows.length||_curState!==_newState;
     if(_needsFull){
       el.innerHTML=html;
-      // Event delegation – one listener on the container survives incremental updates
-      el.addEventListener('click',e=>{
-        if(e.target.closest('#btn-pm-new')){_pmNewSessionSheet();return;}
-        const row=e.target.closest('.pm-session-row');
-        if(row)enterOnlineSession(row.dataset.id);
-      });
+      // Event delegation – bind once per page load, not on every rebuild (avoids duplicate listeners)
+      if(!el._pmClickHandler){
+        el._pmClickHandler=(e)=>{
+          if(e.target.closest('#btn-pm-new')){_pmNewSessionSheet();return;}
+          const row=e.target.closest('.pm-session-row');
+          if(row)enterOnlineSession(row.dataset.id);
+        };
+        el.addEventListener('click',el._pmClickHandler);
+      }
       // Realtime – only set up once per full rebuild
       if(_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       _pmLobbyChannel=db.channel('pm-lobby')
-        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},()=>{clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);})
+        .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele'},(payload)=>{
+          // Only reload when session status changes (start/end), not on every game-state update
+          if(payload.eventType==='UPDATE'&&payload.new?.status===payload.old?.status)return;
+          clearTimeout(_pmLobbyLoadTimer);_pmLobbyLoadTimer=setTimeout(()=>{loadOnlineLobby(true);_pmUpdateLiveIndicator();},200);
+        })
         .on('postgres_changes',{event:'*',schema:'public',table:'online_seats'},(payload)=>{
           // Only reload on join/leave – stack/bet updates happen too frequently and don't need a full lobby rebuild
           if(payload.eventType==='UPDATE')return;
@@ -7885,6 +7892,7 @@
     }
     // Single _pmLoad call — no double render
     await _pmLoad();
+    if(!_pm)return; // guard: user navigated away while _pmLoad was running
     // Restore away flag from action log (actual send is driven by showPage, not _pmLoad)
     const _lastAB=(_pm.actions||[]).filter(a=>(a.action==='away'||a.action==='back')&&a.spieler_id===currentSpieler?.id).at(-1);
     _pm._isAway=_lastAB?.action==='away';
@@ -7918,6 +7926,7 @@
       db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
+    if(!_pm)return; // guard: user navigated away while DB queries were in flight
     const einstMap={};(einstRows||[]).forEach(e=>{einstMap[e.key]=e.wert;});
     // Suppress card animations on the very first load of a running game (initial page arrival).
     // _pm._initialLoad is set true by showPage; cleared here after we record the current board count.
@@ -7949,6 +7958,7 @@
       // Check if player was dealt cards this hand (has blind/look/dealt_blind action for current hand_nr)
       const _dealtThisHand=!_isSittingOut&&(actions||[]).some(a=>a.spieler_id===currentSpieler?.id&&(a.hand_nr||0)===_hn0&&(a.action==='blind'||a.action==='look'||a.action==='dealt_blind'||a.action==='dealt'));
       const{data:cardRow}=(_isSittingOut||!_dealtThisHand)?{data:null}:await db.from('online_seat_cards').select('hole_cards').eq('seat_id',mySeatRow.id).maybeSingle();
+      if(!_pm)return; // guard: navigated away during card fetch
       _pm.myHoleCards=(_isSittingOut||!_dealtThisHand)?[]:cardRow?.hole_cards||[];
       const _fd=localStorage.getItem('pm_facedown')==='true';
       const _hn=session?.hand_nr||0;
