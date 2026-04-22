@@ -2304,6 +2304,29 @@
     const inp=document.getElementById('ee-input');
     setTimeout(()=>inp?.focus(),100);
     document.getElementById('ee-cancel').onclick=()=>ov.remove();
+    let _eeAttempts=0;
+    const _eeMessages=[
+      'Falsch. Typisch. Und trotzdem läuft eure App.',
+      'Schon wieder falsch. Er hat euch eine App gebaut – und ihr kennt seinen Namen nicht.',
+      'Drei Versuche. Beim Poker seid ihr hoffentlich besser.',
+      'Tipp: Die Person, die ihr sucht, ist kein Pokerprofi. Sie baut Pokerprofi-Apps.',
+      'Fünfter Versuch. Langsam fragt man sich, ob die App sich selbst gebaut hat.',
+      'Sechs Versuche. Die App läuft übrigens noch immer tadellos.',
+      'Sieben. Wer nutzt schon die App eines «gar nicht vorhandenen IT-Experten»?',
+      'Acht. Ihr habt ihn «nicht» – aber ihr habt diese wunderbare App.',
+      'Die gesuchte Person hat diese Fehlermeldung übrigens selbst getippt. Denkt mal drüber nach.',
+      'Zehn Versuche. Das WLAN-Passwort wäre schneller geknackt.',
+      'Elf. Es sind vier Buchstaben. Wirklich alles, was ich sagen kann.',
+      'Zwölf. Der Name beginnt mit «C». Ihr seid herzlich willkommen.',
+      'Dreizehn. Er reimt sich auf «Iris». Die Antwort ist nicht Iris.',
+      'Vierzehn. Er fragt sich gerade wahrscheinlich, warum er das gemacht hat.',
+      'Fünfzehn. Der Name wurde in diesem Dialog bereits mehrfach erwähnt. Mehrfach.',
+      'Sechzehn. Ich bin eine App. Ich habe weder Mitgefühl noch Eile. Ihr schon?',
+      'Siebzehn. Jemand am Tisch kennt die Antwort. Fragt ihn. Er heisst übrigens ähnlich wie die Antwort.',
+      'Achtzehn Versuche. Ich bin sprachlos. Und ich bin eine App.',
+      'Neunzehn. Das hier ist mein letztes geduldiges Angebot. Wirklich.',
+      'Ach du meine Güte. Also gut – die Antwort lautet: CHRIS. C–H–R–I–S. Vier Buchstaben. Ein Mensch. Euer IT-Experte.',
+    ];
     const _eeConfirm=()=>{
       const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
       if(val==='chris'){
@@ -2312,8 +2335,15 @@
         _showV4Modal();
       } else {
         const msg=document.getElementById('ee-msg');
-        if(msg)msg.textContent='Falsch. Typisch. Und trotzdem läuft eure App.';
-        inp?.select();
+        const idx=Math.min(_eeAttempts, _eeMessages.length-1);
+        if(msg)msg.textContent=_eeMessages[idx];
+        _eeAttempts++;
+        if(_eeAttempts>=_eeMessages.length){
+          const input=document.getElementById('ee-input');
+          if(input){input.value='Chris';input.select();}
+        } else {
+          inp?.select();
+        }
       }
     };
     document.getElementById('ee-confirm').onclick=_eeConfirm;
