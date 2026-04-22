@@ -3985,7 +3985,7 @@
     const el=document.getElementById('verwaltung-content');
     if(!currentSpieler?.ist_admin){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="empty-title">Kein Zugriff</div></div>`;return;}
     const{data:spieler}=await db.from('spieler').select('*').order('name');if(!spieler)return;
-    const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank),inaktive=spieler.filter(s=>!s.aktiv);
+    const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank&&!s.ist_bot),inaktive=spieler.filter(s=>!s.aktiv&&!s.ist_bot);
     const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
     const loginSub=s=>(s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'')+
       (s.pandemie_entdeckt_am?`<div class="item-subtitle" style="color:var(--accent-text)">🎴 Easter Egg: ${fmtLogin(s.pandemie_entdeckt_am)}</div>`:'');
