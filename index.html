@@ -10868,15 +10868,19 @@
     const K=e.key;
     // Esc: close topmost overlay/modal
     if(K==='Escape'){
+      if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-cancel')?.click();e.preventDefault();return;}
       const cis=document.getElementById('pm-chat-input-sheet');if(cis){cis.click();e.preventDefault();return;}
+      const pas=document.getElementById('pm-preaction-sheet');if(pas){pas.click();e.preventDefault();return;}
       if(document.getElementById('pm-feed-modal')){document.getElementById('btn-pm-feed-modal-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-info-modal')?.style.display==='block'){document.getElementById('btn-pm-info-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-fab-menu')?.classList.contains('pm-fab-open')){document.getElementById('pm-fab')?.classList.remove('pm-fab-open');document.getElementById('pm-fab-menu')?.classList.remove('pm-fab-open');e.preventDefault();}
       return;
     }
-    // Enter: close read-only overlays
+    // Enter: confirm active modal or close read-only overlays
     if(K==='Enter'){
+      if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-ok')?.click();e.preventDefault();return;}
+      if(document.getElementById('pm-preaction-sheet')){document.getElementById('pm-pas-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-info-modal')?.style.display==='block'){document.getElementById('btn-pm-info-close')?.click();e.preventDefault();return;}
       return;
