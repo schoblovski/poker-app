@@ -9781,7 +9781,7 @@
       <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md)">Tippe auf eine Karte um sie zu zeigen oder zu verstecken. Jederzeit änderbar bis zur nächsten Runde.</div>
       <div id="pm-cp-cards" style="display:flex;justify-content:center;gap:16px;padding:var(--space-md) 0">${buildCards()}</div>
       <div style="display:flex;gap:var(--space-sm);flex-direction:column;max-width:320px;margin:0 auto">
-        <button class="btn btn-primary" id="pm-cp-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Bestätigen</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
+        <button class="btn btn-primary" id="pm-cp-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Bestätigen</span><span class="pm-key-hint" style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
         <button class="btn btn-ghost" id="pm-cp-cancel" style="font-size:13px">Abbrechen<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[Esc]</span></button>
       </div>
     </div>`;
@@ -10548,7 +10548,7 @@
       </div>
       <div class="btn-row-2">
         <button class="btn btn-secondary" id="pm-pause-cancel">Abbrechen<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[Esc]</span></button>
-        <button class="btn btn-primary" id="pm-pause-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Pause starten</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
+        <button class="btn btn-primary" id="pm-pause-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>Pause starten</span><span class="pm-key-hint" style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
       </div>
     </div>`;
     document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
@@ -10595,7 +10595,7 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
         <button class="btn btn-secondary" id="pm-rs-cancel" style="max-width:none;margin:0">Abbrechen</button>
-        <button class="btn btn-primary" id="pm-rs-confirm" style="max-width:none;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span id="pm-rs-confirm-label">Raise bestätigen</span><span style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
+        <button class="btn btn-primary" id="pm-rs-confirm" style="max-width:none;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span id="pm-rs-confirm-label">Raise bestätigen</span><span class="pm-key-hint" style="opacity:.35;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span></button>
       </div>
     </div>`;
     document.body.appendChild(overlay);requestAnimationFrame(()=>overlay.classList.add('open'));
