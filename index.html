@@ -939,7 +939,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/><path d="M6 8h2M6 11h2"/><path d="M16 8h2M16 11h2"/></svg>
           Equity-Rechner
         </button>
-        <button class="dropdown-item" id="btn-online-poker" style="display:none">
+        <button class="dropdown-item" id="btn-online-poker">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20"/><path d="M2 12h20"/></svg>
           Online-Modus
         </button>
@@ -2193,86 +2193,70 @@
   document.getElementById('btn-blindtimer').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('blindtimer');loadBlindtimer();});
   document.getElementById('btn-h2h').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('h2h');loadH2H();});
   document.getElementById('btn-equity').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('equity');loadEquity();});
-  document.getElementById('btn-online-poker').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('online-lobby');});
+  document.getElementById('btn-online-poker').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');_showEasterEgg();});
   document.getElementById('btn-console').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('console');loadConsole();});
   document.getElementById('btn-rohdaten').addEventListener('click',()=>{document.getElementById('dropdown').classList.remove('open');showPage('rohdaten');loadRohdaten();});
   document.getElementById('bell-btn').addEventListener('click',()=>{showPage('benachrichtigungen');});
 
-  // ── EASTER EGG: 7× auf App-Titel tippen → Pandemie-Modus freischalten ──────
-  (function(){
-    let _taps=0,_tapTimer=null;
-    function _unlockPandemie(){
-      localStorage.setItem('dtks_pandemie_entdeckt','true');
-      if(currentSpieler?.id)db.from('spieler').update({pandemie_entdeckt_am:new Date().toISOString()}).eq('id',currentSpieler.id).then(()=>{});
-      document.getElementById('btn-online-poker').style.display='flex';
-      document.getElementById('pm-live-btn').style.removeProperty('display');
+  // ── EASTER EGG: Online-Modus im Avatar-Menü → Rätsel beim ersten Klick ─────
+  function _unlockPandemie(){
+    localStorage.setItem('dtks_pandemie_entdeckt','true');
+    if(currentSpieler?.id)db.from('spieler').update({pandemie_entdeckt_am:new Date().toISOString()}).eq('id',currentSpieler.id).then(()=>{});
+    document.getElementById('pm-live-btn').style.removeProperty('display');
+  }
+  function _showV4Modal(){
+    const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
+    ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:440px;padding:var(--space-xl) var(--space-lg);text-align:center;overflow-y:auto;max-height:90vh">
+      <div style="font-size:48px;margin-bottom:var(--space-md)">🎉</div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Richtig!</div>
+      <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
+      <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
+      <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
+        <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Online-Modus</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
+      </div>
+      <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
+    </div>`;
+    document.body.appendChild(ov);
+    document.getElementById('ee-v4-close').onclick=()=>{ov.remove();showPage('online-lobby');};
+  }
+  function _showEasterEgg(){
+    if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
+      showPage('online-lobby');
+      return;
     }
-    function _showEasterEgg(){
-      if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
-        // Bereits entdeckt → direkt öffnen
-        document.getElementById('dropdown').classList.remove('open');
-        showPage('online-lobby');
-        return;
+    const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
+    ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:400px;padding:var(--space-xl) var(--space-lg);text-align:center">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
+      <div style="font-size:22px;margin-bottom:var(--space-md)">🕵️</div>
+      <div style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat.</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:var(--space-xl);color:var(--text-primary)">Wer ist der IT-Experte,<br>den ihr angeblich gar nicht habt?</div>
+      <input id="ee-input" type="text" class="form-input" placeholder="Antwort eingeben…" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;margin-bottom:var(--space-md)">
+      <div id="ee-msg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:var(--space-md)"></div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
+        <button class="btn btn-primary" id="ee-confirm" style="max-width:none">Bestätigen</button>
+        <button class="btn btn-ghost" id="ee-cancel" style="max-width:none;font-size:13px">Abbrechen</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    const inp=document.getElementById('ee-input');
+    setTimeout(()=>inp?.focus(),100);
+    document.getElementById('ee-cancel').onclick=()=>ov.remove();
+    const _eeConfirm=()=>{
+      const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
+      if(val==='chris'){
+        ov.remove();
+        _unlockPandemie();
+        _showV4Modal();
+      } else {
+        const msg=document.getElementById('ee-msg');
+        if(msg)msg.textContent='Falsch. Typisch. Und trotzdem läuft eure App.';
+        inp?.select();
       }
-      const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
-      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:400px;padding:var(--space-xl) var(--space-lg);text-align:center">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
-        <div style="font-size:22px;margin-bottom:var(--space-md)">🕵️</div>
-        <div style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Ooohhh… du hast was gefunden! Gut gemacht.<br>Leider musst du erst beweisen, dass du qualifiziert bist.</div>
-        <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:var(--space-xl);color:var(--text-primary)">Wer ist der IT-Experte,<br>den ihr angeblich gar nicht habt?</div>
-        <input id="ee-input" type="text" class="form-input" placeholder="Antwort eingeben…" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;margin-bottom:var(--space-md)">
-        <div id="ee-msg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:var(--space-md)"></div>
-        <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
-          <button class="btn btn-primary" id="ee-confirm" style="max-width:none">Bestätigen</button>
-          <button class="btn btn-ghost" id="ee-cancel" style="max-width:none;font-size:13px">Abbrechen</button>
-        </div>
-      </div>`;
-      document.body.appendChild(ov);
-      const inp=document.getElementById('ee-input');
-      setTimeout(()=>inp?.focus(),100);
-      document.getElementById('ee-cancel').onclick=()=>ov.remove();
-      const confirm=async()=>{
-        const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
-        if(val==='chris'){
-          ov.remove();
-          _unlockPandemie();
-          _showV4Modal();
-        } else {
-          const msg=document.getElementById('ee-msg');
-          if(msg)msg.textContent='Falsch. Typisch. Und trotzdem läuft eure App.';
-          inp?.select();
-        }
-      };
-      document.getElementById('ee-confirm').onclick=confirm;
-      document.getElementById('ee-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirm();});
-    }
-    function _showV4Modal(){
-      const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;padding:var(--space-md)';
-      ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:440px;padding:var(--space-xl) var(--space-lg);text-align:center;overflow-y:auto;max-height:90vh">
-        <div style="font-size:48px;margin-bottom:var(--space-md)">🎉</div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Richtig!</div>
-        <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
-        <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-xl);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
-        <div style="text-align:left;background:var(--bg-secondary);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-xl)">
-          <div style="font-weight:700;font-size:14px;margin-bottom:var(--space-sm)">Online-Modus</div>
-          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Online Poker mit euren Freunden – auch wenn ihr euch nicht physisch treffen könnt. Texas Hold'em, Omaha oder Texahma. Echte Karten, echter Einsatz, echter Spass.</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-top:var(--space-sm);line-height:1.6">Den Online-Modus findest du jetzt im Avatar-Menü.</div>
-        </div>
-        <button class="btn btn-primary" id="ee-v4-close" style="max-width:none">Los geht's!</button>
-      </div>`;
-      document.body.appendChild(ov);
-      document.getElementById('ee-v4-close').onclick=()=>{ov.remove();showPage('online-lobby');};
-    }
-    // 5× tippen auf App-Titel (touchstart+preventDefault verhindert OS-Textmarkierung)
-    const appNameEl=document.querySelector('.header-app-name');
-    if(appNameEl){
-      appNameEl.style.cssText+=(appNameEl.style.cssText?';':'')+'user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:default';
-      let _taps=0,_tapTimer=null;
-      const _eeTap=()=>{_taps++;clearTimeout(_tapTimer);if(_taps>=5){_taps=0;_showEasterEgg();}else{_tapTimer=setTimeout(()=>{_taps=0;},1500);}};
-      appNameEl.addEventListener('touchstart',e=>{e.preventDefault();_eeTap();},{passive:false});
-      appNameEl.addEventListener('click',_eeTap); // desktop fallback (click doesn't fire on mobile after touchstart preventDefault)
-    }
-  })();
+    };
+    document.getElementById('ee-confirm').onclick=_eeConfirm;
+    document.getElementById('ee-input').addEventListener('keydown',e=>{if(e.key==='Enter')_eeConfirm();});
+  }
 
   // ── PM NUMPAD ──────────────────────────────────────────
   (function(){
@@ -2612,9 +2596,8 @@
     ['dropdown-admin-divider','dropdown-admin-label','dropdown-debug-divider','dropdown-debug-label'].forEach(id=>{document.getElementById(id).style.display=_adm?'block':'none';});
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
-    // Easter Egg: Pandemie-Modus nur sichtbar nach Entdeckung
+    // Live-Button im Header nur nach Entdeckung sichtbar
     if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
-      document.getElementById('btn-online-poker').style.display='flex';
       document.getElementById('pm-live-btn').style.removeProperty('display');
     }
     loginEl.style.display='none';
