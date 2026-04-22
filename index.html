@@ -9214,9 +9214,10 @@
     const isCurrentPlayer=_pm?.session?.current_player_id===sid&&_pm?.session?.status==='running';
     const statusLabel=sStatus==='folded'?'Gefoldet':sStatus==='allin'?'All-in':sStatus==='paused'?'Pausiert':sStatus==='sitting_out'?'Zuschauer':sAway?'AFK':isCurrentPlayer?'Am Zug':'Am Tisch';
     const statusColor=sStatus==='folded'?'var(--danger)':sStatus==='allin'?'#c2410c':sStatus==='paused'?'#d97706':sAway?'#64748b':isCurrentPlayer?'#2563eb':'var(--accent-text)';
-    // Feed excerpt: last 10 actions by or about this player
-    const _playerActs=(_pm?.actions||[]).filter(a=>a.spieler_id===sid).slice(-10);
-    const _feedExcerpt=_playerActs.length?`<div style="margin-bottom:16px;background:var(--bg-secondary);border-radius:14px;overflow:hidden;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);padding:10px 14px 4px;font-weight:700">Verlauf</div><div style="font-size:12px;padding:0 4px 6px;max-height:220px;overflow-y:auto;overscroll-behavior:contain">${_pmFeedHtml(_playerActs)}</div></div>`:'';
+    // Feed excerpt: lazy-loadable history for this player
+    const _pcInitActs=[...(_pm._olderActions||[]),...(_pm.actions||[])].filter(a=>a.spieler_id===sid);
+    const _pcFeedState={cursor:_pcInitActs.length?_pcInitActs[0].created_at:null,loading:false,allLoaded:false};
+    const _feedExcerpt=_pcInitActs.length?`<div style="margin-bottom:16px;background:var(--bg-secondary);border-radius:14px;overflow:hidden;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);padding:10px 14px 4px;font-weight:700">Verlauf</div><div id="_pc-feed-scroll" style="font-size:12px;padding:0 4px 6px;max-height:220px;overflow-y:auto;overscroll-behavior:contain">${_pmFeedHtml(_pcInitActs)}<div id="_pc-feed-sentinel" style="height:4px"></div></div></div>`:'';
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;touch-action:none';
     ov.innerHTML=`<div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:0 0 calc(24px + env(safe-area-inset-bottom,0px));max-height:82dvh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -8px 40px rgba(0,0,0,.3)">
@@ -9250,7 +9251,7 @@
         ${_feedExcerpt}
         ${seat?.spieler?.ist_bot
           ?`${(()=>{const _bc=seat?.bot_config||{};const _style=_bc.style||'custom';const _p=typeof _BOT_PRESETS!=='undefined'?_BOT_PRESETS[_style]:null;return _p?`<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 14px;margin-bottom:12px;text-align:left"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);margin-bottom:4px">Spielstil</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px">${escHtml(_p.label||_style)}</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.4">${escHtml(_p.desc||'')}</div></div>`:'';})()} <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
-              <button id="_pc-bot-config" class="btn btn-secondary" style="width:100%;max-width:none;font-size:13px">Bot-Parameter anpassen</button>
+              <button id="_pc-bot-config" class="btn btn-secondary" style="width:100%;max-width:none;font-size:13px">${_pm?.session?.status==='finished'?'Bot-Parameter ansehen':'Bot-Parameter anpassen'}</button>
               ${_pm?.session?.status==='finished'?'':`<button id="_pc-bot-remove" class="btn" style="width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Bot entfernen</button>`}
             </div>`
           :`<div id="_pc-kpis"><div class="loading"><div class="spinner"></div></div></div>
@@ -9258,6 +9259,35 @@
       </div>
     </div>`;
     document.body.appendChild(ov);
+    // Player-card feed lazy loading
+    const _pcSetupSentinel=()=>{
+      const scroll=ov.querySelector('#_pc-feed-scroll');
+      const sent=ov.querySelector('#_pc-feed-sentinel');
+      if(!scroll||!sent||sent._obs)return;
+      const obs=new IntersectionObserver(entries=>{
+        if(!entries[0].isIntersecting||_pcFeedState.loading||_pcFeedState.allLoaded)return;
+        _pcLoadMore();
+      },{root:scroll,rootMargin:'0px 0px 60px 0px'});
+      obs.observe(sent);sent._obs=obs;
+    };
+    const _pcLoadMore=async()=>{
+      if(!_pcFeedState.cursor||_pcFeedState.loading||_pcFeedState.allLoaded)return;
+      _pcFeedState.loading=true;
+      const{data:older}=await db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).eq('spieler_id',sid).lt('created_at',_pcFeedState.cursor).order('created_at',{ascending:false}).limit(60);
+      _pcFeedState.loading=false;
+      if(!older?.length){_pcFeedState.allLoaded=true;const s=ov.querySelector('#_pc-feed-sentinel');s?._obs?.disconnect();s?.remove();return;}
+      const batch=older.slice().reverse();
+      _pcFeedState.cursor=batch[0].created_at;
+      if(older.length<60)_pcFeedState.allLoaded=true;
+      const scroll=ov.querySelector('#_pc-feed-scroll');const sent=ov.querySelector('#_pc-feed-sentinel');
+      if(scroll&&sent){
+        const tmp=document.createElement('div');tmp.innerHTML=_pmFeedHtml(batch);
+        const frag=document.createDocumentFragment();while(tmp.firstChild)frag.appendChild(tmp.firstChild);
+        scroll.insertBefore(frag,sent);
+        if(_pcFeedState.allLoaded){sent._obs?.disconnect();sent.remove();}else{sent._obs?.disconnect();delete sent._obs;_pcSetupSentinel();}
+      }
+    };
+    requestAnimationFrame(_pcSetupSentinel);
     ov.querySelector('#_pc-cls').addEventListener('click',()=>ov.remove());
     ov.querySelector('#_pc-to-stats')?.addEventListener('click',()=>{
       const _sp=seat?.spieler||{id:sid,name:sName,profilbild:sBild};
@@ -11522,7 +11552,7 @@
 
     // Read-only mode for finished sessions
     if(isReadOnly){
-      ov.querySelectorAll('input,button:not(#pm-bot-cancel)').forEach(el=>{el.disabled=true;el.style.opacity='.5';el.style.cursor='default';if(el.tagName==='INPUT')el.style.pointerEvents='none';});
+      ov.querySelectorAll('input,button:not(#pm-bot-cancel):not(#pm-bot-avatar-preview)').forEach(el=>{el.disabled=true;el.style.opacity='.5';el.style.cursor='default';if(el.tagName==='INPUT')el.style.pointerEvents='none';});
       const nameRnd=ov.querySelector('#pm-bot-name-rnd');if(nameRnd)nameRnd.style.display='none';
     }
 
