@@ -10224,8 +10224,8 @@
         hc.forEach((c,i)=>{
           const dxC=(i-(hc.length-1)/2)*(mcW+mcG);
           const dyC=Math.sqrt(Math.max(0,mcR*mcR-dxC*dxC));
-          const mx=Math.round(sx+dxC-mcW/2);
-          const my=Math.round(sy+(isTopHalf?dyC:-dyC)-mcH/2);
+          const mx=Math.max(2,Math.min(W-mcW-2,Math.round(sx+dxC-mcW/2)));
+          const my=Math.max(2,Math.min(H-mcH-2,Math.round(sy+(isTopHalf?dyC:-dyC)-mcH/2)));
           rrect(mx,my,mcW,mcH,5);
           ctx.fillStyle='#fff';ctx.fill();
           ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
