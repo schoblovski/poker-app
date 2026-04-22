@@ -10563,9 +10563,9 @@
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Raise / All-in</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
-        <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span></button>
-        <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span></button>
-        <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span></button>
+        <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span><span style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[1]</span></button>
+        <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span><span style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[2]</span></button>
+        <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;position:relative">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span><span style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[3]</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
         <input type="text" id="pm-rs-input" class="form-input pm-num" inputmode="none" value="${_r05(Math.min(fullPot,myStack)).toFixed(2)}" data-label="Raise-Betrag" style="width:100%;font-size:20px;font-weight:700;text-align:center">
@@ -10869,8 +10869,8 @@
   function _pmOnKeydown(e){
     if(!document.getElementById('page-online-tisch')?.classList.contains('active'))return;
     const K=e.key;
-    // Esc always works even when an input is focused (e.g. chat sheet auto-focuses its input)
-    if(K!=='Escape'){
+    // Esc/Enter bypass the input-focus guard so they always close/confirm overlays
+    if(K!=='Escape'&&K!=='Enter'){
       const tag=(e.target?.tagName||'').toUpperCase();
       if(tag==='INPUT'||tag==='TEXTAREA'||e.target?.isContentEditable)return;
     }
@@ -10881,6 +10881,7 @@
       const cis=document.getElementById('pm-chat-input-sheet');if(cis){cis.click();e.preventDefault();return;}
       const pas=document.getElementById('pm-preaction-sheet');if(pas){pas.click();e.preventDefault();return;}
       const psh=document.getElementById('pm-pause-sheet');if(psh){psh.click();e.preventDefault();return;}
+      const prs=document.getElementById('pm-raise-sheet');if(prs){document.getElementById('pm-rs-cancel')?.click();e.preventDefault();return;}
       const tm=document.getElementById('pm-tisch-modal');if(tm){tm.remove();e.preventDefault();return;}
       if(document.getElementById('pm-feed-modal')){document.getElementById('btn-pm-feed-modal-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
@@ -10891,13 +10892,21 @@
     // Enter: confirm active modal or close read-only overlays
     if(K==='Enter'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-ok')?.click();e.preventDefault();return;}
+      if(document.getElementById('pm-raise-sheet')){document.getElementById('pm-rs-confirm')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-preaction-sheet')){document.getElementById('pm-pas-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-info-modal')?.style.display==='block'){document.getElementById('btn-pm-info-close')?.click();e.preventDefault();return;}
       return;
     }
-    // 1-4: select preaction option (if sheet open) or flip hole card
+    // 1-4: raise preset / preaction option / flip hole card (priority order)
     if(K>='1'&&K<='4'){
+      const _prs=document.getElementById('pm-raise-sheet');
+      if(_prs){
+        const _pp=[..._prs.querySelectorAll('.pm-rs-preset')];
+        const _pb=_pp[parseInt(K)-1];
+        if(_pb)_pb.click();
+        e.preventDefault();return;
+      }
       const _pas=document.getElementById('pm-preaction-sheet');
       if(_pas){
         const _preMap=['fold','check','call','call_any'];
