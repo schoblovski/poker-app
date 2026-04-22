@@ -10878,6 +10878,7 @@
       const cis=document.getElementById('pm-chat-input-sheet');if(cis){cis.click();e.preventDefault();return;}
       const pas=document.getElementById('pm-preaction-sheet');if(pas){pas.click();e.preventDefault();return;}
       const psh=document.getElementById('pm-pause-sheet');if(psh){psh.click();e.preventDefault();return;}
+      const tm=document.getElementById('pm-tisch-modal');if(tm){tm.remove();e.preventDefault();return;}
       if(document.getElementById('pm-feed-modal')){document.getElementById('btn-pm-feed-modal-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-stacks-modal-overlay')){document.getElementById('pm-stacks-close')?.click();e.preventDefault();return;}
       if(document.getElementById('pm-info-modal')?.style.display==='block'){document.getElementById('btn-pm-info-close')?.click();e.preventDefault();return;}
@@ -10899,7 +10900,7 @@
       case'F':document.querySelector('.pm-act-btn[data-action="fold"]')?.click();e.preventDefault();break;
       case'R':document.getElementById('pm-raise-toggle')?.click();e.preventDefault();break;
       case'S':if(document.getElementById('pm-stacks-modal-overlay'))document.getElementById('pm-stacks-close')?.click();else document.getElementById('pm-stacks-header')?.click();e.preventDefault();break;
-      case'T':document.getElementById('btn-pm-tisch-expand')?.click();e.preventDefault();break;
+      case'T':{const _tm=document.getElementById('pm-tisch-modal');if(_tm)_tm.remove();else document.getElementById('btn-pm-tisch-expand')?.click();e.preventDefault();break;}
       case'L':if(document.getElementById('pm-feed-modal'))document.getElementById('btn-pm-feed-modal-close')?.click();else document.getElementById('btn-pm-feed-expand')?.click();e.preventDefault();break;
       case'I':document.getElementById('btn-pm-info')?.click();e.preventDefault();break;
       case'M':document.getElementById('btn-pm-feed-chat')?.click();e.preventDefault();break;
