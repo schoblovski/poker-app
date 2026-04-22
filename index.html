@@ -10994,8 +10994,9 @@
       const newLevel=level-1;const lvl=sess.blind_struktur[newLevel];
       const startedAt=sess.blind_timer_running?new Date().toISOString():null;
       const secsLeft=sess.blind_timer_running?null:(lvl.min||15)*60;
-      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb}).eq('id',sess.id);
-      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb});
+      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft}).eq('id',sess.id);
+      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft});
+      if(!sess.current_player_id)await _pmBtSyncBlinds(newLevel);
       close();_pmSessionSettingsSheet();
     });
     document.getElementById('pm-sess-bt-next')?.addEventListener('click',async()=>{
@@ -11005,8 +11006,9 @@
       const newLevel=level+1;const lvl=levels[newLevel];
       const startedAt=sess.blind_timer_running?new Date().toISOString():null;
       const secsLeft=sess.blind_timer_running?null:(lvl.min||15)*60;
-      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb}).eq('id',sess.id);
-      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb});
+      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft}).eq('id',sess.id);
+      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft});
+      if(!sess.current_player_id)await _pmBtSyncBlinds(newLevel);
       if(typeof _btBeep==='function')_btBeep(660,'sine');
       close();_pmSessionSettingsSheet();
     });
@@ -11338,6 +11340,16 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
     if(spEl)spEl.style.width=pct+'%';
   }
 
+  async function _pmBtSyncBlinds(idx){
+    if(!_pm?.session?.blind_struktur)return;
+    const session=_pm.session;const levels=session.blind_struktur;
+    const i=idx??session.blind_level??0;if(i>=levels.length)return;
+    const newSB=levels[i].sb;const newBB=levels[i].bb;
+    if(session.small_blind===newSB&&session.big_blind===newBB)return;
+    await db.from('online_spiele').update({small_blind:newSB,big_blind:newBB}).eq('id',session.id);
+    if(_pm?.session){_pm.session.small_blind=newSB;_pm.session.big_blind=newBB;}
+  }
+
   async function _pmBtAdvanceLevel(){
     if(!_pm?.session?.blind_struktur||_pm._btAdvancing)return;
     const session=_pm.session;
@@ -11350,14 +11362,16 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
       return;
     }
     _pm._btAdvancing=true;
-    const newSB=levels[nextLevel].sb;const newBB=levels[nextLevel].bb;
     const startedAt=new Date().toISOString();
+    // Only advance level counter — blind sync happens separately between hands
     const{error}=await db.from('online_spiele')
-      .update({blind_level:nextLevel,blind_level_started_at:startedAt,blind_level_secs_left:null,small_blind:newSB,big_blind:newBB})
+      .update({blind_level:nextLevel,blind_level_started_at:startedAt,blind_level_secs_left:null})
       .eq('id',session.id).eq('blind_level',currentLevel);
     if(!error&&_pm?.session){
       _pm.session.blind_level=nextLevel;_pm.session.blind_level_started_at=startedAt;
-      _pm.session.blind_level_secs_left=null;_pm.session.small_blind=newSB;_pm.session.big_blind=newBB;
+      _pm.session.blind_level_secs_left=null;
+      // Sync blinds immediately only if no hand is currently running
+      if(!_pm.session.current_player_id)_pmBtSyncBlinds(nextLevel);
     }
     if(_pm)delete _pm._btAdvancing;
     if(typeof _btBeep==='function')_btBeep(660,'sine');
@@ -11366,6 +11380,13 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
   function _pmBtTick(){
     if(!_pm?.session?.blind_struktur)return;
     const session=_pm.session;
+    // Sync blinds to current level when hand is over and blinds are stale
+    if(!session.current_player_id&&session.status==='running'&&!_pm._btSyncing){
+      const levels=session.blind_struktur;const idx=session.blind_level??0;
+      if(idx<levels.length&&(session.small_blind!==levels[idx].sb||session.big_blind!==levels[idx].bb)){
+        _pm._btSyncing=true;_pmBtSyncBlinds(idx).finally(()=>{if(_pm)delete _pm._btSyncing;});
+      }
+    }
     const sl=_pmBtSecsLeft();
     _pmBtUpdateWidget(sl);
     if(sl!==null&&sl<=0&&session.blind_timer_running&&currentSpieler?.ist_admin&&!_pm._btAdvancing){
