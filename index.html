@@ -2010,8 +2010,14 @@
       if(!isOnlinePage&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
       if(!isOnlinePage&&_pmLobbyTickerInterval){clearInterval(_pmLobbyTickerInterval);_pmLobbyTickerInterval=null;}
       if(_pm?.id&&_pm?.session?.status!=='finished'){
-        if(typeof _pmDrawerShow==='function')_pmDrawerShow();
-        if(_pm?.mySeat&&typeof _pmSendAway==='function')_pmSendAway();
+        if(_pm?.mySeat){
+          if(typeof _pmDrawerShow==='function')_pmDrawerShow();
+          if(typeof _pmSendAway==='function')_pmSendAway();
+        }else{
+          // Only in waiting area — clean up silently, no drawer
+          if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();
+          if(typeof _pmDrawerHide==='function')_pmDrawerHide();
+        }
       }else{if(typeof _pmUnsubscribe==='function')_pmUnsubscribe();if(typeof _pmDrawerHide==='function')_pmDrawerHide();}
     }
     if(page!=='online-lobby'&&_pmLobbyChannel){db.removeChannel(_pmLobbyChannel);_pmLobbyChannel=null;}
