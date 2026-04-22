@@ -8107,7 +8107,7 @@
     const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
     const ccKey=(s.community_cards||[]).map(c=>`${c.rank}${c.suit}`).join('');
     const presenceKey=(_pm._presence||[]).map(p=>p.spieler_id).sort().join(',');
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${(_pm.seats||[]).filter(x=>x.status==='sitting_out').length}`;
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${(_pm.seats||[]).filter(x=>x.status==='sitting_out').length}|${s.blind_level??0}|${s.blind_timer_running?'1':'0'}|${s.small_blind??''}|${s.big_blind??''}`;
   }
 
   function renderOnlineTisch(){
@@ -8296,7 +8296,7 @@
     const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
-          <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div>
+          <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>${(()=>{const _bsL=session.blind_struktur;if(!_bsL||!_bsL.length)return'';const _bsIdx=Math.min(session.blind_level??0,_bsL.length-1);const _bsLvl=_bsL[_bsIdx];const _bsSl=_pmBtSecsLeft();const _bsTot=(_bsLvl.min||15)*60;const _bsPct=_bsSl!==null&&_bsTot>0?Math.max(0,Math.min(100,_bsSl/_bsTot*100)):100;const _bsTime=session.blind_timer_running&&_bsSl!==null?_pmBtFmt(_bsSl):'--:--';return`<div id="pm-bt-widget" style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:8px;padding:5px 8px;color:white;cursor:pointer;border:1px solid rgba(255,255,255,.15);min-width:70px;z-index:2" title="Blind-Timer – Einstellungen öffnen"><div style="display:flex;align-items:center;gap:4px;font-size:11px;line-height:1.3"><span id="pm-bt-level" style="font-weight:700;font-family:var(--font-mono)">L${_bsIdx+1}</span><span id="pm-bt-sbbb" style="color:rgba(255,255,255,.75);font-size:10px;flex:1">${_bsLvl.sb}/${_bsLvl.bb}</span><span id="pm-bt-time" style="font-family:var(--font-mono);font-size:11px;color:${session.blind_timer_running?'rgba(255,255,255,.95)':'rgba(255,255,255,.45)'}">${_bsTime}</span></div><div style="height:2px;background:rgba(255,255,255,.15);border-radius:1px;margin-top:3px;overflow:hidden"><div id="pm-bt-progress" style="height:100%;background:var(--accent);border-radius:1px;width:${_bsPct}%;transition:width .5s linear"></div></div></div>`;})()}</div>
           ${isLandscape?`<div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}${startBtn}</div>`:`<div style="padding:0 var(--space-sm)"><div id="pm-s-runout">${runoutDisplay}${runoutBtn}${newHandBtn}${startBtn}</div><div id="pm-s-action">${actionArea}</div></div>`}
           ${isLandscape?feedSection:''}
         </div>
@@ -8409,6 +8409,7 @@
           renderOnlineTisch(); // newly revealed card gets pm-new-card flip animation
         });
       });
+      document.getElementById('pm-bt-widget')?.addEventListener('click',()=>_pmSessionSettingsSheet());
       document.getElementById('btn-pm-tisch-expand')?.addEventListener('click',()=>{
         if(!_pm)return;
         const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();
@@ -8899,9 +8900,13 @@
             text=`<b>${escHtml(n)}</b> zeigt gefoldete Karten${_hRow}`;
             break;
           }
-          const usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
+          let usedKeys=new Set((a.meta?.used_hole||[]).map(ck));
+          let handName=a.meta?.hand_name;
+          if(!handName&&hc.length>0){
+            const _fBoard=[...(_pm?.session?.community_cards||[]),...(_pm?.session?.runout_cards||[])];
+            if(_fBoard.length>=3){const _fb=_pmBestHandJS(hc,_fBoard,_pm?.session?.variante||'holdem');if(_fb?.name){handName=_fb.name;usedKeys=new Set((_fb.usedHole||[]).map(ck));}}
+          }
           const cards=hc.map(c=>_pmCard(c,{highlight:usedKeys.size>0&&usedKeys.has(ck(c))})).join('');
-          const handName=a.meta?.hand_name;
           const cardRow=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span style="display:inline-flex;gap:4px">${cards}</span>${handName?`<span style="font-size:11px;font-weight:700;color:var(--accent-text)">– ${handName}</span>`:''}</div>`;
           text=`<b>${escHtml(n)}</b> zeigt ${hc.length===1?'eine Karte':'Karten'}${cardRow}`;
           break;
@@ -10855,7 +10860,45 @@
     const equityOn=localStorage.getItem('pm_show_equity')==='1';
     const actionsOnly=localStorage.getItem('pm_feed_actions_only')==='1';
     const hasBots=(_pm?.seats||[]).some(s=>s.bot_config);
-    const botRebuy=_pm?.session?.bot_auto_rebuy!==false; // default true
+    const botRebuy=_pm?.session?.bot_auto_rebuy!==false;
+    const isAdmin=currentSpieler?.ist_admin;
+    const session=_pm?.session;
+    const hasBs=!!(session?.blind_struktur);
+    const bsLevels=hasBs?session.blind_struktur:_btGetDefaults();
+    const bsLevel=Math.min(session?.blind_level??0,bsLevels.length-1);
+    const bsRunning=session?.blind_timer_running??false;
+    const bsSl=_pmBtSecsLeft();
+    const bsTot=(bsLevels[bsLevel]?.min||15)*60;
+    const bsPct=bsSl!==null?Math.round(Math.max(0,Math.min(100,bsSl/bsTot*100))):100;
+    const bsLvl=bsLevels[bsLevel]||bsLevels[0];
+    const bsNext=bsLevels[bsLevel+1];
+    const _playIco=`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:14px;height:14px"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    const _pauseIco=`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:14px;height:14px"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    const _prevIco=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>`;
+    const _nextIco=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="9 18 15 12 9 6"/></svg>`;
+    const _ctrlBtn=(id,ico,disabled='')=>`<button id="${id}" style="display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;width:38px;height:38px;cursor:pointer;color:var(--text-primary)${disabled?';opacity:.35;cursor:default':''}"${disabled?' disabled':''}>${ico}</button>`;
+    const bsPanel=hasBs&&isAdmin?`<div id="pm-sess-bt-panel" style="padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px">
+        <span style="font-weight:700;color:var(--text-primary)">Level ${bsLevel+1}/${bsLevels.length}</span>
+        <span style="color:var(--text-secondary)">${bsLvl.sb}/${bsLvl.bb}</span>
+        ${bsNext?`<span style="color:var(--text-tertiary)">→ ${bsNext.sb}/${bsNext.bb}</span>`:'<span style="color:var(--text-tertiary)">Letztes Level</span>'}
+        <span style="font-family:var(--font-mono);margin-left:auto;color:${bsRunning?'var(--text-primary)':'var(--text-tertiary)'}" id="pm-sess-bt-countdown">${bsRunning&&bsSl!==null?_pmBtFmt(bsSl):'--:--'}</span>
+      </div>
+      <div style="height:3px;background:var(--bg-secondary);border-radius:2px;margin-bottom:10px"><div id="pm-sess-bt-prog" style="height:100%;background:var(--accent);border-radius:2px;width:${bsPct}%;transition:width .5s linear"></div></div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+        ${_ctrlBtn('pm-sess-bt-prev',_prevIco,bsLevel<=0?'true':'')}
+        ${_ctrlBtn('pm-sess-bt-play',bsRunning?_pauseIco:_playIco)}
+        ${_ctrlBtn('pm-sess-bt-next',_nextIco,bsLevel>=bsLevels.length-1?'true':'')}
+      </div>
+      <details style="margin-top:12px">
+        <summary style="font-size:12px;font-weight:700;cursor:pointer;color:var(--text-secondary);user-select:none;padding:4px 0">Blindstruktur bearbeiten</summary>
+        <div id="pm-sess-bt-editor" style="margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-secondary" id="pm-sess-bt-add" style="flex:1;font-size:12px;height:36px;padding:0">+ Level</button>
+          <button class="btn btn-ghost" id="pm-sess-bt-reset-lvls" style="flex:1;font-size:12px;height:36px;padding:0">Standard</button>
+        </div>
+      </details>
+    </div>`:hasBs?`<div style="padding:6px 0 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">Blindstruktur aktiv – Level ${bsLevel+1}/${bsLevels.length} · ${bsLvl.sb}/${bsLvl.bb}${bsRunning&&bsSl!==null?' · '+_pmBtFmt(bsSl):''}</div>`:'';
     const overlay=document.createElement('div');overlay.id=sid;overlay.className='pm-sheet-overlay';
     overlay.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
@@ -10868,20 +10911,28 @@
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-equity"${equityOn?' checked':''}><span class="toggle-slider"></span></label>
         </div>
-        <div class="setting-row" style="padding:14px 0${hasBots?';border-bottom:1px solid var(--border)':''}">
+        <div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Nur Spieler-Aktionen</div>
             <div class="setting-sub" style="font-size:12px">Feed zeigt nur Fold/Call/Raise/Win – keine System-Events, Dealer-Kommentare oder Status-Meldungen</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-actonly"${actionsOnly?' checked':''}><span class="toggle-slider"></span></label>
         </div>
-        ${hasBots?`<div class="setting-row" style="padding:14px 0">
+        ${hasBots?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Bot Auto-Rebuy</div>
             <div class="setting-sub" style="font-size:12px">Bots kaufen nach dem Ausscheiden automatisch neue Chips – deaktivieren für permanente Eliminierung</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-botrebuy"${botRebuy?' checked':''}><span class="toggle-slider"></span></label>
         </div>`:''}
+        ${isAdmin?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div class="setting-info">
+            <div class="setting-label" style="font-size:14px">Blindstruktur-Timer</div>
+            <div class="setting-sub" style="font-size:12px">Blinds erhöhen sich automatisch nach Zeit – nur für diese Session</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="pm-sess-blindstruktur"${hasBs?' checked':''}><span class="toggle-slider"></span></label>
+        </div>
+        ${bsPanel}`:''}
       </div>
       <button class="btn btn-ghost" id="pm-sess-close" style="margin-top:var(--space-md);max-width:none;margin-left:0;margin-right:0">Schließen</button>
     </div>`;
@@ -10902,6 +10953,96 @@
       const v=e.target.checked;
       await db.from('online_spiele').update({bot_auto_rebuy:v}).eq('id',_pm.id);
       if(_pm.session)_pm.session.bot_auto_rebuy=v;
+    });
+    // ── Blind Structure Toggle ──
+    document.getElementById('pm-sess-blindstruktur')?.addEventListener('change',async e=>{
+      if(!_pm?.id)return;
+      const v=e.target.checked;
+      if(v){
+        const levels=_btGetDefaults();
+        await db.from('online_spiele').update({blind_struktur:levels,blind_level:0,blind_timer_running:false,blind_level_started_at:null,blind_level_secs_left:null}).eq('id',_pm.id);
+        if(_pm.session){Object.assign(_pm.session,{blind_struktur:levels,blind_level:0,blind_timer_running:false,blind_level_started_at:null,blind_level_secs_left:null});}
+        close();_pmSessionSettingsSheet();
+      }else{
+        await db.from('online_spiele').update({blind_struktur:null,blind_timer_running:false,blind_level_started_at:null,blind_level_secs_left:null}).eq('id',_pm.id);
+        if(_pm.session){Object.assign(_pm.session,{blind_struktur:null,blind_timer_running:false});}
+        renderOnlineTisch();
+      }
+    });
+    // ── Blind Timer Controls ──
+    document.getElementById('pm-sess-bt-play')?.addEventListener('click',async()=>{
+      if(!_pm?.session?.blind_struktur)return;
+      const sess=_pm.session;
+      const running=!sess.blind_timer_running;
+      let updates;
+      if(running){
+        const secsLeft=typeof sess.blind_level_secs_left==='number'?sess.blind_level_secs_left:((sess.blind_struktur[sess.blind_level??0]?.min||15)*60);
+        const totalSecs=(sess.blind_struktur[sess.blind_level??0]?.min||15)*60;
+        const startedAt=new Date(Date.now()-(totalSecs-secsLeft)*1000).toISOString();
+        updates={blind_timer_running:true,blind_level_started_at:startedAt,blind_level_secs_left:null};
+      }else{
+        const sl=_pmBtSecsLeft();
+        updates={blind_timer_running:false,blind_level_secs_left:sl,blind_level_started_at:null};
+      }
+      await db.from('online_spiele').update(updates).eq('id',sess.id);
+      if(_pm?.session)Object.assign(_pm.session,updates);
+      close();_pmSessionSettingsSheet();
+    });
+    document.getElementById('pm-sess-bt-prev')?.addEventListener('click',async()=>{
+      if(!_pm?.session?.blind_struktur)return;
+      const sess=_pm.session;const level=sess.blind_level??0;if(level<=0)return;
+      const newLevel=level-1;const lvl=sess.blind_struktur[newLevel];
+      const startedAt=sess.blind_timer_running?new Date().toISOString():null;
+      const secsLeft=sess.blind_timer_running?null:(lvl.min||15)*60;
+      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb}).eq('id',sess.id);
+      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb});
+      close();_pmSessionSettingsSheet();
+    });
+    document.getElementById('pm-sess-bt-next')?.addEventListener('click',async()=>{
+      if(!_pm?.session?.blind_struktur)return;
+      const sess=_pm.session;const levels=sess.blind_struktur;const level=sess.blind_level??0;
+      if(level>=levels.length-1)return;
+      const newLevel=level+1;const lvl=levels[newLevel];
+      const startedAt=sess.blind_timer_running?new Date().toISOString():null;
+      const secsLeft=sess.blind_timer_running?null:(lvl.min||15)*60;
+      await db.from('online_spiele').update({blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb}).eq('id',sess.id);
+      if(_pm?.session)Object.assign(_pm.session,{blind_level:newLevel,blind_level_started_at:startedAt,blind_level_secs_left:secsLeft,small_blind:lvl.sb,big_blind:lvl.bb});
+      if(typeof _btBeep==='function')_btBeep(660,'sine');
+      close();_pmSessionSettingsSheet();
+    });
+    // ── Levels editor ──
+    function _bsRenderEditor(){
+      const ed=document.getElementById('pm-sess-bt-editor');if(!ed||!_pm?.session?.blind_struktur)return;
+      const lvls=_pm.session.blind_struktur;const curLvl=_pm.session.blind_level??0;
+      ed.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:11px;color:var(--text-tertiary);padding:2px 4px">#</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">SB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">BB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">Min</th><th></th></tr></thead><tbody>${lvls.map((l,i)=>`<tr style="background:${i===curLvl?'var(--accent-soft)':''}"><td style="font-size:11px;color:var(--text-tertiary);padding:2px 4px;font-family:var(--font-mono)">${i+1}</td><td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" style="width:44px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><button data-action="del" data-idx="${i}" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-tertiary);padding:0 4px">×</button></td></tr>`).join('')}</tbody></table>`;
+      ed.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',async e=>{
+        const i=parseInt(e.target.dataset.idx),f=e.target.dataset.field;
+        _pm.session.blind_struktur[i][f]=parseInt(e.target.value)||0;
+        await db.from('online_spiele').update({blind_struktur:_pm.session.blind_struktur}).eq('id',_pm.id);
+      }));
+      ed.querySelectorAll('[data-action="del"]').forEach(btn=>btn.addEventListener('click',async e=>{
+        const i=parseInt(e.target.dataset.idx);
+        if(_pm.session.blind_struktur.length<=2)return;
+        _pm.session.blind_struktur.splice(i,1);
+        if((_pm.session.blind_level??0)>=_pm.session.blind_struktur.length)_pm.session.blind_level=_pm.session.blind_struktur.length-1;
+        await db.from('online_spiele').update({blind_struktur:_pm.session.blind_struktur,blind_level:_pm.session.blind_level}).eq('id',_pm.id);
+        _bsRenderEditor();
+      }));
+    }
+    _bsRenderEditor();
+    document.getElementById('pm-sess-bt-add')?.addEventListener('click',async()=>{
+      if(!_pm?.session?.blind_struktur)return;
+      const last=_pm.session.blind_struktur.at(-1)||{sb:100,bb:200,min:15};
+      _pm.session.blind_struktur.push({sb:Math.round(last.sb*1.5),bb:Math.round(last.bb*1.5),min:last.min});
+      await db.from('online_spiele').update({blind_struktur:_pm.session.blind_struktur}).eq('id',_pm.id);
+      _bsRenderEditor();
+    });
+    document.getElementById('pm-sess-bt-reset-lvls')?.addEventListener('click',async()=>{
+      if(!_pm?.session?.blind_struktur)return;
+      const defaults=_btGetDefaults();
+      _pm.session.blind_struktur=defaults;
+      await db.from('online_spiele').update({blind_struktur:defaults,blind_level:0}).eq('id',_pm.id);
+      close();_pmSessionSettingsSheet();
     });
   }
 
@@ -11137,6 +11278,7 @@
   function _pmSubscribe(){
     if(!_pm?.id)return;
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
+    _pmBtStartInterval();
     _pmUpdateRtBadge('JOINING');
     _pmChannel=db.channel(`online_spiel:${_pm.id}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'online_spiele',filter:`id=eq.${_pm.id}`},_pmScheduleLoad)
@@ -11155,10 +11297,90 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
       });
   }
 
+  // ── SESSION BLIND TIMER ────────────────────────────────────────────────
+  let _pmBtInterval=null;
+
+  function _pmBtFmt(s){const m=Math.floor(s/60);return`${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+
+  function _pmBtSecsLeft(){
+    const session=_pm?.session;
+    if(!session?.blind_struktur)return null;
+    const levels=session.blind_struktur;
+    const level=session.blind_level??0;
+    if(level>=levels.length)return 0;
+    const totalSecs=(levels[level].min||15)*60;
+    if(session.blind_timer_running&&session.blind_level_started_at){
+      return Math.max(0,Math.ceil(totalSecs-(Date.now()-new Date(session.blind_level_started_at).getTime())/1000));
+    }
+    if(typeof session.blind_level_secs_left==='number')return session.blind_level_secs_left;
+    return totalSecs;
+  }
+
+  function _pmBtUpdateWidget(secsLeft){
+    const widget=document.getElementById('pm-bt-widget');if(!widget)return;
+    const session=_pm?.session;if(!session?.blind_struktur)return;
+    const levels=session.blind_struktur;
+    const level=session.blind_level??0;if(level>=levels.length)return;
+    const lvl=levels[level];
+    const sl=secsLeft??_pmBtSecsLeft();
+    const totalSecs=(lvl.min||15)*60;
+    const pct=sl!==null&&totalSecs>0?Math.max(0,Math.min(100,sl/totalSecs*100)):0;
+    const timeEl=document.getElementById('pm-bt-time');
+    if(timeEl)timeEl.textContent=session.blind_timer_running&&sl!==null?_pmBtFmt(sl):'--:--';
+    const progEl=document.getElementById('pm-bt-progress');if(progEl)progEl.style.width=pct+'%';
+    const lvlEl=document.getElementById('pm-bt-level');if(lvlEl)lvlEl.textContent=`L${level+1}`;
+    const sbbbEl=document.getElementById('pm-bt-sbbb');if(sbbbEl)sbbbEl.textContent=`${lvl.sb}/${lvl.bb}`;
+    widget.style.borderColor=sl!==null&&sl<=30&&sl>0&&session.blind_timer_running?'rgba(239,68,68,.5)':'rgba(255,255,255,.15)';
+    // Also update settings sheet if open
+    const cdEl=document.getElementById('pm-sess-bt-countdown');
+    if(cdEl)cdEl.textContent=session.blind_timer_running&&sl!==null?_pmBtFmt(sl):'--:--';
+    const spEl=document.getElementById('pm-sess-bt-prog');
+    if(spEl)spEl.style.width=pct+'%';
+  }
+
+  async function _pmBtAdvanceLevel(){
+    if(!_pm?.session?.blind_struktur||_pm._btAdvancing)return;
+    const session=_pm.session;
+    const levels=session.blind_struktur;
+    const currentLevel=session.blind_level??0;
+    const nextLevel=currentLevel+1;
+    if(nextLevel>=levels.length){
+      await db.from('online_spiele').update({blind_timer_running:false}).eq('id',session.id);
+      if(_pm?.session)_pm.session.blind_timer_running=false;
+      return;
+    }
+    _pm._btAdvancing=true;
+    const newSB=levels[nextLevel].sb;const newBB=levels[nextLevel].bb;
+    const startedAt=new Date().toISOString();
+    const{error}=await db.from('online_spiele')
+      .update({blind_level:nextLevel,blind_level_started_at:startedAt,blind_level_secs_left:null,small_blind:newSB,big_blind:newBB})
+      .eq('id',session.id).eq('blind_level',currentLevel);
+    if(!error&&_pm?.session){
+      _pm.session.blind_level=nextLevel;_pm.session.blind_level_started_at=startedAt;
+      _pm.session.blind_level_secs_left=null;_pm.session.small_blind=newSB;_pm.session.big_blind=newBB;
+    }
+    if(_pm)delete _pm._btAdvancing;
+    if(typeof _btBeep==='function')_btBeep(660,'sine');
+  }
+
+  function _pmBtTick(){
+    if(!_pm?.session?.blind_struktur)return;
+    const session=_pm.session;
+    const sl=_pmBtSecsLeft();
+    _pmBtUpdateWidget(sl);
+    if(sl!==null&&sl<=0&&session.blind_timer_running&&currentSpieler?.ist_admin&&!_pm._btAdvancing){
+      _pmBtAdvanceLevel();
+    }
+  }
+
+  function _pmBtStartInterval(){if(!_pmBtInterval)_pmBtInterval=setInterval(_pmBtTick,1000);}
+  function _pmBtStopInterval(){if(_pmBtInterval){clearInterval(_pmBtInterval);_pmBtInterval=null;}}
+
   function _pmUnsubscribe(){
     if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
     if(_pm?._visHandler){document.removeEventListener('visibilitychange',_pm._visHandler);_pm._visHandler=null;}
     _pmClearBotTimer();
+    _pmBtStopInterval();
     _pmUpdateRtBadge(null);
     _pmReleaseWakeLock();
     _pm=null;

@@ -10,7 +10,7 @@
 //   }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsOk, json, err } from '../poker-utils/index.ts';
+import { corsOk, json, err, evalHoldem, evalOmaha, evalTexahma, handName as evalHandName, type Card as UtilCard } from '../poker-utils/index.ts';
 
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -186,13 +186,33 @@ Deno.serve(async (req) => {
     if (config.karten_zeigen === 'nie') return json({ ok: true, skipped: true });
     const holeCards: Card[] = botHoleCards;
     if (!holeCards.length) return json({ ok: true, skipped: true });
+    // Compute best hand for display in feed
+    const board: UtilCard[] = (session.community_cards ?? []) as UtilCard[];
+    let usedHole: UtilCard[] = [];
+    let usedBoard: UtilCard[] = [];
+    let hn = '';
+    if (board.length >= 3 && holeCards.length > 0) {
+      try {
+        const v = session.variante ?? 'holdem';
+        const hc = holeCards as UtilCard[];
+        let res: { score: number; best: UtilCard[]; usedHole?: UtilCard[]; usedBoard?: UtilCard[] } | null = null;
+        if (v === 'omaha' && hc.length >= 2) res = evalOmaha(hc, board);
+        else if (v === 'texahma') res = evalTexahma(hc, board);
+        else res = evalHoldem(hc, board);
+        if (res && res.score >= 0) {
+          hn = evalHandName(res.score);
+          usedHole = (res as any).usedHole ?? [];
+          usedBoard = (res as any).usedBoard ?? [];
+        }
+      } catch { /* non-critical */ }
+    }
     await db.from('online_actions').insert({
       online_spiel_id,
       spieler_id: bot_spieler_id,
       action: 'reveal_cards',
       street: session.street,
       hand_nr: session.hand_nr,
-      meta: { hole_cards: holeCards, facedown: false },
+      meta: { hole_cards: holeCards, facedown: false, hand_name: hn, used_hole: usedHole, used_board: usedBoard },
     });
     return json({ ok: true, revealed: holeCards.length });
   }
