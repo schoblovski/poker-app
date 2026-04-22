@@ -7934,7 +7934,7 @@
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,bot_config,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
       db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
-      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').order('created_at',{ascending:true}).limit(1).maybeSingle(),
+      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').order('created_at',{ascending:true}).limit(1).then(({data,error})=>({data:data?.[0]??null,error})),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
     if(!_pm)return; // guard: user navigated away while DB queries were in flight
@@ -7961,6 +7961,8 @@
     _pm.mySeat=mySeatRow||null;
     _pm._waLink=einstMap['video_call_link']||einstMap['whatsapp_gruppe']||'';
     _pm._showEquity=localStorage.getItem('pm_show_equity')==='1';
+    // Cleanup: silently remove duplicate observer seats in this session (stale from test runs)
+    if(currentSpieler?.id){const _dupes=(seats||[]).filter(s=>s.spieler_id===currentSpieler.id&&s.status==='sitting_out');if(_dupes.length>1){const _keepId=mySeatRow?.id||_dupes[0].id;db.from('online_seats').delete().eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).eq('status','sitting_out').neq('id',_keepId).then(()=>{});}}
     if(mySeatRow){
       // sitting_out players have no active cards (old card rows from previous hands must be ignored).
       // Also: players who bought in MID-HAND (not dealt cards for current hand_nr) must not see stale cards.
