@@ -9877,20 +9877,18 @@
     document.getElementById('pm-del-cancel').addEventListener('click',()=>ov.remove());
     document.getElementById('pm-del-confirm').addEventListener('click',async()=>{
       const sessionId=session.id;
-      const botIds=botSeats.map(s=>s.spieler_id);
       ov.remove();
       _pmUnsubscribe();
-      // Hide the session in DB BEFORE navigating so the lobby renders it as gone immediately
+      // Mark as hidden immediately (UPDATE works without service role) so lobby shows correct state
       await db.from('online_spiele').update({status:'finished',hand_nr:0,current_player_id:null}).eq('id',sessionId);
       showPage('online-lobby');
-      // Background cleanup (doesn't affect lobby visibility – session already hidden above)
-      (async()=>{
-        await db.from('online_actions').delete().eq('online_spiel_id',sessionId);
-        await db.from('online_chat').delete().eq('online_spiel_id',sessionId);
-        await db.from('online_seats').delete().eq('online_spiel_id',sessionId);
-        if(botIds.length)await db.from('benachrichtigungen').delete().in('spieler_id',botIds);
-        if(botIds.length)await db.from('spieler').update({aktiv:false}).in('id',botIds).eq('ist_bot',true);
-      })().catch(e=>console.warn('[delete-session cleanup]',e));
+      // Full cleanup via Edge Function (service role bypasses RLS – all data actually deleted)
+      fetch(`${SUPABASE_URL}/functions/v1/poker-delete-session`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${(await db.auth.getSession()).data.session?.access_token}`},
+        body:JSON.stringify({online_spiel_id:sessionId}),
+      }).then(r=>r.json()).then(r=>{if(!r.ok)console.warn('[delete-session]',r);})
+        .catch(e=>console.warn('[delete-session]',e));
     });
   }
 
