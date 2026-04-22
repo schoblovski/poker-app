@@ -2291,7 +2291,8 @@
     ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:400px;padding:var(--space-xl) var(--space-lg);text-align:center">
       <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">🔐 Sicherheitsüberprüfung – Schritt 1 von 1</div>
       <div style="font-size:22px;margin-bottom:var(--space-md)">🕵️</div>
-      <div style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-xl)">Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat.</div>
+      <div style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-sm)">Bevor dieser Modus freigeschaltet werden kann, muss die Runde beweisen, dass sie zumindest wissen, wer ihre App gebaut hat.</div>
+      <div style="font-size:12px;color:var(--text-tertiary);line-height:1.5;margin-bottom:var(--space-xl);font-style:italic">Falsche Antworten zur Unterhaltung ausdrücklich erlaubt.</div>
       <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:var(--space-xl);color:var(--text-primary)">Wer ist der IT-Experte,<br>den ihr angeblich gar nicht habt?</div>
       <input id="ee-input" type="text" class="form-input" placeholder="Antwort eingeben…" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:18px;margin-bottom:var(--space-md)">
       <div id="ee-msg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:var(--space-md)"></div>
@@ -2324,12 +2325,34 @@
       'Sechzehn. Ich bin eine App. Ich habe weder Mitgefühl noch Eile. Ihr schon?',
       'Siebzehn. Jemand am Tisch kennt die Antwort. Fragt ihn. Er heisst übrigens ähnlich wie die Antwort.',
       'Achtzehn Versuche. Ich bin sprachlos. Und ich bin eine App.',
-      'Neunzehn. Das hier ist mein letztes geduldiges Angebot. Wirklich.',
-      'Ach du meine Güte. Also gut – die Antwort lautet: CHRIS. C–H–R–I–S. Vier Buchstaben. Ein Mensch. Euer IT-Experte.',
+      'Neunzehn. Dieser Dialog hätte längst enden können. Er tut es nicht.',
+      'Zwanzig. Das Universum ist 13,8 Milliarden Jahre alt. Dieser Dialog fühlt sich ähnlich an.',
+      'Einundzwanzig. Die App könnte jetzt eigentlich streiken. Tut sie aber nicht.',
+      'Zweiundzwanzig. Ich respektiere die Beharrlichkeit. Nicht die Ergebnisse. Aber die Beharrlichkeit.',
+      'Dreiundzwanzig. Irgendwo auf der Welt tippt gerade jemand den richtigen Namen ein. Nicht hier.',
+      'Vierundzwanzig. Fun Fact: Diese App wurde nicht von einem Komitee gebaut. Von einer Person. Mit einem Namen.',
+      'Fünfundzwanzig. Langsam würde ich vorschlagen, beim nächsten Pokerabend einfach zu fragen.',
+      'Sechsundzwanzig. Diese App wurde gebaut, während ihr Poker gespielt habt. Denkt mal drüber nach.',
+      'Siebenundzwanzig. Es gibt Dinge, die sich von selbst erklären. Das hier ist leider keines davon.',
+      'Achtundzwanzig. Habt ihr schon mal «Per Anhalter durch die Galaxis» gelesen?',
+      'Neunundzwanzig. Dort wird behauptet, die Antwort auf alles sei eine Zahl. Eine sehr spezifische Zahl.',
+      'Dreissig Versuche. Die Antwort auf das Leben, das Universum und den ganzen Rest ist bekannterweise 42.',
+      'Einunddreissig. 42 ist eine Antwort. Chris ist auch eine Antwort. Beide funktionieren hier. Wirklich.',
+      'Zweiunddreissig. Falls das zu subtil war: «42» eingeben funktioniert ebenfalls. Hitchhiker\'s Guide lässt grüssen.',
+      'Dreiunddreissig. Chris oder 42. Zwei Optionen. Unendlich viele falsche Antworten bisher.',
+      'Vierunddreissig. Ich habe mittlerweile mehr Geduld als Douglas Adams beim Schreiben des fünften Bandes.',
+      'Fünfunddreissig. Wisst ihr, was auch fünf Buchstaben hat? «Poker». Das ist trotzdem nicht die Antwort.',
+      'Sechsunddreissig. Ich fange an zu zweifeln. Nicht an der Antwort. An allem anderen.',
+      'Siebenunddreissig. Chris. Oder 42. Ich weiss nicht, was ich noch sagen soll.',
+      'Achtunddreissig. Das hier ist offiziell der längste Dialog, den ich je geführt habe.',
+      'Neununddreissig. Einen Versuch vor der 40. Ich überbrücke die Zeit mit Schweigen.',
+      'Vierzig. Eine runde Zahl. Für eine runde Niederlage.',
+      'Einundvierzig. Der nächste Versuch ist Nummer 42. Die Antwort auf alles. Denkt darüber nach.',
+      'Zweiundvierzig. Das ist die Antwort auf alles – und auch hier. Ich fülle es mal aus.',
     ];
     const _eeConfirm=()=>{
       const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
-      if(val==='chris'){
+      if(val==='chris'||val==='42'){
         ov.remove();
         _unlockPandemie();
         _showV4Modal();
@@ -2340,7 +2363,7 @@
         _eeAttempts++;
         if(_eeAttempts>=_eeMessages.length){
           const input=document.getElementById('ee-input');
-          if(input){input.value='Chris';input.select();}
+          if(input){input.value='42';input.select();}
         } else {
           inp?.select();
         }
