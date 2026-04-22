@@ -7869,18 +7869,6 @@
   }
 
   async function enterOnlineSession(sessionId,{silent=false}={}){
-    // If already active in a different running session, ask user to confirm switch
-    if(_pm?.id&&_pm.id!==sessionId&&_pm?.session?.status==='running'&&_pm?.mySeat&&_pm.mySeat.status!=='sitting_out'){
-      const confirmed=await new Promise(resolve=>{
-        const ov=document.createElement('div');ov.className='modal-overlay open';ov.style.cssText='z-index:9999;align-items:center;justify-content:center;padding:20px';
-        ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.4)"><div style="font-size:17px;font-weight:700;margin-bottom:8px">Andere Session aktiv</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5">Du bist gerade in einer anderen Session am Tisch. Möchtest du wechseln?</div><div style="display:flex;flex-direction:column;gap:8px"><button id="_sc-ok" class="btn btn-primary" style="max-width:none;margin:0">Wechseln</button><button id="_sc-cancel" class="btn btn-ghost" style="max-width:none;margin:0 auto;width:auto;padding:0 24px">Abbrechen</button></div></div>`;
-        document.body.appendChild(ov);
-        ov.querySelector('#_sc-ok').onclick=()=>{ov.remove();resolve(true);};
-        ov.querySelector('#_sc-cancel').onclick=()=>{ov.remove();resolve(false);};
-        ov.addEventListener('click',e=>{if(e.target===ov){ov.remove();resolve(false);}});
-      });
-      if(!confirmed)return;
-    }
     _pmUnsubscribe();
     document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
