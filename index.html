@@ -2262,7 +2262,7 @@
       <div style="font-size:48px;margin-bottom:var(--space-md)">🎉</div>
       <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Richtig!</div>
       <div style="font-size:15px;color:var(--text-secondary);margin-bottom:var(--space-xl)">Er existiert. Und er hat Grossartiges geleistet.</div>
-      <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-lg);letter-spacing:-.3px">Version 4.0 freigeschaltet!</div>
+      <div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);font-size:18px;font-weight:800;margin-bottom:var(--space-lg);letter-spacing:-.3px">Online-Modus freigeschaltet!</div>
       <div style="text-align:left;margin-bottom:var(--space-xl)">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:var(--space-sm)">Was dich im Online-Modus erwartet</div>
         <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:0 var(--space-md)">
@@ -6425,10 +6425,7 @@
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
     {version:'4.0',datum:'April 2026',eintraege:[
-      {typ:'neu',text:'Online-Modus: Online-Poker über Supabase Realtime – Texas Hold\'em, Omaha & Texahma. Serverseitig gemischte Karten, Sidepots, Auto-Runout, Pre-Action, Pause-Modus.'},
-      {typ:'fix',text:'Hand-Evaluator: Kategorie-Vergleich korrigiert (Pärchen schlug fälschlicherweise Ass-hoch nicht)'},
-      {typ:'verbessert',text:'Online-Modus: Sidepots über Action-Log berechnet, Cent-Rundung, Doppelte Gewinn-Einträge eliminiert'},
-      {typ:'verbessert',text:'Nummernblock: eigener Overlay für Betragsfelder im Online-Modus (kein System-Keyboard)'},
+      {typ:'neu',text:'Etwas Neues wartet – für alle, die neugierig genug sind, es selbst herauszufinden. 🃏'},
     ]},
     {version:'3.15',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Seitenübergänge: Seiten gleiten beim Wechsel sanft von unten ein (Spring-Easing). Inhaltsblöcke erscheinen gestaffelt von oben nach unten auf allen Seiten inkl. Poker Tools'},
@@ -6856,8 +6853,7 @@
 
     // Changelog
     html+=`<div class="section-title">Changelog</div>`;
-    const _entdeckt=localStorage.getItem('dtks_pandemie_entdeckt')==='true';
-    CHANGELOG.filter(v=>v.version!=='4.0'||_entdeckt).forEach(v=>{
+    CHANGELOG.forEach(v=>{
       const isCurrent=v.version===VERSION;
       html+=`<div class="card" style="margin-bottom:var(--space-sm)">
         <div style="display:flex;align-items:center;gap:var(--space-sm);padding:12px var(--space-md);border-bottom:1px solid var(--border)">
