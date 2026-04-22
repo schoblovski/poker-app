@@ -10125,7 +10125,7 @@
     const ctx=canvas.getContext('2d');
     const session=_pm?.session;
     const handNr=session?.hand_nr||0;
-    const rankStr={14:'A',13:'K',12:'Q',11:'J',10:'T',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+    const rankStr={14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
     const suitStr={s:'♠',h:'♥',d:'♦',c:'♣'};
     const isRed={h:true,d:true};
     const rrect=(cx,cy,rw,rh,r)=>{ctx.beginPath();ctx.moveTo(cx+r,cy);ctx.lineTo(cx+rw-r,cy);ctx.quadraticCurveTo(cx+rw,cy,cx+rw,cy+r);ctx.lineTo(cx+rw,cy+rh-r);ctx.quadraticCurveTo(cx+rw,cy+rh,cx+rw-r,cy+rh);ctx.lineTo(cx+r,cy+rh);ctx.quadraticCurveTo(cx,cy+rh,cx,cy+rh-r);ctx.lineTo(cx,cy+r);ctx.quadraticCurveTo(cx,cy,cx+r,cy);ctx.closePath();};
