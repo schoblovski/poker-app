@@ -7568,7 +7568,7 @@
       });
     }
     const done=visibleSessions.filter(s=>s.status==='finished');
-    if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Admin kann eine neue Session starten.</div></div>`;}
+    if(!active.length&&!done.length){html+=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div><div class="empty-title">Keine Sessions</div><div class="empty-sub">Tippe auf «Neue Session» um loszulegen.</div></div>`;}
     if(active.length){
       html+=`<div class="section-title">Aktiv</div>`;
       active.forEach(s=>{
