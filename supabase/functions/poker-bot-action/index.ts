@@ -186,6 +186,8 @@ Deno.serve(async (req) => {
     if (config.karten_zeigen === 'nie') return json({ ok: true, skipped: true });
     const holeCards: Card[] = botHoleCards;
     if (!holeCards.length) return json({ ok: true, skipped: true });
+    // Guard: new hand started since reveal was scheduled – inserting now would show cards mid-hand
+    if (session.current_player_id !== null) return json({ ok: true, skipped: 'hand_changed' });
     // Compute best hand for display in feed
     const board: UtilCard[] = (session.community_cards ?? []) as UtilCard[];
     let usedHole: UtilCard[] = [];
