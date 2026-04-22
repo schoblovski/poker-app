@@ -391,11 +391,11 @@ async function executePreActionIfSet(
         // Bet exceeds limit: game waits for paused player to return and decide manually.
         autoAction = null;
       } else {
-        autoAction = 'call';
+        autoAction = callAmount > 0 ? 'call' : 'check';
       }
       break;
     }
-    case 'call_any': autoAction = 'call'; break;
+    case 'call_any': autoAction = callAmount > 0 ? 'call' : 'check'; break;
   }
 
   if (!autoAction) return;

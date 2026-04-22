@@ -75,17 +75,18 @@ Deno.serve(async (req) => {
     s.status = 'active';
   }
 
-  // Spieler ohne Stack eliminieren (busted), paused → sitting_out
-  const bustsAndPaused = (seats ?? []).filter(
-    (s: { stack: number; status: string; bot_config?: unknown }) => !s.bot_config && (s.stack === 0 || s.status === 'paused')
+  // Spieler ohne Stack eliminieren (busted). Paused Spieler bleiben am Tisch –
+  // poker-start-game setzt sie zu Beginn der neuen Hand wieder auf 'active'.
+  const busts = (seats ?? []).filter(
+    (s: { stack: number; status: string; bot_config?: unknown }) => !s.bot_config && s.stack === 0
   );
-  const bustIds = new Set(bustsAndPaused.map((s: { id: string }) => s.id));
-  for (const s of bustsAndPaused) {
+  const bustIds = new Set(busts.map((s: { id: string }) => s.id));
+  for (const s of busts) {
     await db.from('online_seats').update({ status: 'sitting_out' }).eq('id', s.id);
   }
 
   // Genug Spieler? Zähle nur Spieler die tatsächlich mitspielen:
-  // - nicht gerade auf sitting_out gesetzt (busted/paused)
+  // - nicht gerade auf sitting_out gesetzt (busted)
   // - nicht bereits sitting_out
   // - haben Chips
   const activeSeatCount = (seats ?? []).filter(
