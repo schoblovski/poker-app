@@ -1366,6 +1366,7 @@
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">I</code><span style="color:var(--text-secondary)">Spielregeln &amp; Hilfe öffnen</span></div>
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">M</code><span style="color:var(--text-secondary)">Kommentar schreiben</span></div>
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">H</code><span style="color:var(--text-secondary)">Hand festhalten</span></div>
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">N</code><span style="color:var(--text-secondary)">Nächste Spielrunde starten</span></div>
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">B</code><span style="color:var(--text-secondary)">Face-down ein/ausschalten (B = Blind)</span></div>
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">P</code><span style="color:var(--text-secondary)">Pause</span></div>
           <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"><code style="font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text-primary);min-width:22px;text-align:center;flex-shrink:0">V</code><span style="color:var(--text-secondary)">Vorauswahl</span></div>
@@ -9668,7 +9669,7 @@
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Vorauswahl</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        ${[['fold','Fold'],['check','Check'],['call','Call'],['call_any','Call Any']].map(([v,l])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pas-btn" data-pre="${v}" style="flex:1 0 calc(45% - 6px);font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">${l}</button>`).join('')}
+        ${[['fold','Fold','1'],['check','Check','2'],['call','Call','3'],['call_any','Call Any','4']].map(([v,l,k])=>`<button class="btn ${pre===v?'btn-primary':'btn-ghost'} pm-pas-btn" data-pre="${v}" style="flex:1 0 calc(45% - 6px);font-size:13px;height:42px!important;padding:0 8px!important;max-width:none;margin:0">${l}<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[${k}]</span></button>`).join('')}
       </div>
       <div id="pm-pas-limit-row" style="display:${pre==='call'?'block':'none'};margin-bottom:14px">
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
@@ -10875,6 +10876,7 @@
     // Esc: close topmost overlay/modal
     if(K==='Escape'){
       if(document.getElementById('modal-confirm')?.classList.contains('open')){document.getElementById('modal-confirm-cancel')?.click();e.preventDefault();return;}
+      if(document.getElementById('modal-hand')?.classList.contains('open')){document.getElementById('hand-abbrechen')?.click();e.preventDefault();return;}
       const cis=document.getElementById('pm-chat-input-sheet');if(cis){cis.click();e.preventDefault();return;}
       const pas=document.getElementById('pm-preaction-sheet');if(pas){pas.click();e.preventDefault();return;}
       const psh=document.getElementById('pm-pause-sheet');if(psh){psh.click();e.preventDefault();return;}
@@ -10893,8 +10895,23 @@
       if(document.getElementById('pm-info-modal')?.style.display==='block'){document.getElementById('btn-pm-info-close')?.click();e.preventDefault();return;}
       return;
     }
-    // 1-4: flip individual hole cards
-    if(K>='1'&&K<='4'){document.querySelector(`.pm-card-ind[data-card-idx="${parseInt(K)-1}"]`)?.click();e.preventDefault();return;}
+    // 1-4: select preaction option (if sheet open) or flip hole card
+    if(K>='1'&&K<='4'){
+      const _pas=document.getElementById('pm-preaction-sheet');
+      if(_pas){
+        const _preMap=['fold','check','call','call_any'];
+        const _v=_preMap[parseInt(K)-1];
+        if(_v){
+          _pas.querySelectorAll('.pm-pas-btn').forEach(x=>{x.classList.remove('btn-primary');x.classList.add('btn-ghost');});
+          const _pb=_pas.querySelector(`.pm-pas-btn[data-pre="${_v}"]`);
+          if(_pb){_pb.classList.remove('btn-ghost');_pb.classList.add('btn-primary');}
+          const _lr=document.getElementById('pm-pas-limit-row');if(_lr)_lr.style.display=_v==='call'?'block':'none';
+          document.getElementById('pm-pas-close')?.click();
+        }
+        e.preventDefault();return;
+      }
+      document.querySelector(`.pm-card-ind[data-card-idx="${parseInt(K)-1}"]`)?.click();e.preventDefault();return;
+    }
     switch(K.toUpperCase()){
       case'C':(document.querySelector('.pm-act-btn[data-action="call"]')||document.querySelector('.pm-act-btn[data-action="check"]'))?.click();e.preventDefault();break;
       case'F':document.querySelector('.pm-act-btn[data-action="fold"]')?.click();e.preventDefault();break;
@@ -10906,6 +10923,7 @@
       case'M':document.getElementById('btn-pm-feed-chat')?.click();e.preventDefault();break;
       case'H':document.getElementById('btn-pm-hand-record')?.click();e.preventDefault();break;
       case'B':document.getElementById('btn-pm-facedown')?.click();e.preventDefault();break;
+      case'N':{const _nb=document.getElementById('btn-pm-newhand');if(_nb&&!_nb.disabled){_nb.click();e.preventDefault();}break;}
       case'P':document.getElementById('btn-pm-pause')?.click();e.preventDefault();break;
       case'V':document.getElementById('btn-pm-preaction')?.click();e.preventDefault();break;
     }
