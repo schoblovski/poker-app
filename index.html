@@ -11607,7 +11607,7 @@
       const prev=ov.querySelector('#pm-bot-avatar-preview');if(prev)prev.src=_pmBotAvatar(e.target.value||'Bot');
     });
     // Confirm
-    ov.querySelector('#pm-bot-confirm').addEventListener('click',async()=>{
+    ov.querySelector('#pm-bot-confirm')?.addEventListener('click',async()=>{
       const nameInp=ov.querySelector('#pm-bot-name');
       const name=nameInp?nameInp.value.trim().slice(0,10):existingSeat?.spieler?.name||'Bot';
       if(!name){await showAlert('Bitte einen Namen eingeben.');return;}
