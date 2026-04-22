@@ -7934,7 +7934,7 @@
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,bot_config,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
       db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
-      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').maybeSingle(),
+      db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').order('created_at',{ascending:true}).limit(1).maybeSingle(),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
     if(!_pm)return; // guard: user navigated away while DB queries were in flight
@@ -8931,7 +8931,8 @@
         case'buyin':{const _firstBuyin=!actions.some(b=>b.spieler_id===a.spieler_id&&b.action==='buyin'&&b!==a&&(b.created_at||'')<(a.created_at||''));text=`<b>${escHtml(n)}</b> kauft ${_firstBuyin?'einen':'einen weiteren'} Buy-In${amt}`;extra=' pm-feed-win';break;}
         case'leave':if(a.meta?.temp){text=`<b>${escHtml(n)}</b> hat den Tisch kurz verlassen – ist gleich zurück`;extra=' facedown-action';}else{text=`<b>${escHtml(n)}</b> hat den Tisch verlassen`;}break;
         case'bot_leave':{const _bn=a.spieler?.name||a.meta?.name||n;text=`<b>${escHtml(_bn)}</b> foldet und verlässt den Tisch`;extra=' facedown-action';break;}
-        case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt nur`;extra=' facedown-action';break;
+        case'spectate':text=`<b>${escHtml(n)}</b> beobachtet jetzt`;extra=' facedown-action';break;
+        case'unspectate':text=`<b>${escHtml(n)}</b> hat den Beobachter-Modus verlassen`;extra=' facedown-action';break;
         case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
         case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
         case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:#fef3c7;color:#92400e;font-weight:700;font-size:12px">Split Pot – €${(+a.amount).toFixed(2)} aufgeteilt</div>`;
@@ -9459,9 +9460,9 @@
     document.getElementById('btn-pm-leave')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmLeaveSheet();});
     document.getElementById('btn-pm-lobby')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();if(!_pm?.mySeat)_pmDrawerHide();showPage('online-lobby');});
     document.getElementById('btn-pm-stop-observe')?.addEventListener('click',async(e)=>{e.stopPropagation();_pmFabClose();
-      if(!_pm?.mySeat)return;
-      const seatId=_pm.mySeat.id;
-      await db.from('online_seats').delete().eq('id',seatId);
+      if(!_pm?.id||!currentSpieler?.id)return;
+      // Delete ALL observer seats for this player (handles stale duplicates too)
+      await db.from('online_seats').delete().eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).eq('status','sitting_out');
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'unspectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       _pm.mySeat=null;
       await _pmLoad();
