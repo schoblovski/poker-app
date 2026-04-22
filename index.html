@@ -2905,7 +2905,13 @@
       const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
       return s+(t.buyins||0)*(bPot+bKassa);
     },0);
-    const ks=spieler._ks||0;
+    let ks=spieler._ks??null;
+    if(ks===null){
+      let txBal=0;
+      (transIn||[]).forEach(t=>txBal+=t.betrag||0);
+      (transOut||[]).forEach(t=>txBal-=t.betrag||0);
+      ks=gRein+txBal;
+    }
     const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).toLocaleString('de-DE', { month: 'long', year: 'numeric' }):'–';
 
     // Avatar: initial letter fallback
@@ -9072,11 +9078,17 @@
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
     try{
       const[{data:stRows},{data:txRows}]=await Promise.all([
-        db.from('spiel_teilnehmer').select('payout,buyins,spiele(buyin_pot,buyin_kassa)').eq('spieler_id',sid).eq('in_statistik',true),
+        db.from('spiel_teilnehmer').select('payout,buyins,spiele(buyin_pot,buyin_kassa,modus,abgeschlossen)').eq('spieler_id',sid),
         db.from('transaktionen').select('betrag,von_spieler_id,nach_spieler_id').or(`von_spieler_id.eq.${sid},nach_spieler_id.eq.${sid}`),
       ]);
-      let bal=0,wins=0;const tot=(stRows||[]).length;
-      (stRows||[]).forEach(r=>{const n=(r.payout||0)-(r.buyins||1)*(r.spiele?.buyin_kassa||0);bal+=n;if(n>0)wins++;});
+      let bal=0,wins=0;const tot=(stRows||[]).filter(r=>r.spiele?.abgeschlossen).length;
+      (stRows||[]).forEach(r=>{
+        if(!r.spiele?.abgeschlossen)return;
+        const bPot=r.spiele?.buyin_pot||0;
+        const bKassa=(r.spiele?.modus==='online')||(bPot<5)?0:(r.spiele?.buyin_kassa||0);
+        const n=(r.payout||0)-(r.buyins||0)*(bPot+bKassa);
+        bal+=n;if(n>0)wins++;
+      });
       (txRows||[]).forEach(t=>{if(t.nach_spieler_id===sid)bal+=t.betrag||0;if(t.von_spieler_id===sid)bal-=t.betrag||0;});
       const wr=tot>0?Math.round(wins/tot*100):0;
       const kpisEl=document.getElementById('_pc-kpis');if(!kpisEl)return;
