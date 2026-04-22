@@ -7980,7 +7980,7 @@
   async function enterOnlineSession(sessionId,{silent=false}={}){
     _pmUnsubscribe();
     document.getElementById('pm-feed-modal')?.remove();document.getElementById('pm-tisch-modal')?.remove();
-    _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true};
+    _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true,_olderActions:[],_feedCursor:null,_feedAllLoaded:false,_feedLoading:false};
     if(!silent){
       showPage('online-tisch');
       // Request device motion/orientation permission (iOS 13+) and set up easter eggs
@@ -8036,7 +8036,7 @@
     const[{data:session},{data:seats},{data:actions},{data:mySeatRow},{data:einstRows}]=await Promise.all([
       db.from('online_spiele').select('*').eq('id',_pm.id).single(),
       db.from('online_seats').select('*,bot_config,spieler(id,name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).order('seat'),
-      db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(120),
+      db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).order('created_at',{ascending:false}).limit(60),
       db.from('online_seats').select('*').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler?.id||'').limit(1).then(({data,error})=>({data:data?.[0]??null,error})),
       db.from('einstellungen').select('key,wert').in('key',['video_call_link','whatsapp_gruppe']),
     ]);
@@ -8061,6 +8061,8 @@
     } else {_pm._runoutRevealedCount=null;_pm._renderedRunoutCount=null;}
     _pm.seats=seats||[];
     _pm.actions=(actions||[]).reverse();
+    if(!_pm._feedCursor&&_pm.actions.length>0)_pm._feedCursor=_pm.actions[0].created_at;
+    if((actions?.length??0)<60)_pm._feedAllLoaded=true;
     _pm.mySeat=mySeatRow||(seats||[]).find(s=>s.spieler_id===currentSpieler?.id&&!s.spieler?.ist_bot)||null;
     // Track the session where user is actively playing (not just observing)
     if(_pm.mySeat&&_pm.mySeat.status!=='sitting_out')_pmActivePlayerSid=_pm.id;
@@ -8324,7 +8326,7 @@
 
     // Feed – with optional slow-player sarcastic comment prepended
     const _feedActOnly=localStorage.getItem('pm_feed_actions_only')==='1';
-    const feedHtml=(_feedActOnly?'':_pmSlowCommentHtml(actions,session,seats))+_pmFeedHtml(actions);
+    const _allFeedActs=[...(_pm._olderActions||[]),...actions];const feedHtml=(_feedActOnly?'':_pmSlowCommentHtml(_allFeedActs,session,seats))+_pmFeedHtml(_allFeedActs);
 
     const streetLabel={preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River'};
     const _handHasWin=(actions||[]).some(a=>a.hand_nr===session.hand_nr&&a.action==='win');
@@ -8404,7 +8406,7 @@
     }).join('');
     const myCardsSection=myCardsHtml?`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm) 0">${useFdLayout?`<div id="pm-hole-cards-wrap" style="display:flex;justify-content:center;gap:8px">${_fdCardsHtml}</div>${_fdHint}`:`<div style="display:flex;justify-content:center;gap:8px;opacity:${myStatus==='folded'?'0.5':'1'}">${myHoleCards.map((c,i)=>_pmCard(c,{big:true,highlight:usedHoleKeys.has(_cardKey(c)),animDelay:_holeAnim?i*0.2:undefined,flip:(_holeFlip&&_pm._flipRevealIdx===i)?0:undefined})).join('')}</div>`}${(!useFdLayout||_perCard.size>0)?badgesRow:''}</div>`:'';
     const isLandscape=window.innerWidth>window.innerHeight||window.innerWidth>=768;
-    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span>${!isFinished?`<button id="btn-pm-feed-chat" title="Kommentar senden" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>`:''}<button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}</div>`;
+    const feedSection=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-top:var(--space-sm);border-top:1px solid var(--border)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;color:var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary)">Verlauf</span><span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${varLabel[session.variante]||session.variante} · #${session.hand_nr||0}</span>${!isFinished?`<button id="btn-pm-feed-chat" title="Kommentar senden" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>`:''}<button id="btn-pm-feed-expand" title="Verlauf vergrössern" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;margin-left:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button></div><div class="pm-feed">${feedHtml}${_pm._feedAllLoaded?'':<div id="pm-feed-sentinel" style="height:4px"></div>}</div>`;
     // Compute which players are currently "away" (screen locked / left the app)
     const _awayLast={};
     for(const _aa of(_pm.actions||[])){
@@ -8450,7 +8452,7 @@
         if(_fabEl&&_fabMenuEl){document.body.appendChild(_fabMenuEl);document.body.appendChild(_fabEl);}
       }
       // Feed is newest-first (top), so scroll to top unless user scrolled down into history
-      requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}});
+      requestAnimationFrame(()=>{const _fn=el.querySelector('.pm-feed');if(_fn){if(_fbAtT)_fn.scrollTop=0;else _fn.scrollTop=_fbS;}_pmSetupFeedSentinel();});
       _pmBindEvents();
       if(_pm?._rtStatus)_pmUpdateRtBadge(_pm._rtStatus);
     }else{
@@ -8474,7 +8476,7 @@
         _fo.innerHTML=_fn.innerHTML;
         const _numNew=Math.max(0,_fo.children.length-_oldCnt);
         if(_numNew>0&&_numNew<=8){Array.from(_fo.children).slice(0,_numNew).forEach((c,i)=>{c.style.animationDelay=`${i*25}ms`;c.classList.add('pm-feed-new');c.addEventListener('animationend',()=>{c.classList.remove('pm-feed-new');c.style.animationDelay='';},{once:true});});}
-        if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;
+        if(_atT)_fo.scrollTop=0;else _fo.scrollTop=_svd;_pmSetupFeedSentinel();
         const _mb=document.getElementById('pm-feed-modal-body');
         if(_mb){const _atBottom=_mb.scrollTop>=_mb.scrollHeight-_mb.clientHeight-80;_mb.innerHTML=_fn.innerHTML;const _mbItems=[..._mb.children];_mb.innerHTML='';_mbItems.reverse().forEach(el=>_mb.appendChild(el));if(_atBottom)_mb.scrollTop=_mb.scrollHeight;}
       }
@@ -8908,6 +8910,73 @@
     'Markus':['Markus sagt nichts. Er zeigt am Ende.','Markus\' Pokerface hat das Konzept des Pokerfaces erfunden.','Wenn Markus die Augenbraue hebt, weiss niemand warum.','Markus spielt ruhig. Was dahinter steckt: nur Markus weiss es.','Markus: Stolz. Schweigend. Effizient.'],
     'Peter':['Peter kennt die Wahrscheinlichkeiten. Er ignoriert sie mit Stil.','Peter hat immer einen Plan. Manchmal hat der Plan auch Peter.','Peter rechnet die Pot Odds. Dann entscheidet er sich trotzdem dafür.','Wenn Peter erhöht, ist das eine Aussage. Was sie bedeutet: unklar.','Peter spielt Poker wie er alles macht: überlegt und entschlossen.'],
   };
+  function _pmSetupFeedSentinel(){
+    if(!_pm||_pm._feedAllLoaded)return;
+    // Inline feed
+    const feedEl=document.querySelector('#page-online-tisch .pm-feed');
+    if(feedEl){
+      const s=feedEl.querySelector('#pm-feed-sentinel');
+      if(s&&!s._pmObs){
+        const obs=new IntersectionObserver(entries=>{
+          if(!entries[0].isIntersecting||_pm._feedLoading||_pm._feedAllLoaded)return;
+          _pmLoadMoreFeed();
+        },{root:feedEl,rootMargin:'0px 0px 120px 0px'});
+        obs.observe(s);s._pmObs=obs;
+      }
+    }
+    // Modal feed (reversed: sentinel is at top after reversal)
+    const modalBody=document.getElementById('pm-feed-modal-body');
+    if(modalBody){
+      const s=modalBody.querySelector('#pm-feed-sentinel');
+      if(s&&!s._pmObs){
+        const obs=new IntersectionObserver(entries=>{
+          if(!entries[0].isIntersecting||_pm._feedLoading||_pm._feedAllLoaded)return;
+          _pmLoadMoreFeed();
+        },{root:modalBody,rootMargin:'120px 0px 0px 0px'});
+        obs.observe(s);s._pmObs=obs;
+      }
+    }
+  }
+  async function _pmLoadMoreFeed(){
+    if(!_pm?._feedCursor||_pm._feedLoading||_pm._feedAllLoaded)return;
+    _pm._feedLoading=true;
+    const cur=_pm._feedCursor;
+    const{data:older}=await db.from('online_actions').select('*,spieler(name,profilbild)').eq('online_spiel_id',_pm.id).lt('created_at',cur).order('created_at',{ascending:false}).limit(60);
+    _pm._feedLoading=false;
+    if(!older?.length){_pm._feedAllLoaded=true;document.querySelectorAll('#pm-feed-sentinel').forEach(s=>s.remove());return;}
+    const batch=older.reverse();
+    _pm._feedCursor=batch[0].created_at;
+    _pm._olderActions=[...batch,...(_pm._olderActions||[])];
+    if(older.length<60)_pm._feedAllLoaded=true;
+    const batchHtml=_pmFeedHtml(batch);
+    // Inline feed: insert before sentinel (sentinel at bottom = older content goes above it)
+    const feedEl=document.querySelector('#page-online-tisch .pm-feed');
+    if(feedEl){
+      const s=feedEl.querySelector('#pm-feed-sentinel');
+      if(s){
+        const tmp=document.createElement('div');tmp.innerHTML=batchHtml;
+        const frag=document.createDocumentFragment();
+        while(tmp.firstChild)frag.appendChild(tmp.firstChild);
+        feedEl.insertBefore(frag,s);
+        if(_pm._feedAllLoaded)s.remove();else{s._pmObs?.disconnect();delete s._pmObs;_pmSetupFeedSentinel();}
+      }
+    }
+    // Modal feed: insert after sentinel (sentinel at top after reversal = older content goes just below it)
+    const modalBody=document.getElementById('pm-feed-modal-body');
+    if(modalBody){
+      const s=modalBody.querySelector('#pm-feed-sentinel');
+      if(s){
+        const tmp=document.createElement('div');tmp.innerHTML=batchHtml;
+        const items=[...tmp.children].reverse();
+        const ref=s.nextSibling;
+        const oldH=modalBody.scrollHeight;
+        items.forEach(el=>modalBody.insertBefore(el,ref));
+        modalBody.scrollTop+=modalBody.scrollHeight-oldH;
+        if(_pm._feedAllLoaded)s.remove();else{s._pmObs?.disconnect();delete s._pmObs;_pmSetupFeedSentinel();}
+      }
+    }
+  }
+
   function _pmStrHash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h);}
 
   const _PM_FEED_PLAYER_ACTIONS=new Set(['fold','check','call','raise','bet','allin','post_sb','post_bb','win','split_pot','buyin','react']);
@@ -8918,7 +8987,7 @@
     // When actions-only mode is on, filter to player actions before further processing
     const actionsFiltered=_actOnly?actions.filter(a=>_PM_FEED_PLAYER_ACTIONS.has(a.action)):actions;
     // Newest first; new_hand acts as a divider AFTER all actions of its hand (bottom of group)
-    const raw=actionsFiltered.slice(-40).reverse();
+    const raw=actionsFiltered.slice().reverse();
     // Dedup: win/fold/allin/blind are unique per player+hand; others dedup by DB id
     const _seenDedup=new Set();
     const rawDeduped=raw.filter(a=>{
@@ -9524,7 +9593,7 @@
     });
     document.getElementById('btn-pm-feed-expand')?.addEventListener('click',()=>{
       if(!_pm)return;
-      const allFeedHtml=_pmFeedHtml(_pm.actions||[]);
+      const _allFeedActs2=[...(_pm._olderActions||[]),...(_pm.actions||[])];const allFeedHtml=_pmFeedHtml(_allFeedActs2)+(_pm._feedAllLoaded?'':'<div id="pm-feed-sentinel" style="height:4px"></div>');
       const isFinished=_pm.session?.status==='finished';
       const canChat=!isFinished&&!!currentSpieler?.id;
       const ov=document.createElement('div');
@@ -9537,6 +9606,7 @@
       ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
       // Reverse feed to show oldest-first (newest at bottom) then scroll to bottom
       requestAnimationFrame(()=>{const sc=document.getElementById('pm-feed-modal-body');if(!sc)return;const items=[...sc.children];sc.innerHTML='';items.reverse().forEach(el=>sc.appendChild(el));sc.scrollTop=sc.scrollHeight;});
+      _pmSetupFeedSentinel();
       if(canChat){
         const sendModalChat=async()=>{
           const inp=document.getElementById('pm-feed-modal-chat-inp');
