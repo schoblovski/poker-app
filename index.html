@@ -11181,10 +11181,10 @@
       inp?.addEventListener('input',()=>{vals[k]=parseInt(inp.value);if(lbl)lbl.textContent=vals[k]+'%';_switchToCustom();});
     });
     // Gesprächigkeit slider
-    ov.querySelector('#pm-bot-gespr')?.addEventListener('input',e=>{vals.gespr=parseInt(e.target.value);const lbl=ov.querySelector('#pm-bot-lbl-gespr');if(lbl)lbl.textContent=vals.gespr+'%';_switchToCustom();});
+    ov.querySelector('#pm-bot-gespr')?.addEventListener('input',e=>{vals.gespr=parseInt(e.target.value);const lbl=ov.querySelector('#pm-bot-lbl-gespr');if(lbl)lbl.textContent=vals.gespr+'%';});
     // Reaktionszeit slider (single: sets max, min = 1 fixed)
     const _syncReak=()=>{vals.reaktion_min=1;const lbl=ov.querySelector('#pm-bot-lbl-reaktion');if(lbl)lbl.textContent=`${vals.reaktion_max}s`;const sub=ov.querySelector('#pm-bot-reaktion-sub');if(sub)sub.textContent=`Antwortet in 1–${vals.reaktion_max}s`;};
-    ov.querySelector('#pm-bot-reaktion-max')?.addEventListener('input',e=>{vals.reaktion_max=parseInt(e.target.value);_syncReak();_switchToCustom();});
+    ov.querySelector('#pm-bot-reaktion-max')?.addEventListener('input',e=>{vals.reaktion_max=parseInt(e.target.value);_syncReak();});
     // Preset buttons
     ov.querySelectorAll('.pm-bot-preset').forEach(btn=>{
       btn.addEventListener('click',()=>{
