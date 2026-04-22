@@ -69,10 +69,62 @@ Deno.serve(async (req) => {
     );
 
     const triggered = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`[poker-bot-cron] triggered ${triggered}/${botSessions.length} bot sessions`);
+
+    // Also start the next hand for bot-only sessions that are between hands
+    // (current_player_id=null, hand settled, all active seats are bots)
+    const { data: betweenHandSessions } = await db
+      .from('online_spiele')
+      .select('id, hand_nr')
+      .eq('status', 'running')
+      .is('current_player_id', null)
+      .gt('hand_nr', 0);
+
+    let nextHandTriggered = 0;
+    if (betweenHandSessions?.length) {
+      for (const sess of betweenHandSessions as any[]) {
+        // Check if hand is settled (win action exists for current hand_nr)
+        const { data: winAction } = await db
+          .from('online_actions')
+          .select('id')
+          .eq('online_spiel_id', sess.id)
+          .eq('action', 'win')
+          .eq('hand_nr', sess.hand_nr)
+          .limit(1);
+        if (!winAction?.length) continue;
+
+        // Check that all active seats are bots (no human players active at table)
+        const { data: activeSeats } = await db
+          .from('online_seats')
+          .select('spieler_id, spieler(ist_bot)')
+          .eq('online_spiel_id', sess.id)
+          .in('status', ['active', 'allin', 'paused']);
+        if (!activeSeats?.length) continue;
+        const allBots = (activeSeats as any[]).every(s => s.spieler?.ist_bot);
+        if (!allBots) continue;
+
+        // Find a bot to call poker-new-hand as the caller
+        const botCaller = (activeSeats as any[])[0];
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/poker-new-hand`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SERVICE_KEY}`,
+            },
+            body: JSON.stringify({
+              online_spiel_id: sess.id,
+              spieler_id: botCaller.spieler_id,
+            }),
+          });
+          nextHandTriggered++;
+        } catch (_) { /* ignore */ }
+      }
+    }
+
+    console.log(`[poker-bot-cron] actions=${triggered}/${botSessions.length} next_hand=${nextHandTriggered}`);
 
     return new Response(
-      JSON.stringify({ triggered, sessions: botSessions.map((s: any) => s.id) }),
+      JSON.stringify({ triggered, next_hand: nextHandTriggered, sessions: botSessions.map((s: any) => s.id) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
