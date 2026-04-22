@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
   const { online_spiel_id } = body;
   if (!online_spiel_id) return err('online_spiel_id fehlt');
 
-  // Session laden (muss existieren)
+  // Session laden (muss existieren – auch wenn status=finished/hand_nr=0)
   const { data: session } = await db
     .from('online_spiele')
     .select('id, status')
@@ -47,16 +47,27 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (!session) return err('Session nicht gefunden', 404);
 
-  // Bot-Spieler-IDs ermitteln (werden nach der Session-Löschung bereinigt)
-  const { data: botSeats } = await db
+  // Bot-Spieler-IDs: erst alle Sitz-Spieler-IDs holen, dann separat nach ist_bot filtern
+  // (kein join, da FK on online_seats.spieler_id nicht immer vorhanden)
+  const { data: seatRows } = await db
     .from('online_seats')
-    .select('spieler_id, spieler:spieler_id(ist_bot)')
+    .select('spieler_id')
     .eq('online_spiel_id', online_spiel_id);
-  const botIds: string[] = (botSeats ?? [])
-    .filter((s: any) => s.spieler?.ist_bot)
-    .map((s: any) => s.spieler_id);
+  const sitzIds = (seatRows ?? []).map((s: any) => s.spieler_id).filter(Boolean);
+
+  let botIds: string[] = [];
+  if (sitzIds.length) {
+    const { data: botSpieler } = await db
+      .from('spieler')
+      .select('id')
+      .in('id', sitzIds)
+      .eq('ist_bot', true);
+    botIds = (botSpieler ?? []).map((s: any) => s.id);
+  }
 
   // FK-Abhängigkeiten auflösen, dann Session löschen
+  // (ON DELETE CASCADE auf online_seats/actions/chat/decks würde auch reichen,
+  //  aber explizite Reihenfolge ist sicherer)
   await db.from('online_spiele').update({ current_player_id: null }).eq('id', online_spiel_id);
   await db.from('online_actions').delete().eq('online_spiel_id', online_spiel_id);
   await db.from('online_chat').delete().eq('online_spiel_id', online_spiel_id);
@@ -64,10 +75,9 @@ Deno.serve(async (req) => {
   await db.from('online_decks').delete().eq('id', online_spiel_id);
   await db.from('online_spiele').delete().eq('id', online_spiel_id);
 
-  // Bot-Spieler bereinigen
+  // Bot-Spieler löschen (alle FK-Refs sind jetzt weg)
   if (botIds.length) {
     await db.from('benachrichtigungen').delete().in('spieler_id', botIds);
-    // Alle anderen FK-Referenzen sind jetzt weg → direkte Löschung möglich
     await db.from('spieler').delete().in('id', botIds).eq('ist_bot', true);
   }
 
