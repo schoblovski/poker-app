@@ -8205,7 +8205,7 @@
     const actionArea=_pmActionArea(session,seats,mySeat,isMyTurn,isAdmin,isDealer,isWaiting,isRunning,isFinished,myStatus,handIsOver2);
     const playableSeats=seats.filter(s=>s.status!=='sitting_out'&&(s.stack>0||s.status==='allin'));
     const showNewHand=isRunning&&handIsOver2&&mySeat&&seats.filter(s=>s.status!=='sitting_out').length>1;
-    const newHandBtn=showNewHand?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button id="btn-pm-newhand" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;border:none;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 14px rgba(22,163,74,.4);font-family:var(--font-sans)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde</button></div>`:'';
+    const newHandBtn=showNewHand?`<div style="display:flex;justify-content:center;margin-bottom:var(--space-md)"><button id="btn-pm-newhand" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;border:none;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 14px rgba(22,163,74,.4);font-family:var(--font-sans)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Nächste Spielrunde<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[N]</span></button></div>`:'';
     const _enoughForStart=seats.filter(s=>s.status!=='sitting_out'&&(s.stack||0)>0).length>=2;
     const _canShowStart=isWaiting&&(mySeat||(myStatus==='sitting_out'&&isAdmin));
     const startBtn=_canShowStart?`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:var(--space-md)"><button id="btn-pm-start" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;border:none;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 14px rgba(22,163,74,.4);font-family:var(--font-sans)"${_enoughForStart?'':' disabled'}><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>Erste Spielrunde starten</button>${!_enoughForStart?`<div style="font-size:12px;color:var(--text-secondary)">Mindestens 2 Spieler mit Buy-In benötigt</div>`:''}</div>`:'';
@@ -9015,7 +9015,7 @@
       const myHC=_pm?.myHoleCards||[];
       const handSettled=(_pm?.actions||[]).some(a=>a.action==='win'&&a.hand_nr===session.hand_nr);
       const alreadyRevealed=(_pm?.actions||[]).some(a=>a.action==='reveal_cards'&&a.spieler_id===currentSpieler?.id&&a.hand_nr===session.hand_nr);
-      const revealBtn=handSettled&&myHC.length>0&&!alreadyRevealed?`<button class="btn btn-secondary" id="btn-pm-reveal" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px!important;padding:0 16px!important;font-weight:600;letter-spacing:-.01em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Karten zeigen</button>`:'';
+      const revealBtn=handSettled&&myHC.length>0&&!alreadyRevealed?`<button class="btn btn-secondary" id="btn-pm-reveal" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;height:34px!important;padding:0 16px!important;font-weight:600;letter-spacing:-.01em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Karten zeigen<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[A]</span></button>`:'';
       return`<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)"><span>Spielrunde beendet – warte auf nächste Spielrunde…</span>${revealBtn}</div>`;
     }
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Spielrunde…</div>`;
@@ -9037,9 +9037,9 @@
       return`<div class="pm-action-area">
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
-          <button class="btn btn-danger pm-act-btn" data-action="fold" data-can-check="${canCheck}">Fold</button>
-          ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check</button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}</button>`}
-          ${myStack>0&&anyoneCanCall?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise</button>`:''}
+          <button class="btn btn-danger pm-act-btn" data-action="fold" data-can-check="${canCheck}">Fold<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[F]</span></button>
+          ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`}
+          ${myStack>0&&anyoneCanCall?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise<span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[R]</span></button>`:''}
         </div>
       </div>`;
     }
@@ -9050,11 +9050,11 @@
     if(pre==='call'&&mySeat?.pre_action_limit){preLabel+=` bis €${parseFloat(mySeat.pre_action_limit).toFixed(2)}`;}
     const _preIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
     const _pauseIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-    const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span>`:`${_preIcon}<span>Vorauswahl</span>`;
+    const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span><span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[V]</span>`:`${_preIcon}<span>Vorauswahl</span><span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[V]</span>`;
     return`<div class="pm-action-area">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
         <button class="btn ${pre?'btn-primary':'btn-ghost'} pm-wait-btn" id="btn-pm-preaction" style="max-width:none;margin:0;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${preBtnLabel}</button>
-        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="max-width:none;margin:0;min-width:0;white-space:nowrap">${_pauseIcon}<span>Pause</span></button>
+        <button class="btn btn-ghost pm-wait-btn" id="btn-pm-pause" style="max-width:none;margin:0;min-width:0;white-space:nowrap">${_pauseIcon}<span>Pause</span><span style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[P]</span></button>
       </div>
     </div>`;
   }
