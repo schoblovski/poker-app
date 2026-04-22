@@ -9413,6 +9413,7 @@
         // No hands were played: offer to silently delete the session (no history entry)
         if(!await confirmAction('Es wurden keine Runden gespielt.\n\nSession löschen? Sie wird nicht in der Historie gespeichert.'))return;
         const _id=_pm.id;
+        const _botIds2=(_pm.seats||[]).filter(s=>s.spieler?.ist_bot).map(s=>s.spieler_id);
         if(_pmChannel){db.removeChannel(_pmChannel);_pmChannel=null;}
         _pmReleaseWakeLock();_pm=null;_pmDrawerHide();
         // UPDATE to 'finished' triggers postgres_changes for all lobby clients reliably
@@ -9423,6 +9424,7 @@
         db.from('online_seats').delete().eq('online_spiel_id',_id).then(()=>{});
         db.from('online_actions').delete().eq('online_spiel_id',_id).then(()=>{});
         db.from('online_spiele').delete().eq('id',_id).then(()=>{});
+        if(_botIds2.length)db.from('spieler').update({aktiv:false}).in('id',_botIds2).then(()=>{});
         showPage('online-lobby');
         return;
       }
