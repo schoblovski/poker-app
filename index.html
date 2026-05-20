@@ -101,14 +101,20 @@
 
     /* OPTIMIERUNG DER HEADER-KLASSE */
     .header {
-      /* Nutzt die Safe-Area plus deinen Standard-Abstand */
+      /* Fallback-Werte ohne env() für Android-Kompatibilität */
+      padding-top: 12px;
+      padding-right: var(--space-md);
+      padding-bottom: 12px;
+      padding-left: var(--space-md);
+      /* Nutzt die Safe-Area plus deinen Standard-Abstand (überschreibt Fallback wenn env() unterstützt) */
       padding-top: calc(var(--safe-top) + 12px);
       padding-right: calc(var(--safe-right) + var(--space-md));
       padding-bottom: 12px;
       padding-left: calc(var(--safe-left) + var(--space-md));
 
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      /* minmax(0,1fr) verhindert, dass Grid-Spalten über ihren 1fr-Anteil hinauswachsen */
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
       align-items: center;
       position: sticky;
       top: 0;
@@ -124,10 +130,10 @@
     }
 
 
-    .header-left{display:flex;flex-direction:column;justify-self:start;grid-column:1;}
+    .header-left{display:flex;flex-direction:column;justify-self:start;grid-column:1;min-width:0;}
     .header-app-name{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;}
     .header-page-title{font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;}
-    .header-right{display:flex;align-items:center;gap:10px;position:relative;justify-self:end;grid-column:3;}
+    .header-right{display:flex;align-items:center;gap:10px;position:relative;justify-self:end;grid-column:3;min-width:0;}
     .sync-badge{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;transition:all var(--transition);}
     .sync-badge.synced{background:var(--accent-soft);color:var(--accent-text);}
     .sync-badge.pending{background:var(--warning-soft);color:var(--warning);}
