@@ -89,10 +89,10 @@
     /* Android: in fullscreen the header is hidden so give panels the full viewport height */
     body.pm-fullscreen .pm-tisch-layout{min-height:100dvh;}
     body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
-    body.pm-tisch{height:100dvh;}
+    body.pm-tisch{height:100dvh;overflow:hidden;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
-    body.pm-tisch .content{overscroll-behavior-y:none;}
+    body.pm-tisch .content{overscroll-behavior-y:none;min-height:0;}
     /* Override page-enter to fade-only for online-tisch – prevents position:fixed stacking-context bug */
     #page-online-tisch.active{animation-name:pm-page-fade;}
     @keyframes pm-page-fade{from{opacity:0}to{opacity:1}}
