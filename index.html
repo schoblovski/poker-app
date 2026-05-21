@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.0">
+  <meta name="version" content="4.1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1429,7 +1429,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.0'; // build 20260419
+  const VERSION='4.1';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -6524,6 +6524,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.1',datum:'Mai 2026',eintraege:[
+      {typ:'fix',text:'Android-Kompatibilität: Scrollen auf dem Pokertisch-Screen funktioniert jetzt zuverlässig auf Android Chrome und Desktop-Browser (war komplett blockiert)'},
+      {typ:'fix',text:'Android-Kompatibilität: Landscape-Modus erkennt Orientierungswechsel korrekt und ordnet den Tisch-Inhalt neu an'},
+      {typ:'fix',text:'Android-Kompatibilität: Avatar-Button im Header war abgeschnitten – Layout-Berechnungen mit Safe Area korrigiert'},
+    ]},
     {version:'4.0',datum:'April 2026',eintraege:[
       {typ:'neu',text:'Etwas Neues wartet – für alle, die neugierig genug sind, es selbst herauszufinden. 🃏'},
     ]},
