@@ -89,10 +89,11 @@
     /* Android: in fullscreen the header is hidden so give panels the full viewport height */
     body.pm-fullscreen .pm-tisch-layout{min-height:100dvh;}
     body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
-    body.pm-tisch{height:100dvh;overflow:hidden;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
-    body.pm-tisch .content{overscroll-behavior-y:none;min-height:0;}
+    body.pm-tisch .content{overscroll-behavior-y:none;}
+    /* Scroll container for portrait: height set via JS in renderOnlineTisch */
+    body.pm-tisch:not(.pm-fullscreen) #online-tisch-content{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:none;}
     /* Override page-enter to fade-only for online-tisch – prevents position:fixed stacking-context bug */
     #page-online-tisch.active{animation-name:pm-page-fade;}
     @keyframes pm-page-fade{from{opacity:0}to{opacity:1}}
@@ -8335,6 +8336,14 @@
     const fp=_pmFingerprint();
     if(fp&&fp===_pm._lastFp)return;
     _pm._lastFp=fp;
+    // Bind #online-tisch-content as the scroll container (cross-browser: explicit px height
+    // avoids body/viewport overflow-propagation issues on Android Chrome and desktop Chrome)
+    if(document.body.classList.contains('pm-fullscreen')){
+      el.style.height='';
+    }else{
+      const _hdrH=document.querySelector('.header')?.offsetHeight??60;
+      el.style.height=(window.innerHeight-_hdrH)+'px';
+    }
     // Layout fingerprint: only triggers full DOM rebuild on orientation/role/mode change
     const _sFp=_pmStructFp();
     const _hasSects=!!el.querySelector('#pm-s-svg');
