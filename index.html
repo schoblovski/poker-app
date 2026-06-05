@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.1">
+  <meta name="version" content="4.2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1429,7 +1429,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.1';
+  const VERSION='4.2';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -5279,10 +5279,6 @@
 
   // ── Asse legen (Dealer-Randomizer) ─────────────────────
   function loadRandomizer(){
-    // iOS 13+: request DeviceMotion permission to enable shake easter egg
-    if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
-      DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
-    }
     const el=document.getElementById('randomizer-content');
     // Alle aktiven Nicht-Bank-Spieler als Pool
     const pool=(alleSpieler||[]).filter(s=>!s.ist_bank);
@@ -6524,6 +6520,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.2',datum:'Juni 2026',eintraege:[
+      {typ:'fix',text:'Asse-Randomizer: Schütteln des Geräts öffnet den Randomizer nicht mehr automatisch (war zu sensibel – normales Bewegen löste ihn versehentlich aus). Der Randomizer ist weiterhin über das Avatar-Menü erreichbar'},
+    ]},
     {version:'4.1',datum:'Mai 2026',eintraege:[
       {typ:'fix',text:'Android-Kompatibilität: Scrollen auf dem Pokertisch-Screen funktioniert jetzt zuverlässig auf Android Chrome und Desktop-Browser (war komplett blockiert)'},
       {typ:'fix',text:'Android-Kompatibilität: Landscape-Modus erkennt Orientierungswechsel korrekt und ordnet den Tisch-Inhalt neu an'},
@@ -8084,10 +8083,6 @@
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true,_olderActions:[],_feedCursor:null,_feedAllLoaded:false,_feedLoading:false};
     if(!silent){
       showPage('online-tisch');
-      // Request device motion/orientation permission (iOS 13+) and set up easter eggs
-      if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
-        DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
-      }
     }
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
 
@@ -11905,31 +11900,8 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
     _pmDrawerHide();
   }
 
-  // ── SHAKE EASTER EGG: Schütteln → Asse-Randomizer ──
-  let _shakeSetup=false,_shakeLastMag=0,_shakeCd=false;
-  function _shakeHandler(e){
-    const a=e.accelerationIncludingGravity;if(!a)return;
-    const m=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
-    const d=Math.abs(m-_shakeLastMag);_shakeLastMag=m;
-    if(d>18&&!_shakeCd){
-      _shakeCd=true;setTimeout(()=>_shakeCd=false,4000);
-      if(typeof _pm!=='undefined'&&_pm!==null)return; // Don't trigger during online session
-      if(typeof showPage!=='function'||typeof loadRandomizer!=='function')return;
-      const t=document.createElement('div');
-      t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--accent);color:var(--accent-text);border-radius:24px;padding:10px 20px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.25)';
-      t.textContent='🎲 Asse-Randomizer!';
-      document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
-      setTimeout(()=>{showPage('randomizer');loadRandomizer();setTimeout(()=>document.getElementById('rnd-go')?.click(),350);},700);
-    }
-  }
-  function _shakeEnable(){
-    if(_shakeSetup)return;_shakeSetup=true;
-    window.addEventListener('devicemotion',_shakeHandler,{passive:true});
-  }
-  // Non-iOS: enable immediately; iOS: will request permission in loadRandomizer / enterOnlineSession
-  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission!=='function'){
-    _shakeEnable();
-  }
+  // Shake-to-Randomizer deaktiviert (war zu sensibel)
+  function _shakeEnable(){}
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
