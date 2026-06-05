@@ -5279,10 +5279,6 @@
 
   // ── Asse legen (Dealer-Randomizer) ─────────────────────
   function loadRandomizer(){
-    // iOS 13+: request DeviceMotion permission to enable shake easter egg
-    if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
-      DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
-    }
     const el=document.getElementById('randomizer-content');
     // Alle aktiven Nicht-Bank-Spieler als Pool
     const pool=(alleSpieler||[]).filter(s=>!s.ist_bank);
@@ -8084,10 +8080,6 @@
     _pm={id:sessionId,session:null,seats:[],actions:[],mySeat:null,myHoleCards:[],_waLink:'',_initialLoad:true,_olderActions:[],_feedCursor:null,_feedAllLoaded:false,_feedLoading:false};
     if(!silent){
       showPage('online-tisch');
-      // Request device motion/orientation permission (iOS 13+) and set up easter eggs
-      if(typeof DeviceMotionEvent?.requestPermission==='function'&&!_shakeSetup){
-        DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')_shakeEnable();}).catch(()=>{});
-      }
     }
     if(typeof _btRequestWakeLock==='function')_btRequestWakeLock();
 
@@ -11905,31 +11897,8 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
     _pmDrawerHide();
   }
 
-  // ── SHAKE EASTER EGG: Schütteln → Asse-Randomizer ──
-  let _shakeSetup=false,_shakeLastMag=0,_shakeCd=false;
-  function _shakeHandler(e){
-    const a=e.accelerationIncludingGravity;if(!a)return;
-    const m=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
-    const d=Math.abs(m-_shakeLastMag);_shakeLastMag=m;
-    if(d>18&&!_shakeCd){
-      _shakeCd=true;setTimeout(()=>_shakeCd=false,4000);
-      if(typeof _pm!=='undefined'&&_pm!==null)return; // Don't trigger during online session
-      if(typeof showPage!=='function'||typeof loadRandomizer!=='function')return;
-      const t=document.createElement('div');
-      t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--accent);color:var(--accent-text);border-radius:24px;padding:10px 20px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.25)';
-      t.textContent='🎲 Asse-Randomizer!';
-      document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
-      setTimeout(()=>{showPage('randomizer');loadRandomizer();setTimeout(()=>document.getElementById('rnd-go')?.click(),350);},700);
-    }
-  }
-  function _shakeEnable(){
-    if(_shakeSetup)return;_shakeSetup=true;
-    window.addEventListener('devicemotion',_shakeHandler,{passive:true});
-  }
-  // Non-iOS: enable immediately; iOS: will request permission in loadRandomizer / enterOnlineSession
-  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission!=='function'){
-    _shakeEnable();
-  }
+  // Shake-to-Randomizer deaktiviert (war zu sensibel)
+  function _shakeEnable(){}
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
