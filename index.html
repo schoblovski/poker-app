@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.2">
+  <meta name="version" content="4.3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -249,9 +249,9 @@
     select.form-input{font-size:16px;}
     .payout-input-row{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);border-bottom:1px solid var(--border);}
     .payout-input-row:last-child{border-bottom:none;}
-    .payout-field{flex:1;background:transparent;border:none;color:var(--text-primary);font-size:16px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
+    .payout-field{flex:1;min-width:0;background:transparent;border:none;color:var(--text-primary);font-size:16px;font-weight:500;font-family:var(--font-mono);text-align:right;padding:4px 0;}
     .payout-field:focus{outline:none;}
-    .payout-unit{font-size:13px;color:var(--text-tertiary);}
+    .payout-unit{font-size:13px;color:var(--text-tertiary);flex-shrink:0;}
     .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-sm);}
     .stat-card{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);box-shadow:var(--shadow);}
     .stat-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;}
@@ -1429,7 +1429,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.2';
+  const VERSION='4.3';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -4405,7 +4405,7 @@
     <div class="section-title">Ergebnis (PayOut)</div>
     <div class="card" style="margin-top:var(--space-sm)">`;
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0.00"><span class="payout-unit">€</span></div>`;
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0.00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
     <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
@@ -6520,6 +6520,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.3',datum:'Juni 2026',eintraege:[
+      {typ:'fix',text:'Android: PayOut-Eingabefelder zeigen das €-Symbol jetzt korrekt an – auf Android Chrome wurde es durch einen Layout-Overflow abgeschnitten'},
+    ]},
     {version:'4.2',datum:'Juni 2026',eintraege:[
       {typ:'fix',text:'Asse-Randomizer: Schütteln des Geräts öffnet den Randomizer nicht mehr automatisch (war zu sensibel – normales Bewegen löste ihn versehentlich aus). Der Randomizer ist weiterhin über das Avatar-Menü erreichbar'},
     ]},
