@@ -4500,7 +4500,7 @@
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:'Buy-In hinzugefügt',
-        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,
+        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(t.buyins*einstellungen.buyin_pot)} im Pot)`,
         data:{url:'/#spiel',tag:'buyin'},
         kategorie:'buyins',
       });
@@ -4513,19 +4513,27 @@
     // Push pro Spieler mit individuellen Ergebnissen
     const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
     const datumStr=new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const buyin_kassa=aktuellesSpiel.buyin_kassa||2;
     const spielId=aktuellesSpiel.id;
+    // Kontostände nach Abschluss berechnen für Push
+    const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
+      db.from('spieler').select('id,name,aktiv,ist_bank'),
+      db.from('transaktionen').select('*'),
+      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
+      db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
+    ]);
+    const spieleMap={};(spiele||[]).forEach(s=>{spieleMap[s.id]=s;});
+    const kontostaende=berechneKontostaende(alleSpielerDB||[],trans,verlauf,spieleMap);
     for(const t of spielTeilnehmer){
       if(!t.spieler_id)continue;
       const buyins=t.buyins||0;
       // Payout aus DOM lesen (spielTeilnehmer[].payout wird beim Tippen nicht aktualisiert)
       const payout=parseFloat(document.getElementById('payout-'+t.id)?.value?.replace(',','.'))||t.payout||0;
-      const net=payout-buyins*buyin_kassa;
-      const netStr=(net>=0?'+':'')+fmt(net);
+      const ks=kontostaende[t.spieler_id]||0;
+      const ksStr=(ks>=0?'+':'')+fmt(ks);
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:`Spielabend ${datumStr}`,
-        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · ${netStr}`,
+        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · Kontostand: ${ksStr}`,
         data:{url:'/#spiel-detail?id='+spielId,tag:'spielergebnis'},
         kategorie:'spielergebnisse',
       });
