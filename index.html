@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.3">
+  <meta name="version" content="4.4">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -349,7 +349,7 @@
     .empty-icon svg{width:28px;height:28px;color:var(--text-tertiary);}
     .empty-title{font-size:17px;font-weight:600;margin-bottom:6px;}
     .empty-subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg);}
-    .pot-summary{background:var(--accent-soft);border-radius:var(--radius-md);padding:10px var(--space-md);display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:var(--space-sm);}
+    .pot-summary{background:var(--accent-soft);border-radius:var(--radius-md);padding:12px var(--space-md);display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:var(--space-sm);}
     .pot-summary-label{color:var(--accent-text);font-weight:500;}
     .pot-summary-value{color:var(--accent-text);font-weight:700;font-variant-numeric:tabular-nums;}
     .pot-summary-value.warn{color:var(--warning);}
@@ -1429,7 +1429,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.3';
+  const VERSION='4.4';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -4360,6 +4360,8 @@
       
       // Warn-Farbe (Gelb) hinzufügen, wenn der Restwert nicht 0 ist
       v.className = 'pot-summary-value' + (Math.abs(rest) > 0.01 ? ' warn' : '');
+      const btnRest = document.getElementById('btn-rest-zuweisen');
+      if (btnRest) btnRest.style.display = rest > 0.01 ? 'inline-flex' : 'none';
     }
 
     // 3. Logik für den "Spiel abschließen" Button
@@ -4372,6 +4374,46 @@
       // Optional: Optisches Feedback (Button wirkt blasser, wenn deaktiviert)
       finishBtn.style.opacity = isReady ? "1" : "0.5";
     }
+  }
+
+  function zeigeRestZuweisenSheet(){
+    const {rest} = calcPotInfo();
+    if(rest < 0.01) return;
+    const sheet = document.createElement('div');
+    sheet.id = 'rest-zuweisen-sheet';
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;justify-content:flex-end';
+    const backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45)';
+    backdrop.onclick = () => sheet.remove();
+    const panel = document.createElement('div');
+    panel.style.cssText = 'position:relative;background:var(--surface);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px))';
+    let html = `<div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px"></div>`;
+    html += `<div style="font-size:15px;font-weight:600;margin-bottom:4px">Rest zuweisen</div>`;
+    html += `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">€${rest.toFixed(2)} dem Payout hinzufügen:</div>`;
+    spielTeilnehmer.forEach(t => {
+      const cur = parseFloat((document.getElementById('payout-'+t.id)?.value||'').replace(',','.'))||0;
+      const neu = cur + rest;
+      html += `<button class="btn btn-ghost" style="justify-content:space-between;margin-bottom:8px" data-tid="${t.id}" data-neu="${neu.toFixed(2)}">
+        <span style="display:flex;align-items:center;gap:8px">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500">${t.spieler.name}</span></span>
+        <span style="font-size:13px;color:var(--text-secondary)">→ €${neu.toFixed(2)}</span>
+      </button>`;
+    });
+    panel.innerHTML = html;
+    panel.querySelectorAll('[data-tid]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tid = btn.dataset.tid;
+        const neu = parseFloat(btn.dataset.neu);
+        const input = document.getElementById('payout-'+tid);
+        if(input){ input.value = neu.toFixed(2); input.dispatchEvent(new Event('change')); }
+        const t = spielTeilnehmer.find(x=>x.id===tid);
+        if(t) await save(()=>db.from('spiel_teilnehmer').update({payout:neu}).eq('id',tid),`PayOut ${t.spieler.name}: €${neu}`);
+        updatePotUI();
+        sheet.remove();
+      });
+    });
+    sheet.appendChild(backdrop);
+    sheet.appendChild(panel);
+    document.body.appendChild(sheet);
   }
 
   function renderSpiel(){
@@ -4408,12 +4450,19 @@
       html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0.00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
-    <div class="pot-summary" id="pot-rest-summary"><span class="pot-summary-label">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span><span class="pot-summary-value">Rest €${gesamtPot.toFixed(2)}</span></div>
+    <div class="pot-summary" id="pot-rest-summary" style="flex-direction:column;gap:8px;text-align:center">
+      <span class="pot-summary-label" style="font-size:12px">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <span class="pot-summary-value" style="font-size:17px">Rest €${gesamtPot.toFixed(2)}</span>
+        <button id="btn-rest-zuweisen" style="display:none;background:var(--accent-text);color:#fff;border:none;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;font-family:var(--font-sans);cursor:pointer;display:none;align-items:center;gap:5px;transition:opacity .15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg>zuweisen</button>
+      </div>
+    </div>
     <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
     <button class="btn btn-ghost" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
 
     el.innerHTML=html;
     updatePotUI();
+    document.getElementById('btn-rest-zuweisen')?.addEventListener('click', zeigeRestZuweisenSheet);
 
     el.querySelectorAll('.counter-btn.plus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,+1)));
     el.querySelectorAll('.counter-btn.minus').forEach(btn=>btn.addEventListener('click',()=>buyinChange(btn.dataset.id,-1)));
@@ -6520,6 +6569,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.4',datum:'Juni 2026',eintraege:[
+      {typ:'neu',text:'Payout: Neuer «↓ zuweisen»-Button in der Pot-Statusleiste – erscheint sobald ein Restbetrag vorhanden ist. Ein Tippen öffnet ein Sheet mit allen Spielern; der Rest wird per Klick direkt dem gewählten Spieler gutgeschrieben'},
+    ]},
     {version:'4.3',datum:'Juni 2026',eintraege:[
       {typ:'fix',text:'Android: PayOut-Eingabefelder zeigen das €-Symbol jetzt korrekt an – auf Android Chrome wurde es durch einen Layout-Overflow abgeschnitten'},
     ]},
