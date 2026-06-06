@@ -4533,7 +4533,7 @@
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:`Spielabend ${datumStr}`,
-        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · Kontostand: ${ksStr}`,
+        body:`${buyins} Buy-In${buyins!==1?'s':''} · Payout: ${fmt(payout)} · Neuer Kontostand: ${ksStr}`,
         data:{url:'/#spiel-detail?id='+spielId,tag:'spielergebnis'},
         kategorie:'spielergebnisse',
       });
