@@ -4489,13 +4489,17 @@
     });
   }
 
+  const _buyinLock=new Set();
   async function buyinChange(id,delta){
-    const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=1))return;
+    if(_buyinLock.has(id))return;
+    _buyinLock.add(id);
+    const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=1)){_buyinLock.delete(id);return;}
     t.buyins=(t.buyins||0)+delta;
     document.getElementById('count-'+id).textContent=t.buyins;
     document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
     updatePotUI();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
+    _buyinLock.delete(id);
     if(delta>0){
       triggerPush({
         spieler_ids:[t.spieler_id],
