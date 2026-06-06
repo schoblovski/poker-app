@@ -4529,7 +4529,7 @@
       // Payout aus DOM lesen (spielTeilnehmer[].payout wird beim Tippen nicht aktualisiert)
       const payout=parseFloat(document.getElementById('payout-'+t.id)?.value?.replace(',','.'))||t.payout||0;
       const ks=kontostaende[t.spieler_id]||0;
-      const ksStr=(ks>=0?'+':'')+fmt(ks);
+      const ksStr=fmt(ks);
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:`Spielabend ${datumStr}`,
