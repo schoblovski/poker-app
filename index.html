@@ -4560,7 +4560,10 @@
     if(mitBuyins.length>0){if(!await confirmAction(`${mitBuyins.map(t=>t.spieler.name).join(', ')} ${mitBuyins.length>1?'haben':'hat'} bereits Buy-Ins und wird entfernt. Fortfahren?`))return;}
     setSync('pending');
     for(const t of entf)await db.from('spiel_teilnehmer').delete().eq('id',t.id);
-    if(hinzu.length>0)await db.from('spiel_teilnehmer').insert(hinzu.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
+    if(hinzu.length>0){
+      await db.from('spiel_teilnehmer').insert(hinzu.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
+      hinzu.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
+    }
     setSync('synced');
     document.getElementById('modal-teilnehmer-edit').classList.remove('open');
     await loadSpiel();
@@ -4581,6 +4584,7 @@
     const uniqueIds=[...new Set(selectedCards.map(el=>el.dataset.id))];
     const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa}).select().single();
     await db.from('spiel_teilnehmer').insert(uniqueIds.map(id=>({spiel_id:neuesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
+    uniqueIds.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
     document.getElementById('modal-spieler-auswahl').classList.remove('open');
     aktuellesSpiel=neuesSpiel;await loadSpiel();
   });
