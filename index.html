@@ -4361,7 +4361,7 @@
       // Warn-Farbe (Gelb) hinzufügen, wenn der Restwert nicht 0 ist
       v.className = 'pot-summary-value' + (Math.abs(rest) > 0.01 ? ' warn' : '');
       const btnRest = document.getElementById('btn-rest-zuweisen');
-      if (btnRest) btnRest.style.display = rest > 0.01 ? '' : 'none';
+      if (btnRest) btnRest.style.display = rest > 0.01 ? 'inline-flex' : 'none';
     }
 
     // 3. Logik für den "Spiel abschließen" Button
@@ -4454,7 +4454,7 @@
       <span class="pot-summary-label" style="font-size:12px">Pot €${gesamtPot.toFixed(2)} · Zugeteilt €0</span>
       <div style="display:flex;align-items:center;justify-content:center;gap:10px">
         <span class="pot-summary-value" style="font-size:17px">Rest €${gesamtPot.toFixed(2)}</span>
-        <button id="btn-rest-zuweisen" class="btn btn-ghost" style="display:none;width:auto;padding:5px 12px;font-size:12px;height:auto;border-color:var(--accent-text);color:var(--accent-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg> zuweisen</button>
+        <button id="btn-rest-zuweisen" style="display:none;background:var(--accent-text);color:#fff;border:none;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;font-family:var(--font-sans);cursor:pointer;display:none;align-items:center;gap:5px;transition:opacity .15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg>zuweisen</button>
       </div>
     </div>
     <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
