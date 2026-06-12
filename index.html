@@ -704,6 +704,10 @@
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
   .eq-explain{margin-top:var(--space-sm);padding:var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;line-height:1.5;color:var(--text-secondary);display:flex;align-items:center;gap:var(--space-sm);}
+  .eq-photo-preview{display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:var(--space-md);}
+  .eq-photo-preview-img{width:56px;height:56px;border-radius:8px;}
+  .eq-photo-preview-close{flex-shrink:0;width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .eq-photo-preview-close svg{width:16px;height:16px;}
   .eq-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 
   /* Key hints: hidden on touch-only devices, shown when physical keyboard detected */
@@ -6333,6 +6337,7 @@
     let _mcToken=0;   // Cancellation für laufende Simulation
     let _calcInFlight=false;
     let _analyzing=false;   // Foto wird gerade von der KI analysiert
+    let _analyzedImageSrc=null; // Foto, das zuletzt zur Analyse verwendet wurde (zum Vergleich/Abgleich)
     let explanation=null;   // KI-Erklärung zum Ergebnis (Text)
     let _explLoading=false;
 
@@ -6439,6 +6444,7 @@
     // ── KI-Fotoanalyse ─────────────────────────────────────
     async function analyzePhoto(payload){
       _analyzing=true;
+      _analyzedImageSrc=payload.image??payload.imageUrl??null;
       render();
       const data=await _callFn('analyze-poker-photo',payload);
       _analyzing=false;
@@ -6616,6 +6622,11 @@
         </div>
         <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Foto wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
         <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
+        ${_analyzedImageSrc?`<div class="eq-photo-preview">
+          <img src="${escHtml(_analyzedImageSrc)}" class="hand-foto-thumb eq-photo-preview-img" alt="Analysiertes Foto">
+          <div class="eq-hint" style="text-align:left;padding:0;flex:1">Analysiertes Foto – zum Vergrössern tippen, dann mit den erkannten Karten oben vergleichen.</div>
+          <button type="button" class="eq-photo-preview-close" id="eq-photo-preview-close" title="Foto ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
+        </div>`:''}
         <div class="section-title" style="margin-top:0">Hände</div>
         <div id="eq-hands-wrap"></div>
         ${hands.length<MAX_HANDS?`<button class="btn btn-secondary" id="eq-add-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand hinzufügen</button>`:''}
@@ -6713,6 +6724,8 @@
         const b64=await compressImageToBase64(file,1568,0.9);
         analyzePhoto({image:b64});
       });
+      const photoPreviewClose=el.querySelector('#eq-photo-preview-close');
+      if(photoPreviewClose)photoPreviewClose.addEventListener('click',()=>{_analyzedImageSrc=null;render();});
     }
 
     render();
