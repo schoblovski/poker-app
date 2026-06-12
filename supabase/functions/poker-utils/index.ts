@@ -206,3 +206,55 @@ export function json(data: unknown, status = 200) {
 export function err(msg: string, status = 400) {
   return json({ error: msg }, status);
 }
+
+// ─── Dealer-Kommentare (KI-generiert via Edge Function `dealer-comment`) ──
+// Würfelt pro Trigger-Event ob ein Dealer-Kommentar erscheinen soll und
+// stösst die Generierung fire-and-forget an. Blockiert den Spielfluss nie.
+
+const DEALER_COMMENT_PROB: Record<string, number> = {
+  fold: 18,
+  allin: 52,
+  raise: 20,
+  call: 10,
+  check: 7,
+  win: 42,
+  win_72: 95,
+  small_pot: 60,
+  new_hand: 12,
+  showdown: 35,
+};
+
+export async function getSpielerName(
+  db: { from: (table: string) => any },
+  spieler_id: string | null | undefined,
+): Promise<string | null> {
+  if (!spieler_id) return null;
+  const { data } = await db.from('spieler').select('name').eq('id', spieler_id).single();
+  return data?.name ?? null;
+}
+
+export function rollDealerTrigger(trigger: string): boolean {
+  const p = DEALER_COMMENT_PROB[trigger];
+  if (!p) return false;
+  return Math.random() * 100 < p;
+}
+
+export function fireDealerComment(supabaseUrl: string, serviceKey: string, payload: {
+  online_spiel_id: string;
+  trigger: string;
+  spielerName?: string | null;
+  hand_nr: number;
+  street?: string | null;
+  kontext?: Record<string, unknown>;
+}) {
+  const p = fetch(`${supabaseUrl}/functions/v1/dealer-comment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+    body: JSON.stringify(payload),
+  }).catch((e) => console.error('[dealer-comment] fetch failed:', e));
+
+  // Hält die Edge Function am Leben bis der Kommentar geschrieben ist,
+  // ohne die eigentliche Response zu verzögern.
+  // @ts-ignore EdgeRuntime ist in Supabase/Deno Deploy global verfügbar
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(p);
+}

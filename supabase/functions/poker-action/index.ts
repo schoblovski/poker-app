@@ -12,7 +12,7 @@
 //   }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { CORS, corsOk, json, err } from '../poker-utils/index.ts';
+import { CORS, corsOk, json, err, rollDealerTrigger, fireDealerComment, getSpielerName } from '../poker-utils/index.ts';
 
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -222,6 +222,16 @@ Deno.serve(async (req) => {
     street: session.street, hand_nr: session.hand_nr,
   });
 
+  // Dealer-Kommentar (KI, fire-and-forget) – nur für fold/check/call/raise/allin
+  if (rollDealerTrigger(logAction)) {
+    const name = await getSpielerName(db, spieler_id);
+    fireDealerComment(SUPABASE_URL, SERVICE_KEY, {
+      online_spiel_id, trigger: logAction, spielerName: name,
+      hand_nr: session.hand_nr, street: session.street,
+      kontext: { pot: newPot, variante: session.variante },
+    });
+  }
+
   // Aktualisierte Sitze berechnen
   const updatedSeats = (seats ?? []).map((s: { id: string; status: string; bet_current_round: number }) =>
     s.id === mySeat.id ? { ...s, status: newStatus, bet_current_round: newBet } : s
@@ -248,6 +258,18 @@ Deno.serve(async (req) => {
       street: session.street,
       hand_nr: session.hand_nr,
     });
+
+    // Dealer-Kommentar (KI, fire-and-forget)
+    const bb = session.big_blind ?? session.small_blind * 2;
+    const winTrigger = newPot < bb * 2 ? 'small_pot' : 'win';
+    if (rollDealerTrigger(winTrigger)) {
+      const name = await getSpielerName(db, winner.spieler_id);
+      fireDealerComment(SUPABASE_URL, SERVICE_KEY, {
+        online_spiel_id, trigger: winTrigger, spielerName: name,
+        hand_nr: session.hand_nr, street: session.street,
+        kontext: { pot: newPot, variante: session.variante },
+      });
+    }
 
     return json({ ok: true, hand_over: true, winner_id: winner.spieler_id });
   }

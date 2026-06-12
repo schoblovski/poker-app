@@ -6,7 +6,7 @@
 //   { online_spiel_id: string, spieler_id: string }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { CORS, corsOk, json, err } from '../poker-utils/index.ts';
+import { CORS, corsOk, json, err, rollDealerTrigger, fireDealerComment, getSpielerName } from '../poker-utils/index.ts';
 
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -145,6 +145,16 @@ Deno.serve(async (req) => {
 
   const startData = await startRes.json();
   if (!startRes.ok) return json(startData, startRes.status);
+
+  // Dealer-Kommentar (KI, fire-and-forget)
+  if (rollDealerTrigger('new_hand')) {
+    const name = await getSpielerName(db, spieler_id);
+    fireDealerComment(SUPABASE_URL, SERVICE_KEY, {
+      online_spiel_id, trigger: 'new_hand', spielerName: name,
+      hand_nr: newHandNr, street: 'preflop',
+      kontext: { variante: session.variante },
+    });
+  }
 
   return json({ ok: true, new_hand: true, hand_nr: newHandNr, ...startData });
 });
