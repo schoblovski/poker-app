@@ -64,3 +64,11 @@ jobs:
       - name: Deploy dealer-comment
         continue-on-error: true
         run: supabase functions deploy dealer-comment --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+
+      - name: Deploy analyze-poker-photo
+        continue-on-error: true
+        run: supabase functions deploy analyze-poker-photo --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt
+
+      - name: Deploy equity-explain
+        continue-on-error: true
+        run: supabase functions deploy equity-explain --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --no-verify-jwt

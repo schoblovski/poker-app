@@ -703,6 +703,8 @@
   .eq-progress{height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin:var(--space-sm) 0;}
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
+  .eq-explain{margin-top:var(--space-sm);padding:var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;line-height:1.5;color:var(--text-secondary);display:flex;align-items:center;gap:var(--space-sm);}
+  .eq-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 
   /* Key hints: hidden on touch-only devices, shown when physical keyboard detected */
   .pm-key-hint{display:none}
@@ -1105,6 +1107,7 @@
       </div>
       <div id="hand-view-foto-wrap" style="display:none;margin-bottom:var(--space-md)">
         <img id="hand-view-foto" style="width:100%;border-radius:var(--radius-md);max-height:220px;object-fit:cover;cursor:zoom-in;display:block" alt="Beweisfoto">
+        <button type="button" class="btn btn-secondary" id="hand-view-equity-btn" style="width:100%;margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg> In Equity-Rechner anzeigen</button>
       </div>
     </div>
 
@@ -1704,6 +1707,7 @@
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
+  const cameraIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
   function getAvatar(s){
     if(!s?.profilbild) return null;
     // Base64 data URL (neu gespeicherte Bilder)
@@ -6175,6 +6179,23 @@
   const EQ_RANK_LABEL=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   const EQ_SUIT_CHAR=['♠','♥','♦','♣'];
   const EQ_SUIT_RED=[false,true,true,false];
+  // Kartennotation für KI-Foto-Analyse: Rang 2-9,T,J,Q,K,A + Farbe s/h/d/c (Reihenfolge wie EQ_SUIT_CHAR)
+  const EQ_RANK_CHAR=['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+  const EQ_SUIT_CHAR_AI=['s','h','d','c'];
+  function eqCardToStr(c){return EQ_RANK_CHAR[c>>2]+EQ_SUIT_CHAR_AI[c&3];}
+  function eqStrToCard(s){
+    if(typeof s!=='string')return null;
+    const m=s.trim().match(/^(10|[2-9TJQKAtjqka])([shdcSHDC])$/);
+    if(!m)return null;
+    let rankStr=m[1].toUpperCase();
+    if(rankStr==='10')rankStr='T';
+    const r=EQ_RANK_CHAR.indexOf(rankStr);
+    const s_idx=EQ_SUIT_CHAR_AI.indexOf(m[2].toLowerCase());
+    if(r<0||s_idx<0)return null;
+    return r*4+s_idx;
+  }
+  // Foto eines Beweisfotos (besondere Hand), das im Equity-Rechner analysiert werden soll
+  let _eqPendingPhotoUrl=null;
 
   function _eqStraightHigh(ranksMask){
     // ranksMask: bitmask 13 bits (bit r = rank r present)
@@ -6311,6 +6332,9 @@
     let results=null; // {wins:[],ties:[],iters:N} oder null
     let _mcToken=0;   // Cancellation für laufende Simulation
     let _calcInFlight=false;
+    let _analyzing=false;   // Foto wird gerade von der KI analysiert
+    let explanation=null;   // KI-Erklärung zum Ergebnis (Text)
+    let _explLoading=false;
 
     const MAX_HANDS=6;
     const MIN_HANDS=2;
@@ -6406,8 +6430,89 @@
       // Nach jeder Änderung: laufende Simulation verwerfen, neu rendern, ggf. neu berechnen
       _mcToken++;
       results=null;
+      explanation=null;
+      _explLoading=false;
       render();
       if(canCalc())runSimulation();
+    }
+
+    // ── KI-Fotoanalyse ─────────────────────────────────────
+    async function analyzePhoto(payload){
+      _analyzing=true;
+      render();
+      const data=await _callFn('analyze-poker-photo',payload);
+      _analyzing=false;
+      if(data?.error){
+        await showAlert('Foto-Analyse fehlgeschlagen: '+data.error);
+        render();
+        return;
+      }
+      applyAnalysis(data);
+    }
+
+    function applyAnalysis(data){
+      const used=new Set();
+      const community=[];
+      (data.community||[]).forEach(s=>{
+        const c=eqStrToCard(s);
+        if(c!==null&&!used.has(c)){used.add(c);community.push(c);}
+      });
+      const groups=[];
+      (data.hands||[]).forEach(g=>{
+        const cards=[];
+        (g||[]).forEach(s=>{
+          const c=eqStrToCard(s);
+          if(c!==null&&!used.has(c)){used.add(c);cards.push(c);}
+        });
+        if(cards.length===2||cards.length===4)groups.push(cards);
+      });
+
+      if(!groups.length){
+        showAlert('Es konnten keine vollständigen Hände auf dem Foto erkannt werden.'+(data.note?' '+data.note:''));
+        render();
+        return;
+      }
+
+      // Modus automatisch setzen: Mehrheit der erkannten Gruppen entscheidet (Hold'em=2, Omaha=4)
+      const fourCount=groups.filter(g=>g.length===4).length;
+      const newMode=fourCount*2>=groups.length?'omaha':'holdem';
+      const size=newMode==='holdem'?2:4;
+
+      let validGroups=groups.filter(g=>g.length===size);
+      if(!validGroups.length){
+        showAlert('Es konnten keine vollständigen Hände auf dem Foto erkannt werden.'+(data.note?' '+data.note:''));
+        render();
+        return;
+      }
+      if(validGroups.length>MAX_HANDS)validGroups=validGroups.slice(0,MAX_HANDS);
+      while(validGroups.length<MIN_HANDS)validGroups.push(new Array(size).fill(null));
+
+      mode=newMode;
+      hands=validGroups.map(g=>{
+        const arr=new Array(size).fill(null);
+        g.forEach((c,i)=>{arr[i]=c;});
+        return arr;
+      });
+      board=[null,null,null,null,null];
+      community.slice(0,5).forEach((c,i)=>{board[i]=c;});
+
+      if(data.note)showAlert(data.note);
+      onChange();
+    }
+
+    // ── KI-Erklärung zum Ergebnis ──────────────────────────
+    async function fetchExplanation(){
+      const myToken=_mcToken;
+      _explLoading=true;
+      render();
+      const handsStr=hands.map(h=>h.map(eqCardToStr));
+      const boardStr=board.filter(c=>c!==null).map(eqCardToStr);
+      const totals=results.wins.map((w,i)=>(w+results.ties[i])/results.iters*100);
+      const data=await _callFn('equity-explain',{mode,hands:handsStr,board:boardStr,results:totals});
+      if(myToken!==_mcToken)return; // veraltet (zwischenzeitlich geändert)
+      _explLoading=false;
+      explanation=(!data?.error&&data?.text)?data.text:null;
+      render();
     }
 
     function addHand(){if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange();}}
@@ -6493,6 +6598,7 @@
           results={wins,ties,iters:MC_ITERS};
           _calcInFlight=false;
           render();
+          fetchExplanation();
         }
       }
       setTimeout(runBatch,0);
@@ -6508,6 +6614,8 @@
           <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
           <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
         </div>
+        <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Foto wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
+        <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
         <div class="section-title" style="margin-top:0">Hände</div>
         <div id="eq-hands-wrap"></div>
         ${hands.length<MAX_HANDS?`<button class="btn btn-secondary" id="eq-add-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand hinzufügen</button>`:''}
@@ -6521,6 +6629,8 @@
           <button class="btn btn-secondary" id="eq-reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset</button>
         </div>
         ${results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:''}
+        ${_explLoading?`<div class="eq-explain"><span class="eq-spinner"></span> KI analysiert das Ergebnis…</div>`:''}
+        ${explanation?`<div class="eq-explain">${escHtml(explanation)}</div>`:''}
       `;
 
       // Hände rendern
@@ -6589,9 +6699,30 @@
       el.querySelectorAll('.eq-mode-switch button').forEach(btn=>{
         btn.addEventListener('click',()=>switchMode(btn.dataset.mode));
       });
+
+      // Foto-Analyse
+      const photoInput=el.querySelector('#eq-photo-input');
+      el.querySelector('#eq-camera').addEventListener('click',()=>{
+        if(_analyzing)return;
+        photoInput.click();
+      });
+      photoInput.addEventListener('change',async e=>{
+        const file=e.target.files[0];
+        photoInput.value='';
+        if(!file)return;
+        const b64=await compressImageToBase64(file,1024,0.85);
+        analyzePhoto({image:b64});
+      });
     }
 
     render();
+
+    // Falls von der Hand-Detail-Seite mit einem Beweisfoto gestartet: direkt analysieren
+    if(_eqPendingPhotoUrl){
+      const url=_eqPendingPhotoUrl;
+      _eqPendingPhotoUrl=null;
+      analyzePhoto({imageUrl:url});
+    }
   }
 
   // ── INFO & CHANGELOG ───────────────────────────────────
@@ -7305,6 +7436,12 @@
     if(h.beweisfoto){
       fotoImg.src=h.beweisfoto;
       fotoWrap.style.display='block';
+      document.getElementById('hand-view-equity-btn').onclick=()=>{
+        _eqPendingPhotoUrl=h.beweisfoto;
+        document.getElementById('modal-hand').classList.remove('open');
+        showPage('equity');
+        loadEquity();
+      };
     } else {
       fotoWrap.style.display='none';
     }
