@@ -89,6 +89,7 @@
     /* Android: in fullscreen the header is hidden so give panels the full viewport height */
     body.pm-fullscreen .pm-tisch-layout{min-height:100dvh;}
     body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
+    body.pm-fullscreen .pm-tisch-right{padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
     body.pm-tisch .content{overscroll-behavior-y:none;}
