@@ -6433,25 +6433,32 @@
       modal.querySelector('#eq-pick-done').addEventListener('click',()=>{close();onConfirm(Array.from(selected));});
     }
 
-    function onChange(){
-      // Nach jeder Änderung: laufende Simulation verwerfen, neu rendern, ggf. neu berechnen
+    function onChange(opts={}){
+      // Nach jeder Änderung: laufende Simulation verwerfen, betroffene Teile neu rendern, ggf. neu berechnen
       _mcToken++;
       results=null;
       explanation=null;
       _explLoading=false;
-      render();
+      if(opts.full){
+        render();
+      } else {
+        renderAllHandRows();
+        if(opts.board)renderBoard();
+        renderResultsExtras();
+        renderProgress();
+      }
       if(canCalc())runSimulation();
     }
 
     // ── KI-Fotoanalyse ─────────────────────────────────────
     async function analyzePhoto(payload){
       _analyzing=true;
-      render();
+      renderCameraButton();
       const data=await _callFn('analyze-poker-photo',payload);
       _analyzing=false;
       if(data?.error){
+        renderCameraButton();
         await showAlert('Foto-Analyse fehlgeschlagen: '+data.error);
-        render();
         return;
       }
       applyAnalysis(data,payload.image??payload.imageUrl??null);
@@ -6506,14 +6513,14 @@
       _analyzedImageSrc=imgSrc;
 
       if(data.note)showAlert(data.note);
-      onChange();
+      onChange({full:true});
     }
 
     // ── KI-Erklärung zum Ergebnis ──────────────────────────
     async function fetchExplanation(){
       const myToken=_mcToken;
       _explLoading=true;
-      render();
+      renderResultsExtras();
       const handsStr=hands.map(h=>h.map(eqCardToStr));
       const boardStr=board.filter(c=>c!==null).map(eqCardToStr);
       const totals=results.wins.map((w,i)=>(w+results.ties[i])/results.iters*100);
@@ -6521,12 +6528,12 @@
       if(myToken!==_mcToken)return; // veraltet (zwischenzeitlich geändert)
       _explLoading=false;
       explanation=(!data?.error&&data?.text)?data.text:null;
-      render();
+      renderResultsExtras();
     }
 
-    function addHand(){if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange();}}
-    function removeHand(i){if(hands.length>MIN_HANDS){hands.splice(i,1);onChange();}}
-    function resetAll(){hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];board=[null,null,null,null,null];onChange();}
+    function addHand(){if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange({full:true});}}
+    function removeHand(i){if(hands.length>MIN_HANDS){hands.splice(i,1);onChange({full:true});}}
+    function resetAll(){hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];board=[null,null,null,null,null];onChange({full:true});}
     function switchMode(newMode){
       if(newMode===mode)return;
       const newSize=newMode==='holdem'?2:4;
@@ -6536,7 +6543,7 @@
         return nh;
       });
       mode=newMode;
-      onChange();
+      onChange({full:true});
     }
 
     function canCalc(){return hands.every(h=>h.every(c=>c!==null));}
@@ -6606,16 +6613,88 @@
           if(myToken!==_mcToken)return;
           results={wins,ties,iters:MC_ITERS};
           _calcInFlight=false;
-          render();
+          renderAllHandRows();
+          renderResultsExtras();
+          renderProgress();
           fetchExplanation();
         }
       }
       setTimeout(runBatch,0);
     }
 
-    function render(){
+    function handRowInnerHtml(i){
+      const h=hands[i];
       const totals=results?results.wins.map((w,j)=>(w+results.ties[j])/results.iters*100):null;
       const maxTotal=totals?Math.max(...totals):null;
+      let pctHtml='';
+      if(results){
+        const t=results.ties[i];
+        const tiePct=(t/results.iters*100);
+        const total=totals[i];
+        const cls=total>=maxTotal-0.0001?'':' loser';
+        pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct${cls}">${total.toFixed(1)}%</div>${t>0?`<div class="eq-result-split">${tiePct.toFixed(1)}% Split</div>`:''}</div>`;
+      } else if(_calcInFlight){
+        pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct calc">…</div></div>`;
+      }
+      const cardsHtml=h.map((c,si)=>`<div class="eq-card-slot" data-slot="${si}">${cardDisplay(c)}</div>`).join('');
+      return `
+          <div class="eq-hand-label">Hand ${i+1}</div>
+          <div class="eq-cards">${cardsHtml}</div>
+          ${pctHtml}
+          ${hands.length>MIN_HANDS?`<button class="eq-remove" data-rm="${i}" title="Hand entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>`:''}
+        `;
+    }
+
+    function renderHandRow(i){
+      const wrap=el.querySelector('#eq-hands-wrap');
+      if(!wrap)return;
+      let row=wrap.children[i];
+      if(!row){row=document.createElement('div');row.className='eq-hand';wrap.appendChild(row);}
+      row.innerHTML=handRowInnerHtml(i);
+      row.querySelector('.eq-cards').addEventListener('click',()=>{
+        openMultiPicker(hands[i],handSize(),`Hand ${i+1}`,newCards=>{
+          const nh=new Array(handSize()).fill(null);
+          newCards.forEach((c,idx)=>{nh[idx]=c;});
+          hands[i]=nh;
+          onChange({hand:i});
+        });
+      });
+      const rmBtn=row.querySelector('[data-rm]');
+      if(rmBtn)rmBtn.addEventListener('click',()=>removeHand(i));
+    }
+    function renderAllHandRows(){hands.forEach((_,i)=>renderHandRow(i));}
+
+    function renderBoard(){
+      for(let bi=0;bi<5;bi++){
+        const slot=el.querySelector(`#eq-board [data-board="${bi}"]`);
+        if(slot)slot.innerHTML=cardDisplay(board[bi]);
+      }
+    }
+
+    function renderResultsExtras(){
+      const hintWrap=el.querySelector('#eq-results-hint');
+      if(hintWrap)hintWrap.innerHTML=results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:'';
+      const explWrap=el.querySelector('#eq-explain-wrap');
+      if(explWrap){
+        if(_explLoading)explWrap.innerHTML=`<div class="eq-explain"><span class="eq-spinner"></span> KI analysiert das Ergebnis…</div>`;
+        else if(explanation)explWrap.innerHTML=`<div class="eq-explain">${escHtml(explanation)}</div>`;
+        else explWrap.innerHTML='';
+      }
+    }
+
+    function renderProgress(){
+      const progress=el.querySelector('#eq-progress');
+      if(progress)progress.style.display=_calcInFlight?'block':'none';
+    }
+
+    function renderCameraButton(){
+      const btn=el.querySelector('#eq-camera');
+      if(!btn)return;
+      btn.disabled=_analyzing;
+      btn.innerHTML=_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten';
+    }
+
+    function render(){
       el.innerHTML=`
         <button class="back-btn" id="eq-back">${backIcon} Zurück</button>
         <div class="eq-mode-switch" role="tablist">
@@ -6642,45 +6721,12 @@
         <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md)">
           <button class="btn btn-secondary" id="eq-reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset</button>
         </div>
-        ${results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:''}
-        ${_explLoading?`<div class="eq-explain"><span class="eq-spinner"></span> KI analysiert das Ergebnis…</div>`:''}
-        ${explanation?`<div class="eq-explain">${escHtml(explanation)}</div>`:''}
+        <div id="eq-results-hint">${results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:''}</div>
+        <div id="eq-explain-wrap">${_explLoading?`<div class="eq-explain"><span class="eq-spinner"></span> KI analysiert das Ergebnis…</div>`:explanation?`<div class="eq-explain">${escHtml(explanation)}</div>`:''}</div>
       `;
 
       // Hände rendern
-      const wrap=el.querySelector('#eq-hands-wrap');
-      hands.forEach((h,i)=>{
-        const row=document.createElement('div');
-        row.className='eq-hand';
-        let pctHtml='';
-        if(results){
-          const t=results.ties[i];
-          const tiePct=(t/results.iters*100);
-          const total=totals[i];
-          const cls=total>=maxTotal-0.0001?'':' loser';
-          pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct${cls}">${total.toFixed(1)}%</div>${t>0?`<div class="eq-result-split">${tiePct.toFixed(1)}% Split</div>`:''}</div>`;
-        } else if(_calcInFlight){
-          pctHtml=`<div style="text-align:right;min-width:72px"><div class="eq-result-pct calc">…</div></div>`;
-        }
-        const cardsHtml=h.map((c,si)=>`<div class="eq-card-slot" data-slot="${si}">${cardDisplay(c)}</div>`).join('');
-        row.innerHTML=`
-          <div class="eq-hand-label">Hand ${i+1}</div>
-          <div class="eq-cards">${cardsHtml}</div>
-          ${pctHtml}
-          ${hands.length>MIN_HANDS?`<button class="eq-remove" data-rm="${i}" title="Hand entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>`:''}
-        `;
-        row.querySelector('.eq-cards').addEventListener('click',()=>{
-          openMultiPicker(h,handSize(),`Hand ${i+1}`,newCards=>{
-            const nh=new Array(handSize()).fill(null);
-            newCards.forEach((c,idx)=>{nh[idx]=c;});
-            hands[i]=nh;
-            onChange();
-          });
-        });
-        const rmBtn=row.querySelector('[data-rm]');
-        if(rmBtn)rmBtn.addEventListener('click',()=>removeHand(i));
-        wrap.appendChild(row);
-      });
+      renderAllHandRows();
 
       // Board rendern (Flop 3 + Turn 1 + River 1 mit Separatoren)
       const bw=el.querySelector('#eq-board');
@@ -6688,7 +6734,7 @@
         openMultiPicker(board,5,'Board',newCards=>{
           board=[null,null,null,null,null];
           newCards.slice(0,5).forEach((c,i)=>{board[i]=c;});
-          onChange();
+          onChange({board:true});
         });
       };
       const makeSlot=(bi)=>{
