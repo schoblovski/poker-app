@@ -89,7 +89,6 @@
     /* Android: in fullscreen the header is hidden so give panels the full viewport height */
     body.pm-fullscreen .pm-tisch-layout{min-height:100dvh;}
     body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
-    body.pm-fullscreen .pm-tisch-right{padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
     body.pm-tisch .content{overscroll-behavior-y:none;}
@@ -8614,7 +8613,7 @@
         ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';
           const _scrollContent=`<div id="pm-s-result">${handResultHtml}</div>${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}<div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>`;
           if(isLandscape){
-            return`<div class="pm-tisch-right" style="overflow-y:hidden"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 4px;border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
+            return`<div class="pm-tisch-right" style="overflow-y:hidden"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 calc(env(safe-area-inset-bottom,0px) + 8px);border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
           }
           return`<div class="pm-tisch-right" style="border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0">${_scrollContent}${feedSection}${_rStrip}</div>`;
         })()}
