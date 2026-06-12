@@ -6450,6 +6450,7 @@
       if(opts.full){
         render();
       } else {
+        if(opts.mode)renderModeSwitch();
         renderAllHandRows();
         if(opts.board)renderBoard();
         renderResultsExtras();
@@ -6561,7 +6562,7 @@
         return nh;
       });
       mode=newMode;
-      onChange({full:true});
+      onChange({mode:true});
     }
 
     function canCalc(){return hands.every(h=>h.every(c=>c!==null));}
@@ -6716,6 +6717,12 @@
     function renderInteractiveLock(){
       const lock=el.querySelector('#eq-interactive');
       if(lock)lock.classList.toggle('eq-locked',_analyzing);
+    }
+
+    function renderModeSwitch(){
+      el.querySelectorAll('.eq-mode-switch button').forEach(btn=>{
+        btn.classList.toggle('active',btn.dataset.mode===mode);
+      });
     }
 
     function render(){
