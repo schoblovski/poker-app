@@ -6710,7 +6710,7 @@
         const file=e.target.files[0];
         photoInput.value='';
         if(!file)return;
-        const b64=await compressImageToBase64(file,1024,0.85);
+        const b64=await compressImageToBase64(file,1568,0.9);
         analyzePhoto({image:b64});
       });
     }

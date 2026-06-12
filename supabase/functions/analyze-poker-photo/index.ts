@@ -22,6 +22,16 @@ Aufgabe:
 2. Gruppiere die Hole-Cards: Karten, die offensichtlich als Hand zusammen ausgelegt wurden (üblicherweise 2 Karten = Hold'em-Hand, 4 Karten = Omaha-Hand), bilden je eine Gruppe.
 3. Übrige Karten (meist eine Reihe in der Mitte des Tisches) sind die Community Cards (Board), 0 bis 5 Karten.
 
+WICHTIG – überlappende/gestapelte Karten:
+Sehr oft liegen mehrere Karten einer Hand leicht überlappend übereinander (gefächert oder gestapelt),
+sodass nur ein Teil jeder Karte sichtbar ist. Bei JEDER Karte ist aber immer mindestens eine Ecke
+(meist oben links oder unten rechts) vollständig sichtbar – dort stehen Rang UND Farbsymbol klein
+("Index") abgebildet. Schau dir bei Stapeln/überlappenden Karten gezielt JEDE sichtbare Ecke einzeln an
+und lies Rang+Farbe aus diesem Mini-Index ab, auch wenn der Rest der Karte verdeckt ist. Zähle dabei
+genau, wie viele Karten in einem Stapel/Fächer liegen (z.B. anhand der Anzahl sichtbarer versetzter Ecken
+oder Kartenränder) – gib NUR Karten zurück, deren Eck-Index du tatsächlich lesen kannst, aber verpasse
+keine Karte nur weil sie grösstenteils verdeckt ist.
+
 Kartennotation: Rang als 2-9, T (Zehn), J, Q, K, A; Farbe als s (Pik/♠), h (Herz/♥), d (Karo/♦), c (Kreuz/♣).
 Beispiele: "Ah" = Ass Herz, "Td" = Zehn Karo, "2c" = Zwei Kreuz.
 
@@ -29,7 +39,7 @@ Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne Mark
 {"community":["Ah","Td","2c"],"hands":[["Kh","Ks"],["2c","2d","2h","2s"]],"note":""}
 
 Regeln:
-- Erkenne NUR Karten, die du eindeutig lesen kannst. Unsichere oder verdeckte Karten lässt du komplett weg (NICHT raten!).
+- Erkenne NUR Karten, die du eindeutig lesen kannst (z.B. über den Eck-Index). Wirklich verdeckte/unleserliche Karten lässt du weg (NICHT raten!).
 - Jede Hand-Gruppe sollte 2 oder 4 Karten enthalten (Hold'em bzw. Omaha). Ist eine Gruppe unklar oder unvollständig erkennbar, lass nur die eindeutigen Karten davon stehen oder lass die Gruppe ganz weg.
 - Maximal 6 Hand-Gruppen, maximal 5 Community Cards.
 - Keine Karte darf doppelt vorkommen (auch nicht über Gruppen/Board hinweg).
