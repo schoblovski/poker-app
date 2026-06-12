@@ -43,6 +43,17 @@ an dieser Stelle der Reihe – KEINE separate Hole-Card-Gruppe! Lies beide Eck-I
 der "community"-Liste hinzu. Bilde nur dann eine eigene Hole-Card-Gruppe, wenn ein Kartenpaar/-stapel klar
 ABSEITS der Board-Reihe liegt (z.B. am Rand, in einem eigenen Bereich des Tisches).
 
+PLAUSIBILITÄTS-CHECK bei vollständig sichtbaren Karten:
+Wenn eine Karte komplett sichtbar ist (NICHT von einer anderen Karte überlappt), zeigt sie nicht nur den
+Eck-Index, sondern auch die Symbole/Pips in der Kartenmitte (bzw. ein Bild bei J/Q/K, ein einzelnes großes
+Symbol bei A). Prüfe bei solchen vollständig sichtbaren Karten, ob die Anzahl/Anordnung der Pips in der
+Mitte zum erkannten Rang passt (z.B. Rang "3" → genau 3 Pips, Rang "A" → 1 großes zentrales Pip,
+Rang "9" → 9 Pips, J/Q/K → Bild einer Figur). Widersprechen sich Eck-Index und Pip-Muster (z.B. Eck-Index
+sieht aus wie "3", aber die Karte zeigt nur 1 grosses zentrales Symbol wie ein Ass), vertraue dem
+Pip-Muster der Kartenmitte und korrigiere den Rang entsprechend – ein einzelnes grosses zentrales Symbol
+ist immer ein Ass (A), unabhängig davon wie der Eck-Index aussieht. Bei echten Zweifeln lass die Karte weg
+statt zu raten.
+
 Kartennotation: Rang als 2-9, T (Zehn), J, Q, K, A; Farbe als s (Pik/♠), h (Herz/♥), d (Karo/♦), c (Kreuz/♣).
 Beispiele: "Ah" = Ass Herz, "Td" = Zehn Karo, "2c" = Zwei Kreuz.
 
