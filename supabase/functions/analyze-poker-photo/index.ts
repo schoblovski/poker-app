@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: SYSTEM_PROMPT,
         messages: [{
           role: 'user',
@@ -191,8 +191,12 @@ Deno.serve(async (req) => {
     let parsed: { community?: unknown; hands?: unknown; note?: unknown };
     try {
       const afterMarker = text.split(/ERGEBNIS:/i).pop() ?? text;
-      const jsonMatch = afterMarker.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : afterMarker);
+      const start = afterMarker.indexOf('{');
+      const end = afterMarker.lastIndexOf('}');
+      const candidate = start !== -1 && end !== -1 && end > start
+        ? afterMarker.slice(start, end + 1)
+        : afterMarker;
+      parsed = JSON.parse(candidate);
     } catch {
       console.error('[analyze-poker-photo] JSON parse failed:', text);
       return err('Antwort konnte nicht ausgewertet werden');
