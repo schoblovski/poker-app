@@ -6623,7 +6623,7 @@
           <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
           <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
         </div>
-        <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Foto wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
+        <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
         <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
         ${_analyzedImageSrc?`<div class="eq-photo-preview">
           <img src="${escHtml(_analyzedImageSrc)}" class="hand-foto-thumb eq-photo-preview-img" alt="Analysiertes Foto">
