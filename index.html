@@ -92,7 +92,11 @@
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
     @media(min-width:600px),(orientation:landscape){
-      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;}
+      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;display:flex;flex-direction:column;overflow:hidden;}
+      body.pm-tisch:not(.pm-fullscreen) #page-online-tisch{flex:1;min-height:0;}
+      body.pm-tisch:not(.pm-fullscreen) #page-online-tisch.active{display:flex;flex-direction:column;}
+      body.pm-tisch:not(.pm-fullscreen) #online-tisch-content{flex:1;min-height:0;height:auto!important;display:flex;flex-direction:column;}
+      body.pm-tisch:not(.pm-fullscreen) .pm-tisch-layout{flex:1;min-height:0;height:auto!important;}
     }
     body.pm-tisch .content{overscroll-behavior-y:none;}
     /* Scroll container for portrait: height set via JS in renderOnlineTisch */
@@ -8418,7 +8422,7 @@
     _pm._lastFp=fp;
     // Bind #online-tisch-content as the scroll container (cross-browser: explicit px height
     // avoids body/viewport overflow-propagation issues on Android Chrome and desktop Chrome)
-    if(document.body.classList.contains('pm-fullscreen')){
+    if(document.body.classList.contains('pm-fullscreen')||window.matchMedia('(min-width:600px), (orientation: landscape)').matches){
       el.style.height='';
     }else{
       const _hdrH=document.querySelector('.header')?.offsetHeight??60;
