@@ -12,7 +12,7 @@
 //
 // Antwort: { text: string }
 
-import { CORS, corsOk, json, err } from '../poker-utils/index.ts';
+import { CORS, corsOk, json, err, type Card, evalHoldem, evalOmaha, evalTexahma, handName } from '../poker-utils/index.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 
@@ -26,7 +26,11 @@ Regeln:
 - Erkläre kurz warum die führende Hand vorne liegt (z.B. starkes Paar, Draw, dominante Karten) und
   was die schwächere(n) Hand(en) noch brauchen würde(n), um aufzuholen (z.B. "braucht noch ein Ass für die Straight").
 - Bei sehr knappen Ergebnissen (Unterschied < 5%) darfst du erwähnen, dass es ein Coinflip ist.
-- Ton: locker, freundlich, leicht humorvoll – wie unter Pokerkumpels.`;
+- Ton: locker, freundlich, leicht humorvoll – wie unter Pokerkumpels.
+- WICHTIG: Falls für eine Hand bereits ein "aktuell beste Hand"-Wert angegeben ist, übernimm diesen
+  unverändert (z.B. "Drilling" oder "Zwei Paare") und erfinde keine andere Einstufung oder Karten,
+  die nicht im Board oder in der Hand stehen. Zähle Kartenwerte nicht selbst neu – verlasse dich
+  ausschliesslich auf die gegebenen Angaben.`;
 
 const RANK_NAMES: Record<string, string> = {
   '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
@@ -38,6 +42,41 @@ function describeCard(c: string): string {
   const rank = c[0]?.toUpperCase();
   const suit = c[1]?.toLowerCase();
   return `${RANK_NAMES[rank] ?? rank} ${SUIT_NAMES[suit] ?? suit}`;
+}
+
+const RANK_VALUES: Record<string, number> = {
+  '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+  T: 10, J: 11, Q: 12, K: 13, A: 14,
+};
+
+function parseCard(c: string): Card | null {
+  const rank = RANK_VALUES[c[0]?.toUpperCase()];
+  const suit = c[1]?.toLowerCase();
+  if (!rank || !suit) return null;
+  return { rank, suit };
+}
+
+// Aktuell beste erreichbare Hand (mit dem bisherigen Board) berechnen,
+// damit Claude keine eigene (fehleranfällige) Einschätzung erfinden muss.
+function bestHandDesc(mode: string | undefined, holeStr: string[], boardStr: string[]): string | null {
+  const hole = holeStr.map(parseCard).filter((c): c is Card => c !== null);
+  const board = boardStr.map(parseCard).filter((c): c is Card => c !== null);
+  if (hole.length !== holeStr.length || board.length !== boardStr.length) return null;
+  try {
+    if (mode === 'holdem') {
+      if (hole.length + board.length < 5) return null;
+      return handName(evalHoldem(hole, board).score);
+    }
+    if (mode === 'texama') {
+      if (board.length < 1) return null;
+      return handName(evalTexahma(hole, board).score);
+    }
+    // omaha
+    if (board.length < 3) return null;
+    return handName(evalOmaha(hole, board).score);
+  } catch {
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -55,10 +94,15 @@ Deno.serve(async (req) => {
     }
 
     const varianteName = mode === 'holdem' ? "Texas Hold'em" : mode === 'texama' ? 'Texahma' : 'Omaha';
+    const boardArr = board ?? [];
     const handsDesc = hands
-      .map((h, i) => `Hand ${i + 1}: ${h.map(describeCard).join(', ')} → ${results[i].toFixed(1)}% Equity`)
+      .map((h, i) => {
+        const best = bestHandDesc(mode, h, boardArr);
+        const bestPart = best ? `, aktuell beste Hand: ${best}` : '';
+        return `Hand ${i + 1}: ${h.map(describeCard).join(', ')} → ${results[i].toFixed(1)}% Equity${bestPart}`;
+      })
       .join('\n');
-    const boardDesc = board && board.length ? board.map(describeCard).join(', ') : 'noch kein Board';
+    const boardDesc = boardArr.length ? boardArr.map(describeCard).join(', ') : 'noch kein Board';
 
     const userPrompt = `Variante: ${varianteName}\nBoard: ${boardDesc}\n${handsDesc}\n\nErkläre kurz, warum die Equity so verteilt ist.`;
 
