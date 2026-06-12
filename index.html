@@ -701,6 +701,7 @@
   .eq-picker-card:active:not(.used):not(.sel){transform:scale(.90);}
   .eq-picker-card-rank{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.3px;}
   .eq-picker-card-suit{font-size:17px;line-height:1;margin-top:4px;}
+  #eq-interactive.eq-locked{opacity:.5;pointer-events:none;transition:opacity .15s;}
   .eq-progress{height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin:var(--space-sm) 0;}
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
@@ -2075,6 +2076,10 @@
   });
 
   function showPage(page){
+    if(_eqAnalyzing&&page!=='equity'&&document.getElementById('page-equity')?.classList.contains('active')){
+      if(!confirm('⚠️ Foto-Analyse läuft noch\n\nWenn du die Seite jetzt verlässt, wird das Ergebnis der Analyse verworfen.\n\nTrotzdem verlassen?'))return;
+      _eqAnalysisToken++;_eqAnalyzing=false;
+    }
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('page-'+page).classList.add('active');
@@ -6202,6 +6207,9 @@
   }
   // Foto eines Beweisfotos (besondere Hand), das im Equity-Rechner analysiert werden soll
   let _eqPendingPhotoUrl=null;
+  // Globaler Status der KI-Fotoanalyse im Equity-Rechner (für Navigations-Guard in showPage)
+  let _eqAnalyzing=false;
+  let _eqAnalysisToken=0;
 
   function _eqStraightHigh(ranksMask){
     // ranksMask: bitmask 13 bits (bit r = rank r present)
@@ -6453,11 +6461,20 @@
     // ── KI-Fotoanalyse ─────────────────────────────────────
     async function analyzePhoto(payload){
       _analyzing=true;
+      _eqAnalyzing=true;
+      const myToken=++_eqAnalysisToken;
       renderCameraButton();
+      renderInteractiveLock();
       const data=await _callFn('analyze-poker-photo',payload);
       _analyzing=false;
+      if(myToken!==_eqAnalysisToken){
+        // Analyse wurde durch Seitenwechsel abgebrochen – Ergebnis verwerfen
+        return;
+      }
+      _eqAnalyzing=false;
       if(data?.error){
         renderCameraButton();
+        renderInteractiveLock();
         await showAlert('Foto-Analyse fehlgeschlagen: '+data.error);
         return;
       }
@@ -6531,10 +6548,11 @@
       renderResultsExtras();
     }
 
-    function addHand(){if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange({full:true});}}
-    function removeHand(i){if(hands.length>MIN_HANDS){hands.splice(i,1);onChange({full:true});}}
-    function resetAll(){hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];board=[null,null,null,null,null];onChange({full:true});}
+    function addHand(){if(_analyzing)return;if(hands.length<MAX_HANDS){hands.push(new Array(handSize()).fill(null));onChange({full:true});}}
+    function removeHand(i){if(_analyzing)return;if(hands.length>MIN_HANDS){hands.splice(i,1);onChange({full:true});}}
+    function resetAll(){if(_analyzing)return;hands=[new Array(handSize()).fill(null), new Array(handSize()).fill(null)];board=[null,null,null,null,null];onChange({full:true});}
     function switchMode(newMode){
+      if(_analyzing)return;
       if(newMode===mode)return;
       const newSize=newMode==='holdem'?2:4;
       hands=hands.map(h=>{
@@ -6652,6 +6670,7 @@
       if(!row){row=document.createElement('div');row.className='eq-hand';wrap.appendChild(row);}
       row.innerHTML=handRowInnerHtml(i);
       row.querySelector('.eq-cards').addEventListener('click',()=>{
+        if(_analyzing)return;
         openMultiPicker(hands[i],handSize(),`Hand ${i+1}`,newCards=>{
           const nh=new Array(handSize()).fill(null);
           newCards.forEach((c,idx)=>{nh[idx]=c;});
@@ -6694,14 +6713,14 @@
       btn.innerHTML=_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten';
     }
 
+    function renderInteractiveLock(){
+      const lock=el.querySelector('#eq-interactive');
+      if(lock)lock.classList.toggle('eq-locked',_analyzing);
+    }
+
     function render(){
       el.innerHTML=`
         <button class="back-btn" id="eq-back">${backIcon} Zurück</button>
-        <div class="eq-mode-switch" role="tablist">
-          <button data-mode="holdem" class="${mode==='holdem'?'active':''}">Hold'em</button>
-          <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
-          <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
-        </div>
         <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
         <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
         ${_analyzedImageSrc?`<div class="eq-photo-preview">
@@ -6709,7 +6728,13 @@
           <button type="button" class="eq-photo-preview-close" id="eq-photo-preview-close" title="Foto ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
           <div class="eq-photo-preview-hint">Analysiertes Foto – zum Vergrössern tippen, dann mit den erkannten Karten oben vergleichen.</div>
         </div>`:''}
-        <div class="section-title" style="margin-top:0">Hände</div>
+        <div id="eq-interactive" class="${_analyzing?'eq-locked':''}">
+        <div class="eq-mode-switch" role="tablist">
+          <button data-mode="holdem" class="${mode==='holdem'?'active':''}">Hold'em</button>
+          <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
+          <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
+        </div>
+        <div class="section-title">Hände</div>
         <div id="eq-hands-wrap"></div>
         ${hands.length<MAX_HANDS?`<button class="btn btn-secondary" id="eq-add-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand hinzufügen</button>`:''}
         <div class="section-title">Board (optional)</div>
@@ -6721,6 +6746,7 @@
         <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md)">
           <button class="btn btn-secondary" id="eq-reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset</button>
         </div>
+        </div>
         <div id="eq-results-hint">${results?`<div class="eq-hint" style="padding-top:var(--space-md)">${results.iters.toLocaleString('de-DE')} Simulationen · Monte-Carlo</div>`:''}</div>
         <div id="eq-explain-wrap">${_explLoading?`<div class="eq-explain"><span class="eq-spinner"></span> KI analysiert das Ergebnis…</div>`:explanation?`<div class="eq-explain">${escHtml(explanation)}</div>`:''}</div>
       `;
@@ -6731,6 +6757,7 @@
       // Board rendern (Flop 3 + Turn 1 + River 1 mit Separatoren)
       const bw=el.querySelector('#eq-board');
       const openBoardPicker=()=>{
+        if(_analyzing)return;
         openMultiPicker(board,5,'Board',newCards=>{
           board=[null,null,null,null,null];
           newCards.slice(0,5).forEach((c,i)=>{board[i]=c;});
