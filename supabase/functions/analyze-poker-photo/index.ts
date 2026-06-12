@@ -19,6 +19,11 @@ const SYSTEM_PROMPT = `Du analysierst ein Foto eines Pokertisches von oben, auf 
 (typisches Foto für eine "besondere Hand" am Ende eines Showdowns).
 
 Aufgabe:
+0. SCHRITT 1 – ÜBERBLICK VERSCHAFFEN: Bevor du auch nur eine einzelne Karte liest, schau dir das GESAMTE Foto an
+   und liste gedanklich ALLE separaten Kartengruppen/-stapel auf dem Tisch auf, jeweils mit ungefährer Position
+   (z.B. "oben links", "Mitte horizontale Reihe", "rechts neben dem Board", "unten rechts") und geschätzter
+   Kartenanzahl. Erst NACHDEM du diese räumliche Übersicht hast, gehst du Gruppe für Gruppe durch und liest die
+   einzelnen Karten – so vermischst du keine Karten aus unterschiedlichen Gruppen/Stapeln.
 1. Identifiziere zuerst die COMMUNITY CARDS (Board): Das ist EINE einzelne Reihe/Linie von 0, 3, 4 oder 5
    Karten, meist in der Mitte/Längsachse des Tisches angeordnet (z.B. eine senkrechte oder horizontale
    Kartenreihe). Bei einem fertig ausgespielten Showdown sind es üblicherweise genau 5 Karten.
@@ -62,6 +67,11 @@ ob die Anzahl zum erkannten Rang passt:
 
 Besonders verwechslungsanfällig: "8" vs. "T" (Zehn) – zähle die Pips bewusst durch (8 vs. 10 Pips) und achte
 auf eine eventuell aufgedruckte "10"-Beschriftung im Eck-Index, statt die Form nur grob zu schätzen.
+
+Besonders verwechslungsanfällig: "A" (Ass) vs. "3" – beide Eck-Indizes können bei kleiner Auflösung ähnlich
+rund/kompakt wirken. Das Ass hat IMMER genau 1 grosses zentrales Pip/Symbol in der Kartenmitte, die "3" hat
+genau 3 Pips übereinander. Prüfe bei vollständig sichtbaren Karten zwingend die Anzahl der zentralen Pips,
+bevor du dich zwischen "A" und "3" entscheidest.
 
 Besonders verwechslungsanfällig: "6" vs. "9" – der Eck-Index von 6 und 9 sieht (insbesondere bei kleiner
 Auflösung oder leicht gedrehter Karte) fast identisch aus, da eine 9 oft wie eine um 180° gedrehte 6 wirkt.
