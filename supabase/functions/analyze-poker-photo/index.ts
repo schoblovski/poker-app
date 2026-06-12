@@ -52,6 +52,13 @@ weitere Karte (mit eigener sichtbarer Ecke) darunter verborgen liegt – aber NU
 tatsächlich siehst. Wenn nicht, übernimm die Gruppe genau mit der Anzahl Karten, die du siehst, auch wenn
 andere Gruppen im selben Foto eine andere Anzahl haben.
 
+ACHTUNG – KLEINE/ISOLIERTE GRUPPEN NICHT ÜBERSEHEN ODER MIT ANDEREN VERMISCHEN:
+Auch eine kleine Gruppe von nur 1-2 Karten, die seitlich/abseits liegt (z.B. neben dem Board, am Rand des
+Tisches), ist eine VOLLWERTIGE, EIGENSTÄNDIGE Hole-Card-Gruppe – auch wenn andere Gruppen im Foto 4 Karten
+haben. Lass eine solche kleine Gruppe NICHT weg und vermische ihre Karten NICHT mit einer benachbarten
+grösseren Gruppe oder dem Board, nur um "einheitlichere" Gruppengrössen zu erreichen. Zähle gemäss Schritt 0
+ALLE räumlich getrennten Kartenansammlungen, auch kleine, als eigene Gruppen.
+
 ACHTUNG – überlappende Karten INNERHALB der Board-Reihe:
 Wenn an einer Position INNERHALB der Board-Linie zwei Karten leicht überlappend übereinander liegen
 (z.B. weil sie beim Fotografieren leicht verrutscht sind), sind das trotzdem ZWEI EINZELNE BOARD-KARTEN
