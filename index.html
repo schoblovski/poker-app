@@ -68,9 +68,9 @@
     .pm-tisch-left,.pm-tisch-right{min-width:0}
     @media(min-width:600px),(orientation:landscape){
       .pm-tisch-layout{flex-direction:row;align-items:stretch;gap:0;height:100%}
-      .pm-tisch-left{flex:0.85;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;box-sizing:border-box}
+      .pm-tisch-left{flex:0.95;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;box-sizing:border-box}
       .pm-tisch-left .pm-feed{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-      .pm-tisch-right{flex:1.15;display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none;box-sizing:border-box}.pm-tisch-right::-webkit-scrollbar{display:none}
+      .pm-tisch-right{flex:1.05;display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none;box-sizing:border-box}.pm-tisch-right::-webkit-scrollbar{display:none}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
@@ -91,6 +91,9 @@
     body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
+    @media(min-width:600px),(orientation:landscape){
+      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;}
+    }
     body.pm-tisch .content{overscroll-behavior-y:none;}
     /* Scroll container for portrait: height set via JS in renderOnlineTisch */
     body.pm-tisch:not(.pm-fullscreen) #online-tisch-content{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:none;}
