@@ -92,7 +92,9 @@
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
     @media(min-width:600px),(orientation:landscape){
-      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;display:flex;flex-direction:column;overflow:hidden;}
+      body.pm-tisch:not(.pm-fullscreen){height:100dvh;overflow:hidden;}
+      body.pm-tisch:not(.pm-fullscreen) #app-screen{min-height:0;height:100%;overflow:hidden;}
+      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
       body.pm-tisch:not(.pm-fullscreen) #page-online-tisch{flex:1;min-height:0;}
       body.pm-tisch:not(.pm-fullscreen) #page-online-tisch.active{display:flex;flex-direction:column;}
       body.pm-tisch:not(.pm-fullscreen) #online-tisch-content{flex:1;min-height:0;height:auto!important;display:flex;flex-direction:column;}
