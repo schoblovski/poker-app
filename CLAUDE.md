@@ -243,7 +243,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 3.12**
+- **Aktuelle Version: 4.6**
 
 ## Login-Provider
 
@@ -336,16 +336,7 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
 
 ## Aktueller Backlog / TODOs
 1. **Pandemie-Modus Finalisierung** – UI-Polish + Stabilisierung auf Branch `claude/polish-pandemic-mode-ZaJXb` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs bereits implementiert. Offene Punkte: FK SET NULL, Feed-Flackern, Vorauswahl-Fold-Fix, Runout-Handauswertung.
-2. **Dealer-Kommentare im Pandemie-Modus** *(spätere Erweiterung, nach v4.0-Freigabe)* – Witzige Dealer-Kommentare erscheinen im Action-Feed, farblich klar vom normalen Spielgeschehen unterschieden (z.B. goldener/lila Hintergrund + Dealer-Icon). Ansatz: lokal hardcoded (kein API-Call, sofort verfügbar), ca. 40–60 Kommentare in Kategorien, ausgelöst durch spezifische Events mit ~20% Wahrscheinlichkeit. Kommentar-Kategorien & Trigger:
-   - **Fold (early):** «Der Dealer reibt sich die Hände. Immer wieder.»
-   - **All-in:** «Alles auf eine Karte. Romantikerinnen.»
-   - **River-Überraschung (bad beat):** «Der River – ein Freund, dem man nicht trauen sollte.»
-   - **Check–Check:** «Spannung pur. Fast wie Schach, nur schlechter.»
-   - **7-2 gewonnen:** «Die Legende lebt. 7-2 schlägt wieder zu.»
-   - **Sehr kleiner Pot:** «Für diesen Einsatz lohnt sich kaum das Kartenmischen.»
-   - **Spieler-spezifisch (via Name):** Kommentare die den aktuellen Spieler namentlich erwähnen, mit Chuck-Norris-Stil-Adaptionen (z.B. «Andreas hat Poker nicht gelernt. Poker hat Andreas gelernt.»)
-   - **Showdown (beste Hand):** Standard-Poker-Kommentatoren-Ton
-   Implementierungs-Details: Dealer-Kommentar als eigener Feed-Eintrag-Typ (`action: 'dealer_comment'`), meta.text enthält den Kommentar. Wird lokal erzeugt (kein DB-Insert), nur clientseitig im Feed angezeigt. Styling: `background: linear-gradient(...)` – AUSNAHME zur Gradient-Regel erlaubt für diesen dekorativen Element, ODER einfach `background: #fef3c7; color: #92400e` (Goldton). Chuck-Norris-Witze angepasst auf Poker + die Runde.
+2. **Dealer-Kommentare im Pandemie-Modus** ✅ v4.6 – KI-generiert statt hardcoded: Edge Function `dealer-comment` ruft Claude (Haiku, `claude-haiku-4-5-20251001`, Secret `ANTHROPIC_API_KEY`) auf und schreibt das Ergebnis als `online_actions`-Eintrag (`action:'dealer_comment'`, `meta.text`) → via Realtime sehen alle Spieler denselben Kommentar. Trigger serverseitig in `poker-action`/`poker-showdown`/`poker-new-hand` über `rollDealerTrigger()` + `fireDealerComment()` (fire-and-forget mit `EdgeRuntime.waitUntil`, blockiert nie den Spielfluss; Wahrscheinlichkeiten pro Event in `poker-utils` `DEALER_COMMENT_PROB`, z.B. fold 18%, allin 52%, win_72 95%). WICHTIG: `dealer-comment` ist im Deploy-Workflow `.github/workflows/deploy-edge-functions.yml` als eigener Step eingetragen.
 3. **Keyboard-Shortcuts** *(spätere Erweiterung, PC/Tablet mit physischer Tastatur)* – Tastaturkürzel für häufig verwendete Aktionen: z.B. `Alt+F` für Feed-Vollbild oder Feed-Drawer öffnen, `Esc` um Modals/Sheets zu schliessen, evtl. Poker-Aktionen (F=Fold, C=Call, R=Raise) wenn am Tisch aktiv; kurze Onboarding-Hinweis-Einblendung für Nutzer mit Tastatur (Erkennung via `navigator.maxTouchPoints===0`).
 4. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:

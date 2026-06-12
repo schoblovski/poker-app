@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.5">
+  <meta name="version" content="4.6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1438,7 +1438,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.5';
+  const VERSION='4.6';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -6594,6 +6594,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.6',datum:'Juni 2026',eintraege:[
+      {typ:'neu',text:'Pandemie-Modus: KI-generierte Dealer-Kommentare im Spielverlauf – der Dealer kommentiert Folds, All-ins, Showdowns, 7-2-Siege & Co. mit trockenem Witz. Serverseitig generiert (Claude), alle Spieler sehen denselben Kommentar'},
+      {typ:'fix',text:'Pandemie-Modus: Tisch-Layout auf Tablet/Desktop im Querformat – Action-Buttons und Feed wurden unten abgeschnitten, jetzt nutzt das Layout exakt die Bildschirmhöhe ohne Scrollbalken'},
+      {typ:'verbessert',text:'Pandemie-Modus: Spaltenaufteilung im Querformat angepasst – mehr Platz für Feed und Infobereich'},
+    ]},
     {version:'4.5',datum:'Juni 2026',eintraege:[
       {typ:'verbessert',text:'Push-Benachrichtigung bei Buy-In: zeigt jetzt den kumulierten Pot-Betrag (z.B. Buy-In #3 → € 15,00 im Pot statt immer € 5,00)'},
       {typ:'verbessert',text:'Push-Benachrichtigung bei Spielabschluss: enthält jetzt Anzahl Buy-Ins, Payout und neuen Kontostand des Spielers'},
