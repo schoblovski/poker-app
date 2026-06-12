@@ -662,7 +662,11 @@
   .eq-mode-switch button{flex:1;padding:8px 10px;border:none;background:transparent;color:var(--text-secondary);font-weight:600;font-size:13px;border-radius:calc(var(--radius-md) - 3px);cursor:pointer;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:background var(--transition),color var(--transition);}
   .eq-mode-switch button.active{background:var(--surface);color:var(--text-primary);box-shadow:var(--shadow);}
   .eq-hand{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-sm);}
-  .eq-hand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);min-width:52px;flex-shrink:0;}
+  .eq-hand-side{display:flex;flex-direction:column;align-items:flex-start;gap:6px;flex-shrink:0;min-width:52px;}
+  .eq-hand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+  .eq-edit-btn{width:28px;height:28px;border-radius:var(--radius-md);border:none;background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+  .eq-edit-btn svg{width:14px;height:14px;}
+  .eq-edit-btn:active{transform:scale(.92);}
   .eq-cards{display:flex;gap:6px;cursor:pointer;}
   .eq-board-wrap{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);}
   .eq-board{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;}
@@ -1715,6 +1719,7 @@
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const backIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
   const cameraIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+  const editIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
   function getAvatar(s){
     if(!s?.profilbild) return null;
     // Base64 data URL (neu gespeicherte Bilder)
@@ -6441,6 +6446,50 @@
       modal.querySelector('#eq-pick-done').addEventListener('click',()=>{close();onConfirm(Array.from(selected));});
     }
 
+    // Einzelne Karte wählen/ändern – ein Tap auf eine Karte setzt sie direkt und schliesst das Modal.
+    function openSinglePicker(currentCard,label,onConfirm){
+      const used=allUsedCards();
+      if(currentCard!==null)used.delete(currentCard);
+      const modal=document.createElement('div');
+      modal.className='modal-overlay open';
+      modal.innerHTML=`<div class="eq-picker-modal">
+        <div class="eq-pick-header">
+          <div class="modal-handle" style="margin-bottom:var(--space-sm)"></div>
+          <div class="modal-title" style="margin-bottom:0">${label}</div>
+        </div>
+        <div class="eq-pick-grid-scroll">
+          <div class="eq-picker-grid" id="eq-pick-grid"></div>
+        </div>
+        ${currentCard!==null?`<div class="eq-pick-footer">
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="eq-pick-remove">Karte entfernen</button>
+          </div>
+        </div>`:''}
+      </div>`;
+      document.body.appendChild(modal);
+      const grid=modal.querySelector('#eq-pick-grid');
+      function close(){modal.remove();document.removeEventListener('keydown',esc);}
+      for(let r=12;r>=0;r--){
+        for(let s=0;s<4;s++){
+          const cid=r*4+s;
+          const isUsed=used.has(cid);
+          const isCur=cid===currentCard;
+          const card=document.createElement('div');
+          card.className=`eq-picker-card${EQ_SUIT_RED[s]?' red':''}${isCur?' sel':''}${isUsed?' used':''}`;
+          card.innerHTML=`<span class="eq-picker-card-rank">${EQ_RANK_LABEL[r]}</span><span class="eq-picker-card-suit">${EQ_SUIT_CHAR[s]}</span>`;
+          if(!isUsed){
+            card.addEventListener('click',()=>{close();onConfirm(cid);});
+          }
+          grid.appendChild(card);
+        }
+      }
+      const esc=e=>{if(e.key==='Escape')close();};
+      document.addEventListener('keydown',esc);
+      modal.addEventListener('click',e=>{if(e.target===modal)close();});
+      const removeBtn=modal.querySelector('#eq-pick-remove');
+      if(removeBtn)removeBtn.addEventListener('click',()=>{close();onConfirm(null);});
+    }
+
     function onChange(opts={}){
       // Nach jeder Änderung: laufende Simulation verwerfen, betroffene Teile neu rendern, ggf. neu berechnen
       _mcToken++;
@@ -6657,7 +6706,10 @@
       }
       const cardsHtml=h.map((c,si)=>`<div class="eq-card-slot" data-slot="${si}">${cardDisplay(c)}</div>`).join('');
       return `
-          <div class="eq-hand-label">Hand ${i+1}</div>
+          <div class="eq-hand-side">
+            <div class="eq-hand-label">Hand ${i+1}</div>
+            <button type="button" class="eq-edit-btn" data-edit-hand title="Ganze Hand bearbeiten">${editIcon}</button>
+          </div>
           <div class="eq-cards">${cardsHtml}</div>
           ${pctHtml}
           ${hands.length>MIN_HANDS?`<button class="eq-remove" data-rm="${i}" title="Hand entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>`:''}
@@ -6670,7 +6722,18 @@
       let row=wrap.children[i];
       if(!row){row=document.createElement('div');row.className='eq-hand';wrap.appendChild(row);}
       row.innerHTML=handRowInnerHtml(i);
-      row.querySelector('.eq-cards').addEventListener('click',()=>{
+      row.querySelectorAll('.eq-card-slot').forEach(slot=>{
+        const si=+slot.dataset.slot;
+        slot.addEventListener('click',()=>{
+          if(_analyzing)return;
+          openSinglePicker(hands[i][si],`Hand ${i+1} – Karte ${si+1}`,newCard=>{
+            hands[i][si]=newCard;
+            onChange({hand:i});
+          });
+        });
+      });
+      const editBtn=row.querySelector('[data-edit-hand]');
+      if(editBtn)editBtn.addEventListener('click',()=>{
         if(_analyzing)return;
         openMultiPicker(hands[i],handSize(),`Hand ${i+1}`,newCards=>{
           const nh=new Array(handSize()).fill(null);
@@ -6744,7 +6807,10 @@
         <div class="section-title">Hände</div>
         <div id="eq-hands-wrap"></div>
         ${hands.length<MAX_HANDS?`<button class="btn btn-secondary" id="eq-add-hand" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hand hinzufügen</button>`:''}
-        <div class="section-title">Board (optional)</div>
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;text-transform:none;letter-spacing:0">
+          <span style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px">Board (optional)</span>
+          <button type="button" class="eq-edit-btn" id="eq-board-edit" title="Ganzes Board bearbeiten">${editIcon}</button>
+        </div>
         <div class="eq-board-wrap">
           <div class="eq-board" id="eq-board"></div>
           <div class="eq-hint">Tippen um Karte zu wählen · Flop · Turn · River</div>
@@ -6763,20 +6829,19 @@
 
       // Board rendern (Flop 3 + Turn 1 + River 1 mit Separatoren)
       const bw=el.querySelector('#eq-board');
-      const openBoardPicker=()=>{
-        if(_analyzing)return;
-        openMultiPicker(board,5,'Board',newCards=>{
-          board=[null,null,null,null,null];
-          newCards.slice(0,5).forEach((c,i)=>{board[i]=c;});
-          onChange({board:true});
-        });
-      };
+      const BOARD_LABELS=['Flop 1','Flop 2','Flop 3','Turn','River'];
       const makeSlot=(bi)=>{
         const d=document.createElement('div');
         d.className='eq-card-slot';
         d.dataset.board=bi;
         d.innerHTML=cardDisplay(board[bi]);
-        d.addEventListener('click',openBoardPicker);
+        d.addEventListener('click',()=>{
+          if(_analyzing)return;
+          openSinglePicker(board[bi],BOARD_LABELS[bi],newCard=>{
+            board[bi]=newCard;
+            onChange({board:true});
+          });
+        });
         return d;
       };
       for(let i=0;i<3;i++)bw.appendChild(makeSlot(i));
@@ -6784,6 +6849,15 @@
       bw.appendChild(makeSlot(3));
       const sep2=document.createElement('div');sep2.className='eq-board-sep';bw.appendChild(sep2);
       bw.appendChild(makeSlot(4));
+      const boardEditBtn=el.querySelector('#eq-board-edit');
+      if(boardEditBtn)boardEditBtn.addEventListener('click',()=>{
+        if(_analyzing)return;
+        openMultiPicker(board,5,'Board',newCards=>{
+          board=[null,null,null,null,null];
+          newCards.slice(0,5).forEach((c,i)=>{board[i]=c;});
+          onChange({board:true});
+        });
+      });
 
       // Buttons
       el.querySelector('#eq-back').addEventListener('click',()=>history.back());
