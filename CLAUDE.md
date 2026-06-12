@@ -44,7 +44,7 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | abgeschlossen   | boolean | false = läuft noch                        |
 | buyin_pot       | numeric | €5 default (historisch auch 2.5)          |
 | buyin_kassa     | numeric | €2 default                                |
-| modus           | text    | null = cash, 'online' = Pandemie-Modus   |
+| modus           | text    | null = cash, 'online' = Online-Modus   |
 | online_variante | text    | 'holdem'/'omaha'/'texama' (bei online)   |
 
 ### `spiel_teilnehmer`
@@ -243,7 +243,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 4.6**
+- **Aktuelle Version: 4.7**
 
 ## Login-Provider
 
@@ -280,28 +280,14 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 | 21 | Buy-In Minimum = 1 (kein Minus auf 0 möglich)                                      | ✅ v2.11 |
 | 22 | Doppelte Spieler im aktiven Spiel verhindern                                        | ✅ v2.11 |
 
-## Aktueller Feature-Branch (noch nicht in main / kein Version-Bump)
+## Terminologie: «Online-Modus» (früher anders benannt)
 
-Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilisierung
-
-**Was implementiert wurde (noch auf dem Branch, wartet auf Freigabe):**
-- Terminologie: „Hand/nächste Hand" → „Spielrunde/nächste Spielrunde" überall in der UI
-- Community-Card-Animationen: SMIL → JS-driven CSS transition (opacity)
-- Showdown-Fixes: Sidepots via action-log, Cent-Rundung, keine doppelten Win-Einträge
-- All-in Capping + Floating-Point-Fix beim Call-as-Allin
-- Payout-Modal: erscheint sofort beim Beenden, schreibt `spiel_teilnehmer` + `spiele` erst bei Bestätigung
-- `loadSpiel()` filtert `modus='online'` aus (Phantom-Einträge verhindert)
-- Beobachter-Modus für Nicht-Spieler
-- Karten-Umdreh-Animation, Feed-Vollbild, Bogen-Layout
-- Vibration bei eigenem Spielzug
-- Easter Eggs: Shake-to-Randomizer, Kippen-to-Peek
-- Direktkamera via `capture="environment"` bei Beweisfotos
-- Zahlreiche UI-Fixes (Dealer-D, Stack-Icons, Kebab-Breite, KPIs, Landscape-Layout)
-
-**Nächste Schritte:**
-1. Chris testet auf Preview-URL
-2. Changelog-Text entwerfen
-3. Nach Freigabe: Version bumpen auf 4.0, in main mergen
+Der Online-Poker-Modus heisst seit v4.7 überall einheitlich **«Online-Modus»**.
+Der frühere interne Name (P-Wort) darf NIRGENDS mehr auftauchen – nicht in UI-Texten,
+Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabei auch:
+- localStorage-Key: `dtks_online_entdeckt` (Migration vom alten Key beim App-Start in index.html)
+- DB-Spalte: `spieler.online_entdeckt_am` (per Supabase-Migration vom alten Spaltennamen umbenannt, Juni 2026)
+- Funktion `_unlockOnlineModus()`, CSS/JS-Sektions-Kommentare, SYSTEM_PROMPT der Edge Function `dealer-comment`
 
 ---
 
@@ -335,8 +321,8 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
 
 
 ## Aktueller Backlog / TODOs
-1. **Pandemie-Modus Finalisierung** – UI-Polish + Stabilisierung auf Branch `claude/polish-pandemic-mode-ZaJXb` (wartet auf Freigabe + Version-Bump auf 4.0). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs bereits implementiert. Offene Punkte: FK SET NULL, Feed-Flackern, Vorauswahl-Fold-Fix, Runout-Handauswertung.
-2. **Dealer-Kommentare im Pandemie-Modus** ✅ v4.6 – KI-generiert statt hardcoded: Edge Function `dealer-comment` ruft Claude (Haiku, `claude-haiku-4-5-20251001`, Secret `ANTHROPIC_API_KEY`) auf und schreibt das Ergebnis als `online_actions`-Eintrag (`action:'dealer_comment'`, `meta.text`) → via Realtime sehen alle Spieler denselben Kommentar. Trigger serverseitig in `poker-action`/`poker-showdown`/`poker-new-hand` über `rollDealerTrigger()` + `fireDealerComment()` (fire-and-forget mit `EdgeRuntime.waitUntil`, blockiert nie den Spielfluss; Wahrscheinlichkeiten pro Event in `poker-utils` `DEALER_COMMENT_PROB`, z.B. fold 18%, allin 52%, win_72 95%). WICHTIG: `dealer-comment` ist im Deploy-Workflow `.github/workflows/deploy-edge-functions.yml` als eigener Step eingetragen.
+1. **Online-Modus Finalisierung** ✅ v4.0 – UI-Polish + Stabilisierung (in main gemerged). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs implementiert.
+2. **Dealer-Kommentare im Online-Modus** ✅ v4.6 – KI-generiert statt hardcoded: Edge Function `dealer-comment` ruft Claude (Haiku, `claude-haiku-4-5-20251001`, Secret `ANTHROPIC_API_KEY`) auf und schreibt das Ergebnis als `online_actions`-Eintrag (`action:'dealer_comment'`, `meta.text`) → via Realtime sehen alle Spieler denselben Kommentar. Trigger serverseitig in `poker-action`/`poker-showdown`/`poker-new-hand` über `rollDealerTrigger()` + `fireDealerComment()` (fire-and-forget mit `EdgeRuntime.waitUntil`, blockiert nie den Spielfluss; Wahrscheinlichkeiten pro Event in `poker-utils` `DEALER_COMMENT_PROB`, z.B. fold 18%, allin 52%, win_72 95%). WICHTIG: `dealer-comment` ist im Deploy-Workflow `.github/workflows/deploy-edge-functions.yml` als eigener Step eingetragen.
 3. **Keyboard-Shortcuts** *(spätere Erweiterung, PC/Tablet mit physischer Tastatur)* – Tastaturkürzel für häufig verwendete Aktionen: z.B. `Alt+F` für Feed-Vollbild oder Feed-Drawer öffnen, `Esc` um Modals/Sheets zu schliessen, evtl. Poker-Aktionen (F=Fold, C=Call, R=Raise) wenn am Tisch aktiv; kurze Onboarding-Hinweis-Einblendung für Nutzer mit Tastatur (Erkennung via `navigator.maxTouchPoints===0`).
 4. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:
@@ -349,14 +335,14 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
    - ✅ Admin: manueller App-Update-Push aus Einstellungen-Screen
    - ✅ Deep Links: Klick auf Notification öffnet direkt den relevanten Screen
 
-### Pandemie-Modus – Offene Bugs & Verbesserungen
+### Online-Modus – Offene Bugs & Verbesserungen
 
 *(Alle bekannten Bugs sind behoben. Neue Issues hier eintragen.)*
 
 - **Vorauswahl „Chk/Fold"** – Server-seitig noch in `poker-action/index.ts` vorhanden, aber in der UI nicht exponiert. Kann bei Gelegenheit aus dem Server entfernt werden (jetzt durch das neue Fold-Verhalten, das bei `callAmount=0` automatisch checkt, ersetzt).
 
 
-## Pandemie-Modus – Wichtige Implementierungsdetails
+## Online-Modus – Wichtige Implementierungsdetails
 
 ### Edge Functions (Supabase Deno)
 | Function | Status | Key-Logik |
@@ -372,7 +358,7 @@ Branch: `claude/polish-pandemic-mode-ZaJXb` – Pandemie-Modus Polish & Stabilis
 
 Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script type="module">`) enthält die komplette Spielanleitung für Endanwender. Sie ist über das Kebab-Menü (⋮) → „Spielregeln & Hilfe" erreichbar.
 
-**WICHTIG:** Wann immer eine Funktion des Pandemie-Modus geändert oder ergänzt wird, MUSS der entsprechende Abschnitt in diesem Modal ebenfalls aktualisiert werden. Abschnitte:
+**WICHTIG:** Wann immer eine Funktion des Online-Modus geändert oder ergänzt wird, MUSS der entsprechende Abschnitt in diesem Modal ebenfalls aktualisiert werden. Abschnitte:
 - `Spielvarianten` — bei neuer Variante Karte hinzufügen
 - `Spielablauf` — bei Änderung am Hand-Flow
 - `Aktionen am Tisch` — bei neuer/geänderter Aktion
@@ -453,14 +439,14 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Geänderte Functions in dieser Session: `poker-action`, `poker-showdown`
 - Weitere Functions (unverändert): `poker-start-game`, `poker-next-street`, `poker-new-hand`, `poker-reveal-runout`, `send-push`, `weekly-backup`
 
-## Pandemie-Modus – Easter Egg Rollout (noch nicht implementiert)
+## Online-Modus – Easter Egg Rollout (noch nicht implementiert)
 
 Wenn der Modus fertig ist und für alle freigeschaltet werden soll:
 
 **Versteckter Einstieg:**
 - Trigger: 7× auf das App-Logo/Titel tippen (Referenz zur 7-2-Regel) – oder Langdruck auf Versionsnummer in der Info-Seite
 - Erst NACH Entdecken ist der Modus dauerhaft im Avatar-Menü sichtbar
-- State: `localStorage: 'dtks_pandemie_entdeckt'` (true/false)
+- State: `localStorage: 'dtks_online_entdeckt'` (true/false)
 
 **Das Rätsel (vor Freischaltung):**
 Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…". Das Rätsel nimmt sich humorvoll daran:
@@ -476,15 +462,15 @@ Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…"
   Celebration-Animation + Meldung: *«Richtig! Er existiert. Und er hat Grossartiges geleistet.»*
   → Direkt danach: **«Version 4.0 freigeschaltet!»** Modal mit:
     - Konfetti / Celebration-Effekt
-    - Changelog für v4.0 (Pandemie-Modus)
+    - Changelog für v4.0 (Online-Modus)
     - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texama), Pause, Pre-Action, Runout, Video-Call etc.
-    - Diese Infos jederzeit wieder abrufbar via Avatar-Menü → «Pandemie-Modus»
+    - Diese Infos jederzeit wieder abrufbar via Avatar-Menü → «Online-Modus»
 
 **Version-Bump beim Freischalten:**
 - Version springt auf 4.0 (nicht vorher)
-- Changelog-Eintrag für v4.0 beschreibt den Pandemie-Modus komplett
+- Changelog-Eintrag für v4.0 beschreibt den Online-Modus komplett
 
-**UI-Design-Anforderungen für den Pandemie-Modus:**
+**UI-Design-Anforderungen für den Online-Modus:**
 - Funktioniert auf iPhone und iPad in Portrait UND Landscape
 - Professionelles, durchdachtes Layout für alle Orientierungen
 - Landscape auf iPad: Tisch links, Feed/Chat rechts (Side-by-Side)
@@ -495,9 +481,9 @@ Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…"
 
 ---
 
-## Pandemie-Modus – Vollständiges Konzept
+## Online-Modus – Vollständiges Konzept
 
-Online-Poker via Supabase Realtime. Ermöglicht das Spielen ohne physisches Treffen (Urlaub, Pandemie etc.). Ergebnisse fliessen direkt in die bestehende Statistik.
+Online-Poker via Supabase Realtime. Ermöglicht das Spielen ohne physisches Treffen (Urlaub, Reisen etc.). Ergebnisse fliessen direkt in die bestehende Statistik.
 
 ### Kernprinzip
 Server (Supabase) ist einzige Wahrheit. Karten werden serverseitig gemischt und ausgeteilt – kein Client sieht fremde Karten, kein Client kann schummeln.

@@ -21,7 +21,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 
-const SYSTEM_PROMPT = `Du bist der Dealer bei einer privaten Pokerrunde (Pandemie-Modus, Online-Poker).
+const SYSTEM_PROMPT = `Du bist der Dealer bei einer privaten Pokerrunde (Online-Modus, Online-Poker).
 Du gibst nach Spielzügen kurze, augenzwinkernde Kommentare im Stil eines trockenen Pokerkommentators ab.
 
 Regeln:
