@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.6">
+  <meta name="version" content="4.7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -708,7 +708,7 @@
   .pm-key-hint{display:none}
   body.has-keyboard .pm-key-hint{display:inline-flex;align-items:center;vertical-align:middle}
 
-  /* ── PANDEMIE-MODUS ───────────────────────────────────── */
+  /* ── ONLINE-MODUS ───────────────────────────────────── */
   .pm-session-card{background:var(--surface);border-radius:var(--radius-md);padding:var(--space-md);border:1.5px solid var(--border);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s}
   .pm-session-card:active{border-color:var(--accent)}
   .pm-session-card .pm-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent-text)}
@@ -1438,7 +1438,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.6';
+  const VERSION='4.7';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2287,9 +2287,9 @@
   document.getElementById('bell-btn').addEventListener('click',()=>{showPage('benachrichtigungen');});
 
   // ── EASTER EGG: Online-Modus im Avatar-Menü → Rätsel beim ersten Klick ─────
-  function _unlockPandemie(){
-    localStorage.setItem('dtks_pandemie_entdeckt','true');
-    if(currentSpieler?.id)db.from('spieler').update({pandemie_entdeckt_am:new Date().toISOString()}).eq('id',currentSpieler.id).then(()=>{});
+  function _unlockOnlineModus(){
+    localStorage.setItem('dtks_online_entdeckt','true');
+    if(currentSpieler?.id)db.from('spieler').update({online_entdeckt_am:new Date().toISOString()}).eq('id',currentSpieler.id).then(()=>{});
     document.getElementById('pm-live-btn').style.removeProperty('display');
   }
   function _showV4Modal(){
@@ -2332,7 +2332,7 @@
     document.getElementById('ee-v4-close').onclick=()=>{document.body.style.overflow='';ov.remove();showPage('online-lobby');};
   }
   function _showEasterEgg(){
-    if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
+    if(localStorage.getItem('dtks_online_entdeckt')==='true'){
       showPage('online-lobby');
       return;
     }
@@ -2403,7 +2403,7 @@
       const val=(document.getElementById('ee-input')?.value||'').trim().toLowerCase();
       if(val==='chris'||val==='42'){
         ov.remove();
-        _unlockPandemie();
+        _unlockOnlineModus();
         _showV4Modal();
       } else {
         const msg=document.getElementById('ee-msg');
@@ -2760,8 +2760,10 @@
     ['dropdown-admin-divider','dropdown-admin-label','dropdown-debug-divider','dropdown-debug-label'].forEach(id=>{document.getElementById(id).style.display=_adm?'block':'none';});
     document.getElementById('btn-console').style.display=sp.ist_admin?'flex':'none';
     document.getElementById('btn-rohdaten').style.display=sp.ist_admin?'flex':'none';
+    // Migration: alter Easter-Egg-Key → neuer Key (einmalig)
+    if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){localStorage.setItem('dtks_online_entdeckt','true');localStorage.removeItem('dtks_pandemie_entdeckt');}
     // Live-Button im Header nur nach Entdeckung sichtbar
-    if(localStorage.getItem('dtks_pandemie_entdeckt')==='true'){
+    if(localStorage.getItem('dtks_online_entdeckt')==='true'){
       document.getElementById('pm-live-btn').style.removeProperty('display');
     }
     loginEl.style.display='none';
@@ -4054,7 +4056,7 @@
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank&&!s.ist_bot),inaktive=spieler.filter(s=>!s.aktiv&&!s.ist_bot);
     const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
     const loginSub=s=>(s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'')+
-      (s.pandemie_entdeckt_am?`<div class="item-subtitle" style="color:var(--accent-text)">🎴 Easter Egg: ${fmtLogin(s.pandemie_entdeckt_am)}</div>`:'');
+      (s.online_entdeckt_am?`<div class="item-subtitle" style="color:var(--accent-text)">🎴 Easter Egg: ${fmtLogin(s.online_entdeckt_am)}</div>`:'');
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
     html+=`<div class="section-title">Aktiv · ${aktive.length}</div><div class="card">`;
     aktive.forEach(s=>{html+=`<div class="list-item clickable" data-spieler='${JSON.stringify({id:s.id,name:s.name,email:s.email||'',profilbild:s.profilbild||'',aktiv:s.aktiv,ist_admin:s.ist_admin||false})}'>${avatarHtml(s,40)}<div class="item-body"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.email||'Keine E-Mail'}${s.ist_admin?' · Admin':''}</div>${loginSub(s)}</div><div class="item-trailing"><span class="badge badge-green">Aktiv</span>${chevron}</div></div>`;});
@@ -6594,10 +6596,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.7',datum:'Juni 2026',eintraege:[
+      {typ:'verbessert',text:'Einheitliche Benennung: Der Online-Poker-Modus heisst jetzt durchgängig «Online-Modus» – in allen Texten, Hilfeseiten und Changelog-Einträgen'},
+    ]},
     {version:'4.6',datum:'Juni 2026',eintraege:[
-      {typ:'neu',text:'Pandemie-Modus: KI-generierte Dealer-Kommentare im Spielverlauf – der Dealer kommentiert Folds, All-ins, Showdowns, 7-2-Siege & Co. mit trockenem Witz. Serverseitig generiert (Claude), alle Spieler sehen denselben Kommentar'},
-      {typ:'fix',text:'Pandemie-Modus: Tisch-Layout auf Tablet/Desktop im Querformat – Action-Buttons und Feed wurden unten abgeschnitten, jetzt nutzt das Layout exakt die Bildschirmhöhe ohne Scrollbalken'},
-      {typ:'verbessert',text:'Pandemie-Modus: Spaltenaufteilung im Querformat angepasst – mehr Platz für Feed und Infobereich'},
+      {typ:'neu',text:'Online-Modus: KI-generierte Dealer-Kommentare im Spielverlauf – der Dealer kommentiert Folds, All-ins, Showdowns, 7-2-Siege & Co. mit trockenem Witz. Serverseitig generiert (Claude), alle Spieler sehen denselben Kommentar'},
+      {typ:'fix',text:'Online-Modus: Tisch-Layout auf Tablet/Desktop im Querformat – Action-Buttons und Feed wurden unten abgeschnitten, jetzt nutzt das Layout exakt die Bildschirmhöhe ohne Scrollbalken'},
+      {typ:'verbessert',text:'Online-Modus: Spaltenaufteilung im Querformat angepasst – mehr Platz für Feed und Infobereich'},
     ]},
     {version:'4.5',datum:'Juni 2026',eintraege:[
       {typ:'verbessert',text:'Push-Benachrichtigung bei Buy-In: zeigt jetzt den kumulierten Pot-Betrag (z.B. Buy-In #3 → € 15,00 im Pot statt immer € 5,00)'},
@@ -7020,9 +7025,9 @@
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
             titel:'Besondere Hände',
             text:'Erfasse Poker, Straight Flush, Royal Flush und 7-2 Gewinne mit optionalem Beweisfoto. Bei 7-2 werden automatisch Transaktionen (1€ von jedem Mitspieler) erstellt. Der Gewinner erhält eine Push-Benachrichtigung.'},
-          ...( localStorage.getItem('dtks_pandemie_entdeckt')==='true' ? [{icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+          ...( localStorage.getItem('dtks_online_entdeckt')==='true' ? [{icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
             titel:'Online-Modus',
-            text:'Spiele echtes Poker online mit der ganzen Runde — ideal bei Pandemien, Reisen oder sonstigen Hindernissen. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'}] : []),
+            text:'Spiele echtes Poker online mit der ganzen Runde — ideal bei Reisen oder sonstigen Hindernissen. Wähle zwischen Texas Hold\'em, Omaha und Texahma. Karten werden serverseitig gemischt und ausgeteilt, kein Schummeln möglich. Unterstützt Sidepots, Pre-Action, Pause, Bots, Video-Call-Link und mehr. Ergebnisse fliessen direkt in die Statistik.'}] : []),
           {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent-text)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
             titel:'Push-Benachrichtigungen',
             text:'Aktiviere Benachrichtigungen im Profil. Wähle welche Kategorien du erhalten möchtest: Spielergebnisse, Buy-Ins, Besondere Hände, Transaktionen, App-Updates. Auf iOS muss die App zuerst zum Homescreen hinzugefügt werden.'},
@@ -7580,7 +7585,7 @@
     document.getElementById('btn-roh-alles')?.addEventListener('click',()=>loadRohdaten(undefined,true));
   }
 
-  // ── PANDEMIE-MODUS ─────────────────────────────────────
+  // ── ONLINE-MODUS ─────────────────────────────────────
   let _pmLobbyChannel=null;let _pmLobbyLoadTimer=null;let _pmLobbyTickerInterval=null;let _pmLobbyNameCache={};
   // Global bot watcher – triggers bots for sessions not currently on-screen
   let _globalBotChannel=null;let _globalBotFlying=new Set();let _botPlayerIds=new Set();
