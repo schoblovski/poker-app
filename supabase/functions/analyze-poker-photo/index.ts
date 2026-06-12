@@ -42,11 +42,15 @@ diesem Mini-Index ab, auch wenn der Rest der Karte verdeckt ist. Zähle dabei ge
 einem Stapel/Fächer liegen (z.B. anhand der Anzahl sichtbarer versetzter Ecken oder Kartenränder).
 
 WICHTIG – Anzahl Hole-Cards pro Gruppe (Hold'em vs. Omaha):
-Hole-Card-Gruppen haben üblicherweise EINHEITLICH 2 Karten (Hold'em) ODER EINHEITLICH 4 Karten (Omaha) –
-nicht gemischt. Wenn eine Gruppe auf den ersten Blick nur 2-3 Karten zu zeigen scheint, prüfe genau, ob im
-Stapel noch eine weitere Karte (mit eigener sichtbarer Ecke) darunter verborgen liegt, bevor du die
-Gruppengrösse festlegst – insbesondere wenn andere Gruppen im selben Foto 4 Karten haben, ist es
-wahrscheinlich, dass ALLE Gruppen 4 Karten (Omaha) haben.
+Hole-Card-Gruppen haben OFT (aber nicht immer!) EINHEITLICH 2 Karten (Hold'em) oder EINHEITLICH 4 Karten
+(Omaha). Es kann aber durchaus vorkommen, dass Gruppen UNTERSCHIEDLICH VIELE Karten zeigen (z.B. weil ein
+Spieler vorzeitig gefoldet hat und nur einen Teil seiner Karten aufdeckt, oder eine Karte einer Gruppe verdeckt
+liegt). ZÄHLE für JEDE Gruppe EINZELN und UNABHÄNGIG die tatsächlich sichtbaren Karten (inkl. überlappter
+Karten mit eigener sichtbarer Ecke) – verzerre die Anzahl NICHT künstlich auf 2 oder 4, wenn das Foto klar eine
+andere Anzahl zeigt. Prüfe zwar bei einer auf den ersten Blick kleineren Gruppe, ob im Stapel noch eine
+weitere Karte (mit eigener sichtbarer Ecke) darunter verborgen liegt – aber NUR wenn du diese zusätzliche Ecke
+tatsächlich siehst. Wenn nicht, übernimm die Gruppe genau mit der Anzahl Karten, die du siehst, auch wenn
+andere Gruppen im selben Foto eine andere Anzahl haben.
 
 ACHTUNG – überlappende Karten INNERHALB der Board-Reihe:
 Wenn an einer Position INNERHALB der Board-Linie zwei Karten leicht überlappend übereinander liegen
@@ -112,7 +116,7 @@ Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne Mark
 Regeln:
 - Erkenne NUR Karten, die du eindeutig lesen kannst (z.B. über den Eck-Index). Wirklich verdeckte/unleserliche Karten lässt du weg (NICHT raten!).
 - Verdeckte Karten (Rückseite) NIE in "community" oder "hands" aufnehmen.
-- Jede Hand-Gruppe sollte 2 oder 4 Karten enthalten (Hold'em bzw. Omaha). Ist eine Gruppe unklar oder unvollständig erkennbar, lass nur die eindeutigen Karten davon stehen oder lass die Gruppe ganz weg.
+- Jede Hand-Gruppe enthält genau so viele Karten, wie auf dem Foto für diese Gruppe tatsächlich eindeutig erkennbar sind (das können 2, 3, 4 oder auch nur 1 sein – Gruppen müssen NICHT alle gleich gross sein). Ist eine Gruppe unklar oder teilweise unleserlich, lass nur die eindeutigen Karten davon stehen.
 - Maximal 6 Hand-Gruppen, maximal 5 Community Cards.
 - Keine Karte (exakte Kombination aus Rang+Farbe) darf doppelt vorkommen (auch nicht über Community/Hand-Gruppen
   hinweg) – jede Karte existiert nur einmal im Deck. Bei einem Vierling liegen z.B. 2 Jacks im Board UND die
