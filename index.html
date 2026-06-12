@@ -705,9 +705,10 @@
   .eq-progress-fill{height:100%;background:var(--accent);transition:width .1s linear;width:0;}
   .eq-hint{font-size:12px;color:var(--text-tertiary);text-align:center;padding:var(--space-md) 0;}
   .eq-explain{margin-top:var(--space-sm);padding:var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;line-height:1.5;color:var(--text-secondary);display:flex;align-items:center;gap:var(--space-sm);}
-  .eq-photo-preview{display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:var(--space-md);}
-  .eq-photo-preview-img{width:56px;height:56px;border-radius:8px;}
-  .eq-photo-preview-close{flex-shrink:0;width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .eq-photo-preview{position:relative;margin-bottom:var(--space-md);border-radius:var(--radius-md);overflow:hidden;background:var(--bg-secondary);}
+  .eq-photo-preview-img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;cursor:zoom-in;}
+  .eq-photo-preview-hint{padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-secondary);text-align:left;}
+  .eq-photo-preview-close{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
   .eq-photo-preview-close svg{width:16px;height:16px;}
   .eq-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 
@@ -6445,7 +6446,6 @@
     // ── KI-Fotoanalyse ─────────────────────────────────────
     async function analyzePhoto(payload){
       _analyzing=true;
-      _analyzedImageSrc=payload.image??payload.imageUrl??null;
       render();
       const data=await _callFn('analyze-poker-photo',payload);
       _analyzing=false;
@@ -6454,10 +6454,10 @@
         render();
         return;
       }
-      applyAnalysis(data);
+      applyAnalysis(data,payload.image??payload.imageUrl??null);
     }
 
-    function applyAnalysis(data){
+    function applyAnalysis(data,imgSrc){
       const used=new Set();
       const community=[];
       (data.community||[]).forEach(s=>{
@@ -6502,6 +6502,8 @@
       });
       board=[null,null,null,null,null];
       community.slice(0,5).forEach((c,i)=>{board[i]=c;});
+
+      _analyzedImageSrc=imgSrc;
 
       if(data.note)showAlert(data.note);
       onChange();
@@ -6625,8 +6627,8 @@
         <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
         ${_analyzedImageSrc?`<div class="eq-photo-preview">
           <img src="${escHtml(_analyzedImageSrc)}" class="hand-foto-thumb eq-photo-preview-img" alt="Analysiertes Foto">
-          <div class="eq-hint" style="text-align:left;padding:0;flex:1">Analysiertes Foto – zum Vergrössern tippen, dann mit den erkannten Karten oben vergleichen.</div>
           <button type="button" class="eq-photo-preview-close" id="eq-photo-preview-close" title="Foto ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
+          <div class="eq-photo-preview-hint">Analysiertes Foto – zum Vergrössern tippen, dann mit den erkannten Karten oben vergleichen.</div>
         </div>`:''}
         <div class="section-title" style="margin-top:0">Hände</div>
         <div id="eq-hands-wrap"></div>
