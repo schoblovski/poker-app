@@ -85,20 +85,20 @@
     body.pm-fullscreen .pm-rt-inline{display:flex!important;}
     .pm-tisch-left .pm-rt-inline{display:flex!important;}
     body.pm-fullscreen #app-screen{max-width:none!important;}
-    body.pm-fullscreen .content{padding:0!important;overflow-y:auto;height:100dvh;}
-    /* Android: in fullscreen the header is hidden so give panels the full viewport height */
-    body.pm-fullscreen .pm-tisch-layout{min-height:100dvh;}
-    body.pm-fullscreen .pm-tisch-left,body.pm-fullscreen .pm-tisch-right{min-height:100dvh!important;max-height:100dvh!important;}
+    body.pm-fullscreen .content{padding:0!important;height:100dvh;}
     body.pm-tisch .bottom-nav{display:none!important;}
     body.pm-tisch:not(.pm-fullscreen) .content{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important;}
+    /* Tablet/Landscape: durchgehende Flexbox-Höhenkette body→panels, nichts wächst über den Viewport.
+       Gilt für pm-fullscreen UND nicht-fullscreen (Tablet Portrait ≥600px). */
     @media(min-width:600px),(orientation:landscape){
-      body.pm-tisch:not(.pm-fullscreen){height:100dvh;overflow:hidden;}
-      body.pm-tisch:not(.pm-fullscreen) #app-screen{min-height:0;height:100%;overflow:hidden;}
-      body.pm-tisch:not(.pm-fullscreen) .content{padding-top:0!important;padding-bottom:0!important;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-      body.pm-tisch:not(.pm-fullscreen) #page-online-tisch{flex:1;min-height:0;}
-      body.pm-tisch:not(.pm-fullscreen) #page-online-tisch.active{display:flex;flex-direction:column;}
-      body.pm-tisch:not(.pm-fullscreen) #online-tisch-content{flex:1;min-height:0;height:auto!important;display:flex;flex-direction:column;}
-      body.pm-tisch:not(.pm-fullscreen) .pm-tisch-layout{flex:1;min-height:0;height:auto!important;}
+      body.pm-tisch{height:100dvh;min-height:0;overflow:hidden;}
+      body.pm-tisch #app-screen{min-height:0;height:100%;overflow:hidden;}
+      body.pm-tisch .content{padding-top:0!important;padding-bottom:0!important;display:flex;flex-direction:column;min-height:0;overflow:hidden!important;}
+      body.pm-tisch #page-online-tisch{flex:1;min-height:0;}
+      body.pm-tisch #page-online-tisch.active{display:flex;flex-direction:column;}
+      body.pm-tisch #online-tisch-content{flex:1;min-height:0;height:auto!important;display:flex;flex-direction:column;overflow:hidden!important;}
+      body.pm-tisch #online-tisch-content>div{flex:1;min-height:0;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;}
+      body.pm-tisch .pm-tisch-layout{flex:1;min-height:0;height:auto!important;}
     }
     body.pm-tisch .content{overscroll-behavior-y:none;}
     /* Scroll container for portrait: height set via JS in renderOnlineTisch */
@@ -8612,7 +8612,7 @@
       _pm._clearingAway=true;_pm._isAway=true;
       _pmSendBack().finally(()=>{if(_pm)delete _pm._clearingAway;});
     }
-    const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) var(--space-xl)':'0 0 var(--space-xl)'}">
+    const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) 0':'0 0 var(--space-xl)'}">
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>${(()=>{const _bsL=session.blind_struktur;if(!_bsL||!_bsL.length)return'';const _bsIdx=Math.min(session.blind_level??0,_bsL.length-1);const _bsLvl=_bsL[_bsIdx];const _bsSl=_pmBtSecsLeft();const _bsTot=(_bsLvl.min||15)*60;const _bsPct=_bsSl!==null&&_bsTot>0?Math.max(0,Math.min(100,_bsSl/_bsTot*100)):100;const _bsTime=session.blind_timer_running&&_bsSl!==null?_pmBtFmt(_bsSl):'--:--';return`<div id="pm-bt-widget" style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:8px;padding:5px 8px;color:white;cursor:pointer;border:1px solid rgba(255,255,255,.15);min-width:70px;z-index:2" title="Blind-Timer – Einstellungen öffnen"><div style="display:flex;align-items:center;gap:4px;font-size:11px;line-height:1.3"><span id="pm-bt-level" style="font-weight:700;font-family:var(--font-mono)">L${_bsIdx+1}</span><span id="pm-bt-sbbb" style="color:rgba(255,255,255,.75);font-size:10px;flex:1">${_bsLvl.sb}/${_bsLvl.bb}</span><span id="pm-bt-time" style="font-family:var(--font-mono);font-size:11px;color:${session.blind_timer_running?'rgba(255,255,255,.95)':'rgba(255,255,255,.45)'}">${_bsTime}</span></div><div style="height:2px;background:rgba(255,255,255,.15);border-radius:1px;margin-top:3px;overflow:hidden"><div id="pm-bt-progress" style="height:100%;background:var(--accent);border-radius:1px;width:${_bsPct}%;transition:width .5s linear"></div></div></div>`;})()}</div>
