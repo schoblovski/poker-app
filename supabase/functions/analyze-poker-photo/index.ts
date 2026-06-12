@@ -63,6 +63,14 @@ ob die Anzahl zum erkannten Rang passt:
 Besonders verwechslungsanfällig: "8" vs. "T" (Zehn) – zähle die Pips bewusst durch (8 vs. 10 Pips) und achte
 auf eine eventuell aufgedruckte "10"-Beschriftung im Eck-Index, statt die Form nur grob zu schätzen.
 
+Besonders verwechslungsanfällig: "6" vs. "9" – der Eck-Index von 6 und 9 sieht (insbesondere bei kleiner
+Auflösung oder leicht gedrehter Karte) fast identisch aus, da eine 9 oft wie eine um 180° gedrehte 6 wirkt.
+Verlasse dich hier NICHT nur auf den Eck-Index, sondern zähle bei vollständig sichtbaren Karten die Pips:
+"6" hat genau 6 Pips (zwei Spalten zu je 3), "9" hat genau 9 Pips (zwei Spalten zu je 4 plus 1 mittig oben/unten).
+Achte zusätzlich auf die Ausrichtung des Eck-Index relativ zu benachbarten Karten in derselben Reihe/Gruppe:
+liegen mehrere Karten gleich orientiert nebeneinander, hat eine "6" den kleinen Bogen/Schwung des Ziffernkopfes
+UNTEN, eine "9" hat ihn OBEN – vergleiche das bei Unsicherheit mit eindeutig erkennbaren Nachbarkarten.
+
 Widersprechen sich Eck-Index und Pip-Anzahl in der Mitte, vertraue der ausgezählten Pip-Anzahl der
 Kartenmitte und korrigiere den Rang entsprechend (z.B. ein einzelnes grosses zentrales Symbol ist immer ein
 Ass, 10 durchgezählte Pips bedeuten Rang "T", auch wenn der Eck-Index wie "8" aussah). Bei überlappten
