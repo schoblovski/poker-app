@@ -100,7 +100,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        max_tokens: 8000,
+        thinking: { type: 'enabled', budget_tokens: 4000 },
         system: SYSTEM_PROMPT,
         messages: [{
           role: 'user',
@@ -118,7 +119,10 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    const text: string | undefined = data?.content?.[0]?.text?.trim();
+    const textBlock = Array.isArray(data?.content)
+      ? data.content.find((b: { type?: string }) => b?.type === 'text')
+      : undefined;
+    const text: string | undefined = textBlock?.text?.trim();
     if (!text) return err('Keine Antwort von Claude');
 
     let parsed: { community?: unknown; hands?: unknown; note?: unknown };
