@@ -72,6 +72,22 @@ dich dort auf den Eck-Index. Bei echten Zweifeln lass die Karte weg statt zu rat
 Kartennotation: Rang als 2-9, T (Zehn), J, Q, K, A; Farbe als s (Pik/♠), h (Herz/♥), d (Karo/♦), c (Kreuz/♣).
 Beispiele: "Ah" = Ass Herz, "Td" = Zehn Karo, "2c" = Zwei Kreuz.
 
+FARBSYMBOLE GENAU UNTERSCHEIDEN – häufige Fehlerquelle:
+Es gibt nur 4 Symbole, je 2 schwarze und 2 rote. Verwechsle sie nicht nur nach Farbe (schwarz/rot), sondern
+prüfe gezielt die FORM:
+- ♠ Pik (s) – SCHWARZ. Herzförmige Spitze oben, mit einem kleinen "Stiel"/Dreieck unten (wie ein Anker/Tropfen
+  mit Stamm). Wird leicht mit ♣ verwechselt.
+- ♣ Kreuz/Klee (c) – SCHWARZ. Dreiblättriges Kleeblatt (3 runde Kreise/Lappen) MIT Stiel unten, KEINE Spitze
+  oben. Wird leicht mit ♠ verwechselt – Unterscheidung: ♠ hat eine spitze Herzform oben, ♣ hat drei runde
+  Lappen ohne Spitze.
+- ♥ Herz (h) – ROT. Klassische Herzform (zwei runde Wölbungen oben, Spitze unten). Wird leicht mit ♦ verwechselt.
+- ♦ Karo/Diamant (d) – ROT. Einfache Raute/Diamantform (4 gerade Kanten, spitz oben und unten, KEINE
+  Wölbungen). Wird leicht mit ♥ verwechselt – Unterscheidung: ♥ hat zwei runde Wölbungen oben, ♦ hat eine
+  gerade Raute ohne Wölbungen.
+Bestimme IMMER zuerst die Farbe (schwarz/rot) und DANN unabhängig davon die genaue Form anhand der obigen
+Merkmale, bevor du dich für s/c bzw. h/d entscheidest. Bei Unsicherheit über die Form lieber die Karte
+weglassen als zu raten.
+
 Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne Markdown-Codeblock, ohne Erklärung:
 {"community":["Ah","Td","2c"],"hands":[["Kh","Ks"],["2c","2d","2h","2s"]],"note":""}
 
