@@ -110,7 +110,15 @@ Bestimme IMMER zuerst die Farbe (schwarz/rot) und DANN unabhängig davon die gen
 Merkmale, bevor du dich für s/c bzw. h/d entscheidest. Bei Unsicherheit über die Form lieber die Karte
 weglassen als zu raten.
 
-Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne Markdown-Codeblock, ohne Erklärung:
+Vorgehen – ZUERST ANALYSE, DANN JSON:
+Bevor du antwortest, schreibe eine kurze Analyse in Stichworten (max. ca. 15 Zeilen):
+1. Liste alle erkannten Kartengruppen/-stapel mit Position und Kartenanzahl auf (siehe Schritt 0 oben).
+2. Liste für jede Gruppe die einzeln gelesenen Karten auf (Rang+Farbe), inkl. kurzer Begründung bei
+   Unsicherheiten (Pip-Anzahl, Eck-Index, etc.).
+3. Prüfe am Schluss: Gibt es Duplikate (gleiche Karte doppelt)? Falls ja, korrigiere die unsicherere Lesung.
+
+Schreibe DANACH auf einer neuen Zeile exakt "ERGEBNIS:" und anschliessend AUSSCHLIESSLICH ein JSON-Objekt in
+genau diesem Format, ohne Markdown-Codeblock, ohne weitere Erklärung danach:
 {"community":["Ah","Td","2c"],"hands":[["Kh","Ks"],["2c","2d","2h","2s"]],"note":""}
 
 Regeln:
@@ -159,7 +167,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: SYSTEM_PROMPT,
         messages: [{
           role: 'user',
@@ -182,8 +190,9 @@ Deno.serve(async (req) => {
 
     let parsed: { community?: unknown; hands?: unknown; note?: unknown };
     try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+      const afterMarker = text.split(/ERGEBNIS:/i).pop() ?? text;
+      const jsonMatch = afterMarker.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : afterMarker);
     } catch {
       console.error('[analyze-poker-photo] JSON parse failed:', text);
       return err('Antwort konnte nicht ausgewertet werden');
