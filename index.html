@@ -68,9 +68,9 @@
     .pm-tisch-left,.pm-tisch-right{min-width:0}
     @media(min-width:600px),(orientation:landscape){
       .pm-tisch-layout{flex-direction:row;align-items:stretch;gap:0}
-      .pm-tisch-left{flex:1.1;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden}
+      .pm-tisch-left{flex:1.1;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;box-sizing:border-box}
       .pm-tisch-left .pm-feed{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow-y:auto;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none}.pm-tisch-right::-webkit-scrollbar{display:none}
+      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none;box-sizing:border-box}.pm-tisch-right::-webkit-scrollbar{display:none}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
@@ -8613,7 +8613,7 @@
         ${(()=>{const _reacts=['😂','🤡','💀','🤦','🔥','😤','🍀','😴','🤑','😱','🫠','😎','🤯','😏','💸','🙈'];const _rStrip=mySeat&&!isFinished?`<div id="pm-react-strip" style="overflow-x:auto;padding:8px 4px;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:8px;justify-content:center;min-width:max-content;margin:0 auto">${_reacts.map(e=>`<button class="pm-react-btn" data-emoji="${e}" style="background:none;border:1.5px solid var(--border);border-radius:50%;width:44px;height:44px;min-width:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,border-color .1s;flex-shrink:0">${e}</button>`).join('')}</div></div>`:'';
           const _scrollContent=`<div id="pm-s-result">${handResultHtml}</div>${(myCardsSection||infoBar)?`<div style="padding-bottom:var(--space-md);margin-bottom:var(--space-md);border-bottom:1px solid var(--border)"><div id="pm-s-cards">${myCardsSection||''}</div>${myCardsSection&&infoBar?`<div style="height:2px;background:var(--bg-secondary);margin:8px 0 14px;border-radius:1px"></div>`:''}<div id="pm-s-info">${infoBar||''}</div></div>`:''}<div id="pm-s-stacks">${_pmStackBarsHtml(seats,currentSpieler?.id)}</div>`;
           if(isLandscape){
-            return`<div class="pm-tisch-right" style="overflow-y:auto"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 calc(env(safe-area-inset-bottom,0px) + 8px);border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
+            return`<div class="pm-tisch-right"><div style="flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;-webkit-overflow-scrolling:touch">${_scrollContent}</div><div style="flex-shrink:0">${_rStrip}<div id="pm-s-action" style="padding:var(--space-sm) 0 calc(env(safe-area-inset-bottom,0px) + 8px);border-top:1px solid var(--border)">${actionArea}</div></div></div>`;
           }
           return`<div class="pm-tisch-right" style="border-top:1px solid var(--border);padding:var(--space-md) var(--space-sm) 0">${_scrollContent}${feedSection}${_rStrip}</div>`;
         })()}
