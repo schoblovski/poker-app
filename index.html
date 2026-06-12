@@ -424,6 +424,7 @@
     .drilldown-row:last-child{border-bottom:none;}
     .drilldown-header{display:flex;align-items:center;gap:12px;padding:12px var(--space-md);cursor:pointer;}
     .drilldown-details{border-top:1px solid var(--border);padding:4px 0 4px var(--space-md);}
+    .drilldown-row:not(.expanded) .drilldown-details{display:none;}
     .drilldown-item{display:flex;align-items:center;gap:8px;padding:7px var(--space-md) 7px 0;cursor:pointer;border-bottom:1px solid var(--border);}
     .drilldown-item:last-child{border-bottom:none;}
     .drilldown-item:active{background:var(--bg-secondary);}
@@ -7322,6 +7323,19 @@
     haende.forEach(h=>{if(!byTyp[h.hand])byTyp[h.hand]=[];byTyp[h.hand].push(h);});
     const drillTypen=alleTypen.filter(t=>byTyp[t]&&byTyp[t].length>0);
 
+    // Sammelt für jeden Drilldown-Key die Hände-Liste (für Toggle ohne Voll-Rerender)
+    const drillData={};
+    function drillDetailsHtml(ph){
+      return ph.slice().sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).map(h=>{
+        const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+        return `<div class="drilldown-item clickable" data-hand-id="${h.id}">
+              <span class="drilldown-date">${d}</span>
+              <span class="drilldown-comment">${escHtml(h.kommentar||'–')}</span>
+              ${h.has_foto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--accent);flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
+            </div>`;
+      }).join('');
+    }
+
     html+=`<div class="section-title">Nach Hand-Typ</div>`;
     drillTypen.forEach(hand=>{
       const items=byTyp[hand];
@@ -7337,6 +7351,7 @@
       players.forEach(({sp,hands:ph})=>{
         const key=`${hand}||${sp.id||sp.name}`;
         const exp=_haendeExpanded.has(key);
+        drillData[key]=ph;
         html+=`<div class="drilldown-row${exp?' expanded':''}" data-drill-key="${escHtml(key)}">
           <div class="drilldown-header">
             ${avatarHtml(sp,36)}
@@ -7345,20 +7360,9 @@
               <span class="item-amount amount-pos">${ph.length}×</span>
               <div class="chevron" style="transform:rotate(${exp?90:0}deg);transition:transform 200ms ease">${`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`}</div>
             </div>
-          </div>`;
-        if(exp){
-          html+=`<div class="drilldown-details">`;
-          ph.sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).forEach(h=>{
-            const d=h.datum?new Date(h.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
-            html+=`<div class="drilldown-item clickable" data-hand-id="${h.id}">
-              <span class="drilldown-date">${d}</span>
-              <span class="drilldown-comment">${escHtml(h.kommentar||'–')}</span>
-              ${h.has_foto?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--accent);flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:''}
-            </div>`;
-          });
-          html+=`</div>`;
-        }
-        html+=`</div>`;
+          </div>
+          <div class="drilldown-details">${exp?drillDetailsHtml(ph):''}</div>
+        </div>`;
       });
       html+=`</div>`;
     });
@@ -7380,22 +7384,37 @@
       });
     });
 
-    // Drilldown expand/collapse
+    // Drilldown expand/collapse – nur die betroffene Zeile aktualisieren (kein Voll-Rerender)
     el.querySelectorAll('[data-drill-key]').forEach(row=>{
       row.querySelector('.drilldown-header').addEventListener('click',()=>{
         const k=row.dataset.drillKey;
-        if(_haendeExpanded.has(k))_haendeExpanded.delete(k);else _haendeExpanded.add(k);
-        renderHaende();
+        const details=row.querySelector('.drilldown-details');
+        const chevron=row.querySelector('.chevron');
+        if(_haendeExpanded.has(k)){
+          _haendeExpanded.delete(k);
+          row.classList.remove('expanded');
+          if(chevron)chevron.style.transform='rotate(0deg)';
+          details.innerHTML='';
+        } else {
+          _haendeExpanded.add(k);
+          row.classList.add('expanded');
+          if(chevron)chevron.style.transform='rotate(90deg)';
+          details.innerHTML=drillDetailsHtml(drillData[k]||[]);
+          bindDrillItemHandlers(details);
+        }
       });
     });
     // Open hand modal on individual item click
-    el.querySelectorAll('.drilldown-item[data-hand-id]').forEach(item=>{
-      item.addEventListener('click',async e=>{
-        e.stopPropagation();
-        const{data:h}=await db.from('hand_statistik').select('*').eq('id',item.dataset.handId).single();
-        if(h)openHandModal(h);
+    function bindDrillItemHandlers(container){
+      container.querySelectorAll('.drilldown-item[data-hand-id]').forEach(item=>{
+        item.addEventListener('click',async e=>{
+          e.stopPropagation();
+          const{data:h}=await db.from('hand_statistik').select('*').eq('id',item.dataset.handId).single();
+          if(h)openHandModal(h);
+        });
       });
-    });
+    }
+    bindDrillItemHandlers(el);
   }
 
   function openHandModal(h){
