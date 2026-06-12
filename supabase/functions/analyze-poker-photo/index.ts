@@ -36,6 +36,13 @@ Schau dir bei Stapeln/überlappenden Karten gezielt JEDE sichtbare Ecke einzeln 
 diesem Mini-Index ab, auch wenn der Rest der Karte verdeckt ist. Zähle dabei genau, wie viele Karten in
 einem Stapel/Fächer liegen (z.B. anhand der Anzahl sichtbarer versetzter Ecken oder Kartenränder).
 
+WICHTIG – Anzahl Hole-Cards pro Gruppe (Hold'em vs. Omaha):
+Hole-Card-Gruppen haben üblicherweise EINHEITLICH 2 Karten (Hold'em) ODER EINHEITLICH 4 Karten (Omaha) –
+nicht gemischt. Wenn eine Gruppe auf den ersten Blick nur 2-3 Karten zu zeigen scheint, prüfe genau, ob im
+Stapel noch eine weitere Karte (mit eigener sichtbarer Ecke) darunter verborgen liegt, bevor du die
+Gruppengrösse festlegst – insbesondere wenn andere Gruppen im selben Foto 4 Karten haben, ist es
+wahrscheinlich, dass ALLE Gruppen 4 Karten (Omaha) haben.
+
 ACHTUNG – überlappende Karten INNERHALB der Board-Reihe:
 Wenn an einer Position INNERHALB der Board-Linie zwei Karten leicht überlappend übereinander liegen
 (z.B. weil sie beim Fotografieren leicht verrutscht sind), sind das trotzdem ZWEI EINZELNE BOARD-KARTEN
@@ -46,13 +53,21 @@ ABSEITS der Board-Reihe liegt (z.B. am Rand, in einem eigenen Bereich des Tische
 PLAUSIBILITÄTS-CHECK bei vollständig sichtbaren Karten:
 Wenn eine Karte komplett sichtbar ist (NICHT von einer anderen Karte überlappt), zeigt sie nicht nur den
 Eck-Index, sondern auch die Symbole/Pips in der Kartenmitte (bzw. ein Bild bei J/Q/K, ein einzelnes großes
-Symbol bei A). Prüfe bei solchen vollständig sichtbaren Karten, ob die Anzahl/Anordnung der Pips in der
-Mitte zum erkannten Rang passt (z.B. Rang "3" → genau 3 Pips, Rang "A" → 1 großes zentrales Pip,
-Rang "9" → 9 Pips, J/Q/K → Bild einer Figur). Widersprechen sich Eck-Index und Pip-Muster (z.B. Eck-Index
-sieht aus wie "3", aber die Karte zeigt nur 1 grosses zentrales Symbol wie ein Ass), vertraue dem
-Pip-Muster der Kartenmitte und korrigiere den Rang entsprechend – ein einzelnes grosses zentrales Symbol
-ist immer ein Ass (A), unabhängig davon wie der Eck-Index aussieht. Bei echten Zweifeln lass die Karte weg
-statt zu raten.
+Symbol bei A). ZÄHLE bei solchen vollständig sichtbaren Karten die Pips in der Mitte genau durch und prüfe,
+ob die Anzahl zum erkannten Rang passt:
+- "A" → genau 1 grosses zentrales Pip
+- "2".."9" → genau so viele Pips wie der Rang angibt (z.B. "9" → 9 Pips)
+- "T" (Zehn) → 10 Pips (meist in zwei Fünfer-Spalten, oft ZUSÄTZLICH mit der Zahl "10" beschriftet)
+- "J"/"Q"/"K" → Bild einer Figur (Bube/Dame/König)
+
+Besonders verwechslungsanfällig: "8" vs. "T" (Zehn) – zähle die Pips bewusst durch (8 vs. 10 Pips) und achte
+auf eine eventuell aufgedruckte "10"-Beschriftung im Eck-Index, statt die Form nur grob zu schätzen.
+
+Widersprechen sich Eck-Index und Pip-Anzahl in der Mitte, vertraue der ausgezählten Pip-Anzahl der
+Kartenmitte und korrigiere den Rang entsprechend (z.B. ein einzelnes grosses zentrales Symbol ist immer ein
+Ass, 10 durchgezählte Pips bedeuten Rang "T", auch wenn der Eck-Index wie "8" aussah). Bei überlappten
+Karten, bei denen die Kartenmitte nicht sichtbar ist, kannst du diesen Check nicht durchführen – verlasse
+dich dort auf den Eck-Index. Bei echten Zweifeln lass die Karte weg statt zu raten.
 
 Kartennotation: Rang als 2-9, T (Zehn), J, Q, K, A; Farbe als s (Pik/♠), h (Herz/♥), d (Karo/♦), c (Kreuz/♣).
 Beispiele: "Ah" = Ass Herz, "Td" = Zehn Karo, "2c" = Zwei Kreuz.
