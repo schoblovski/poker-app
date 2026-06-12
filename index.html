@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.8">
+  <meta name="version" content="4.9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.8';
+  const VERSION='4.9';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -6897,6 +6897,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.9',datum:'Juni 2026',eintraege:[
+      {typ:'verbessert',text:'Equity-Rechner: Klicks, KI-Erklärung und Moduswechsel (Hold\'em/Omaha/Texahma) bauen die Seite nicht mehr komplett neu auf – Karten, Ergebnisse und Buttons werden gezielt aktualisiert für ein deutlich flüssigeres Gefühl'},
+      {typ:'neu',text:'Equity-Rechner: Während der KI-Fotoanalyse ist das restliche Tool gesperrt – ein Seitenwechsel ist möglich, bricht die Analyse aber mit Warnung ab'},
+      {typ:'verbessert',text:'Equity-Rechner: Klick auf eine einzelne Karte ändert nur diese Karte; ein neuer Stift-Button pro Hand und beim Board öffnet wie bisher die komplette Auswahl'},
+      {typ:'fix',text:'Equity-Rechner: KI-Erklärung erfindet keine falschen Hand-Einstufungen mehr (z.B. "Vierling" oder zusätzliche Pärchen) – die aktuell beste Hand bzw. die Paare in der Hand werden serverseitig berechnet und der KI vorgegeben'},
+    ]},
     {version:'4.8',datum:'Juni 2026',eintraege:[
       {typ:'neu',text:'Equity-Rechner: Tisch fotografieren & per KI auswerten lassen – erkennt Community Cards und Hole-Card-Gruppen automatisch und setzt sie direkt ins Tool ein'},
       {typ:'neu',text:'Equity-Rechner: Nach erfolgreicher Foto-Analyse wird das verwendete Foto zum Vergleich angezeigt (auch beim Einstieg über «Hand in Equity-Rechner anzeigen» aus dem Hände-Tab)'},
