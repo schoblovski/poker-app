@@ -8,6 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   evalHoldem, evalOmaha, evalTexahma, handName,
   CORS, corsOk, json, err,
+  rollDealerTrigger, fireDealerComment, getSpielerName,
   type Card,
 } from '../poker-utils/index.ts';
 
@@ -190,6 +191,24 @@ Deno.serve(async (req) => {
   }
 
   await db.from('online_actions').insert(logEntries);
+
+  // Dealer-Kommentar (KI, fire-and-forget) – für den grössten Sidepot-Gewinn dieser Hand
+  if (winLogAgg.length > 0) {
+    const top = winLogAgg.reduce((a, b) => (b.amount > a.amount ? b : a));
+    const res = results.find(r => r.spielerId === top.spieler_id);
+    const hole = res ? (holeMap[res.seatId] ?? []) : [];
+    const is72 = hole.some(c => c.rank === 7) && hole.some(c => c.rank === 2);
+    const bb = session.big_blind ?? session.small_blind * 2;
+    const trigger = is72 ? 'win_72' : top.amount < bb * 2 ? 'small_pot' : 'showdown';
+    if (rollDealerTrigger(trigger)) {
+      const name = await getSpielerName(db, top.spieler_id);
+      fireDealerComment(SUPABASE_URL, SERVICE_KEY, {
+        online_spiel_id, trigger, spielerName: name,
+        hand_nr: session.hand_nr, street: 'showdown',
+        kontext: { pot: top.amount, hand: top.hand, variante: session.variante },
+      });
+    }
+  }
 
   return json({
     ok: true,
