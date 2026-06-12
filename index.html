@@ -67,10 +67,10 @@
     .pm-tisch-layout{display:flex;flex-direction:column;gap:var(--space-md)}
     .pm-tisch-left,.pm-tisch-right{min-width:0}
     @media(min-width:600px),(orientation:landscape){
-      .pm-tisch-layout{flex-direction:row;align-items:stretch;gap:0}
-      .pm-tisch-left{flex:1.1;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;box-sizing:border-box}
+      .pm-tisch-layout{flex-direction:row;align-items:stretch;gap:0;height:100%}
+      .pm-tisch-left{flex:0.85;padding-right:var(--space-lg);display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;box-sizing:border-box}
       .pm-tisch-left .pm-feed{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-      .pm-tisch-right{flex:0.9;display:flex;flex-direction:column;position:sticky;top:0;min-height:calc(100dvh - var(--header-h,60px));max-height:calc(100dvh - var(--header-h,60px));overflow:hidden;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none;box-sizing:border-box}.pm-tisch-right::-webkit-scrollbar{display:none}
+      .pm-tisch-right{flex:1.15;display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow:hidden;overflow-x:hidden;padding-left:var(--space-lg);border-left:1px solid var(--border);padding-top:env(safe-area-inset-top,0px);scrollbar-width:none;overscroll-behavior:none;box-sizing:border-box}.pm-tisch-right::-webkit-scrollbar{display:none}
     }
     /* Online-Tisch top info row – push down in landscape to clear status bar on iPad */
     @media(orientation:landscape){
