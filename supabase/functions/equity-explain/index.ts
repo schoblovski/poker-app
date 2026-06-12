@@ -27,8 +27,9 @@ Regeln:
   was die schwächere(n) Hand(en) noch brauchen würde(n), um aufzuholen (z.B. "braucht noch ein Ass für die Straight").
 - Bei sehr knappen Ergebnissen (Unterschied < 5%) darfst du erwähnen, dass es ein Coinflip ist.
 - Ton: locker, freundlich, leicht humorvoll – wie unter Pokerkumpels.
-- WICHTIG: Falls für eine Hand bereits ein "aktuell beste Hand"-Wert angegeben ist, übernimm diesen
-  unverändert (z.B. "Drilling" oder "Zwei Paare") und erfinde keine andere Einstufung oder Karten,
+- WICHTIG: Für jede Hand ist entweder die "aktuell beste Hand" (mit Board) oder die "Paare in der Hand"
+  (ohne ausreichendes Board, z.B. Preflop) angegeben. Übernimm diese Angaben unverändert (z.B. "Drilling"
+  oder "ein Paar Sechser") und erfinde keine andere Einstufung, keine zusätzlichen Paare oder Karten,
   die nicht im Board oder in der Hand stehen. Zähle Kartenwerte nicht selbst neu – verlasse dich
   ausschliesslich auf die gegebenen Angaben.`;
 
@@ -54,6 +55,28 @@ function parseCard(c: string): Card | null {
   const suit = c[1]?.toLowerCase();
   if (!rank || !suit) return null;
   return { rank, suit };
+}
+
+const RANK_PLURAL: Record<number, string> = {
+  14: 'Asse', 13: 'Könige', 12: 'Damen', 11: 'Buben', 10: 'Zehnen',
+  9: 'Neuner', 8: 'Achter', 7: 'Siebener', 6: 'Sechser', 5: 'Fünfer',
+  4: 'Vierer', 3: 'Dreier', 2: 'Zweier',
+};
+
+// Paare innerhalb der eigenen Hole Cards beschreiben (unabhängig vom Board) –
+// gibt Claude eine verlässliche Grundlage, bevor genug Board für eine echte
+// Hand-Bewertung da ist (z.B. Preflop).
+function describeHolePairs(holeStr: string[]): string {
+  const cards = holeStr.map(parseCard).filter((c): c is Card => c !== null);
+  const counts: Record<number, number> = {};
+  for (const c of cards) counts[c.rank] = (counts[c.rank] ?? 0) + 1;
+  const pairs = Object.entries(counts)
+    .filter(([, n]) => n >= 2)
+    .map(([r]) => +r)
+    .sort((a, b) => b - a);
+  if (!pairs.length) return 'keine Paare in der Hand';
+  if (pairs.length === 1) return `ein Paar ${RANK_PLURAL[pairs[0]] ?? pairs[0]} in der Hand`;
+  return `Paare in der Hand: ${pairs.map(r => RANK_PLURAL[r] ?? r).join(' und ')}`;
 }
 
 // Aktuell beste erreichbare Hand (mit dem bisherigen Board) berechnen,
@@ -98,7 +121,7 @@ Deno.serve(async (req) => {
     const handsDesc = hands
       .map((h, i) => {
         const best = bestHandDesc(mode, h, boardArr);
-        const bestPart = best ? `, aktuell beste Hand: ${best}` : '';
+        const bestPart = best ? `, aktuell beste Hand: ${best}` : `, ${describeHolePairs(h)}`;
         return `Hand ${i + 1}: ${h.map(describeCard).join(', ')} → ${results[i].toFixed(1)}% Equity${bestPart}`;
       })
       .join('\n');
