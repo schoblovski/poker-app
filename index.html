@@ -1281,7 +1281,7 @@
       <!-- Tisch verlassen -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tisch verlassen</div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button → <b>„Tisch verlassen"</b> oder durch Antippen deines <b>eigenen Avatars</b> kannst du den Tisch verlassen. Zwei Möglichkeiten:<br>• <b>Temporär verlassen</b> — Platz und Stack bleiben reserviert, du nimmst bei Rückkehr automatisch deinen alten Platz wieder ein.<br>• <b>Platz freigeben</b> — dein Sitz wird frei, deine Stats bleiben im Spiel (nur zwischen den Spielrunden möglich).</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button → <b>„Tisch verlassen"</b> oder durch Antippen deines <b>eigenen Avatars</b> kannst du den Tisch verlassen. Zwei Möglichkeiten:<br>• <b>Temporär verlassen</b> — Platz und Stack bleiben reserviert, du nimmst bei Rückkehr automatisch deinen alten Platz wieder ein.<br>• <b>Platz freigeben</b> — dein Sitz wird frei; deine Buy-Ins und dein letzter Stack bleiben für die Abrechnung am Session-Ende erhalten (nur zwischen den Spielrunden möglich).</div>
       </div>
 
       <!-- Was wäre noch gekommen -->
@@ -9735,7 +9735,11 @@
       for(let i=0;i<9;i++){const s=(start+i-1)%9+1;if(!taken.has(s)){free=s;break;}}
       if(free===-1){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Keine freien Plätze.');return;}
       const{error}=await db.from('online_seats').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,seat:free,stack:0,status:'sitting_out',bet_current_round:0,buyins:0});
-      if(error){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+error.message);return;}
+      if(error){
+        btn.disabled=false;btn.textContent='Beobachten';
+        if(error.code==='23505'){await _pmLoad();await showAlert('Du bist an diesem Tisch bereits vertreten (evtl. über ein anderes Gerät).');return;}
+        await showAlert('Fehler: '+error.message);return;
+      }
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'spectate',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await _pmLoad();
     }catch(err){btn.disabled=false;btn.textContent='Beobachten';await showAlert('Fehler: '+err.message);}
@@ -10136,6 +10140,10 @@
     }
     try{
       if(!_pm?.mySeat){
+        // Server-Recheck: sitzt dieser Account hier schon? (z.B. parallel auf
+        // anderem Gerät hingesetzt, lokaler State veraltet) → kein zweiter Sitz!
+        const{data:existingSeat}=await db.from('online_seats').select('id').eq('online_spiel_id',_pm.id).eq('spieler_id',currentSpieler.id).limit(1);
+        if(existingSeat?.length){await _pmLoad();await showAlert('Du sitzt bereits an diesem Tisch (evtl. über ein anderes Gerät). Die Ansicht wurde aktualisiert.');return;}
         // Prevent being active in multiple sessions simultaneously
         const willBeActive=_pm.session.status!=='running';
         if(willBeActive){
@@ -10164,7 +10172,10 @@
         online_spiel_id:_pm.id,spieler_id:currentSpieler.id,
         seat:seatNr,stack:_pm.session.start_stack,status:_pm.session.status==='running'?'sitting_out':'active',bet_current_round:0,
       });
-      if(error){await showAlert('Fehler beim Platz nehmen: '+error.message);return;}
+      if(error){
+        if(error.code==='23505'){await _pmLoad();await showAlert('Du sitzt bereits an diesem Tisch (evtl. über ein anderes Gerät).');return;}
+        await showAlert('Fehler beim Platz nehmen: '+error.message);return;
+      }
       db.from('online_actions').insert({online_spiel_id:_pm.id,spieler_id:currentSpieler.id,action:'join',hand_nr:_pm.session?.hand_nr||0}).then(()=>{});
       await _pmLoad();
     }catch(e){await showAlert('Unbekannter Fehler: '+e.message);}
@@ -10582,12 +10593,27 @@
     const _bPot=einstellungen?.buyin_pot??5;
     const _bKassa=0; // online sessions: no pokerkasse fee
     const _chipToEur=_bPot/(startStack||_bPot);
-    const rows=seats.filter(s=>s.status!=='sitting_out'&&!s.spieler?.ist_bot).map(s=>{
-      const buyins=s.buyins||1;
-      const cost=buyins*(_bPot+_bKassa);
-      const payout=Math.round((s.stack||0)*_chipToEur*100)/100;
+    // Aggregation pro Spieler: zählt alle Sitze mit echten Buy-Ins (buyins>0) –
+    // auch Broke-Beobachter (sitting_out nach Pleite). Reine Zuschauer (buyins=0)
+    // und Bots bleiben aussen vor.
+    const _agg={};
+    seats.filter(s=>!s.spieler?.ist_bot&&(s.buyins||0)>0).forEach(s=>{
+      const a=_agg[s.spieler_id]??(_agg[s.spieler_id]={spieler_id:s.spieler_id,buyins:0,chips:0,name:s.spieler?.name||'?',img:s.spieler?.profilbild||'',status:s.status});
+      a.buyins+=s.buyins||0;a.chips+=s.stack||0;
+    });
+    // Spieler, die per «Platz freigeben» gegangen sind: Buy-Ins + letzter Stack
+    // stehen als Snapshot im Action-Log (Sitz existiert nicht mehr).
+    const{data:_leaveActs}=await db.from('online_actions').select('spieler_id,meta,spieler:spieler_id(name,profilbild,ist_bot)').eq('online_spiel_id',_pm.id).eq('action','leave_permanent');
+    (_leaveActs||[]).forEach(a=>{
+      if(!a.meta||a.spieler?.ist_bot||(a.meta.buyins||0)<=0)return;
+      const g=_agg[a.spieler_id]??(_agg[a.spieler_id]={spieler_id:a.spieler_id,buyins:0,chips:0,name:a.spieler?.name||'?',img:a.spieler?.profilbild||'',status:'folded'});
+      g.buyins+=a.meta.buyins||0;g.chips+=a.meta.stack||0;
+    });
+    const rows=Object.values(_agg).map(g=>{
+      const cost=g.buyins*(_bPot+_bKassa);
+      const payout=Math.round(g.chips*_chipToEur*100)/100;
       const net=Math.round((payout-cost)*100)/100;
-      return{seat:s,buyins,cost,payout,net,name:s.spieler?.name||'?',img:s.spieler?.profilbild||''};
+      return{seat:{spieler_id:g.spieler_id,status:g.status},buyins:g.buyins,cost,payout,net,name:g.name,img:g.img};
     }).sort((a,b)=>b.net-a.net);
 
     let _potNote='';
@@ -10671,8 +10697,15 @@
         }).select().single();
         if(nsErr||!ns){await showAlert('Fehler beim Erstellen des Spieleintrags: '+(nsErr?.message||'Unbekannt'));if(confirmBtn)confirmBtn.disabled=false;if(skipBtn)skipBtn.disabled=false;return;}
         const newSpielId=ns.id;
-        // Link online_spiele → spiele
-        await db.from('online_spiele').update({spiel_id:newSpielId}).eq('id',_pm.id);
+        // Link online_spiele → spiele – atomarer Claim: nur wenn spiel_id noch NULL ist.
+        // Verhindert Doppel-Übernahme wenn zwei Geräte das Payout-Modal parallel bestätigen.
+        const{data:claimed,error:claimErr}=await db.from('online_spiele').update({spiel_id:newSpielId}).eq('id',_pm.id).is('spiel_id',null).select('id');
+        if(claimErr||!claimed?.length){
+          await db.from('spiele').delete().eq('id',newSpielId);
+          await showAlert(claimErr?('Fehler: '+claimErr.message):'Ergebnis wurde bereits von einem anderen Gerät übernommen.');
+          overlay.remove();_pmUnsubscribe();showPage('online-lobby');return;
+        }
+        _pm.session={..._pm.session,spiel_id:newSpielId};
         // Write spiel_teilnehmer entries
         const entries=rows.map(r=>({
           spiel_id:newSpielId,
@@ -11050,7 +11083,8 @@
     ov.querySelector('#_lv-perm').addEventListener('click',async()=>{
       if(isRunning)return;
       ov.remove();
-      await _pmLeaveSeatApi();
+      const ok=await _pmLeaveSeatApi();
+      if(!ok){await showAlert('Tisch verlassen fehlgeschlagen – bitte versuche es erneut.');return;}
       _pm.mySeat=null;
       _pmUnsubscribe();
       _pmDrawerHide();
