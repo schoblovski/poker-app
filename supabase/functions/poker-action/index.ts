@@ -67,8 +67,13 @@ Deno.serve(async (req) => {
       await db.from('online_seat_cards').delete().eq('seat_id', seat.id);
       await db.from('online_seats').delete().eq('id', seat.id);
       if ((session.hand_nr ?? 0) > 0) {
+        // Snapshot (buyins + letzter Stack) für die spätere Payout-Abrechnung –
+        // der Seat ist gelöscht, ohne Snapshot würden die Buy-Ins des Spielers
+        // in der Abrechnung fehlen und die Kontostände/Pokerkasse verfälschen.
         await db.from('online_actions').insert({
           online_spiel_id, spieler_id, action: 'leave_permanent',
+          amount: seat.stack ?? 0,
+          meta: { buyins: seat.buyins ?? 1, stack: seat.stack ?? 0 },
           street: session.street ?? null, hand_nr: session.hand_nr ?? 0,
         });
       }
