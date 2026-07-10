@@ -25,15 +25,19 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 
 | Spalte         | Typ     | Beschreibung                                       |
 |----------------|---------|----------------------------------------------------|
-| id             | uuid    | Primary Key                                        |
-| name           | text    | Anzeigename                                        |
-| email          | text    | Für Login (unique)                                 |
-| profilbild     | text    | URL (Google-Profilbild oder Google Drive)          |
-| eintrittsdatum | date    | Tag an dem der Spieler in der App erfasst wurde    |
-| aktiv          | boolean | Inaktive Spieler werden nicht angezeigt            |
-| ist_bank       | boolean | Genau 1 Spieler ist die "Bank"                     |
-| ist_admin      | boolean | Darf Spieler verwalten + löschen                   |
-| auth_user_id   | uuid    | Verknüpfung mit Supabase Auth                      |
+| id                | uuid      | Primary Key                                        |
+| name              | text      | Anzeigename                                        |
+| email             | text      | Für Login (unique)                                 |
+| profilbild        | text      | URL (Google-Profilbild oder Google Drive)          |
+| eintrittsdatum    | date      | Tag an dem der Spieler in der App erfasst wurde    |
+| aktiv             | boolean   | Inaktive Spieler werden nicht angezeigt            |
+| ist_bank          | boolean   | Genau 1 Spieler ist die "Bank"                     |
+| ist_admin         | boolean   | Darf Spieler verwalten + löschen                   |
+| ist_bot           | boolean   | KI-Bot-Spieler (nur Online-Modus, default false)   |
+| auth_user_id      | uuid      | Verknüpfung mit Supabase Auth                      |
+| letzter_login     | timestamp | Zeitpunkt des letzten Logins                       |
+| online_entdeckt_am| timestamp | Wann der Online-Modus per Easter-Egg entdeckt wurde|
+| created_at        | timestamp | Anlage-Zeitpunkt (default now())                   |
 
 ### `spiele`
 
@@ -44,8 +48,8 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | abgeschlossen   | boolean | false = läuft noch                        |
 | buyin_pot       | numeric | €5 default (historisch auch 2.5)          |
 | buyin_kassa     | numeric | €2 default                                |
-| modus           | text    | null = cash, 'online' = Online-Modus   |
-| online_variante | text    | 'holdem'/'omaha'/'texama' (bei online)   |
+| modus           | text    | default 'cash'; CHECK: 'cash'/'turnier'/'online' |
+| online_variante | text    | 'holdem'/'omaha'/'texahma' (bei online)   |
 
 ### `spiel_teilnehmer`
 
@@ -108,7 +112,38 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | p256dh          | text      | ECDH Public Key (Base64)                                                  |
 | auth            | text      | Auth Secret (Base64)                                                      |
 | einstellungen   | jsonb     | Kategorie-Toggles: spielergebnisse, buyins, neue_hand, transaktionen, app_updates, online_spiel |
+| erstellt_am     | timestamp | Anlage-Zeitpunkt der Subscription                                        |
 | aktualisiert_am | timestamp | Letztes Update der Subscription                                           |
+
+### `blind_struktur`
+
+Default-Blind-Levels für den Blind-Timer (admin-konfigurierbar in den Einstellungen).
+
+| Spalte      | Typ       | Beschreibung                          |
+|-------------|-----------|---------------------------------------|
+| id          | uuid      | Primary Key                           |
+| level_nr    | integer   | Level-Nummer (unique, > 0)            |
+| small_blind | integer   | Small Blind (> 0)                     |
+| big_blind   | integer   | Big Blind (> 0)                       |
+| ante        | integer   | Ante (default 0)                      |
+| dauer_min   | integer   | Dauer des Levels in Minuten (> 0)     |
+| erstellt_am | timestamp | Anlage-Zeitpunkt                      |
+
+### `benachrichtigungen`
+
+In-App-Benachrichtigungen (Glocke im Header). triggerPush schreibt pro Empfänger einen Eintrag.
+
+| Spalte     | Typ       | Beschreibung                                              |
+|------------|-----------|----------------------------------------------------------|
+| id         | uuid      | Primary Key                                              |
+| spieler_id | uuid      | FK → spieler                                             |
+| datum      | timestamp | Zeitpunkt (default now())                                |
+| kategorie  | text      | Push-Kategorie (spielergebnisse, buyins, …)             |
+| title      | text      | Titel                                                    |
+| body       | text      | Text                                                     |
+| url        | text      | Deep-Link-Ziel                                           |
+| tag        | text      | Gruppierungs-Tag                                         |
+| gelesen    | boolean   | Gelesen-Status (default false)                          |
 
 ## Finanz-Logik (KRITISCH – exakt so umsetzen!)
 
@@ -243,7 +278,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 4.7**
+- **Aktuelle Version: 4.9**
 
 ## Login-Provider
 
@@ -288,6 +323,14 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 - localStorage-Key: `dtks_online_entdeckt` (Migration vom alten Key beim App-Start in index.html)
 - DB-Spalte: `spieler.online_entdeckt_am` (per Supabase-Migration vom alten Spaltennamen umbenannt, Juni 2026)
 - Funktion `_unlockOnlineModus()`, CSS/JS-Sektions-Kommentare, SYSTEM_PROMPT der Edge Function `dealer-comment`
+
+> ⚠️ **Noch offen (Stand v4.9):** Das P-Wort taucht noch an zwei Stellen auf:
+> 1. **Live-DB:** der Tabellen-Kommentar auf `online_spiele` lautet noch „Pandemie-Modus: …"
+>    (per `COMMENT ON TABLE online_spiele IS 'Online-Modus: …'` zu bereinigen)
+> 2. **Migrations-Dateien:** `supabase/migrations/*pandemie*.sql` (historische Migrationen – Dateinamen
+>    und Kommentare; unkritisch, aber der Vollständigkeit halber erwähnt)
+> Die localStorage-Migration `dtks_pandemie_entdeckt → dtks_online_entdeckt` in index.html referenziert den
+> alten Key **bewusst** (nötig für die Migration) und ist kein Verstoss.
 
 ---
 
@@ -337,8 +380,18 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 
 ### Online-Modus – Offene Bugs & Verbesserungen
 
-*(Alle bekannten Bugs sind behoben. Neue Issues hier eintragen.)*
+*(Neue Issues hier eintragen.)*
 
+- **🐞 Video-Call „im Call"-Tracking kaputt** – Der Button-Handler `btn-pm-call` (index.html
+  ~Z. 10063) liest/schreibt `online_spiele.call_teilnehmer` (und liest `session.call_aktiv`),
+  aber **diese Spalten existieren nicht in der DB**. Folge: Der WhatsApp-/Video-Link öffnet zwar,
+  aber das `db.from('online_spiele').update({call_teilnehmer:…})` schlägt fehl und die Anzeige
+  „X im Call" funktioniert nie. Entweder Spalten `call_aktiv boolean` + `call_teilnehmer jsonb`
+  per Migration ergänzen (siehe Video-Call-Konzept) oder das Tracking aus der UI entfernen.
+- **texama/texahma Inkonsistenz** – Anzeigename überall «Texahma», aber der interne Mode-Wert im
+  Equity-Rechner (index.html) und in `equity-explain` ist noch `texama`, während die DB-Spalte
+  `online_spiele.variante` per CHECK nur `texahma` erlaubt. Bei Gelegenheit auf einen Wert vereinheitlichen.
+- **P-Wort-Rest** – siehe ⚠️-Hinweis im Abschnitt „Terminologie" (DB-Kommentar + Migrationsdateien).
 - **Vorauswahl „Chk/Fold"** – Server-seitig noch in `poker-action/index.ts` vorhanden, aber in der UI nicht exponiert. Kann bei Gelegenheit aus dem Server entfernt werden (jetzt durch das neue Fold-Verhalten, das bei `callAmount=0` automatisch checkt, ersetzt).
 
 
@@ -353,6 +406,22 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 | `poker-showdown` | ✅ | Sidepots via action-log (investedBySeat), Cent-Rundung, Hold'em/Omaha/Texama |
 | `poker-new-hand` | ✅ | Nächste Hand auf Knopfdruck, Dealer-Button weiter |
 | `poker-reveal-runout` | ✅ | Rest-Board aufdecken (deterministisch aus gespeichertem Deck) |
+| `poker-bot-action` | ✅ | KI-Entscheidung für Bot-Spieler (ist_bot=true); wird vom Client getriggert wenn current_player_id ein Bot ist. Nutzt evalHoldem/evalOmaha/evalTexahma + bot_config (aggressivitaet/risiko/bluff/gespr) |
+| `poker-bot-cron` | ✅ | Fallback-Treiber via pg_cron (~30s): findet running Sessions deren current_player_id ein Bot ist und triggert dessen Aktion (falls niemand die App offen hat) |
+| `poker-delete-session` | ✅ | Löscht eine Online-Session vollständig (Service Role); besondere Hände in hand_statistik bleiben erhalten |
+| `dealer-comment` | ✅ | KI-Dealer-Kommentare (Claude Haiku) → online_actions (action:'dealer_comment') |
+| `poker-utils` | 📦 | Shared-Lib (kein Endpoint): CORS-Helper + Hand-Evaluatoren evalHoldem/evalOmaha/evalTexahma, DEALER_COMMENT_PROB |
+
+**Weitere Edge Functions (nicht Online-Modus):**
+| Function | Status | Key-Logik |
+|---|---|---|
+| `send-push` | ✅ | Web-Push-Versand (npm:web-push, VAPID) |
+| `weekly-backup` | ✅ | Wöchentliches CSV-Backup aller Tabellen (So 03:00 UTC) |
+| `migrate-fotos` | ✅ | Einmal-Migration Base64-Fotos → Supabase Storage |
+| `analyze-poker-photo` | ✅ | Tischfoto → Claude Vision → erkannte Community Cards + Hole-Card-Gruppen für Equity-Rechner |
+| `equity-explain` | ✅ | Kurze KI-Erklärung (Claude Haiku) zu einem Equity-Rechner-Ergebnis |
+
+> Hinweis: Das ursprünglich im Konzept vorgesehene `poker-notify-turn` wurde **nie gebaut** – Push für „du bist dran" läuft nicht über eine eigene Function.
 
 ### In-App Hilfe / FAQ (PFLICHT: immer aktuell halten!)
 
@@ -389,13 +458,49 @@ Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script t
 |---|---|---|---|
 | Texas Hold'em | 2 | Best-of-7 | evalHoldem |
 | Omaha | 4 | exakt 2+3, 60 Kombi | evalOmaha |
-| Texama | 4 | 0-4 eigene, 126 Kombi | evalTexama |
+| Texahma | 4 | 0-4 eigene, 126 Kombi | evalTexahma |
+
+> **Namens-Hinweis:** Der Anzeigename ist überall **«Texahma»**. Der interne Wert ist
+> uneinheitlich: die DB-Spalte `online_spiele.variante` erlaubt per CHECK nur `texahma`,
+> der Equity-Rechner (index.html) und `equity-explain` nutzen aber intern noch `texama`
+> (Anzeige trotzdem «Texahma»). Bei Gelegenheit vereinheitlichen.
 
 ### DB: online_spiele relevante Felder
-`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante, small_blind, big_blind, start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, deck, hand_nr, street, runout_cards, call_aktiv, call_teilnehmer, video_link`
+`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, hat_bots, blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
+
+> ⚠️ `deck` liegt **nicht** in `online_spiele`, sondern in eigener Tabelle **`online_decks`** (id FK→online_spiele, deck jsonb; kein Client-Zugriff, nur Service Role).
+> ⚠️ `call_aktiv` / `call_teilnehmer` (Video-Call-Konzept) existieren **nicht** in der DB – siehe offener Bug im Backlog.
 
 ### DB: online_seats relevante Felder
-`id, online_spiel_id, spieler_id, seat (1-9), stack, status (active/folded/allin/paused/sitting_out), bet_current_round, buyins (Anzahl, startet bei 1), hole_cards (RLS: nur owner), auto_folded, pause_auto_action, pre_action`
+`id, online_spiel_id, spieler_id, seat (1-9), stack, status (active/folded/allin/paused/sitting_out), bet_current_round, buyins (Anzahl, startet bei 1), auto_folded, pause_auto_action, pause_call_limit, pre_action, pre_action_limit, paused_at, bot_config (jsonb, nur bei Bots)`
+
+> ⚠️ `hole_cards` liegen **nicht** in `online_seats`, sondern in eigener Tabelle **`online_seat_cards`** (seat_id FK→online_seats, hole_cards jsonb; RLS: nur lesbar durch den Kartenbesitzer via auth.uid = spieler.auth_user_id).
+
+### Bot-Spieler (KI-Mitspieler im Online-Modus)
+
+Computer-Mitspieler, die automatisch spielen. Ermöglicht Online-Runden auch mit wenigen
+menschlichen Teilnehmern.
+
+**Datenmodell:**
+- `spieler.ist_bot = true` markiert einen Bot (wird aus Dropdowns/Statistik/Spiel-UI gefiltert:
+  `aktiv && !ist_bot`)
+- `online_seats.bot_config` (jsonb) hält die Persönlichkeit pro Sitz:
+  - `aggressivitaet` (0–100): wie oft raise statt call
+  - `risiko` (0–100): Bereitschaft Chips zu riskieren (niedrig = foldet bei grossen Einsätzen)
+  - `bluff` (0–100): Bluff-Häufigkeit mit schwachen Karten
+  - `gespr` (0–100): Häufigkeit von Chat-Kommentaren
+  - `karten_zeigen`: `'immer'` | `'nie'` | `'showdown'`
+  - `style`: Preset-Name, `avatar`: SVG-Data-URI
+- `online_spiele.hat_bots = true` sobald mind. ein Bot am Tisch sitzt
+
+**Spielfluss:**
+1. Über den runden **+**-Button am Tisch → **Bot hinzufügen** (Parameter einstellbar)
+2. Ist ein Bot am Zug (`current_player_id`), triggert **jeder Client mit offener App** die
+   Edge Function `poker-bot-action` (Bedenkzeit 0.5–5 s, dann Fold/Call/Raise + evtl. Kommentar)
+3. Hat niemand die App offen, übernimmt der pg_cron-Job → `poker-bot-cron` (~alle 30 s) den Trigger
+4. Ist ein Bot Dealer-Button und alle Gegner folden, deckt er den Runout automatisch auf
+5. **Bot Auto-Rebuy** (Option beim Session-Erstellen, default an): Bots kaufen nach dem Ausscheiden
+   automatisch nach – aus = sie verlassen den Tisch dauerhaft
 
 ## Migrations-Script
 
@@ -436,12 +541,19 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Einzeln deployen (falls nötig): `supabase functions deploy <function-name>`
 - Alle Functions auf einmal: `supabase functions deploy`
 - Service Role Key und andere Secrets sind in Supabase Dashboard → Settings → Edge Functions hinterlegt
-- Geänderte Functions in dieser Session: `poker-action`, `poker-showdown`
-- Weitere Functions (unverändert): `poker-start-game`, `poker-next-street`, `poker-new-hand`, `poker-reveal-runout`, `send-push`, `weekly-backup`
+- **Alle deployten Functions** (jeweils als eigener Step in `deploy-edge-functions.yml`):
+  `poker-start-game`, `poker-action`, `poker-next-street`, `poker-showdown`, `poker-new-hand`,
+  `poker-reveal-runout`, `poker-bot-action`, `poker-bot-cron`, `poker-delete-session`,
+  `dealer-comment`, `analyze-poker-photo`, `equity-explain`, `send-push`, `weekly-backup`
+- `poker-utils` ist eine Shared-Lib (kein eigener Deploy-Step) und wird von den Poker-Functions importiert
+- `migrate-fotos` liegt im Repo, ist aber kein Deploy-Step (Einmal-Migration, manuell deployt)
 
-## Online-Modus – Easter Egg Rollout (noch nicht implementiert)
+## Online-Modus – Easter Egg Rollout (✅ implementiert in v4.0)
 
-Wenn der Modus fertig ist und für alle freigeschaltet werden soll:
+Umgesetzt: `_unlockOnlineModus()` in index.html, Rätsel-Seite («🔐 Sicherheitsüberprüfung»,
+Frage „Wer ist der IT-Experte, den ihr angeblich gar nicht habt?"), State via
+`localStorage: 'dtks_online_entdeckt'` + Spalte `spieler.online_entdeckt_am`.
+Die ursprüngliche Spezifikation bleibt unten als Referenz erhalten.
 
 **Versteckter Einstieg:**
 - Trigger: 7× auf das App-Logo/Titel tippen (Referenz zur 7-2-Regel) – oder Langdruck auf Versionsnummer in der Info-Seite
@@ -463,7 +575,7 @@ Der Running Gag der Runde ist „ach hätte man doch einen gescheiten IT-ler…"
   → Direkt danach: **«Version 4.0 freigeschaltet!»** Modal mit:
     - Konfetti / Celebration-Effekt
     - Changelog für v4.0 (Online-Modus)
-    - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texama), Pause, Pre-Action, Runout, Video-Call etc.
+    - FAQ: was ist der Modus, Varianten (Hold'em/Omaha/Texahma), Pause, Pre-Action, Runout, Video-Call etc.
     - Diese Infos jederzeit wieder abrufbar via Avatar-Menü → «Online-Modus»
 
 **Version-Bump beim Freischalten:**
