@@ -6899,7 +6899,7 @@
   const CHANGELOG=[
     {version:'4.9.2',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'„Was ist neu"-Hinweis erscheint jetzt auch bei Patch-Updates (z.B. 4.9.1 → 4.9.2) – bisher wurde die dritte Versionsstelle beim Vergleich ignoriert'},
-      {typ:'verbessert',text:'Online-Modus: Bots kaufen nach dem Ausscheiden immer automatisch neue Chips nach – der abschaltbare Auto-Rebuy-Schalter entfällt'},
+      {typ:'verbessert',text:'Online-Modus: Der „Bot Auto-Rebuy"-Schalter wirkt jetzt zuverlässig. Aus = ausgeschiedene Bots bleiben am Tisch sitzen und beobachten nur (statt den Tisch zu verlassen); An = sie kaufen automatisch neue Chips nach'},
     ]},
     {version:'4.9.1',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Online-Modus Video-Call: Die Anzeige „X im Call" funktioniert jetzt – Beitreten und Verlassen wird korrekt erfasst (vorher schlug das Speichern im Hintergrund fehl)'},
@@ -11576,6 +11576,8 @@
     const sid='pm-session-settings-sheet';document.getElementById(sid)?.remove();
     const equityOn=localStorage.getItem('pm_show_equity')==='1';
     const actionsOnly=localStorage.getItem('pm_feed_actions_only')==='1';
+    const hasBots=(_pm?.seats||[]).some(s=>s.bot_config);
+    const botRebuy=_pm?.session?.bot_auto_rebuy!==false;
     const isAdmin=currentSpieler?.ist_admin;
     const session=_pm?.session;
     const hasBs=!!(session?.blind_struktur);
@@ -11633,6 +11635,13 @@
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-actonly"${actionsOnly?' checked':''}><span class="toggle-slider"></span></label>
         </div>
+        ${hasBots?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div class="setting-info">
+            <div class="setting-label" style="font-size:14px">Bot Auto-Rebuy</div>
+            <div class="setting-sub" style="font-size:12px">An: Bots kaufen nach dem Ausscheiden automatisch neue Chips. Aus: Bots bleiben sitzen und beobachten nur (verlassen den Tisch nicht)</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="pm-sess-botrebuy"${botRebuy?' checked':''}><span class="toggle-slider"></span></label>
+        </div>`:''}
         ${isAdmin?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Blindstruktur-Timer</div>
@@ -11655,6 +11664,12 @@
     document.getElementById('pm-sess-actonly').addEventListener('change',e=>{
       localStorage.setItem('pm_feed_actions_only',e.target.checked?'1':'0');
       if(_pm)renderOnlineTisch();
+    });
+    document.getElementById('pm-sess-botrebuy')?.addEventListener('change',async e=>{
+      if(!_pm?.id)return;
+      const v=e.target.checked;
+      await db.from('online_spiele').update({bot_auto_rebuy:v}).eq('id',_pm.id);
+      if(_pm.session)_pm.session.bot_auto_rebuy=v;
     });
     // ── Blind Structure Toggle ──
     document.getElementById('pm-sess-blindstruktur')?.addEventListener('change',async e=>{

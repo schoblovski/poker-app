@@ -387,10 +387,10 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 - ~~**Video-Call „im Call"-Tracking kaputt**~~ ✅ gefixt (Migration `20260710_call_teilnehmer_bot_rebuy.sql`) –
   Spalte `online_spiele.call_teilnehmer jsonb` ergänzt; die UI (btn-pm-call, Join/Leave + „X im Call")
   funktioniert jetzt. `call_aktiv` wurde bewusst **nicht** angelegt (kein Code nutzt sie).
-- ~~**Bot-Auto-Rebuy**~~ ✅ v4.9.2 – Bots kaufen jetzt **immer** automatisch nach (Anforderung Chris).
-  Der abschaltbare Toggle wurde aus der UI entfernt, `poker-new-hand` kauft bedingungslos nach. Die in
-  v4.9.1 ergänzte Spalte `online_spiele.bot_auto_rebuy` ist damit vestigial (bleibt in der DB, wird nicht
-  mehr gelesen/geschrieben).
+- ~~**Bot-Auto-Rebuy-Verhalten**~~ ✅ v4.9.2 – Der Session-Toggle „Bot Auto-Rebuy" bleibt (nutzt die in
+  v4.9.1 ergänzte Spalte `online_spiele.bot_auto_rebuy`), aber das „Aus"-Verhalten wurde korrigiert:
+  ausgeschiedene Bots **verlassen den Tisch nicht mehr**, sondern bleiben sitzen und beobachten
+  (`sitting_out`). „An" = nachkaufen wie bisher.
 - ~~**texama/texahma Inkonsistenz**~~ ✅ Mode-Wert vereinheitlicht auf `texahma` (index.html Equity-Rechner
   + `equity-explain`). **Rest:** die interne Helper-Funktion heisst noch `_eqEvalTexama` (nur Funktionsname,
   kein Wert – unkritisch).
@@ -470,8 +470,7 @@ Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script t
 > Einzig die interne Helper-Funktion heisst noch `_eqEvalTexama` (nur Funktionsname, kein Wert).
 
 ### DB: online_spiele relevante Felder
-`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, call_teilnehmer (jsonb, im-Call-Tracking), hat_bots, blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
-> ℹ️ `bot_auto_rebuy` existiert noch als Spalte (v4.9.1), wird aber seit v4.9.2 nicht mehr genutzt (Bots kaufen immer nach).
+`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, call_teilnehmer (jsonb, im-Call-Tracking), hat_bots, bot_auto_rebuy (Session-Toggle: an=nachkaufen, aus=beobachten), blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
 
 > ⚠️ `deck` liegt **nicht** in `online_spiele`, sondern in eigener Tabelle **`online_decks`** (id FK→online_spiele, deck jsonb; kein Client-Zugriff, nur Service Role).
 > ℹ️ `call_aktiv` existiert bewusst **nicht** (kein Code nutzt sie); das Video-Call-Tracking läuft allein über `call_teilnehmer`.
@@ -504,10 +503,11 @@ menschlichen Teilnehmern.
    Edge Function `poker-bot-action` (Bedenkzeit 0.5–5 s, dann Fold/Call/Raise + evtl. Kommentar)
 3. Hat niemand die App offen, übernimmt der pg_cron-Job → `poker-bot-cron` (~alle 30 s) den Trigger
 4. Ist ein Bot Dealer-Button und alle Gegner folden, deckt er den Runout automatisch auf
-5. **Bot Auto-Rebuy** (immer an, nicht abschaltbar seit v4.9.2): Bots kaufen nach dem Ausscheiden
-   (stack=0) immer automatisch nach – der frühere abschaltbare Toggle wurde entfernt. `poker-new-hand`
-   kauft bedingungslos nach; die DB-Spalte `online_spiele.bot_auto_rebuy` wird nicht mehr gelesen/geschrieben
-   (vestigial, bleibt in der DB).
+5. **Bot Auto-Rebuy** (Session-Toggle, default an): Session-Einstellung `online_spiele.bot_auto_rebuy`.
+   Ist ein Bot ausgeschieden (stack=0), prüft `poker-new-hand`:
+   - **an** (`!== false`): Bot kauft automatisch nach (stack=start_stack, buyins+1, status=active)
+   - **aus** (`false`): Bot bleibt am Tisch sitzen und **beobachtet nur** (status=`sitting_out`) – er verlässt
+     den Tisch NICHT. Wird der Toggle später wieder auf „an" gestellt, kauft er bei der nächsten Hand nach.
 
 ## Migrations-Script (historisch, abgeschlossen)
 
