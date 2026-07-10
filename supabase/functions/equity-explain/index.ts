@@ -4,7 +4,7 @@
 //
 // POST Body:
 //   {
-//     mode: 'holdem'|'omaha'|'texama',
+//     mode: 'holdem'|'omaha'|'texahma',
 //     hands: string[][],   // Kartennotation, z.B. [["Ah","Kh"],["2c","2d","2h","2s"]]
 //     board: string[],     // 0-5 Karten
 //     results: number[],   // Gesamt-Equity in % pro Hand (Win+Split), gleiche Reihenfolge wie hands
@@ -90,7 +90,7 @@ function bestHandDesc(mode: string | undefined, holeStr: string[], boardStr: str
       if (hole.length + board.length < 5) return null;
       return handName(evalHoldem(hole, board).score);
     }
-    if (mode === 'texama') {
+    if (mode === 'texahma') {
       if (board.length < 1) return null;
       return handName(evalTexahma(hole, board).score);
     }
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       return err('Fehlende Parameter');
     }
 
-    const varianteName = mode === 'holdem' ? "Texas Hold'em" : mode === 'texama' ? 'Texahma' : 'Omaha';
+    const varianteName = mode === 'holdem' ? "Texas Hold'em" : mode === 'texahma' ? 'Texahma' : 'Omaha';
     const boardArr = board ?? [];
     const handsDesc = hands
       .map((h, i) => {

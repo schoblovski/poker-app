@@ -324,13 +324,11 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 - DB-Spalte: `spieler.online_entdeckt_am` (per Supabase-Migration vom alten Spaltennamen umbenannt, Juni 2026)
 - Funktion `_unlockOnlineModus()`, CSS/JS-Sektions-Kommentare, SYSTEM_PROMPT der Edge Function `dealer-comment`
 
-> ⚠️ **Noch offen (Stand v4.9):** Das P-Wort taucht noch an zwei Stellen auf:
-> 1. **Live-DB:** der Tabellen-Kommentar auf `online_spiele` lautet noch „Pandemie-Modus: …"
->    (per `COMMENT ON TABLE online_spiele IS 'Online-Modus: …'` zu bereinigen)
-> 2. **Migrations-Dateien:** `supabase/migrations/*pandemie*.sql` (historische Migrationen – Dateinamen
->    und Kommentare; unkritisch, aber der Vollständigkeit halber erwähnt)
-> Die localStorage-Migration `dtks_pandemie_entdeckt → dtks_online_entdeckt` in index.html referenziert den
-> alten Key **bewusst** (nötig für die Migration) und ist kein Verstoss.
+> **Stand v4.9:** Der Live-DB-Tabellen-Kommentar auf `online_spiele` wurde bereinigt (jetzt „Online-Modus: …",
+> Migration `20260710_call_teilnehmer_bot_rebuy.sql`). Verbleibend, aber unkritisch:
+> die historischen `supabase/migrations/*pandemie*.sql` (Dateinamen/Kommentare der Migrations-Historie – bleiben
+> als Aufzeichnung unverändert). Die localStorage-Migration `dtks_pandemie_entdeckt → dtks_online_entdeckt`
+> in index.html referenziert den alten Key **bewusst** (nötig für die Migration) und ist kein Verstoss.
 
 ---
 
@@ -366,7 +364,11 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 ## Aktueller Backlog / TODOs
 1. **Online-Modus Finalisierung** ✅ v4.0 – UI-Polish + Stabilisierung (in main gemerged). Easter Egg, Beobachter-Modus, Karten-Animationen, Vibration, Device-Motion-Easter-Eggs implementiert.
 2. **Dealer-Kommentare im Online-Modus** ✅ v4.6 – KI-generiert statt hardcoded: Edge Function `dealer-comment` ruft Claude (Haiku, `claude-haiku-4-5-20251001`, Secret `ANTHROPIC_API_KEY`) auf und schreibt das Ergebnis als `online_actions`-Eintrag (`action:'dealer_comment'`, `meta.text`) → via Realtime sehen alle Spieler denselben Kommentar. Trigger serverseitig in `poker-action`/`poker-showdown`/`poker-new-hand` über `rollDealerTrigger()` + `fireDealerComment()` (fire-and-forget mit `EdgeRuntime.waitUntil`, blockiert nie den Spielfluss; Wahrscheinlichkeiten pro Event in `poker-utils` `DEALER_COMMENT_PROB`, z.B. fold 18%, allin 52%, win_72 95%). WICHTIG: `dealer-comment` ist im Deploy-Workflow `.github/workflows/deploy-edge-functions.yml` als eigener Step eingetragen.
-3. **Keyboard-Shortcuts** *(spätere Erweiterung, PC/Tablet mit physischer Tastatur)* – Tastaturkürzel für häufig verwendete Aktionen: z.B. `Alt+F` für Feed-Vollbild oder Feed-Drawer öffnen, `Esc` um Modals/Sheets zu schliessen, evtl. Poker-Aktionen (F=Fold, C=Call, R=Raise) wenn am Tisch aktiv; kurze Onboarding-Hinweis-Einblendung für Nutzer mit Tastatur (Erkennung via `navigator.maxTouchPoints===0`).
+3. **Keyboard-Shortcuts** ✅ implementiert – Physische Tastatur wird erkannt (`body.has-keyboard`,
+   proaktiv via `pointer:fine + hover:hover`, reaktiv beim ersten Tastendruck, persistiert in
+   `localStorage: dtks_has_keyboard`); Key-Hints (`.pm-key-hint`) nur bei Tastatur sichtbar. Am Online-Tisch
+   greift der Handler `_pmOnKeydown`: F=Fold, C=Check/Call, R=Raise, N=Nächste Runde, A=Karten zeigen,
+   P=Pause, V=Vorauswahl, 1–4=Pre-Action-Optionen, Esc schliesst Modals/Sheets.
 4. **Turnier-Modus** *(spätere Erweiterung)* – Alternatives Spielformat neben Cash Game: fixer Startstack, Eliminierungen statt Buy-Ins, Platzierungen, Preis-Pool-Verteilung (z.B. 50/30/20), Blinds eskalieren via bestehendem Blind-Timer; Statistik-Erweiterung: Turniersiege, ITM-Quote, Ø-Platzierung; vermutlich neues Feld `spiele.modus = 'cash'|'turnier'` + `spiel_teilnehmer.platz`
 5. **Push Notifications** ✅ vollständig implementiert:
    - ✅ VAPID Keys generiert (Public Key in App, Private Key als Supabase Secret)
@@ -382,16 +384,18 @@ Changelog-Einträgen, Code-Kommentaren oder Dokumentation. Umbenannt wurden dabe
 
 *(Neue Issues hier eintragen.)*
 
-- **🐞 Video-Call „im Call"-Tracking kaputt** – Der Button-Handler `btn-pm-call` (index.html
-  ~Z. 10063) liest/schreibt `online_spiele.call_teilnehmer` (und liest `session.call_aktiv`),
-  aber **diese Spalten existieren nicht in der DB**. Folge: Der WhatsApp-/Video-Link öffnet zwar,
-  aber das `db.from('online_spiele').update({call_teilnehmer:…})` schlägt fehl und die Anzeige
-  „X im Call" funktioniert nie. Entweder Spalten `call_aktiv boolean` + `call_teilnehmer jsonb`
-  per Migration ergänzen (siehe Video-Call-Konzept) oder das Tracking aus der UI entfernen.
-- **texama/texahma Inkonsistenz** – Anzeigename überall «Texahma», aber der interne Mode-Wert im
-  Equity-Rechner (index.html) und in `equity-explain` ist noch `texama`, während die DB-Spalte
-  `online_spiele.variante` per CHECK nur `texahma` erlaubt. Bei Gelegenheit auf einen Wert vereinheitlichen.
-- **P-Wort-Rest** – siehe ⚠️-Hinweis im Abschnitt „Terminologie" (DB-Kommentar + Migrationsdateien).
+- ~~**Video-Call „im Call"-Tracking kaputt**~~ ✅ gefixt (Migration `20260710_call_teilnehmer_bot_rebuy.sql`) –
+  Spalte `online_spiele.call_teilnehmer jsonb` ergänzt; die UI (btn-pm-call, Join/Leave + „X im Call")
+  funktioniert jetzt. `call_aktiv` wurde bewusst **nicht** angelegt (kein Code nutzt sie).
+- ~~**Bot-Auto-Rebuy-Toggle persistierte nicht**~~ ✅ gefixt (gleiche Migration) – Spalte
+  `online_spiele.bot_auto_rebuy boolean DEFAULT true` ergänzt. `poker-new-hand` liest
+  `session.bot_auto_rebuy !== false`; vorher war die Spalte nie da → Auto-Rebuy immer an.
+- ~~**texama/texahma Inkonsistenz**~~ ✅ Mode-Wert vereinheitlicht auf `texahma` (index.html Equity-Rechner
+  + `equity-explain`). **Rest:** die interne Helper-Funktion heisst noch `_eqEvalTexama` (nur Funktionsname,
+  kein Wert – unkritisch).
+- ~~**P-Wort im DB-Tabellen-Kommentar**~~ ✅ gefixt – `COMMENT ON TABLE online_spiele` lautet jetzt
+  „Online-Modus: …". **Rest:** die historischen `supabase/migrations/*pandemie*.sql` bleiben als
+  Migrations-Historie unverändert (bewusst, kein Verstoss).
 - **Vorauswahl „Chk/Fold"** – Server-seitig noch in `poker-action/index.ts` vorhanden, aber in der UI nicht exponiert. Kann bei Gelegenheit aus dem Server entfernt werden (jetzt durch das neue Fold-Verhalten, das bei `callAmount=0` automatisch checkt, ersetzt).
 
 
@@ -460,16 +464,15 @@ Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script t
 | Omaha | 4 | exakt 2+3, 60 Kombi | evalOmaha |
 | Texahma | 4 | 0-4 eigene, 126 Kombi | evalTexahma |
 
-> **Namens-Hinweis:** Der Anzeigename ist überall **«Texahma»**. Der interne Wert ist
-> uneinheitlich: die DB-Spalte `online_spiele.variante` erlaubt per CHECK nur `texahma`,
-> der Equity-Rechner (index.html) und `equity-explain` nutzen aber intern noch `texama`
-> (Anzeige trotzdem «Texahma»). Bei Gelegenheit vereinheitlichen.
+> **Namens-Hinweis:** Anzeigename überall **«Texahma»**, interner Mode-Wert einheitlich `texahma`
+> (DB-Spalte `online_spiele.variante` CHECK, Equity-Rechner in index.html, `equity-explain`).
+> Einzig die interne Helper-Funktion heisst noch `_eqEvalTexama` (nur Funktionsname, kein Wert).
 
 ### DB: online_spiele relevante Felder
-`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, hat_bots, blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
+`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, call_teilnehmer (jsonb, im-Call-Tracking), hat_bots, bot_auto_rebuy, blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
 
 > ⚠️ `deck` liegt **nicht** in `online_spiele`, sondern in eigener Tabelle **`online_decks`** (id FK→online_spiele, deck jsonb; kein Client-Zugriff, nur Service Role).
-> ⚠️ `call_aktiv` / `call_teilnehmer` (Video-Call-Konzept) existieren **nicht** in der DB – siehe offener Bug im Backlog.
+> ℹ️ `call_aktiv` existiert bewusst **nicht** (kein Code nutzt sie); das Video-Call-Tracking läuft allein über `call_teilnehmer`.
 
 ### DB: online_seats relevante Felder
 `id, online_spiel_id, spieler_id, seat (1-9), stack, status (active/folded/allin/paused/sitting_out), bet_current_round, buyins (Anzahl, startet bei 1), auto_folded, pause_auto_action, pause_call_limit, pre_action, pre_action_limit, paused_at, bot_config (jsonb, nur bei Bots)`
@@ -502,11 +505,11 @@ menschlichen Teilnehmern.
 5. **Bot Auto-Rebuy** (Option beim Session-Erstellen, default an): Bots kaufen nach dem Ausscheiden
    automatisch nach – aus = sie verlassen den Tisch dauerhaft
 
-## Migrations-Script
+## Migrations-Script (historisch, abgeschlossen)
 
-`migrate_poker.py` – importiert Altdaten aus `poker tracker v3.xlsx` in Supabase.
-Löscht erst alle bestehenden Spieldaten, dann reimportiert alles.
-Benötigt Service Role Key (nicht Anon Key).
+`migrate_poker.py` – hat einmalig die Altdaten aus `poker tracker v3.xlsx` in Supabase importiert
+(löschte erst alle Spieldaten, dann Reimport; benötigte Service Role Key). Die Migration ist
+**abgeschlossen** – das Script wird nicht mehr benötigt und liegt nicht (mehr) im Repo.
 
 ## Spieler (aktuell aktiv)
 

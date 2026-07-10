@@ -6660,7 +6660,7 @@
             let sc;
             if(evalMode==='omaha'){
               sc=_eqEvalOmaha(handsSnap[h],fullBoard);
-            } else if(evalMode==='texama'){
+            } else if(evalMode==='texahma'){
               sc=_eqEvalTexama(handsSnap[h],fullBoard);
             } else {
               const seven=[handsSnap[h][0],handsSnap[h][1],fullBoard[0],fullBoard[1],fullBoard[2],fullBoard[3],fullBoard[4]];
@@ -6802,7 +6802,7 @@
         <div class="eq-mode-switch" role="tablist">
           <button data-mode="holdem" class="${mode==='holdem'?'active':''}">Hold'em</button>
           <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
-          <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
+          <button data-mode="texahma" class="${mode==='texahma'?'active':''}">Texahma</button>
         </div>
         <div class="section-title">Hände</div>
         <div id="eq-hands-wrap"></div>
