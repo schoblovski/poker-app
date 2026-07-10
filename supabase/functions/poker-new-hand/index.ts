@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
   const callerSeat = seats?.find((s: { spieler_id: string }) => s.spieler_id === spieler_id);
   if (!callerSeat) return err('Du bist nicht an diesem Tisch', 403);
 
-  // Bots: auto-buyin if stack=0 (unless bot_auto_rebuy disabled), promote sitting_out bots with chips
+  // Bots bei stack=0: Auto-Rebuy an → nachkaufen; aus → sitzen bleiben & nur beobachten (sitting_out).
+  // Bots mit Chips, die sitting_out sind, wieder aktivieren.
   const promotedBotIds: string[] = [];
   for (const s of (seats ?? []) as any[]) {
     if (!s.bot_config) continue;
@@ -47,17 +48,10 @@ Deno.serve(async (req) => {
         }).eq('id', s.id);
         s.stack = session.start_stack ?? 100; s.status = 'active';
         promotedBotIds.push(s.spieler_id);
-      } else {
-        // Auto-rebuy disabled – remove bot seat permanently (keep spieler record: FK refs in online_actions)
-        await db.from('online_actions').insert({
-          online_spiel_id,
-          spieler_id: s.spieler_id,
-          action: 'bot_leave',
-          street: 'preflop',
-          hand_nr: session.hand_nr ?? 0,
-          meta: { busted: true },
-        }).catch(() => {});
-        await db.from('online_seats').delete().eq('id', s.id);
+      } else if (s.status !== 'sitting_out') {
+        // Auto-Rebuy aus: Bot bleibt am Tisch und beobachtet nur (verlässt den Tisch NICHT)
+        await db.from('online_seats').update({ status: 'sitting_out' }).eq('id', s.id);
+        s.status = 'sitting_out';
       }
     } else if (s.status === 'sitting_out') {
       await db.from('online_seats').update({ status: 'active' }).eq('id', s.id);

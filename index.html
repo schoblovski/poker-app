@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.9">
+  <meta name="version" content="4.9.3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1281,7 +1281,7 @@
       <!-- Tisch verlassen -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tisch verlassen</div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button kannst du den Tisch verlassen. Dein Platz und Stack bleiben reserviert — wenn du zurückkommst, nimmst du automatisch deinen alten Platz wieder ein.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button → <b>„Tisch verlassen"</b> oder durch Antippen deines <b>eigenen Avatars</b> kannst du den Tisch verlassen. Zwei Möglichkeiten:<br>• <b>Temporär verlassen</b> — Platz und Stack bleiben reserviert, du nimmst bei Rückkehr automatisch deinen alten Platz wieder ein.<br>• <b>Platz freigeben</b> — dein Sitz wird frei, deine Stats bleiben im Spiel (nur zwischen den Spielrunden möglich).</div>
       </div>
 
       <!-- Was wäre noch gekommen -->
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.9';
+  const VERSION='4.9.3';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2653,8 +2653,8 @@
   function showWhatsNew(){
     const seen=localStorage.getItem('dtks_version_seen');
     if(seen===VERSION)return;
-    const parseVer=v=>v.split('.').map(Number);
-    const isNewer=(a,b)=>{const[aM,am]=parseVer(a),[bM,bm]=parseVer(b);return aM>bM||(aM===bM&&am>bm);};
+    const parseVer=v=>String(v).split('.').map(Number);
+    const isNewer=(a,b)=>{const pa=parseVer(a),pb=parseVer(b);for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x>y;}return false;};
     // Wenn keine gespeicherte Version: nur aktuellen Eintrag zeigen (Erstbesuch)
     const entries=seen
       ?CHANGELOG.filter(c=>isNewer(c.version,seen))
@@ -6660,7 +6660,7 @@
             let sc;
             if(evalMode==='omaha'){
               sc=_eqEvalOmaha(handsSnap[h],fullBoard);
-            } else if(evalMode==='texama'){
+            } else if(evalMode==='texahma'){
               sc=_eqEvalTexama(handsSnap[h],fullBoard);
             } else {
               const seven=[handsSnap[h][0],handsSnap[h][1],fullBoard[0],fullBoard[1],fullBoard[2],fullBoard[3],fullBoard[4]];
@@ -6802,7 +6802,7 @@
         <div class="eq-mode-switch" role="tablist">
           <button data-mode="holdem" class="${mode==='holdem'?'active':''}">Hold'em</button>
           <button data-mode="omaha" class="${mode==='omaha'?'active':''}">Omaha</button>
-          <button data-mode="texama" class="${mode==='texama'?'active':''}">Texahma</button>
+          <button data-mode="texahma" class="${mode==='texahma'?'active':''}">Texahma</button>
         </div>
         <div class="section-title">Hände</div>
         <div id="eq-hands-wrap"></div>
@@ -6897,6 +6897,18 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.9.3',datum:'Juli 2026',eintraege:[
+      {typ:'neu',text:'Online-Modus: Den Tisch verlassen ist jetzt jederzeit möglich – über den runden +-Button → „Tisch verlassen" oder durch Antippen des eigenen Avatars. Zwei Optionen: Temporär verlassen (Platz & Stack bleiben reserviert) oder Platz freigeben (nur zwischen den Spielrunden)'},
+      {typ:'verbessert',text:'Spielregeln & Hilfe: Abschnitt „Tisch verlassen" beschreibt jetzt beide Einstiege und beide Optionen'},
+    ]},
+    {version:'4.9.2',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'„Was ist neu"-Hinweis erscheint jetzt auch bei Patch-Updates (z.B. 4.9.1 → 4.9.2) – bisher wurde die dritte Versionsstelle beim Vergleich ignoriert'},
+      {typ:'verbessert',text:'Online-Modus: Der Menü-Button (+) lässt sich jetzt frei an jede Stelle des Bildschirms ziehen (per Maus am PC und per Touch) – kein Einrasten in Ecken mehr. Button und aufklappendes Menü bleiben dabei immer vollständig sichtbar'},
+      {typ:'verbessert',text:'Online-Modus: Der „Bot Auto-Rebuy"-Schalter wirkt jetzt zuverlässig. Aus = ausgeschiedene Bots bleiben am Tisch sitzen und beobachten nur (statt den Tisch zu verlassen); An = sie kaufen automatisch neue Chips nach'},
+    ]},
+    {version:'4.9.1',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Online-Modus Video-Call: Die Anzeige „X im Call" funktioniert jetzt – Beitreten und Verlassen wird korrekt erfasst (vorher schlug das Speichern im Hintergrund fehl)'},
+    ]},
     {version:'4.9',datum:'Juni 2026',eintraege:[
       {typ:'verbessert',text:'Equity-Rechner: Klicks, KI-Erklärung und Moduswechsel (Hold\'em/Omaha/Texahma) bauen die Seite nicht mehr komplett neu auf – Karten, Ergebnisse und Buttons werden gezielt aktualisiert für ein deutlich flüssigeres Gefühl'},
       {typ:'neu',text:'Equity-Rechner: Während der KI-Fotoanalyse ist das restliche Tool gesperrt – ein Seitenwechsel ist möglich, bricht die Analyse aber mit Warnung ab'},
@@ -8856,7 +8868,7 @@
     const _hasTischSection=waLink||(mySeat&&myStatus!=='sitting_out')||_hasFreeSeats||myStatus==='sitting_out';
     const fabHtml=`<div id="pm-fab-menu">${isFinished
       ?`${_fabSectionHdr('Session')}<button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button><button class="pm-fab-item" id="btn-pm-hand-record">${_fabIconHandRecord}Hand festhalten</button>${_fabDivider}<button class="pm-fab-item" id="btn-pm-lobby">${_fabIconLobby}Zur Session-Liste</button>${isAdmin?`${_fabDivider}<button class="pm-fab-item pm-fab-danger" id="btn-pm-delete-session">${_fabIconTrash}Session löschen</button>`:''}`
-      :`${_hasTischSection?_fabSectionHdr('Tisch'):''}${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }${_hasFreeSeats?`<button class="pm-fab-item" id="btn-pm-add-bot">${_fabIconBot}Bot hinzufügen</button>`:''  }${myStatus==='sitting_out'?`<button class="pm-fab-item" id="btn-pm-stop-observe">${_fabIconLeave}Nicht mehr beobachten</button>`:''  }${_hasTischSection?_fabDivider:''}${_fabSectionHdr('Session')}<button class="pm-fab-item" id="btn-pm-settings">${_fabIconSettings}Session Einstellungen</button><button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button><button class="pm-fab-item" id="btn-pm-hand-record">${_fabIconHandRecord}Hand festhalten</button>${_fabDivider}<button class="pm-fab-item" id="btn-pm-lobby">${_fabIconLobby}Zur Session-Liste</button>${_fabDivider}<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`
+      :`${_hasTischSection?_fabSectionHdr('Tisch'):''}${waLink?`<button class="pm-fab-item" id="btn-pm-call" style="color:${imInCall?'var(--accent)':'var(--text-primary)'}${callCount>0?';font-weight:600':''}">${_fabIconCall}${callMenuLabel}</button>`:''  }${mySeat&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-facedown">${_fabIconFd}${facedown?'Face-down AN':'Face-down AUS'}</button>`:''  }${_hasFreeSeats?`<button class="pm-fab-item" id="btn-pm-add-bot">${_fabIconBot}Bot hinzufügen</button>`:''  }${mySeat&&myStatus!=='sitting_out'?`<button class="pm-fab-item" id="btn-pm-leave-seat">${_fabIconLeave}Tisch verlassen</button>`:''  }${myStatus==='sitting_out'?`<button class="pm-fab-item" id="btn-pm-stop-observe">${_fabIconLeave}Nicht mehr beobachten</button>`:''  }${_hasTischSection?_fabDivider:''}${_fabSectionHdr('Session')}<button class="pm-fab-item" id="btn-pm-settings">${_fabIconSettings}Session Einstellungen</button><button class="pm-fab-item" id="btn-pm-info">${_fabIconInfo}Spielregeln &amp; Hilfe</button><button class="pm-fab-item" id="btn-pm-hand-record">${_fabIconHandRecord}Hand festhalten</button>${_fabDivider}<button class="pm-fab-item" id="btn-pm-lobby">${_fabIconLobby}Zur Session-Liste</button>${_fabDivider}<button class="pm-fab-item pm-fab-danger" id="btn-pm-finish">${_fabIconStop}Session beenden</button>`
     }</div><button id="pm-fab" class="pm-fab-vis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
     const handIsOver=!session.current_player_id;
 
@@ -9584,7 +9596,8 @@
               ${_pm?.session?.status==='finished'?'':`<button id="_pc-bot-remove" class="btn" style="width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Bot entfernen</button>`}
             </div>`
           :`<div id="_pc-kpis"><div class="loading"><div class="spinner"></div></div></div>
-            <button id="_pc-to-stats" class="btn btn-secondary" style="margin-top:14px;width:100%;max-width:none;font-size:13px">Spieler-Statistik</button>`}
+            <button id="_pc-to-stats" class="btn btn-secondary" style="margin-top:14px;width:100%;max-width:none;font-size:13px">Spieler-Statistik</button>
+            ${sid===currentSpieler?.id&&_pm?.mySeat&&sStatus!=='sitting_out'&&_pm?.session?.status!=='finished'?`<button id="_pc-leave" class="btn" style="margin-top:8px;width:100%;max-width:none;font-size:13px;background:var(--danger-soft);color:var(--danger);border:none">Tisch verlassen</button>`:''}`}
       </div>
     </div>`;
     document.body.appendChild(ov);
@@ -9623,6 +9636,7 @@
       ov.remove();
       showSpielerStats(_sp,'online-tisch');
     });
+    ov.querySelector('#_pc-leave')?.addEventListener('click',()=>{ov.remove();_pmLeaveSheet();});
     ov.querySelector('#_pc-bot-config')?.addEventListener('click',()=>{ov.remove();_pmAddBotModal(seat);});
     ov.querySelector('#_pc-bot-remove')?.addEventListener('click',()=>{ov.remove();_pmRemoveBot(sid,sName);});
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -9832,67 +9846,105 @@
     document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn(1);});
     // FAB – touch events (reliable on iOS, avoids setPointerCapture bugs)
     const _fab=document.getElementById('pm-fab');
-    let _fabCorner=localStorage.getItem('pm_fab_corner')||'tr';
     let _fabDragged=false,_fabTouchId=-1;
     let _fabSX=0,_fabSY=0,_fabFX=0,_fabFY=0;
-    function _pmFabApplyCorner(corner,animate){
-      const fab=document.getElementById('pm-fab');const menu=document.getElementById('pm-fab-menu');if(!fab)return;
-      const hdrH=(document.querySelector('.header')?.offsetHeight||56)+6;
-      const safeB=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')||'0')||0;
-      const pad=Math.max(16,safeB+8);const fs=46;const gap=8;
-      fab.style.transition=animate?'top .28s cubic-bezier(.34,1.1,.64,1),left .28s cubic-bezier(.34,1.1,.64,1),right .28s cubic-bezier(.34,1.1,.64,1),bottom .28s cubic-bezier(.34,1.1,.64,1),transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s':'transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
-      fab.style.top=fab.style.bottom=fab.style.left=fab.style.right='auto';
-      if(corner[0]==='t')fab.style.top=hdrH+'px';
-      else if(corner[0]==='m')fab.style.top=Math.round(window.innerHeight/2-fs/2)+'px';
-      else fab.style.bottom=pad+'px';
-      if(corner[1]==='m')fab.style.left=Math.round(window.innerWidth/2-fs/2)+'px';
-      else if(corner[1]==='r')fab.style.right=pad+'px';
-      else fab.style.left=pad+'px';
-      if(!menu)return;
-      menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';menu.style.transform='none';
-      if(corner[0]==='t')menu.style.top=(hdrH+fs+gap)+'px';
-      else if(corner[0]==='m')menu.style.bottom=Math.round(window.innerHeight/2+fs/2+gap)+'px';
-      else menu.style.bottom=(pad+fs+gap)+'px';
-      if(corner[1]==='m'){menu.style.left='50%';menu.style.transform='translateX(-50%)';}
-      else if(corner[1]==='r')menu.style.right=pad+'px';
-      else menu.style.left=pad+'px';
+    const FAB_SZ=46,FAB_MARGIN=8,FAB_GAP=8;
+    // Freie Position {x,y} = top-left des Buttons. Bleibt wo losgelassen, wird nur so geklemmt
+    // dass der Button immer komplett sichtbar bleibt.
+    function _fabLoadPos(){
+      try{const p=JSON.parse(localStorage.getItem('pm_fab_pos')||'null');if(p&&typeof p.x==='number'&&typeof p.y==='number')return p;}catch(_){}
+      return null;
     }
-    _pmFabApplyCorner(_fabCorner,false);
+    function _fabClampPos(x,y){
+      const maxX=window.innerWidth-FAB_SZ-FAB_MARGIN,maxY=window.innerHeight-FAB_SZ-FAB_MARGIN;
+      return {x:Math.max(FAB_MARGIN,Math.min(x,maxX)),y:Math.max(FAB_MARGIN,Math.min(y,maxY))};
+    }
+    function _fabDefaultPos(){
+      const hdrH=(document.querySelector('.header')?.offsetHeight||56)+6;
+      return _fabClampPos(window.innerWidth-FAB_SZ-FAB_MARGIN,hdrH);
+    }
+    let _fabPos=_fabLoadPos()||_fabDefaultPos();
+    // Menü immer komplett sichtbar relativ zum Button positionieren (unter/über, horizontal geklemmt)
+    function _pmFabPositionMenu(){
+      const fab=document.getElementById('pm-fab');const menu=document.getElementById('pm-fab-menu');if(!fab||!menu)return;
+      const r=fab.getBoundingClientRect();const mW=menu.offsetWidth,mH=menu.offsetHeight;
+      menu.style.top=menu.style.bottom=menu.style.left=menu.style.right='auto';menu.style.transform='none';
+      let top;
+      if(r.bottom+FAB_GAP+mH+FAB_MARGIN<=window.innerHeight)top=r.bottom+FAB_GAP;
+      else if(r.top-FAB_GAP-mH-FAB_MARGIN>=0)top=r.top-FAB_GAP-mH;
+      else top=window.innerHeight-mH-FAB_MARGIN;
+      top=Math.max(FAB_MARGIN,Math.min(top,window.innerHeight-mH-FAB_MARGIN));
+      const left=Math.max(FAB_MARGIN,Math.min(r.left,window.innerWidth-mW-FAB_MARGIN));
+      menu.style.top=top+'px';menu.style.left=left+'px';
+    }
+    function _pmFabApplyPos(pos,animate){
+      const fab=document.getElementById('pm-fab');if(!fab)return;
+      const c=_fabClampPos(pos.x,pos.y);
+      fab.style.transition=animate?'top .28s cubic-bezier(.34,1.1,.64,1),left .28s cubic-bezier(.34,1.1,.64,1),transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s':'transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+      fab.style.bottom=fab.style.right='auto';
+      fab.style.left=c.x+'px';fab.style.top=c.y+'px';
+      _pmFabPositionMenu();
+    }
+    _pmFabApplyPos(_fabPos,false);
     function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
-    function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.add('pm-fab-open');if(m)m.classList.add('pm-fab-open');}
+    function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(!f||!m)return;_pmFabPositionMenu();f.classList.add('pm-fab-open');m.classList.add('pm-fab-open');}
     if(_fab){
+      // Gemeinsame Drag-Logik für Touch UND Maus
+      function _fabDragStart(cx,cy){
+        _fabDragged=false;
+        _fabSX=cx;_fabSY=cy;
+        const r=_fab.getBoundingClientRect();_fabFX=r.left;_fabFY=r.top;
+        _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+      }
+      function _fabDragMove(cx,cy){
+        const dx=cx-_fabSX,dy=cy-_fabSY;
+        if(!_fabDragged&&Math.hypot(dx,dy)<8)return false;
+        if(!_fabDragged){_fabDragged=true;_pmFabClose();}
+        const c=_fabClampPos(_fabFX+dx,_fabFY+dy);
+        _fab.style.left=c.x+'px';_fab.style.top=c.y+'px';
+        _fab.style.right='auto';_fab.style.bottom='auto';
+        return true;
+      }
+      function _fabDragEnd(){
+        if(!_fabDragged)return;
+        const r=_fab.getBoundingClientRect();
+        // Frei platzieren: bleibt wo losgelassen (nur voll-sichtbar geklemmt), kein Snapping
+        _fabPos=_fabClampPos(r.left,r.top);
+        localStorage.setItem('pm_fab_pos',JSON.stringify(_fabPos));
+        _pmFabPositionMenu();
+      }
+      // Touch
       _fab.addEventListener('touchstart',(e)=>{
         if(e.touches.length>1)return;
         const t=e.touches[0];
-        _fabTouchId=t.identifier;_fabDragged=false;
-        _fabSX=t.clientX;_fabSY=t.clientY;
-        const r=_fab.getBoundingClientRect();_fabFX=r.left;_fabFY=r.top;
-        _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
+        _fabTouchId=t.identifier;
+        _fabDragStart(t.clientX,t.clientY);
       },{passive:true});
       _fab.addEventListener('touchmove',(e)=>{
         const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
         if(!t)return;
-        const dx=t.clientX-_fabSX,dy=t.clientY-_fabSY;
-        if(!_fabDragged&&Math.hypot(dx,dy)<8)return;
-        if(!_fabDragged){_fabDragged=true;_pmFabClose();}
-        e.preventDefault();
-        _fab.style.left=Math.max(4,Math.min(window.innerWidth-50,_fabFX+dx))+'px';
-        _fab.style.top=Math.max(4,Math.min(window.innerHeight-50,_fabFY+dy))+'px';
-        _fab.style.right='auto';_fab.style.bottom='auto';
+        if(_fabDragMove(t.clientX,t.clientY))e.preventDefault();
       },{passive:false});
       _fab.addEventListener('touchend',(e)=>{
         const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
         _fabTouchId=-1;
-        if(!t||!_fabDragged)return;
-        const r=_fab.getBoundingClientRect();
-        const cx=r.left+23,cy=r.top+23,h=window.innerHeight,w=window.innerWidth;
-        const vert=cy<h/3?'t':cy>h*2/3?'b':'m';
-        // Middle row only snaps l/r (no centre); top/bottom rows snap l/m/r
-        const horiz=vert==='m'?(cx<w/2?'l':'r'):(cx<w/3?'l':cx>w*2/3?'r':'m');
-        _fabCorner=vert+horiz;
-        localStorage.setItem('pm_fab_corner',_fabCorner);
-        _pmFabApplyCorner(_fabCorner,true);
+        if(!t)return;
+        _fabDragEnd();
       },{passive:true});
+      // Maus (Desktop) – Move/Up am document, damit der Drag auch außerhalb des Buttons weiterläuft
+      _fab.addEventListener('mousedown',(e)=>{
+        if(e.button!==0)return;
+        e.preventDefault();
+        _fabDragStart(e.clientX,e.clientY);
+        const mm=(ev)=>_fabDragMove(ev.clientX,ev.clientY);
+        const mu=()=>{
+          document.removeEventListener('mousemove',mm);
+          document.removeEventListener('mouseup',mu);
+          _fabDragEnd();
+        };
+        document.addEventListener('mousemove',mm);
+        document.addEventListener('mouseup',mu);
+      });
       _fab.addEventListener('click',(e)=>{
         e.stopPropagation();
         if(_fabDragged){_fabDragged=false;return;}
@@ -9900,8 +9952,8 @@
       });
     }
     document.addEventListener('click',_pmFabClose,{capture:false});
-    // Re-snap FAB on orientation/resize so position tracks the new viewport
-    window._pmFabResizeHandler=()=>{_pmFabApplyCorner(localStorage.getItem('pm_fab_corner')||'tr',false);};
+    // Bei Orientierung/Resize: freie Position neu klemmen, damit der Button sichtbar bleibt
+    window._pmFabResizeHandler=()=>{_pmFabApplyPos(_fabPos,false);};
     window.removeEventListener('resize',window._pmFabResizePrev||window._pmFabResizeHandler);
     window.addEventListener('resize',window._pmFabResizeHandler);
     window._pmFabResizePrev=window._pmFabResizeHandler;
@@ -9929,7 +9981,7 @@
       }
       _pm._lastFp='';
       renderOnlineTisch();
-      setTimeout(()=>{_pmFabApplyCorner(_fabCorner,false);_pmFabOpen();},30);
+      setTimeout(()=>{_pmFabApplyPos(_fabPos,false);_pmFabOpen();},30);
     });
     // Card flip – delegate to named function (avoids stale DOM reference on re-render)
     const _hcWrap=document.getElementById('pm-hole-cards-wrap');
@@ -10011,6 +10063,7 @@
       _pmDrawerHide();
     });
     document.getElementById('btn-pm-add-bot')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmAddBotModal();});
+    document.getElementById('btn-pm-leave-seat')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmLeaveSheet();});
     document.getElementById('btn-pm-hand-record')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmHandFesthalten();});
     document.getElementById('btn-pm-delete-session')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmDeleteSessionModal();});
     document.getElementById('btn-pm-settings')?.addEventListener('click',(e)=>{e.stopPropagation();_pmFabClose();_pmSessionSettingsSheet();});
@@ -11631,7 +11684,7 @@
         ${hasBots?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Bot Auto-Rebuy</div>
-            <div class="setting-sub" style="font-size:12px">Bots kaufen nach dem Ausscheiden automatisch neue Chips – deaktivieren für permanente Eliminierung</div>
+            <div class="setting-sub" style="font-size:12px">An: Bots kaufen nach dem Ausscheiden automatisch neue Chips. Aus: Bots bleiben sitzen und beobachten nur (verlassen den Tisch nicht)</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-botrebuy"${botRebuy?' checked':''}><span class="toggle-slider"></span></label>
         </div>`:''}
