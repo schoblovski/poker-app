@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.9.1">
+  <meta name="version" content="4.9.2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.9.1';
+  const VERSION='4.9.2';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2653,8 +2653,8 @@
   function showWhatsNew(){
     const seen=localStorage.getItem('dtks_version_seen');
     if(seen===VERSION)return;
-    const parseVer=v=>v.split('.').map(Number);
-    const isNewer=(a,b)=>{const[aM,am]=parseVer(a),[bM,bm]=parseVer(b);return aM>bM||(aM===bM&&am>bm);};
+    const parseVer=v=>String(v).split('.').map(Number);
+    const isNewer=(a,b)=>{const pa=parseVer(a),pb=parseVer(b);for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x>y;}return false;};
     // Wenn keine gespeicherte Version: nur aktuellen Eintrag zeigen (Erstbesuch)
     const entries=seen
       ?CHANGELOG.filter(c=>isNewer(c.version,seen))
@@ -6897,9 +6897,12 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.9.2',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'„Was ist neu"-Hinweis erscheint jetzt auch bei Patch-Updates (z.B. 4.9.1 → 4.9.2) – bisher wurde die dritte Versionsstelle beim Vergleich ignoriert'},
+      {typ:'verbessert',text:'Online-Modus: Bots kaufen nach dem Ausscheiden immer automatisch neue Chips nach – der abschaltbare Auto-Rebuy-Schalter entfällt'},
+    ]},
     {version:'4.9.1',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Online-Modus Video-Call: Die Anzeige „X im Call" funktioniert jetzt – Beitreten und Verlassen wird korrekt erfasst (vorher schlug das Speichern im Hintergrund fehl)'},
-      {typ:'fix',text:'Online-Modus Bot Auto-Rebuy: Der Schalter in den Session-Einstellungen greift jetzt wirklich – bei „aus" verlassen ausgeschiedene Bots den Tisch (vorher kauften sie immer automatisch nach)'},
     ]},
     {version:'4.9',datum:'Juni 2026',eintraege:[
       {typ:'verbessert',text:'Equity-Rechner: Klicks, KI-Erklärung und Moduswechsel (Hold\'em/Omaha/Texahma) bauen die Seite nicht mehr komplett neu auf – Karten, Ergebnisse und Buttons werden gezielt aktualisiert für ein deutlich flüssigeres Gefühl'},
@@ -11573,8 +11576,6 @@
     const sid='pm-session-settings-sheet';document.getElementById(sid)?.remove();
     const equityOn=localStorage.getItem('pm_show_equity')==='1';
     const actionsOnly=localStorage.getItem('pm_feed_actions_only')==='1';
-    const hasBots=(_pm?.seats||[]).some(s=>s.bot_config);
-    const botRebuy=_pm?.session?.bot_auto_rebuy!==false;
     const isAdmin=currentSpieler?.ist_admin;
     const session=_pm?.session;
     const hasBs=!!(session?.blind_struktur);
@@ -11632,13 +11633,6 @@
           </div>
           <label class="toggle-switch"><input type="checkbox" id="pm-sess-actonly"${actionsOnly?' checked':''}><span class="toggle-slider"></span></label>
         </div>
-        ${hasBots?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
-          <div class="setting-info">
-            <div class="setting-label" style="font-size:14px">Bot Auto-Rebuy</div>
-            <div class="setting-sub" style="font-size:12px">Bots kaufen nach dem Ausscheiden automatisch neue Chips – deaktivieren für permanente Eliminierung</div>
-          </div>
-          <label class="toggle-switch"><input type="checkbox" id="pm-sess-botrebuy"${botRebuy?' checked':''}><span class="toggle-slider"></span></label>
-        </div>`:''}
         ${isAdmin?`<div class="setting-row" style="padding:14px 0;border-bottom:1px solid var(--border)">
           <div class="setting-info">
             <div class="setting-label" style="font-size:14px">Blindstruktur-Timer</div>
@@ -11661,12 +11655,6 @@
     document.getElementById('pm-sess-actonly').addEventListener('change',e=>{
       localStorage.setItem('pm_feed_actions_only',e.target.checked?'1':'0');
       if(_pm)renderOnlineTisch();
-    });
-    document.getElementById('pm-sess-botrebuy')?.addEventListener('change',async e=>{
-      if(!_pm?.id)return;
-      const v=e.target.checked;
-      await db.from('online_spiele').update({bot_auto_rebuy:v}).eq('id',_pm.id);
-      if(_pm.session)_pm.session.bot_auto_rebuy=v;
     });
     // ── Blind Structure Toggle ──
     document.getElementById('pm-sess-blindstruktur')?.addEventListener('change',async e=>{
