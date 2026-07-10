@@ -6899,6 +6899,7 @@
   const CHANGELOG=[
     {version:'4.9.2',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'„Was ist neu"-Hinweis erscheint jetzt auch bei Patch-Updates (z.B. 4.9.1 → 4.9.2) – bisher wurde die dritte Versionsstelle beim Vergleich ignoriert'},
+      {typ:'fix',text:'Online-Modus: Der verschiebbare Menü-Button (+) lässt sich jetzt auch am PC mit der Maus an eine andere Ecke ziehen – bisher ging das nur per Touch'},
       {typ:'verbessert',text:'Online-Modus: Der „Bot Auto-Rebuy"-Schalter wirkt jetzt zuverlässig. Aus = ausgeschiedene Bots bleiben am Tisch sitzen und beobachten nur (statt den Tisch zu verlassen); An = sie kaufen automatisch neue Chips nach'},
     ]},
     {version:'4.9.1',datum:'Juli 2026',eintraege:[
@@ -9868,29 +9869,24 @@
     function _pmFabClose(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.remove('pm-fab-open');if(m)m.classList.remove('pm-fab-open');}
     function _pmFabOpen(){const f=document.getElementById('pm-fab');const m=document.getElementById('pm-fab-menu');if(f)f.classList.add('pm-fab-open');if(m)m.classList.add('pm-fab-open');}
     if(_fab){
-      _fab.addEventListener('touchstart',(e)=>{
-        if(e.touches.length>1)return;
-        const t=e.touches[0];
-        _fabTouchId=t.identifier;_fabDragged=false;
-        _fabSX=t.clientX;_fabSY=t.clientY;
+      // Gemeinsame Drag-Logik für Touch UND Maus
+      function _fabDragStart(cx,cy){
+        _fabDragged=false;
+        _fabSX=cx;_fabSY=cy;
         const r=_fab.getBoundingClientRect();_fabFX=r.left;_fabFY=r.top;
         _fab.style.transition='transform .22s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s';
-      },{passive:true});
-      _fab.addEventListener('touchmove',(e)=>{
-        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
-        if(!t)return;
-        const dx=t.clientX-_fabSX,dy=t.clientY-_fabSY;
-        if(!_fabDragged&&Math.hypot(dx,dy)<8)return;
+      }
+      function _fabDragMove(cx,cy){
+        const dx=cx-_fabSX,dy=cy-_fabSY;
+        if(!_fabDragged&&Math.hypot(dx,dy)<8)return false;
         if(!_fabDragged){_fabDragged=true;_pmFabClose();}
-        e.preventDefault();
         _fab.style.left=Math.max(4,Math.min(window.innerWidth-50,_fabFX+dx))+'px';
         _fab.style.top=Math.max(4,Math.min(window.innerHeight-50,_fabFY+dy))+'px';
         _fab.style.right='auto';_fab.style.bottom='auto';
-      },{passive:false});
-      _fab.addEventListener('touchend',(e)=>{
-        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
-        _fabTouchId=-1;
-        if(!t||!_fabDragged)return;
+        return true;
+      }
+      function _fabDragEnd(){
+        if(!_fabDragged)return;
         const r=_fab.getBoundingClientRect();
         const cx=r.left+23,cy=r.top+23,h=window.innerHeight,w=window.innerWidth;
         const vert=cy<h/3?'t':cy>h*2/3?'b':'m';
@@ -9899,7 +9895,39 @@
         _fabCorner=vert+horiz;
         localStorage.setItem('pm_fab_corner',_fabCorner);
         _pmFabApplyCorner(_fabCorner,true);
+      }
+      // Touch
+      _fab.addEventListener('touchstart',(e)=>{
+        if(e.touches.length>1)return;
+        const t=e.touches[0];
+        _fabTouchId=t.identifier;
+        _fabDragStart(t.clientX,t.clientY);
       },{passive:true});
+      _fab.addEventListener('touchmove',(e)=>{
+        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
+        if(!t)return;
+        if(_fabDragMove(t.clientX,t.clientY))e.preventDefault();
+      },{passive:false});
+      _fab.addEventListener('touchend',(e)=>{
+        const t=Array.from(e.changedTouches).find(x=>x.identifier===_fabTouchId);
+        _fabTouchId=-1;
+        if(!t)return;
+        _fabDragEnd();
+      },{passive:true});
+      // Maus (Desktop) – Move/Up am document, damit der Drag auch außerhalb des Buttons weiterläuft
+      _fab.addEventListener('mousedown',(e)=>{
+        if(e.button!==0)return;
+        e.preventDefault();
+        _fabDragStart(e.clientX,e.clientY);
+        const mm=(ev)=>_fabDragMove(ev.clientX,ev.clientY);
+        const mu=()=>{
+          document.removeEventListener('mousemove',mm);
+          document.removeEventListener('mouseup',mu);
+          _fabDragEnd();
+        };
+        document.addEventListener('mousemove',mm);
+        document.addEventListener('mouseup',mu);
+      });
       _fab.addEventListener('click',(e)=>{
         e.stopPropagation();
         if(_fabDragged){_fabDragged=false;return;}
