@@ -530,8 +530,11 @@ Sonder-Eintrag: Bank (ist_bank=true)
 - Branch-Naming: `claude/<kurze-beschreibung>` (z.B. `claude/admin-push-notification-view`)
 - Ablauf:
   1. Branch anlegen/auschecken, Änderungen committen, auf Remote pushen (`git push -u origin <branch>`)
-  2. Vercel erzeugt automatisch einen Preview-Deploy – URL-Format: `https://poker-app-git-<branch-lowercase-slash-als-bindestrich>-schoblovskis-projects.vercel.app` (Vercel macht alles lowercase, `/` → `-`)  
-     Beispiel Branch `claude/app-ideas-0j3gF` → `https://poker-app-git-claude-app-ideas-0j3gf-schoblovskis-projects.vercel.app`
+  2. Vercel erzeugt automatisch einen Preview-Deploy. Grundformat: `https://poker-app-git-<branch-lowercase-slash-als-bindestrich>-schoblovskis-projects.vercel.app` (Vercel macht alles lowercase, `/` → `-`).
+     Beispiel kurzer Branch `claude/app-ideas-0j3gF` → `https://poker-app-git-claude-app-ideas-0j3gf-schoblovskis-projects.vercel.app`
+     ⚠️ **ACHTUNG bei langen Branch-Namen:** Ist das DNS-Label zu lang (~63 Zeichen), **kürzt Vercel den Branch-Slug und hängt einen Hash an** – die Formel stimmt dann NICHT mehr.
+     Beispiel `claude/cleanup-branches-deployments-7aa1m5` → `https://poker-app-git-claude-cleanup-branc-f638dc-schoblovskis-projects.vercel.app`.
+     **Nicht raten** – die echte URL ist der `branchAlias` aus dem Vercel-Deployment (Vercel MCP `list_deployments`, Feld `meta.branchAlias`) oder im Vercel-Dashboard.
   3. Chris testet auf der Preview-URL (Google-Login über Supabase Redirect-URL-Whitelist freigegeben)
   4. Erst nach Freigabe: Version & Changelog bumpen, auf Feature-Branch committen, in `main` mergen und `main` pushen
 - Supabase Redirect-URLs müssen Vercel Preview-Domains whitelisten:
