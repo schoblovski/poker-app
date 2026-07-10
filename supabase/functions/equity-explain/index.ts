@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
     try { body = await req.json(); }
     catch { return err('Invalid JSON'); }
 
-    const { mode, hands, board, results } = body;
+    let { mode, hands, board, results } = body;
+    if (mode === 'texama') mode = 'texahma'; // Legacy-Alias: ältere Clients senden noch 'texama'
     if (!Array.isArray(hands) || !hands.length || !Array.isArray(results) || results.length !== hands.length) {
       return err('Fehlende Parameter');
     }
