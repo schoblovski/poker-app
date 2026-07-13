@@ -1959,13 +1959,14 @@
   function confirmAction(msg){return showConfirm(msg);}
 
   // ── FINANZLOGIK ────────────────────────────────────────
-  // Zentrale Kosten-Heuristik pro Buy-In eines Spiels – ÜBERALL verwenden, nie kopieren:
-  // - Online-Spiele: kein Kassa-Anteil
-  // - Alte Spiele mit buyin_pot < 5 (z.B. Pokernacht 2.5): kein Kassa-Anteil
-  // - Sonst: buyin_pot + buyin_kassa (Fallback auf globale Einstellungen wenn am Spiel nicht gesetzt)
+  // Zentrale Buy-In-Kosten eines Spiels – ÜBERALL verwenden, nie kopieren.
+  // Jedes Spiel speichert seine Faktoren beim Eröffnen (buyin_pot/buyin_kassa);
+  // Sonderfälle stehen explizit in den Daten: Alt-Spiele mit Pot < 5 und
+  // Online-Spiele haben buyin_kassa=0 gespeichert (Migration 20260713) –
+  // es gibt KEINE Sonderfall-Heuristik mehr im Code.
   function kostenProBuyin(spiel){
     const bPot=spiel?.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(spiel?.modus==='online')||(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
+    const bKassa=spiel?.buyin_kassa??einstellungen.buyin_kassa;
     return{bPot,bKassa,gesamt:bPot+bKassa};
   }
 
@@ -3837,7 +3838,7 @@
       <div class="card">
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Chips</div><div class="setting-sub">Euro pro BuyIn für Spielguthaben (Chips)</div></div>
-          <input type="number" inputmode="decimal" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="5" step="0.5">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="0" step="0.5">
         </div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Pokerkasse</div><div class="setting-sub">Euro pro BuyIn in die Pokerkasse</div></div>
@@ -3845,7 +3846,8 @@
         </div>
       </div>
       <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
-        1 BuyIn kostet den Spieler <strong id="buyin-total-preview">€${(numVal('buyin_pot',5)+numVal('buyin_kassa',2)).toFixed(2)}</strong> vom Kontostand.
+        1 BuyIn kostet den Spieler <strong id="buyin-total-preview">€${(numVal('buyin_pot',5)+numVal('buyin_kassa',2)).toFixed(2)}</strong> vom Kontostand.<br>
+        Änderungen gelten nur für <strong>neu eröffnete</strong> Spiele – laufende und abgeschlossene Spiele behalten ihre beim Eröffnen gespeicherten Faktoren.
       </div>
       <button class="btn btn-primary" id="btn-einst-speichern" style="margin-top:var(--space-md)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -3931,7 +3933,6 @@
     document.getElementById('btn-einst-speichern').addEventListener('click',async()=>{
       const pot=parseFloat(document.getElementById('set-pot').value)||0;
       const kassa=parseFloat(document.getElementById('set-kassa').value)||0;
-      if(pot<5){await showAlert('BuyIn → Chips muss mindestens €5 sein.\n\nWerte unter €5 werden von der Kontostand-Berechnung als „altes Spiel" ohne Pokerkasse-Anteil gewertet.');return;}
       await save(async()=>{
         await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot},{onConflict:'key'});
         await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa},{onConflict:'key'});
@@ -4452,7 +4453,7 @@
   function renderSpiel(){
     const el=document.getElementById('spiel-content');
     const datum=new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const{bPot,gesamt:buyinGesamt}=kostenProBuyin(aktuellesSpiel);
+    const{bPot,bKassa,gesamt:buyinGesamt}=kostenProBuyin(aktuellesSpiel);
     const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
 
     let html=`<div class="card" style="margin-bottom:var(--space-md)">
@@ -4465,7 +4466,7 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="section-title" style="margin:0">Buy-Ins <span style="color:var(--text-tertiary);font-weight:400">(€${buyinGesamt}/BuyIn)</span></div>
+      <div class="section-title" style="margin:0">Buy-Ins <span style="color:var(--text-tertiary);font-weight:400">(€${buyinGesamt}/BuyIn${bKassa>0?`: €${bPot} Pot + €${bKassa} Kasse`:''})</span></div>
       <button class="btn btn-ghost" id="btn-edit-teilnehmer" style="width:auto;padding:8px 14px;font-size:13px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6"/><line x1="16" y1="3" x2="16" y2="13"/><line x1="13" y1="8" x2="19" y2="8"/></svg>
         Teilnehmer

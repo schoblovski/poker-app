@@ -153,8 +153,15 @@ In-App-Benachrichtigungen (Glocke im Header). triggerPush schreibt pro Empfänge
 Kontostand = Σ(payout - buyins × buyin_kasse aus jeweiligem Spiel) + Transaktionen_ein - Transaktionen_aus
 
 kostenProBuyin:
-  - Alte Spiele : buyin_pot kann variieren, da in der Vergangenheit bei besonderen Anlässen (z.B. Pokernacht) die Faktoren für die buyin_pot und buyin_kassa niedriger gestellt werden
-  - Neue Spiele : buyin_pot + buyin_kassa (bei eröffnen eines Spiels muss die zu dem Zeitpunkt gesetzten globalen Einstellungen (buyin_pot / puyin_kassa) berücksichtigt werden.
+  - EINE zentrale Funktion kostenProBuyin(spiel) in index.html (Finanzlogik-Sektion):
+    buyin_pot + buyin_kassa wie am Spiel gespeichert (Fallback: globale Einstellungen).
+    KEINE Sonderfall-Heuristik im Code – nie wieder kopieren/inline nachbauen!
+  - Jedes Spiel speichert die Faktoren beim Eröffnen als Snapshot der globalen
+    Einstellungen (spiele.buyin_pot / buyin_kassa). Sonder-Spielabende (z.B.
+    Pokernacht: niedrigerer Pot, keine Kassa) = vor Spielstart die Einstellungen
+    anpassen, danach zurückstellen.
+  - Sonderfälle stehen explizit in den Daten: Alt-Spiele (Pot 2.5) und Online-Spiele
+    haben buyin_kassa=0 gespeichert (Migration 20260713_altspiele_buyin_kassa_0.sql).
   - Leihgabe ist nur informativ und wird niemals in Kontostände (Bankkonto, Pokerkasse, Spieler-Kontostand) berücksichtig
 ```
 
