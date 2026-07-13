@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.9.4">
+  <meta name="version" content="4.10">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.9.4';
+  const VERSION='4.10';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -6884,6 +6884,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.10',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Aktuelles Spiel: Pot-Anzeige, „im Pot"-Beträge, Rest-Berechnung und Buy-In-Benachrichtigungen rechnen jetzt mit den beim Eröffnen gespeicherten Buy-In-Faktoren des Spiels – Änderungen an den Einstellungen wirken sich nicht mehr auf ein laufendes Spiel aus'},
+      {typ:'verbessert',text:'Sonder-Spielabende (z.B. Pokernacht): Buy-In-Faktoren können jetzt frei eingestellt werden – auch unter €5 Pot und €0 Pokerkasse. Vor Spielstart in den Einstellungen anpassen, das Spiel merkt sich die Werte'},
+      {typ:'verbessert',text:'Aktuelles Spiel: Das Buy-In-Label zeigt die Aufteilung der Kosten (z.B. „€7/BuyIn: €5 Pot + €2 Kasse") – die „im Pot"-Beträge enthalten wie bisher nur den Pot-Anteil'},
+      {typ:'verbessert',text:'Einstellungen: Hinweis ergänzt, dass geänderte Buy-In-Faktoren nur für neu eröffnete Spiele gelten'},
+      {typ:'fix',text:'Interne Vereinheitlichung der Kontostand-Berechnung: eine zentrale Kostenfunktion statt 15 Kopien; die 5 historischen Spiele mit €2.50-Buy-In sind jetzt explizit ohne Pokerkasse-Anteil in der Datenbank gespeichert. An den berechneten Kontoständen, Bankkonto und Pokerkasse ändert sich nichts'},
+    ]},
     {version:'4.9.4',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Online-Modus: Ein Spieler kann nicht mehr doppelt am selben Tisch sitzen (z.B. gleichzeitig von PC und Handy) – abgesichert in der Datenbank und in der App'},
       {typ:'fix',text:'Online-Modus Abrechnung: Wer den Platz freigibt oder nach dem Ausscheiden nur noch zuschaut, wird beim Session-Ende jetzt korrekt mit seinen Buy-Ins und dem letzten Stack abgerechnet (vorher fehlten diese Beträge und verfälschten die Kontostände)'},
