@@ -1959,6 +1959,16 @@
   function confirmAction(msg){return showConfirm(msg);}
 
   // ── FINANZLOGIK ────────────────────────────────────────
+  // Zentrale Kosten-Heuristik pro Buy-In eines Spiels – ÜBERALL verwenden, nie kopieren:
+  // - Online-Spiele: kein Kassa-Anteil
+  // - Alte Spiele mit buyin_pot < 5 (z.B. Pokernacht 2.5): kein Kassa-Anteil
+  // - Sonst: buyin_pot + buyin_kassa (Fallback auf globale Einstellungen wenn am Spiel nicht gesetzt)
+  function kostenProBuyin(spiel){
+    const bPot=spiel?.buyin_pot??einstellungen.buyin_pot;
+    const bKassa=(spiel?.modus==='online')||(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
+    return{bPot,bKassa,gesamt:bPot+bKassa};
+  }
+
   function berechneKontostaende(spieler, trans, spielVerlauf, spieleMap){
     const ks={};
     spieler.forEach(s=>{ks[s.id]=0;});
@@ -1977,10 +1987,8 @@
       if(ks[t.spieler_id]===undefined) return;
       const spiel=spieleMap?.[t.spiel_id];
       if(!spiel) return; // nur abgeschlossene Spiele zählen (schützt vor Leak offener Spiele)
-      const bPot=spiel.buyin_pot;
-      const bKassa=(spiel.modus==='online')||(bPot < 5) ? 0 : spiel.buyin_kassa;
       ks[t.spieler_id]+=(t.payout||0);
-      ks[t.spieler_id]-=(t.buyins||0)*(bPot+bKassa);
+      ks[t.spieler_id]-=(t.buyins||0)*kostenProBuyin(spiel).gesamt;
     });
     return ks;
   }
@@ -3052,11 +3060,7 @@
     const n=abg.length;
     const gBuyins=abg.reduce((s,t)=>s+(t.buyins||0),0);
     const gPayout=abg.reduce((s,t)=>s+(t.payout||0),0);
-    const reingewinne=abg.map(t=>{
-      const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-      const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-      return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
-    });
+    const reingewinne=abg.map(t=>(t.payout||0)-(t.buyins||0)*kostenProBuyin(t.spiele).gesamt);
     const gRein=reingewinne.reduce((s,v)=>s+v,0);
     const avgRein=n>0?gRein/n:0;
     const maxRein=reingewinne.length>0?Math.max(...reingewinne):0;
@@ -3068,12 +3072,8 @@
     // Einzahlungen: leer → Spieler (von_spieler_id IS NULL)
     const einzahlungen=(transIn||[]).filter(t=>t.von_spieler_id===null);
     const gEinzahlungen=einzahlungen.reduce((s,t)=>s+(t.betrag||0),0);
-    // BuyIn-Kosten: Anzahl BuyIns × (buyin_pot + buyin_kassa) je Spiel
-    const gBuyinKosten=abg.reduce((s,t)=>{
-      const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-      const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-      return s+(t.buyins||0)*(bPot+bKassa);
-    },0);
+    // BuyIn-Kosten: Anzahl BuyIns × Kosten pro BuyIn je Spiel
+    const gBuyinKosten=abg.reduce((s,t)=>s+(t.buyins||0)*kostenProBuyin(t.spiele).gesamt,0);
     let ks=spieler._ks??null;
     if(ks===null){
       let txBal=0;
@@ -3232,7 +3232,7 @@
       // Re-attach click handlers inside scroll container
       listEl.querySelectorAll('[data-spiel-id]').forEach(row=>{
         row.addEventListener('click',async()=>{
-          const{data:spiel}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',row.dataset.spielId).single();
+          const{data:spiel}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,modus,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',row.dataset.spielId).single();
           if(spiel)showSpielDetail(spiel);
         });
       });
@@ -3837,7 +3837,7 @@
       <div class="card">
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Chips</div><div class="setting-sub">Euro pro BuyIn für Spielguthaben (Chips)</div></div>
-          <input type="number" inputmode="decimal" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="0" step="0.5">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-pot" value="${vals['buyin_pot']||5}" min="5" step="0.5">
         </div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-label">BuyIn → Pokerkasse</div><div class="setting-sub">Euro pro BuyIn in die Pokerkasse</div></div>
@@ -3931,6 +3931,7 @@
     document.getElementById('btn-einst-speichern').addEventListener('click',async()=>{
       const pot=parseFloat(document.getElementById('set-pot').value)||0;
       const kassa=parseFloat(document.getElementById('set-kassa').value)||0;
+      if(pot<5){await showAlert('BuyIn → Chips muss mindestens €5 sein.\n\nWerte unter €5 werden von der Kontostand-Berechnung als „altes Spiel" ohne Pokerkasse-Anteil gewertet.');return;}
       await save(async()=>{
         await db.from('einstellungen').upsert({key:'buyin_pot',wert:pot},{onConflict:'key'});
         await db.from('einstellungen').upsert({key:'buyin_kassa',wert:kassa},{onConflict:'key'});
@@ -4369,7 +4370,8 @@
   }
 
   function calcPotInfo(){
-    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*einstellungen.buyin_pot,0);
+    const{bPot}=kostenProBuyin(aktuellesSpiel);
+    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
     let zugeordnet=0;
     spielTeilnehmer.forEach(t=>{zugeordnet+=parseFloat((document.getElementById('payout-'+t.id)?.value||'').replace(',','.'))||0;});
     return{gesamtPot,zugeordnet,rest:gesamtPot-zugeordnet};
@@ -4450,8 +4452,8 @@
   function renderSpiel(){
     const el=document.getElementById('spiel-content');
     const datum=new Date(aktuellesSpiel.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const buyinGesamt=einstellungen.buyin_pot+einstellungen.buyin_kassa;
-    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*einstellungen.buyin_pot,0);
+    const{bPot,gesamt:buyinGesamt}=kostenProBuyin(aktuellesSpiel);
+    const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
 
     let html=`<div class="card" style="margin-bottom:var(--space-md)">
       <div style="display:flex;gap:var(--space-sm);padding:var(--space-md)">
@@ -4472,7 +4474,7 @@
     <div class="card" style="margin-top:var(--space-sm);margin-bottom:var(--space-md)">`;
 
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${((t.buyins||0)*einstellungen.buyin_pot).toFixed(2)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins||0}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
+      html+=`<div class="counter-row">${avatarHtml(t.spieler,36)}<div class="counter-info"><div class="counter-name">${t.spieler.name}</div><div class="counter-sub" id="pot-${t.id}">€${((t.buyins||0)*bPot).toFixed(2)} im Pot</div></div><div class="counter-controls"><button class="counter-btn minus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><div class="counter-value" id="count-${t.id}">${t.buyins||0}</div><button class="counter-btn plus" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>`;
     });
     html+=`</div>
     <div class="section-title">Ergebnis (PayOut)</div>
@@ -4526,8 +4528,9 @@
     _buyinLock.add(id);
     const t=spielTeilnehmer.find(x=>x.id===id);if(!t||(delta<0&&(t.buyins||0)<=1)){_buyinLock.delete(id);return;}
     t.buyins=(t.buyins||0)+delta;
+    const{bPot}=kostenProBuyin(aktuellesSpiel);
     document.getElementById('count-'+id).textContent=t.buyins;
-    document.getElementById('pot-'+id).textContent=`€${(t.buyins*einstellungen.buyin_pot).toFixed(2)} im Pot`;
+    document.getElementById('pot-'+id).textContent=`€${(t.buyins*bPot).toFixed(2)} im Pot`;
     updatePotUI();
     await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
     _buyinLock.delete(id);
@@ -4535,7 +4538,7 @@
       triggerPush({
         spieler_ids:[t.spieler_id],
         title:'Buy-In hinzugefügt',
-        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(t.buyins*einstellungen.buyin_pot)} im Pot)`,
+        body:`Buy-In #${t.buyins} wurde für dich erfasst (${fmt(t.buyins*bPot)} im Pot)`,
         data:{url:'/#spiel',tag:'buyin'},
         kategorie:'buyins',
       });
@@ -4597,7 +4600,7 @@
     for(const t of entf)await db.from('spiel_teilnehmer').delete().eq('id',t.id);
     if(hinzu.length>0){
       await db.from('spiel_teilnehmer').insert(hinzu.map(id=>({spiel_id:aktuellesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
-      hinzu.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
+      hinzu.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(kostenProBuyin(aktuellesSpiel).bPot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
     }
     setSync('synced');
     document.getElementById('modal-teilnehmer-edit').classList.remove('open');
@@ -4619,7 +4622,7 @@
     const uniqueIds=[...new Set(selectedCards.map(el=>el.dataset.id))];
     const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa}).select().single();
     await db.from('spiel_teilnehmer').insert(uniqueIds.map(id=>({spiel_id:neuesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
-    uniqueIds.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(einstellungen.buyin_pot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
+    uniqueIds.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(kostenProBuyin(neuesSpiel).bPot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
     document.getElementById('modal-spieler-auswahl').classList.remove('open');
     aktuellesSpiel=neuesSpiel;await loadSpiel();
   });
@@ -4643,13 +4646,11 @@
       const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       // Spieler-Objekt aus Cache an die Teilnehmer hängen (statt nested DB-Join).
       const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||smap[t.spieler_id]||{name:'?'}}));
-      const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
+      const{bPot,gesamt}=kostenProBuyin(spiel);
       const gesamtPot=teilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
       const gesamtBuyIns=teilnehmer.reduce((s,t)=>s+(t.buyins||0),0);
-      const sorted=[...teilnehmer].sort((a,b)=>{
-        const bK=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
-        return((b.payout||0)-(b.buyins||0)*(bPot+bK))-((a.payout||0)-(a.buyins||0)*(bPot+bK));
-      });
+      const sorted=[...teilnehmer].sort((a,b)=>
+        ((b.payout||0)-(b.buyins||0)*gesamt)-((a.payout||0)-(a.buyins||0)*gesamt));
       const isOnline=spiel.modus==='online';
       const onlineBadge=isOnline?`<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;background:var(--accent-soft);color:var(--accent-text);padding:2px 8px;border-radius:10px;margin-left:8px;text-transform:uppercase;letter-spacing:.04em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Online</span>`:'';
       const wrap=document.createElement('div');
@@ -4666,8 +4667,7 @@
           <div style="margin-left:var(--space-sm)">${chevron}</div>
         </div>
         ${sorted.map((t,i)=>{
-          const bK=(spiel?.modus==='online')||(bPot<5)?0:(spiel?.buyin_kassa??einstellungen.buyin_kassa);
-          const rein=(t.payout||0)-(t.buyins||0)*(bPot+bK);
+          const rein=(t.payout||0)-(t.buyins||0)*gesamt;
           const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           return`<div class="list-item">
             ${avatarHtml(t.spieler,36)}
@@ -4763,8 +4763,7 @@
     showPage('spiel-detail');
 
     const datum=new Date(spiel.datum).toLocaleDateString('de-AT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-    const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+    const{bPot,bKassa}=kostenProBuyin(spiel);
     // Teilnehmer aus Cache anreichern (Queries in Verlauf liefern nur spieler_id).
     await _ensureSpielerMap();
     const _smap=_spielerMap||{};
@@ -4864,8 +4863,7 @@
     const el=document.getElementById('spiel-detail-content');
     const _smap=_spielerMap||{};
     const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||_smap[t.spieler_id]||{name:'?'}}));
-    const bPot=spiel.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(spiel.modus==='online')||(bPot<5)?0:(spiel.buyin_kassa??einstellungen.buyin_kassa);
+    const{bPot,bKassa}=kostenProBuyin(spiel);
 
     // Lokale Kopie zum Editieren
     const editData={};
@@ -4941,7 +4939,7 @@
         }
       },'Spiel aktualisiert');
       // Spiel neu laden und Detail-Ansicht refreshen
-      const{data:updated}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',spiel.id).single();
+      const{data:updated}=await db.from('spiele').select('id,datum,buyin_pot,buyin_kassa,modus,spiel_teilnehmer(id,spieler_id,buyins,payout)').eq('id',spiel.id).single();
       if(updated)showSpielDetail(updated);
       else{showPage('verlauf');loadVerlauf();}
       loadHome();
@@ -4984,7 +4982,7 @@
       const parts=bySpiel[game.id]||{};
       filtSpieler.forEach(s=>{
         const t=parts[s.id];
-        if(t){const bPot=game.buyin_pot;const bKassa=(game.modus==='online')||bPot<5?0:(game.buyin_kassa??einstellungen.buyin_kassa);cumSums[s.id]+=(t.payout||0)-(t.buyins||0)*(bPot+bKassa);}
+        if(t)cumSums[s.id]+=(t.payout||0)-(t.buyins||0)*kostenProBuyin(game).gesamt;
         cumul[s.id].push(cumSums[s.id]);
       });
     });
@@ -5143,17 +5141,9 @@
       // Rangliste
       const ranking=filtSpieler.map(s=>{
         const abg=filtVerlauf.filter(t=>t.spieler_id===s.id);
-        const gRein=abg.reduce((x,t)=>{
-          const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-          return x+(t.payout||0)-(t.buyins||0)*(bPot+bKassa);
-        },0);
+        const gRein=abg.reduce((x,t)=>x+(t.payout||0)-(t.buyins||0)*kostenProBuyin(t.spiele).gesamt,0);
         const gEinz=filtTrans.filter(t=>t.nach_spieler_id===s.id&&t.von_spieler_id===null).reduce((x,t)=>x+(t.betrag||0),0);
-        const gBuyinK=abg.reduce((x,t)=>{
-          const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-          return x+(t.buyins||0)*(bPot+bKassa);
-        },0);
+        const gBuyinK=abg.reduce((x,t)=>x+(t.buyins||0)*kostenProBuyin(t.spiele).gesamt,0);
         return{...s,abg:abg.length,gRein,gEinz,gBuyinK};
       }).sort((a,b)=>{
         const avgA=a.abg>0?a.gRein/a.abg:-Infinity;
@@ -5182,9 +5172,7 @@
         const saldoM={};
         mxSpieler.forEach(s=>{saldoM[s.id]={};});
         Object.values(gameMap).forEach(tList=>{
-          const bPot=tList[0].spiele?.buyin_pot??einstellungen.buyin_pot;
-          const bKassa=(tList[0].spiele?.modus==='online')||(bPot<5)?0:(tList[0].spiele?.buyin_kassa??einstellungen.buyin_kassa);
-          const kb=bPot+bKassa;
+          const kb=kostenProBuyin(tList[0].spiele).gesamt;
           const rein={};
           tList.forEach(t=>{rein[t.spieler_id]=(t.payout||0)-(t.buyins||0)*kb;});
           const ids=Object.keys(rein).filter(id=>saldoM[id]);
@@ -5971,9 +5959,7 @@
   }
 
   function _h2hReingewinn(t){
-    const bPot=t.spiele?.buyin_pot??einstellungen.buyin_pot;
-    const bKassa=(t.spiele?.modus==='online')||(bPot<5)?0:(t.spiele?.buyin_kassa??einstellungen.buyin_kassa);
-    return (t.payout||0)-(t.buyins||0)*(bPot+bKassa);
+    return (t.payout||0)-(t.buyins||0)*kostenProBuyin(t.spiele).gesamt;
   }
 
   function renderH2H(aId,bId){
@@ -9654,9 +9640,7 @@
       let bal=0,wins=0;const tot=(stRows||[]).filter(r=>r.spiele?.abgeschlossen).length;
       (stRows||[]).forEach(r=>{
         if(!r.spiele?.abgeschlossen)return;
-        const bPot=r.spiele?.buyin_pot||0;
-        const bKassa=(r.spiele?.modus==='online')||(bPot<5)?0:(r.spiele?.buyin_kassa||0);
-        const n=(r.payout||0)-(r.buyins||0)*(bPot+bKassa);
+        const n=(r.payout||0)-(r.buyins||0)*kostenProBuyin(r.spiele).gesamt;
         bal+=n;if(n>0)wins++;
       });
       (txRows||[]).forEach(t=>{if(t.nach_spieler_id===sid)bal+=t.betrag||0;if(t.von_spieler_id===sid)bal-=t.betrag||0;});
