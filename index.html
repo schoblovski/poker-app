@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.16">
+  <meta name="version" content="4.17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.16';
+  const VERSION='4.17';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2951,7 +2951,7 @@
     el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
     // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
     const _homeRes=await Promise.all([
-      db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot'),
+      db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot,eintrittsdatum'),
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
@@ -3152,13 +3152,18 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
     showPage('spieler-stats');
 
-    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData}]=await Promise.all([
+    // eintrittsdatum kann fehlen, wenn das Spieler-Objekt aus einer schlanken Query stammt
+    // (z.B. Online-Tisch). Dann parallel nachladen, damit «Dabei seit» nicht auf «–» zurückfällt.
+    const needSince=spieler.eintrittsdatum===undefined&&!!spieler.id;
+    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData},sinceRes]=await Promise.all([
       db.from('spiel_teilnehmer').select('*,spiele(id,datum,abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
+      needSince?db.from('spieler').select('eintrittsdatum').eq('id',spieler.id).single():Promise.resolve(null),
     ]);
+    if(needSince&&sinceRes?.data)spieler={...spieler,eintrittsdatum:sinceRes.data.eintrittsdatum};
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
     const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen).sort((a,b)=>(b.spiele?.datum||'').localeCompare(a.spiele?.datum||''));
@@ -5298,7 +5303,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     await _ensureSpielerMap();
     const _statRes=await Promise.all([
-      db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
+      db.from('spieler').select('id,name,profilbild,eintrittsdatum').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
       db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
@@ -7083,6 +7088,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.17',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Spieler-Statistik: In der Kopfzeile steht wieder „Dabei seit <Monat Jahr>". Bisher fehlte bei allen Spielern das Datum, weil das Eintrittsdatum beim Öffnen der Statistik nicht mitgeladen wurde'},
+    ]},
     {version:'4.16',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Pokerkasse-Detail (Kachel „Pokerkasse" auf der Startseite): KI-Bots werden nicht mehr in der Spielerliste angezeigt – sie zählen ohnehin nie zur Pokerkasse. Inaktive Spieler erscheinen nur noch, wenn ihr Kontostand nicht null ist. Der ausgewiesene Pokerkasse-Betrag bleibt dabei unverändert'},
       {typ:'verbessert',text:'Zeitzone: Die App rechnet und zeigt Datum und Uhrzeit jetzt immer in österreichischer Zeit – egal, wo sich das bedienende Gerät gerade befindet. Eine z.B. nach Mitternacht im Ausland erfasste Transaktion landet damit am korrekten österreichischen Kalendertag, und alle sehen dasselbe Datum und dieselbe Uhrzeit (u.a. Verlauf, Transaktionen, Spiele, Hände und Online-Sessions)'},
