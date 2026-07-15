@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.15">
+  <meta name="version" content="4.16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.15';
+  const VERSION='4.16';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -7083,6 +7083,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.16',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Pokerkasse-Detail (Kachel „Pokerkasse" auf der Startseite): KI-Bots werden nicht mehr in der Spielerliste angezeigt – sie zählen ohnehin nie zur Pokerkasse. Inaktive Spieler erscheinen nur noch, wenn ihr Kontostand nicht null ist. Der ausgewiesene Pokerkasse-Betrag bleibt dabei unverändert'},
+      {typ:'verbessert',text:'Zeitzone: Die App rechnet und zeigt Datum und Uhrzeit jetzt immer in österreichischer Zeit – egal, wo sich das bedienende Gerät gerade befindet. Eine z.B. nach Mitternacht im Ausland erfasste Transaktion landet damit am korrekten österreichischen Kalendertag, und alle sehen dasselbe Datum und dieselbe Uhrzeit (u.a. Verlauf, Transaktionen, Spiele, Hände und Online-Sessions)'},
+      {typ:'verbessert',text:'Neue Transaktion: Bei Von und Nach lässt sich nicht mehr dieselbe Person auswählen – die im einen Feld gewählte Person wird im anderen automatisch gesperrt (eine Transaktion an sich selbst ergibt keinen Sinn)'},
+    ]},
     {version:'4.15',datum:'Juli 2026',eintraege:[
       {typ:'verbessert',text:'Konto/Transaktionen: Die Liste lädt jetzt beim Scrollen automatisch immer weiter nach – auch sehr alte Buchungen sind wieder erreichbar (bisher waren nur die letzten 100 sichtbar)'},
       {typ:'verbessert',text:'Aktives Spiel: „Spiel abschließen" ist jetzt grün hervorgehoben (die eigentliche Erfolgs-Aktion des Abends), „Spiel verwerfen" rot (löscht das Spiel unwiderruflich)'},
