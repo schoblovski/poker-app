@@ -94,6 +94,7 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | kommentar   | text |                                       |
 | beweisfoto  | text | Base64-JPEG (komprimiert, max 1024px) |
 | spiel_id    | uuid | FK → spiele (optional)                |
+| online_spiel_id | uuid | FK → online_spiele (optional). Gesetzt wenn die Hand am Online-Tisch («Hand festhalten») erfasst wurde; bei Payout-Bestätigung wird spiel_id nachgetragen. ON DELETE SET NULL |
 
 ### `einstellungen`
 
@@ -285,7 +286,7 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
     3. auf Test Ergebnisse warten
     4. wenn alles ok ist, changelog Inhalt entwerfen und ausgeben
     5. erst nach ausdrücklichem Einverständnis: Version & Changelog im Code aktualisieren, auf dem Feature-Branch committen, dann in `main` mergen und `main` pushen
-- **Aktuelle Version: 4.10**
+- **Aktuelle Version: 4.11**
 
 ## Login-Provider
 

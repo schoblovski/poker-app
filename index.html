@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.10">
+  <meta name="version" content="4.11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1305,7 +1305,7 @@
           <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Hand festhalten</div>
           <div style="font-size:10px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:2px 7px;border-radius:20px">Profi-Tipp</div>
         </div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Hat jemand eine besondere Hand gewonnen (Royal Flush, Poker, Straight Flush, 7-2)? Drücke jederzeit den runden <b>+</b>-Button und dann <b>„Hand festhalten"</b>. Die App erstellt automatisch ein Tischbild als Beweisfoto (inkl. aufgedeckter Karten), füllt den Gewinner vor und wählt falls erkannt den Hand-Typ aus. Du kannst alles noch anpassen bevor du speicherst. Der gespeicherte Eintrag erscheint direkt im Verlauf und wird in den „Besonderen Hände" der Statistik erfasst.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Hat jemand eine besondere Hand gewonnen (Royal Flush, Poker, Straight Flush, 7-2)? Drücke jederzeit den runden <b>+</b>-Button und dann <b>„Hand festhalten"</b>. Die App erstellt automatisch ein Tischbild als Beweisfoto (inkl. aufgedeckter Karten), füllt den Gewinner vor und wählt falls erkannt den Hand-Typ aus. Du kannst alles noch anpassen bevor du speicherst. Der gespeicherte Eintrag erscheint in den „Besonderen Hände" der Statistik und wird der Online-Session zugeordnet — nach der Abrechnung erscheint er auch im Spiel-Detail. Bei einer <b>7-2</b>-Hand wird automatisch €1 von jedem menschlichen Mitspieler der Session an den Gewinner gebucht (nicht bei Test-Sessions).</div>
       </div>
 
       <!-- Abrechnung -->
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.10';
+  const VERSION='4.11';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1714,6 +1714,9 @@
     return v < 0 ? `−\u00a0€${formatted}` : `€\u00a0${formatted}`;
   };
   const fmtSigned=v=>(v>=0?'+':'')+`\u00a0€${v.toFixed(2)}`;
+  // Lokales Kalenderdatum als YYYY-MM-DD (NICHT toISOString – das liefert UTC und
+  // nach Mitternacht bis 01:00/02:00 Lokalzeit das Datum des Vortags!)
+  const localDateStr=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const escHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
@@ -3959,7 +3962,7 @@
       const ks=berechneKontostaende(spieler||[],trans||[],verlauf||[],spieleMap);
       const bank=spieler?.find(s=>s.ist_bank);
       const aktiveSpieler=(spieler||[]).filter(s=>s.aktiv&&!s.ist_bank);
-      const heute=new Date().toISOString().split('T')[0];
+      const heute=localDateStr();
       let n=0;
       await save(async()=>{
         for(const s of aktiveSpieler){
@@ -4234,7 +4237,7 @@
     const name=document.getElementById('form-name').value.trim(),email=document.getElementById('form-email').value.trim()||null;
     if(!name){await showAlert('Name ist erforderlich.');return;}
     if(editSpielerID){await save(()=>db.from('spieler').update({name,email}).eq('id',editSpielerID),`${name} aktualisiert`);}
-    else{await save(()=>db.from('spieler').insert({name,email,aktiv:true,eintrittsdatum:new Date().toISOString().split('T')[0]}),`Neuer Spieler: ${name}`);}
+    else{await save(()=>db.from('spieler').insert({name,email,aktiv:true,eintrittsdatum:localDateStr()}),`Neuer Spieler: ${name}`);}
     _invalidateSpielerMap();
     document.getElementById('modal-spieler-form').classList.remove('open');
     await loadVerwaltung();await loadHome();
@@ -4271,7 +4274,7 @@
 
   function openTransaktionModal(t){
     editTransaktionID=t?.id||null;
-    document.getElementById('trans-datum').value=t?.datum||new Date().toISOString().split('T')[0];
+    document.getElementById('trans-datum').value=t?.datum||localDateStr();
     document.getElementById('trans-betrag').value=t?t.betrag.toFixed(2):'';
     const opts=alleSpieler.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
     document.getElementById('trans-von').innerHTML=`<option value="">– leer –</option>${opts}`;
@@ -4550,7 +4553,7 @@
     if(!await confirmAction('Spiel wirklich abschließen? Alle Ergebnisse werden gespeichert.'))return;
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
     // Push pro Spieler mit individuellen Ergebnissen
-    const datum=aktuellesSpiel.datum||new Date().toISOString().slice(0,10);
+    const datum=aktuellesSpiel.datum||localDateStr();
     const datumStr=new Date(datum+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
     const spielId=aktuellesSpiel.id;
     // Kontostände nach Abschluss berechnen für Push
@@ -4621,7 +4624,7 @@
     if(selectedCards.length<2){await showAlert('Bitte mindestens 2 Spieler auswählen.');return;}
     // Duplikate in Auswahl verhindern (Sicherheitsnetz)
     const uniqueIds=[...new Set(selectedCards.map(el=>el.dataset.id))];
-    const{data:neuesSpiel}=await db.from('spiele').insert({datum:new Date().toISOString().split('T')[0],buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa}).select().single();
+    const{data:neuesSpiel}=await db.from('spiele').insert({datum:localDateStr(),buyin_pot:einstellungen.buyin_pot,buyin_kassa:einstellungen.buyin_kassa}).select().single();
     await db.from('spiel_teilnehmer').insert(uniqueIds.map(id=>({spiel_id:neuesSpiel.id,spieler_id:id,buyins:1,payout:0,leihgabe:0})));
     uniqueIds.forEach(id=>triggerPush({spieler_ids:[id],title:'Buy-In hinzugefügt',body:`Buy-In #1 wurde für dich erfasst (${fmt(kostenProBuyin(neuesSpiel).bPot)} im Pot)`,data:{url:'/#spiel',tag:'buyin'},kategorie:'buyins'}));
     document.getElementById('modal-spieler-auswahl').classList.remove('open');
@@ -6884,6 +6887,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.11',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Datum: Neue Spiele, Transaktionen und Hände bekommen jetzt zuverlässig das lokale Kalenderdatum. Bisher konnten Einträge, die spätabends nach Mitternacht erfasst wurden, je nach Zeitzone auf dem Vortag landen'},
+      {typ:'fix',text:'Online-Modus „Hand festhalten": Eine am Online-Tisch festgehaltene Hand wird nicht mehr fälschlich einem parallel laufenden Cash-Spiel zugeordnet. Sie wird der Online-Session zugeordnet und erscheint nach der Abrechnung im Spiel-Detail'},
+      {typ:'neu',text:'Online-Modus: Bei einer festgehaltenen 7-2-Hand wird jetzt automatisch €1 von jedem menschlichen Mitspieler der Session an den Gewinner gebucht (nicht bei Test-Sessions und nicht von Bots)'},
+    ]},
     {version:'4.10',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Aktuelles Spiel: Pot-Anzeige, „im Pot"-Beträge, Rest-Berechnung und Buy-In-Benachrichtigungen rechnen jetzt mit den beim Eröffnen gespeicherten Buy-In-Faktoren des Spiels – Änderungen an den Einstellungen wirken sich nicht mehr auf ein laufendes Spiel aus'},
       {typ:'verbessert',text:'Sonder-Spielabende (z.B. Pokernacht): Buy-In-Faktoren können jetzt frei eingestellt werden – auch unter €5 Pot und €0 Pokerkasse. Vor Spielstart in den Einstellungen anpassen, das Spiel merkt sich die Werte'},
@@ -7799,8 +7807,11 @@
     const fotoRemoved=_handFotoOriginal&&!foto;
     const fotoIsNewUpload=foto&&foto.startsWith('data:');
 
-    // Aktuelles Spiel-ID (falls vorhanden)
-    const spielID=aktuellesSpiel?.id||null;
+    // Kontext VOR dem Speichern lesen: kommt der Aufruf vom Online-Tisch («Hand festhalten»)?
+    // Dann darf NICHT das parallel laufende Cash-Spiel verknüpft werden – der spiele-Eintrag
+    // der Online-Session entsteht erst bei der Payout-Bestätigung (Verknüpfung via online_spiel_id).
+    const hfCtx=_pm?._handFesthaltenCtx||null;
+    const spielID=hfCtx?null:(aktuellesSpiel?.id||null);
 
     await save(async()=>{
       if(editHandID){
@@ -7814,7 +7825,7 @@
         if(fotoRemoved)await deleteFotoFromStorage(_handFotoOriginal,'beweisfotos');
       } else {
         // Neue Hand: Insert ohne Foto, um ID zu bekommen; danach Storage-Upload + Update
-        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,datum:new Date().toISOString().split('T')[0],hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:null}).select('id').single();
+        const{data:insertedHand}=await db.from('hand_statistik').insert({spiel_id:spielID,online_spiel_id:hfCtx?.session_id||null,datum:localDateStr(),hand:selectedHandType,gewinner_id:gewinnerID,kommentar,beweisfoto:null}).select('id').single();
         if(fotoIsNewUpload&&insertedHand?.id){
           const beweisfoto=await uploadFotoToStorage(foto,'beweisfotos',insertedHand.id);
           await db.from('hand_statistik').update({beweisfoto}).eq('id',insertedHand.id);
@@ -7835,7 +7846,7 @@
           const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('spieler_id').eq('spiel_id',spielID);
           const mitspieler=(teilnehmer||[]).filter(t=>t.spieler_id!==gewinnerID);
           if(mitspieler.length>0){
-            const heute=new Date().toISOString().split('T')[0];
+            const heute=localDateStr();
             const transaktionen=mitspieler.map(t=>({
               datum:heute,
               von_spieler_id:t.spieler_id,
@@ -7845,6 +7856,22 @@
             }));
             await db.from('transaktionen').insert(transaktionen);
           }
+        } else if(selectedHandType==='7-2'&&hfCtx){
+          // 7-2 am Online-Tisch: Mitspieler = menschliche Session-Teilnehmer mit echten
+          // Buy-Ins (ohne Bots, ohne Gewinner). Bei Test-Sessions kein echtes Geld → keine Transaktionen.
+          if(!_pm?.session?.is_test){
+            const mitspieler=(_pm?.seats||[]).filter(s=>!s.spieler?.ist_bot&&(s.buyins||0)>0&&s.spieler_id&&s.spieler_id!==gewinnerID);
+            if(mitspieler.length>0){
+              const heute=localDateStr();
+              await db.from('transaktionen').insert(mitspieler.map(s=>({
+                datum:heute,
+                von_spieler_id:s.spieler_id,
+                nach_spieler_id:gewinnerID,
+                betrag:1,
+                kommentar:'7-2 Gewinn'
+              })));
+            }
+          }
         }
       }
     },editHandID?'Hand aktualisiert':'Hand erfasst');
@@ -7852,8 +7879,9 @@
     document.getElementById('hand-loeschen')?.remove();
     document.getElementById('modal-hand').classList.remove('open');
     // PM: write feed entry if triggered from "Hand festhalten" FAB
-    if(_pm?._handFesthaltenCtx){
-      const _hfCtx=_pm._handFesthaltenCtx;_pm._handFesthaltenCtx=null;
+    // (Kontext wurde bereits VOR dem Speichern in hfCtx gelesen)
+    if(hfCtx){
+      const _hfCtx=hfCtx;if(_pm)_pm._handFesthaltenCtx=null;
       const _hfWinner=alleSpieler.find(s=>s.id===document.getElementById('hand-gewinner').value);
       const _hfEntry={id:`_hrec_${Date.now()}`,online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,amount:0,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'},created_at:new Date().toISOString(),spieler:currentSpieler?{name:currentSpieler.name,profilbild:currentSpieler.profilbild}:null};
       db.from('online_actions').insert({online_spiel_id:_hfCtx.session_id,spieler_id:currentSpieler?.id||null,action:'hand_recorded',hand_nr:_hfCtx.hand_nr,meta:{hand:selectedHandType,winner_name:_hfWinner?.name||'?'}}).then(()=>{}).catch(e=>console.warn('hand_recorded insert failed',e));
@@ -10685,7 +10713,7 @@
         // Guard against double-submission
         if(_pm?.session?.spiel_id){await showAlert('Ergebnis wurde bereits übernommen.');overlay.remove();_pmUnsubscribe();showPage('online-lobby');return;}
         // Create the spiele entry now (deferred from session creation to avoid phantom entries)
-        const today=new Date().toISOString().split('T')[0];
+        const today=localDateStr();
         const{data:ns,error:nsErr}=await db.from('spiele').insert({
           datum:today,
           buyin_pot:einstellungen?.buyin_pot??5,
@@ -10715,6 +10743,10 @@
         }));
         const{error:insErr}=await db.from('spiel_teilnehmer').insert(entries);
         if(insErr){await showAlert('Fehler beim Speichern der Teilnehmer: '+insErr.message);if(confirmBtn)confirmBtn.disabled=false;if(skipBtn)skipBtn.disabled=false;return;}
+        // Festgehaltene Hände dieser Session mit dem neuen spiele-Eintrag verknüpfen
+        // → sie erscheinen damit im Spiel-Detail (nicht kritisch, Fehler nur loggen)
+        const{error:handLinkErr}=await db.from('hand_statistik').update({spiel_id:newSpielId}).eq('online_spiel_id',_pm.id).is('spiel_id',null);
+        if(handLinkErr)console.warn('Hand-Verknüpfung fehlgeschlagen',handLinkErr);
       }
 
       overlay.remove();
