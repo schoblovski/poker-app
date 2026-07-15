@@ -1460,6 +1460,19 @@
   const KOMMENTAR_VORLAGEN=['Verpflegung (Bier | Snacks)','Pfand','Pokernacht','Einzahlung','Habenzinsen','Kapitalertragssteuer','Spende'];
   const PUSH_FUNCTION_URL=`${SUPABASE_URL}/functions/v1/send-push`;
 
+  // Push-Kategorien: EINE zentrale Default-Definition (alle 7 Kategorien default AN).
+  // Das initiale Upsert setzt ohnehin alles auf true; alte Subscriptions ohne die
+  // neueren Keys verhalten sich dadurch konsistent. Dieselbe Semantik gilt in der
+  // Edge Function send-push.
+  const PUSH_CAT_DEFAULTS={spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true,online_spiel:true,session_start:true};
+  // Ist die Kategorie kat für die gegebenen Subscription-Einstellungen aktiv?
+  // Fehlender/undefined/null Key → Default aus PUSH_CAT_DEFAULTS; explizit false → aus.
+  function pushCatEnabled(einstellungen,kat){
+    const e=einstellungen||{};
+    if(e[kat]===undefined||e[kat]===null)return PUSH_CAT_DEFAULTS[kat]!==false;
+    return e[kat]!==false;
+  }
+
   // Sendet Push-Notification über die Edge Function (fire-and-forget)
   // + speichert In-App-Benachrichtigung pro Empfänger in der DB
   function triggerPush({spieler_ids=[], title, body, data={}, kategorie}){
@@ -3717,13 +3730,13 @@
       pushStatusText.textContent='Aktiv';
 
       const e=row.einstellungen||{};
-      document.getElementById('push-cat-spiele').checked=!!e.spielergebnisse;
-      document.getElementById('push-cat-buyins').checked=e.buyins!==false;
-      document.getElementById('push-cat-hand').checked=e.neue_hand!==false;
-      document.getElementById('push-cat-trans').checked=!!e.transaktionen;
-      document.getElementById('push-cat-updates').checked=!!e.app_updates;
-      document.getElementById('push-cat-online').checked=e.online_spiel!==false;
-      document.getElementById('push-cat-session-start').checked=!!e.session_start;
+      document.getElementById('push-cat-spiele').checked=pushCatEnabled(e,'spielergebnisse');
+      document.getElementById('push-cat-buyins').checked=pushCatEnabled(e,'buyins');
+      document.getElementById('push-cat-hand').checked=pushCatEnabled(e,'neue_hand');
+      document.getElementById('push-cat-trans').checked=pushCatEnabled(e,'transaktionen');
+      document.getElementById('push-cat-updates').checked=pushCatEnabled(e,'app_updates');
+      document.getElementById('push-cat-online').checked=pushCatEnabled(e,'online_spiel');
+      document.getElementById('push-cat-session-start').checked=pushCatEnabled(e,'session_start');
     }
 
     await loadPushState();
@@ -3753,7 +3766,7 @@
             endpoint:sub.endpoint,
             p256dh,
             auth:authStr,
-            einstellungen:{spielergebnisse:true,buyins:true,neue_hand:true,transaktionen:true,app_updates:true,online_spiel:true},
+            einstellungen:{...PUSH_CAT_DEFAULTS},
             aktualisiert_am:new Date().toISOString()
           },{onConflict:'endpoint'});
           if(upsertErr){
@@ -3763,12 +3776,13 @@
           }
           pushStatusText.textContent='Aktiv';
           pushCategories.style.display='block';
-          // Kategorie-Checkboxen auf Standard setzen
+          // Kategorie-Checkboxen auf Standard setzen (alle default AN)
           document.getElementById('push-cat-spiele').checked=true;
           document.getElementById('push-cat-buyins').checked=true;
           document.getElementById('push-cat-hand').checked=true;
           document.getElementById('push-cat-trans').checked=true;
           document.getElementById('push-cat-updates').checked=true;
+          document.getElementById('push-cat-online').checked=true;
           document.getElementById('push-cat-session-start').checked=true;
           console.log('✅ Push-Subscription gespeichert');
         }catch(err){
@@ -3953,7 +3967,7 @@
 
       // Aktuelle Kontostände berechnen
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
-        db.from('spieler').select('*').eq('aktiv',true),
+        db.from('spieler').select('*').eq('aktiv',true).or('ist_bot.is.null,ist_bot.eq.false'),
         db.from('transaktionen').select('*'),
         db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
         db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
@@ -4202,8 +4216,7 @@
       const card=document.getElementById('detail-push-card');
       const{data:subs}=await db.from('push_subscriptions').select('einstellungen,aktualisiert_am,endpoint').eq('spieler_id',s.id).order('aktualisiert_am',{ascending:false});
       if(!subs||subs.length===0){card.innerHTML=`<span style="color:var(--text-tertiary)">Keine Geräte registriert</span>`;return;}
-      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates',online_spiel:'Online-Modus'};
-      const catActive=(e,k)=>k==='buyins'||k==='neue_hand'||k==='online_spiel'?e[k]!==false:!!e[k];
+      const catLabels={spielergebnisse:'Spielergebnisse',buyins:'Buy-Ins',neue_hand:'Besondere Hände',transaktionen:'Transaktionen',app_updates:'App-Updates',online_spiel:'Online-Modus',session_start:'Session gestartet'};
       function deviceName(ep){
         if(ep.includes('fcm.googleapis.com'))return'Chrome / Android';
         if(ep.includes('mozilla.com'))return'Firefox';
@@ -4216,7 +4229,7 @@
         +subs.map((sub,i)=>{
           const e=sub.einstellungen||{};
           const date=sub.aktualisiert_am?new Date(sub.aktualisiert_am).toLocaleDateString('de-CH'):'';
-          const cats=Object.entries(catLabels).map(([k,v])=>`<span class="badge ${catActive(e,k)?'badge-green':'badge-red'}" style="font-size:11px">${v}</span>`).join('');
+          const cats=Object.entries(catLabels).map(([k,v])=>`<span class="badge ${pushCatEnabled(e,k)?'badge-green':'badge-red'}" style="font-size:11px">${v}</span>`).join('');
           return`<div style="padding:var(--space-sm) var(--space-md);${i<subs.length-1?'border-bottom:1px solid var(--border)':''}">
             <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${deviceName(sub.endpoint)}<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:8px">${date}</span></div>
             <div style="display:flex;flex-wrap:wrap;gap:4px">${cats}</div>
@@ -5104,7 +5117,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     await _ensureSpielerMap();
     const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
-      db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).order('name'),
+      db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
       db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
