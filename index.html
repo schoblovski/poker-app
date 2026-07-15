@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.10">
+  <meta name="version" content="4.11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.10';
+  const VERSION='4.11';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -6887,6 +6887,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.11',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Datum: Neue Spiele, Transaktionen und Hände bekommen jetzt zuverlässig das lokale Kalenderdatum. Bisher konnten Einträge, die spätabends nach Mitternacht erfasst wurden, je nach Zeitzone auf dem Vortag landen'},
+      {typ:'fix',text:'Online-Modus „Hand festhalten": Eine am Online-Tisch festgehaltene Hand wird nicht mehr fälschlich einem parallel laufenden Cash-Spiel zugeordnet. Sie wird der Online-Session zugeordnet und erscheint nach der Abrechnung im Spiel-Detail'},
+      {typ:'neu',text:'Online-Modus: Bei einer festgehaltenen 7-2-Hand wird jetzt automatisch €1 von jedem menschlichen Mitspieler der Session an den Gewinner gebucht (nicht bei Test-Sessions und nicht von Bots)'},
+    ]},
     {version:'4.10',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Aktuelles Spiel: Pot-Anzeige, „im Pot"-Beträge, Rest-Berechnung und Buy-In-Benachrichtigungen rechnen jetzt mit den beim Eröffnen gespeicherten Buy-In-Faktoren des Spiels – Änderungen an den Einstellungen wirken sich nicht mehr auf ein laufendes Spiel aus'},
       {typ:'verbessert',text:'Sonder-Spielabende (z.B. Pokernacht): Buy-In-Faktoren können jetzt frei eingestellt werden – auch unter €5 Pot und €0 Pokerkasse. Vor Spielstart in den Einstellungen anpassen, das Spiel merkt sich die Werte'},
