@@ -94,6 +94,7 @@ Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 | kommentar   | text |                                       |
 | beweisfoto  | text | Base64-JPEG (komprimiert, max 1024px) |
 | spiel_id    | uuid | FK → spiele (optional)                |
+| online_spiel_id | uuid | FK → online_spiele (optional). Gesetzt wenn die Hand am Online-Tisch («Hand festhalten») erfasst wurde; bei Payout-Bestätigung wird spiel_id nachgetragen. ON DELETE SET NULL |
 
 ### `einstellungen`
 
