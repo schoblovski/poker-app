@@ -3152,13 +3152,18 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
     showPage('spieler-stats');
 
-    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData}]=await Promise.all([
+    // eintrittsdatum kann fehlen, wenn das Spieler-Objekt aus einer schlanken Query stammt
+    // (z.B. Online-Tisch). Dann parallel nachladen, damit «Dabei seit» nicht auf «–» zurückfällt.
+    const needSince=spieler.eintrittsdatum===undefined&&!!spieler.id;
+    const[{data:verlauf},{data:haende},{data:transOut},{data:transIn},{data:spieleData},sinceRes]=await Promise.all([
       db.from('spiel_teilnehmer').select('*,spiele(id,datum,abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spieler_id',spieler.id).order('created_at',{ascending:false}),
       db.from('hand_statistik').select('*').eq('gewinner_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('von_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('transaktionen').select('*').eq('nach_spieler_id',spieler.id).order('datum',{ascending:false}),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true),
+      needSince?db.from('spieler').select('eintrittsdatum').eq('id',spieler.id).single():Promise.resolve(null),
     ]);
+    if(needSince&&sinceRes?.data)spieler={...spieler,eintrittsdatum:sinceRes.data.eintrittsdatum};
     const spieleMap={};(spieleData||[]).forEach(s=>{spieleMap[s.id]=s;});
 
     const abg=(verlauf||[]).filter(t=>t.spiele?.abgeschlossen).sort((a,b)=>(b.spiele?.datum||'').localeCompare(a.spiele?.datum||''));
