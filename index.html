@@ -2951,7 +2951,7 @@
     el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
     // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
     const _homeRes=await Promise.all([
-      db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot'),
+      db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot,eintrittsdatum'),
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
@@ -5298,7 +5298,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     await _ensureSpielerMap();
     const _statRes=await Promise.all([
-      db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
+      db.from('spieler').select('id,name,profilbild,eintrittsdatum').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
       db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
