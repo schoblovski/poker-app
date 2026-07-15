@@ -1734,6 +1734,9 @@
     if(cents===0)return `€\u00a0${formatted}`;
     return (cents>0?'+':'−')+`\u00a0€${formatted}`;
   };
+  // Eingabe-Format fuer Betragsfelder: Komma-Dezimal OHNE Tausendertrennung,
+  // damit der Wert via .replace(',','.') weiterhin parsebar bleibt ("1234,50" -> 1234.5).
+  const fmtInput=v=>v.toFixed(2).replace('.',',');
   // Eine Datums-Locale fuer die ganze App (toLocaleDateString-Aufrufe).
   const LOCALE='de-AT';
   // Lokales Kalenderdatum als YYYY-MM-DD (NICHT toISOString – das liefert UTC und
@@ -4305,7 +4308,7 @@
   function openTransaktionModal(t){
     editTransaktionID=t?.id||null;
     document.getElementById('trans-datum').value=t?.datum||localDateStr();
-    document.getElementById('trans-betrag').value=t?t.betrag.toFixed(2):'';
+    document.getElementById('trans-betrag').value=t?fmtInput(t.betrag):'';
     const opts=alleSpieler.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
     document.getElementById('trans-von').innerHTML=`<option value="">– leer –</option>${opts}`;
     document.getElementById('trans-nach').innerHTML=`<option value="">– leer –</option>${opts}`;
@@ -4354,7 +4357,7 @@
     document.getElementById('modal-transaktion').classList.add('open');
   }
   document.getElementById('trans-abbrechen').addEventListener('click',()=>document.getElementById('modal-transaktion').classList.remove('open'));
-  document.getElementById('trans-betrag').addEventListener('blur',e=>{const v=parseFloat(e.target.value.replace(',','.'));if(!isNaN(v)&&v>0)e.target.value=v.toFixed(2);});
+  document.getElementById('trans-betrag').addEventListener('blur',e=>{const v=parseFloat(e.target.value.replace(',','.'));if(!isNaN(v)&&v>0)e.target.value=fmtInput(v);});
   document.getElementById('trans-speichern').addEventListener('click',async()=>{
     const datum=document.getElementById('trans-datum').value;
     const von=document.getElementById('trans-von').value||null;
@@ -4473,7 +4476,7 @@
         const tid = btn.dataset.tid;
         const neu = parseFloat(btn.dataset.neu);
         const input = document.getElementById('payout-'+tid);
-        if(input){ input.value = neu.toFixed(2); input.dispatchEvent(new Event('change')); }
+        if(input){ input.value = fmtInput(neu); input.dispatchEvent(new Event('change')); }
         const t = spielTeilnehmer.find(x=>x.id===tid);
         if(t) await save(()=>db.from('spiel_teilnehmer').update({payout:neu}).eq('id',tid),`PayOut ${t.spieler.name}: €${neu}`);
         updatePotUI();
@@ -4516,7 +4519,7 @@
     <div class="section-title">Ergebnis (PayOut)</div>
     <div class="card" style="margin-top:var(--space-sm)">`;
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0,00"><span class="payout-unit">€</span></div>`;
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?fmtInput(t.payout):''}" placeholder="0,00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
     <div class="pot-summary" id="pot-rest-summary" style="flex-direction:column;gap:8px;text-align:center">
@@ -4538,13 +4541,13 @@
     spielTeilnehmer.forEach(t=>{
       document.getElementById('payout-'+t.id)?.addEventListener('change',async e=>{
         const payout=parseFloat(e.target.value.replace(',','.'))||0;
-        if(e.target.value!=='') e.target.value=payout.toFixed(2);
+        if(e.target.value!=='') e.target.value=fmtInput(payout);
         await save(()=>db.from('spiel_teilnehmer').update({payout}).eq('id',t.id),`PayOut ${t.spieler.name}: €${payout}`);
         updatePotUI();
       });
       document.getElementById('payout-'+t.id)?.addEventListener('blur',e=>{
         const v=parseFloat(e.target.value.replace(',','.'));
-        if(!isNaN(v)&&e.target.value!=='') e.target.value=v.toFixed(2);
+        if(!isNaN(v)&&e.target.value!=='') e.target.value=fmtInput(v);
       });
       document.getElementById('payout-'+t.id)?.addEventListener('input',updatePotUI);
     });
