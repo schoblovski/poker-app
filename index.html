@@ -1311,7 +1311,7 @@
       <!-- Abrechnung -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Abrechnung</div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn du dich an den Tisch setzt, erhältst du automatisch deinen ersten Buy-In (einen vollen Startstack). Ein weiterer Buy-In (Rebuy) ist <b>nur möglich, wenn dein Stack komplett leer ist</b> – und immer nur <b>genau einer auf einmal</b>. Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein.</div>
       </div>
 
       <!-- Statistik & KPIs -->
@@ -9150,7 +9150,7 @@
       document.getElementById('btn-pm-start')?.addEventListener('click',_pmStartHand);
       document.getElementById('btn-pm-reveal')?.addEventListener('click',_pmRevealCards);
       document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
-      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn(1);});
+      document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn();});
       document.getElementById('btn-pm-sitdown')?.addEventListener('click',_pmHandleSitDown);
       document.getElementById('btn-pm-sitdown-spectate')?.addEventListener('click',_pmHandleSitDownSpectate);
     }else if(id==='pm-s-cards'){
@@ -9873,7 +9873,7 @@
     document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     document.getElementById('btn-pm-pause')?.addEventListener('click',_pmPauseSheet);
     document.getElementById('btn-pm-resume')?.addEventListener('click',()=>_pmAct('resume'));
-    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn(1);});
+    document.getElementById('btn-pm-spectate-buyin')?.addEventListener('click',async()=>{await _pmBuyIn();});
     // FAB – touch events (reliable on iOS, avoids setPointerCapture bugs)
     const _fab=document.getElementById('pm-fab');
     let _fabDragged=false,_fabTouchId=-1;
@@ -10395,8 +10395,9 @@
     _pmLoad();
   }
 
-  async function _pmBuyIn(count=1){
+  async function _pmBuyIn(){
     if(!_pm?.mySeat||!currentSpieler)return;
+    const count=1; // Online-Modus: immer genau 1 Buy-In auf einmal
     const btn=document.getElementById('btn-pm-buyin')||document.getElementById('btn-pm-spectate-buyin');
     if(btn)btn.disabled=true;
     const startStack=_pm.session?.start_stack||100;
@@ -10407,6 +10408,8 @@
     const sessionRunning=_pm.session?.status==='running'&&!!_pm.session?.current_player_id;
     // Block double buy-in: sitting_out observer already has chips waiting for next hand
     if(_pm.mySeat.status==='sitting_out'&&(_pm.mySeat.stack||0)>0){if(btn)btn.disabled=false;await showAlert('Du hast bereits einen Buy-In für die nächste Spielrunde vorgemerkt.');return;}
+    // Rebuy nur bei leerem Stack: solange noch Chips da sind, ist kein neuer Buy-In erlaubt
+    if(curStack>0){if(btn)btn.disabled=false;await showAlert('Ein neuer Buy-In ist erst möglich, wenn dein Stack leer ist.');return;}
     // One buy-in per hand maximum for sitting_out observers during active hand
     if(sessionRunning&&_pm.mySeat.status==='sitting_out'){
       const alreadyBoughtIn=(_pm.actions||[]).some(a=>a.spieler_id===currentSpieler.id&&a.action==='buyin'&&(a.hand_nr||0)===(_pm.session?.hand_nr||0));
@@ -10437,44 +10440,32 @@
 
   function _pmBuyInSheet(){
     if(!_pm?.mySeat)return;
+    // Rebuy nur bei leerem Stack (immer genau 1 Buy-In auf einmal)
+    if((_pm.mySeat.stack||0)>0){showAlert('Ein neuer Buy-In ist erst möglich, wenn dein Stack leer ist.');return;}
     const startStack=_pm.session?.start_stack||100;
     const bPot=einstellungen?.buyin_pot??5;
     const bKassa=0; // online sessions: no pokerkasse fee
     const chipToEur=bPot/(startStack||bPot);
+    const chips=(startStack*chipToEur).toFixed(2);
+    const cost=(bPot+bKassa).toFixed(2);
     const sid='pm-buyin-sheet';document.getElementById(sid)?.remove();
-    let count=1;
     const ov=document.createElement('div');ov.id=sid;ov.className='pm-sheet-overlay';
-    const render=()=>{
-      const chips=(count*startStack*chipToEur).toFixed(2);
-      const cost=(count*(bPot+bKassa)).toFixed(2);
-      ov.querySelector('#_bi-count').textContent=String(count);
-      ov.querySelector('#_bi-chips').textContent=`€${chips} Chips`;
-      ov.querySelector('#_bi-cost').textContent=`Kosten: €${cost}`;
-      ov.querySelector('#_bi-minus').disabled=count<=1;
-    };
     ov.innerHTML=`<div class="pm-sheet">
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Buy-In</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin:var(--space-md) 0">
-        <button id="_bi-minus" class="btn btn-secondary" style="width:44px;height:44px;padding:0;font-size:22px;border-radius:50%">−</button>
-        <div style="text-align:center;min-width:60px">
-          <div id="_bi-count" style="font-size:40px;font-weight:800;font-family:var(--font-mono);line-height:1">1</div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Buy-Ins</div>
-        </div>
-        <button id="_bi-plus" class="btn btn-secondary" style="width:44px;height:44px;padding:0;font-size:22px;border-radius:50%">+</button>
+      <div style="text-align:center;margin:var(--space-md) 0">
+        <div style="font-size:40px;font-weight:800;font-family:var(--font-mono);line-height:1">1</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Buy-In</div>
       </div>
       <div style="text-align:center;margin-bottom:var(--space-lg)">
-        <div id="_bi-chips" style="font-size:16px;font-weight:700;color:var(--text-primary)"></div>
-        <div id="_bi-cost" style="font-size:12px;color:var(--text-secondary);margin-top:3px"></div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary)">€${chips} Chips</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Kosten: €${cost}</div>
       </div>
       <button id="_bi-confirm" class="btn btn-primary" style="width:100%;max-width:none">Kaufen</button>
       <button id="_bi-cancel" class="btn btn-ghost" style="width:100%;max-width:none;margin-top:8px">Abbrechen</button>
     </div>`;
     document.body.appendChild(ov);
-    render();
-    ov.querySelector('#_bi-minus').addEventListener('click',()=>{if(count>1){count--;render();}});
-    ov.querySelector('#_bi-plus').addEventListener('click',()=>{count++;render();});
-    ov.querySelector('#_bi-confirm').addEventListener('click',()=>{ov.remove();_pmBuyIn(count);});
+    ov.querySelector('#_bi-confirm').addEventListener('click',()=>{ov.remove();_pmBuyIn();});
     ov.querySelector('#_bi-cancel').addEventListener('click',()=>ov.remove());
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }

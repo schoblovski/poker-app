@@ -349,8 +349,14 @@ Deno.serve(async (req) => {
   }
 
   await db.from('online_spiele').update({ current_player_id: nextPlayer.spieler_id }).eq('id', online_spiel_id);
-  await executePreActionIfSet(db, session, updatedSeats, nextPlayer);
-  await notifyPlayer(db, nextPlayer.spieler_id, online_spiel_id);
+  const autoActed = await executePreActionIfSet(db, session, updatedSeats, nextPlayer);
+  // Kein "Du bist dran"-Push wenn:
+  //  (a) der nächste Spieler durch Pre-/Pause-Auto-Aktion sofort weitergezogen ist (autoActed), oder
+  //  (b) der nächste Spieler ein Bot ist (bot_config gesetzt) – Bots bekommen keine Pushes.
+  const nextIsBot = !!nextPlayer.bot_config;
+  if (!autoActed && !nextIsBot) {
+    await notifyPlayer(db, nextPlayer.spieler_id, online_spiel_id);
+  }
 
   return json({ ok: true, next_player: nextPlayer.spieler_id });
 
@@ -361,7 +367,7 @@ Deno.serve(async (req) => {
 });
 
 // Nächster aktiver Spieler nach fromIdx (im Uhrzeigersinn)
-function findNextActivePlayer(seats: { spieler_id: string; status: string }[], fromIdx: number) {
+function findNextActivePlayer(seats: { spieler_id: string; status: string; bot_config?: unknown }[], fromIdx: number) {
   const n = seats.length;
   for (let i = 1; i < n; i++) {
     const s = seats[(fromIdx + i) % n];
@@ -380,12 +386,15 @@ function findPrevActivePlayer(seats: { spieler_id: string; status: string }[], f
   return null;
 }
 
+// Führt eine hinterlegte Pre-/Pause-Auto-Aktion des nächsten Spielers aus.
+// Rückgabe: true, wenn eine Auto-Aktion tatsächlich ausgeführt wurde (Zug ist damit
+// bereits weitergezogen → kein "Du bist dran"-Push für diesen Spieler nötig), sonst false.
 async function executePreActionIfSet(
   db: ReturnType<typeof createClient>,
   session: { id: string; street: string; hand_nr: number },
   seats: { id: string; spieler_id: string; status: string; bet_current_round: number; pre_action: string | null; pre_action_limit: number | null; pause_auto_action?: string | null; pause_call_limit?: number | null; stack: number }[],
   seat: { id: string; spieler_id: string; status: string; pre_action: string | null; pre_action_limit: number | null; pause_auto_action?: string | null; pause_call_limit?: number | null }
-) {
+): Promise<boolean> {
   // Paused players use pause_auto_action; active players use pre_action
   const effectiveAction = seat.status === 'paused'
     ? (seat.pause_auto_action ?? null)
@@ -394,7 +403,7 @@ async function executePreActionIfSet(
     ? (seat.pause_call_limit ?? null)
     : seat.pre_action_limit;
 
-  if (!effectiveAction) return;
+  if (!effectiveAction) return false;
 
   const maxBet = Math.max(0, ...seats
     .filter(s => s.status !== 'folded' && s.status !== 'sitting_out')
@@ -425,7 +434,7 @@ async function executePreActionIfSet(
     case 'call_any': autoAction = callAmount > 0 ? 'call' : 'check'; break;
   }
 
-  if (!autoAction) return;
+  if (!autoAction) return false;
 
   const autoRes = await fetch(`${SUPABASE_URL}/functions/v1/poker-action`, {
     method: 'POST',
@@ -439,7 +448,11 @@ async function executePreActionIfSet(
       action: autoAction,
     }),
   });
-  if (!autoRes.ok) console.error('[auto-action] failed:', seat.spieler_id, autoAction, await autoRes.text().catch(() => ''));
+  if (!autoRes.ok) {
+    console.error('[auto-action] failed:', seat.spieler_id, autoAction, await autoRes.text().catch(() => ''));
+    return false; // Auto-Aktion fehlgeschlagen → Spieler ist noch dran, Push ist berechtigt
+  }
+  return true;
 }
 
 async function handleAutoAction(
