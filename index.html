@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.15">
+  <meta name="version" content="4.16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.15';
+  const VERSION='4.16';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1756,9 +1756,41 @@
   const fmtInput=v=>v.toFixed(2).replace('.',',');
   // Eine Datums-Locale fuer die ganze App (toLocaleDateString-Aufrufe).
   const LOCALE='de-AT';
-  // Lokales Kalenderdatum als YYYY-MM-DD (NICHT toISOString – das liefert UTC und
-  // nach Mitternacht bis 01:00/02:00 Lokalzeit das Datum des Vortags!)
-  const localDateStr=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  // Die App rechnet IMMER in österreichischer Zeitzone – egal wo das Gerät gerade steht.
+  // So landet z.B. eine nach Mitternacht im Ausland erfasste Transaktion am korrekten
+  // AT-Kalendertag und alle Spieler sehen dasselbe Datum / dieselbe Uhrzeit.
+  const APP_TZ='Europe/Vienna';
+  // Aktuelles Kalenderdatum als YYYY-MM-DD in AT-Zeitzone (geräteunabhängig).
+  // NICHT getFullYear/getDate verwenden – das liefert die Gerätezeitzone und würde im
+  // Ausland nach Mitternacht das falsche Datum ergeben.
+  const localDateStr=(d=new Date())=>{
+    const p=new Intl.DateTimeFormat('en-CA',{timeZone:APP_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const g=t=>p.find(x=>x.type===t)?.value;
+    return `${g('year')}-${g('month')}-${g('day')}`;
+  };
+  // Datum in AT-Zeitzone anzeigen. Date-only-Strings (YYYY-MM-DD) werden als UTC-Mitternacht
+  // interpretiert → in Wien (UTC+1/+2) derselbe Kalendertag; volle Timestamps zeigen den
+  // AT-Tag ihres Zeitpunkts. Ersetzt `new Date(x).toLocaleDateString(LOCALE,opts)`.
+  const fmtDate=(value,opts={day:'2-digit',month:'2-digit',year:'numeric'})=>{
+    if(value==null||value==='')return '';
+    const d=(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value))?new Date(value+'T00:00:00Z'):new Date(value);
+    if(isNaN(d.getTime()))return '';
+    return d.toLocaleDateString(LOCALE,{...opts,timeZone:APP_TZ});
+  };
+  // Uhrzeit (HH:MM) in AT-Zeitzone – für Timestamps (z.B. Online-Session-Start/-Ende).
+  const fmtTimeAT=dt=>{
+    if(!dt)return '';
+    const d=dt instanceof Date?dt:new Date(dt);
+    if(isNaN(d.getTime()))return '';
+    return new Intl.DateTimeFormat('de-AT',{timeZone:APP_TZ,hour:'2-digit',minute:'2-digit',hour12:false}).format(d);
+  };
+  // Datum + Uhrzeit in AT-Zeitzone (z.B. letzter Login).
+  const fmtDateTimeAT=ts=>{
+    if(!ts)return '';
+    const d=new Date(ts);
+    if(isNaN(d.getTime()))return '';
+    return `${fmtDate(d)} ${fmtTimeAT(d)}`;
+  };
   const escHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const chevron=`<div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   const userIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
@@ -2611,7 +2643,7 @@
     if(sec<3600)return `vor ${Math.floor(sec/60)} Min`;
     if(sec<86400)return `vor ${Math.floor(sec/3600)} Std`;
     if(sec<604800)return `vor ${Math.floor(sec/86400)} Tg`;
-    return new Date(ts).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'});
+    return fmtDate(ts);
   }
   const _BENACHR_KAT_LABEL={spielergebnisse:'Spielergebnis',buyins:'Buy-In',neue_hand:'Hand',transaktionen:'Transaktion',app_updates:'App-Update',online_spiel:'Online-Spiel'};
   const _BENACHR_KAT_COLOR={spielergebnisse:'var(--accent-text)',buyins:'var(--info)',neue_hand:'var(--warning)',transaktionen:'var(--text-secondary)',app_updates:'var(--text-tertiary)',online_spiel:'var(--accent)'};
@@ -3070,13 +3102,18 @@
     const kontostaende=berechneKontostaende(allSpielerDB||[],trans,verlauf,spieleMap);
     const bankkonto=berechneBankkonto(trans||[]);
     const bankId=(allSpielerDB||[]).find(s=>s.ist_bank)?.id;
-    const nichtBank=(allSpielerDB||[]).filter(s=>!s.ist_bank);
-    const spielerSumme=nichtBank.reduce((s,sp)=>s+(kontostaende[sp.id]||0),0);
+    // Bots zählen NIE zur Pokerkasse (nur "just for fun" in Online-Sessions) → komplett ausschliessen.
+    const nichtBank=(allSpielerDB||[]).filter(s=>!s.ist_bank&&!s.ist_bot);
+    // Anzeige: alle aktiven Spieler + nur inaktive mit relevantem (≠ 0,–) Kontostand.
+    // Ausgeschlossene (inaktiv & 0,–) tragen 0 bei, daher bleibt die Pokerkasse-Summe unverändert.
+    const relevant=s=>s.aktiv||Math.round((kontostaende[s.id]||0)*100)!==0;
+    const anzeige=nichtBank.filter(relevant);
+    const spielerSumme=anzeige.reduce((s,sp)=>s+(kontostaende[sp.id]||0),0);
     const pokerkasse=bankkonto-spielerSumme;
     const fmtAbs=v=>'€\u00a0'+Math.abs(v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
     const sorted=[
-      ...nichtBank.filter(s=>s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
-      ...nichtBank.filter(s=>!s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
+      ...anzeige.filter(s=>s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
+      ...anzeige.filter(s=>!s.aktiv).sort((a,b)=>a.name.localeCompare(b.name)),
     ];
     let html=`<div class="card" style="margin-bottom:var(--space-md)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md);border-bottom:1px solid var(--border)">
@@ -3084,7 +3121,7 @@
         <span class="${ksClass(bankkonto)}" style="font-weight:600">${fmt(bankkonto)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md);border-bottom:1px solid var(--border)">
-        <span style="color:var(--text-secondary);font-size:14px">Spieler-Kontostände (${nichtBank.length})</span>
+        <span style="color:var(--text-secondary);font-size:14px">Spieler-Kontostände (${anzeige.length})</span>
         <span class="${ksClass(-spielerSumme)}" style="font-weight:600">−\u00a0${fmtAbs(spielerSumme)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:14px var(--space-md)">
@@ -3149,7 +3186,7 @@
       (transOut||[]).forEach(t=>txBal-=t.betrag||0);
       ks=gRein+txBal;
     }
-    const seit=spieler.eintrittsdatum?new Date(spieler.eintrittsdatum).toLocaleString(LOCALE, { month: 'long', year: 'numeric' }):'–';
+    const seit=spieler.eintrittsdatum?fmtDate(spieler.eintrittsdatum,{month:'long',year:'numeric'}):'–';
 
     // Avatar: initial letter fallback
     const src=getAvatar(spieler);
@@ -3237,7 +3274,7 @@
             <div class="history-scroll" style="max-height:200px;overflow-y:auto;">`; // Scrollbereich
 
         items.forEach((h,i)=>{
-          const d=h.datum?new Date(h.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+          const d=h.datum?fmtDate(h.datum,{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
           html+=`<div class="timeline-item clickable" data-hand-id="${h.id}" style="padding:8px var(--space-md)${i<items.length-1?';border-bottom:1px solid var(--border)':''}">
             <div class="timeline-date">${d}</div>
             <div class="timeline-body"><div class="timeline-sub" style="color:var(--text-primary)">${escHtml(h.kommentar||'–')}</div></div>
@@ -3269,14 +3306,14 @@
       let h='';
       items.forEach(item=>{
         if(item.type==='spiel'){
-          const d=new Date(item.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'2-digit'});
+          const d=fmtDate(item.datum,{day:'2-digit',month:'2-digit',year:'2-digit'});
           h+=`<div class="timeline-item clickable" data-spiel-id="${item.spiel_id}">
             <div class="timeline-date">${d}</div>
             <div class="timeline-body"><div class="timeline-title">${item.buyins}× BuyIn · ${fmt(item.payout||0)} PayOut</div></div>
             <div class="timeline-amount ${ksClass(item.rein)}">${fmtSigned(item.rein)}</div>
           </div>`;
         } else {
-          const d=new Date(item.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'2-digit'});
+          const d=fmtDate(item.datum,{day:'2-digit',month:'2-digit',year:'2-digit'});
           const cls=item.dir==='in'?'amount-pos':'amount-neg';
           h+=`<div class="timeline-item clickable" data-trans-id="${item.id}">
             <div class="timeline-date">${d}</div>
@@ -4138,7 +4175,7 @@
     if(!currentSpieler?.ist_admin){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="empty-title">Kein Zugriff</div></div>`;return;}
     const{data:spieler}=await db.from('spieler').select('*').order('name');if(!spieler)return;
     const aktive=spieler.filter(s=>s.aktiv&&!s.ist_bank&&!s.ist_bot),inaktive=spieler.filter(s=>!s.aktiv&&!s.ist_bot);
-    const fmtLogin=ts=>{if(!ts)return'Noch nie';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;};
+    const fmtLogin=ts=>ts?fmtDateTimeAT(ts):'Noch nie';
     const loginSub=s=>(s.letzter_login?`<div class="item-subtitle">Zuletzt aktiv: ${fmtLogin(s.letzter_login)}</div>`:'')+
       (s.online_entdeckt_am?`<div class="item-subtitle" style="color:var(--accent-text)">🎴 Easter Egg: ${fmtLogin(s.online_entdeckt_am)}</div>`:'');
     let html=`<button class="btn btn-primary" id="btn-neuer-spieler" style="margin-bottom:var(--space-md)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Neuer Spieler</button>`;
@@ -4273,7 +4310,7 @@
       card.innerHTML=`<div style="padding:var(--space-sm) var(--space-md);color:var(--text-secondary);font-size:13px;border-bottom:1px solid var(--border)">${subs.length} Gerät${subs.length>1?'e':''} registriert</div>`
         +subs.map((sub,i)=>{
           const e=sub.einstellungen||{};
-          const date=sub.aktualisiert_am?new Date(sub.aktualisiert_am).toLocaleDateString(LOCALE):'';
+          const date=sub.aktualisiert_am?fmtDate(sub.aktualisiert_am):'';
           const cats=Object.entries(catLabels).map(([k,v])=>`<span class="badge ${pushCatEnabled(e,k)?'badge-green':'badge-red'}" style="font-size:11px">${v}</span>`).join('');
           return`<div style="padding:var(--space-sm) var(--space-md);${i<subs.length-1?'border-bottom:1px solid var(--border)':''}">
             <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${deviceName(sub.endpoint)}<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:8px">${date}</span></div>
@@ -4325,7 +4362,7 @@
     trans.forEach(t=>{
       // Neue Tages-Gruppe beginnen, wenn sich das Datum ändert; sonst offene Gruppe fortsetzen.
       if(!_transCurGroup||_transCurGroup.datum!==t.datum){
-        const ds=new Date(t.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'long',year:'numeric'});
+        const ds=fmtDate(t.datum,{day:'2-digit',month:'long',year:'numeric'});
         const title=document.createElement('div');title.className='section-title';
         const card=document.createElement('div');card.className='card';
         _transCurGroup={datum:t.datum,ds,summe:0,titleEl:title,cardEl:card};
@@ -4420,6 +4457,18 @@
     document.getElementById('trans-nach').innerHTML=`<option value="">– leer –</option>${opts}`;
     if(t?.von_spieler_id)document.getElementById('trans-von').value=t.von_spieler_id;
     if(t?.nach_spieler_id)document.getElementById('trans-nach').value=t.nach_spieler_id;
+    // Kein Selbst-Transfer: die im jeweils anderen Feld gewählte Person wird deaktiviert,
+    // sodass nur erlaubte Werte wählbar sind (»– leer –« bleibt immer offen → Ein-/Auszahlung).
+    // onchange= statt addEventListener, damit sich beim erneuten Öffnen keine Listener stapeln.
+    const _transSync=()=>{
+      const vonSel=document.getElementById('trans-von'),nachSel=document.getElementById('trans-nach');
+      const vonVal=vonSel.value,nachVal=nachSel.value;
+      Array.from(nachSel.options).forEach(o=>{o.disabled=!!o.value&&o.value===vonVal;});
+      Array.from(vonSel.options).forEach(o=>{o.disabled=!!o.value&&o.value===nachVal;});
+    };
+    document.getElementById('trans-von').onchange=_transSync;
+    document.getElementById('trans-nach').onchange=_transSync;
+    _transSync();
     let sel=t?.kommentar&&KOMMENTAR_VORLAGEN.includes(t.kommentar)?t.kommentar:'';
     const chips=document.getElementById('kommentar-chips');
     chips.innerHTML=KOMMENTAR_VORLAGEN.map(k=>`<button class="kommentar-chip${k===sel?' active':''}" data-val="${k}">${k}</button>`).join('');
@@ -4471,6 +4520,7 @@
     const betrag=parseFloat(String(document.getElementById('trans-betrag').value).replace(',','.'))||0;
     const kommentar=document.getElementById('modal-transaktion')._getKommentar();
     if(!nach&&!von){await showAlert('Bitte Von oder Nach auswählen.');return;}
+    if(von&&nach&&von===nach){await showAlert('Von und Nach dürfen nicht dieselbe Person sein.');return;}
     if(betrag<=0){await showAlert('Bitte einen Betrag eingeben.');return;}
     if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
@@ -4598,7 +4648,7 @@
 
   function renderSpiel(){
     const el=document.getElementById('spiel-content');
-    const datum=new Date(aktuellesSpiel.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'});
+    const datum=fmtDate(aktuellesSpiel.datum,{day:'2-digit',month:'2-digit',year:'numeric'});
     const{bPot,bKassa,gesamt:buyinGesamt}=kostenProBuyin(aktuellesSpiel);
     const gesamtPot=spielTeilnehmer.reduce((s,t)=>s+(t.buyins||0)*bPot,0);
 
@@ -4662,7 +4712,7 @@
     document.getElementById('btn-edit-teilnehmer').addEventListener('click',zeigeTeilnehmerEdit);
     document.getElementById('btn-abschliessen').addEventListener('click',schliesseSpielAb);
     document.getElementById('btn-spiel-loeschen').addEventListener('click',async()=>{
-      const datum=new Date(aktuellesSpiel.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'});
+      const datum=fmtDate(aktuellesSpiel.datum,{day:'2-digit',month:'2-digit',year:'numeric'});
       if(!await confirmDelete(`Das Spiel vom ${datum} wird ohne Speichern gelöscht. Alle Buy-Ins gehen verloren.`))return;
       await save(async()=>{await db.from('spiel_teilnehmer').delete().eq('spiel_id',aktuellesSpiel.id);await db.from('spiele').delete().eq('id',aktuellesSpiel.id);},'Spiel verworfen');
       aktuellesSpiel=null;spielTeilnehmer=[];await loadSpiel();
@@ -4697,7 +4747,7 @@
     await db.from('spiele').update({abgeschlossen:true}).eq('id',aktuellesSpiel.id);
     // Push pro Spieler mit individuellen Ergebnissen
     const datum=aktuellesSpiel.datum||localDateStr();
-    const datumStr=new Date(datum+'T12:00:00').toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'});
+    const datumStr=fmtDate(datum,{day:'2-digit',month:'2-digit',year:'numeric'});
     const spielId=aktuellesSpiel.id;
     // Kontostände nach Abschluss berechnen für Push
     const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
@@ -4790,7 +4840,7 @@
   function _verlaufRenderBatch(el,spiele){
     const smap=_spielerMap||{};
     spiele.forEach(spiel=>{
-      const datum=new Date(spiel.datum).toLocaleDateString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+      const datum=fmtDate(spiel.datum,{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       // Spieler-Objekt aus Cache an die Teilnehmer hängen (statt nested DB-Join).
       const teilnehmer=(spiel.spiel_teilnehmer||[]).map(t=>({...t,spieler:t.spieler||smap[t.spieler_id]||{name:'?'}}));
       const{bPot,gesamt}=kostenProBuyin(spiel);
@@ -4910,7 +4960,7 @@
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Lade…</div>`;
     showPage('spiel-detail');
 
-    const datum=new Date(spiel.datum).toLocaleDateString(LOCALE,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    const datum=fmtDate(spiel.datum,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
     const{bPot,bKassa}=kostenProBuyin(spiel);
     // Teilnehmer aus Cache anreichern (Queries in Verlauf liefern nur spieler_id).
     await _ensureSpielerMap();
@@ -4988,7 +5038,7 @@
     if(currentSpieler?.ist_admin){
       document.getElementById('btn-spiel-detail-edit')?.addEventListener('click',()=>showSpielDetailEdit(spiel));
       document.getElementById('btn-spiel-detail-loeschen')?.addEventListener('click',async()=>{
-        const d=new Date(spiel.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'});
+        const d=fmtDate(spiel.datum,{day:'2-digit',month:'2-digit',year:'numeric'});
         if(!await confirmDelete(`Spiel vom ${d} und alle Teilnehmer-Einträge löschen?`))return;
         await save(async()=>{
           // Beweisfotos der Hände aus Storage löschen (parallel, Fehler ignorieren)
@@ -7033,6 +7083,11 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.16',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Pokerkasse-Detail (Kachel „Pokerkasse" auf der Startseite): KI-Bots werden nicht mehr in der Spielerliste angezeigt – sie zählen ohnehin nie zur Pokerkasse. Inaktive Spieler erscheinen nur noch, wenn ihr Kontostand nicht null ist. Der ausgewiesene Pokerkasse-Betrag bleibt dabei unverändert'},
+      {typ:'verbessert',text:'Zeitzone: Die App rechnet und zeigt Datum und Uhrzeit jetzt immer in österreichischer Zeit – egal, wo sich das bedienende Gerät gerade befindet. Eine z.B. nach Mitternacht im Ausland erfasste Transaktion landet damit am korrekten österreichischen Kalendertag, und alle sehen dasselbe Datum und dieselbe Uhrzeit (u.a. Verlauf, Transaktionen, Spiele, Hände und Online-Sessions)'},
+      {typ:'verbessert',text:'Neue Transaktion: Bei Von und Nach lässt sich nicht mehr dieselbe Person auswählen – die im einen Feld gewählte Person wird im anderen automatisch gesperrt (eine Transaktion an sich selbst ergibt keinen Sinn)'},
+    ]},
     {version:'4.15',datum:'Juli 2026',eintraege:[
       {typ:'verbessert',text:'Konto/Transaktionen: Die Liste lädt jetzt beim Scrollen automatisch immer weiter nach – auch sehr alte Buchungen sind wieder erreichbar (bisher waren nur die letzten 100 sichtbar)'},
       {typ:'verbessert',text:'Aktives Spiel: „Spiel abschließen" ist jetzt grün hervorgehoben (die eigentliche Erfolgs-Aktion des Abends), „Spiel verwerfen" rot (löscht das Spiel unwiderruflich)'},
@@ -7684,7 +7739,7 @@
     const drillData={};
     function drillDetailsHtml(ph){
       return ph.slice().sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).map(h=>{
-        const d=h.datum?new Date(h.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
+        const d=h.datum?fmtDate(h.datum,{day:'2-digit',month:'2-digit',year:'2-digit'}):'?';
         return `<div class="drilldown-item clickable" data-hand-id="${h.id}">
               <span class="drilldown-date">${d}</span>
               <span class="drilldown-comment">${escHtml(h.kommentar||'–')}</span>
@@ -8459,8 +8514,8 @@
         const tm=timeMap[s.id];
         const startDt=tm?.start||(s.created_at?new Date(s.created_at):null);
         const endDt=tm?.end||null;
-        const fmtTime=dt=>{if(!dt)return'';const h=String(dt.getHours()).padStart(2,'0'),m=String(dt.getMinutes()).padStart(2,'0');return`${h}:${m}`;};
-        const datum=startDt?startDt.toLocaleDateString(LOCALE,{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+        const fmtTime=fmtTimeAT;
+        const datum=startDt?fmtDate(startDt,{day:'2-digit',month:'2-digit',year:'numeric'}):'';
         let zeitStr='';
         if(startDt){
           zeitStr=fmtTime(startDt);
