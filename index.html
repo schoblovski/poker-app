@@ -1091,7 +1091,7 @@
     <div class="form-group"><label class="form-label">Von</label><select class="form-input" id="trans-von"></select></div>
     <div class="form-group"><label class="form-label">Nach</label><select class="form-input" id="trans-nach"></select></div>
     <div class="form-group"><label class="form-label">Kommentar</label><div id="kommentar-chips"></div><input type="text" class="form-input" id="trans-kommentar-text" placeholder="Freitext…"></div>
-    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="text" inputmode="decimal" class="form-input" id="trans-betrag" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Betrag (€)</label><input type="text" inputmode="decimal" class="form-input" id="trans-betrag" placeholder="0,00"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="trans-abbrechen">Abbrechen</button><button class="btn btn-primary" id="trans-bearbeiten" style="display:none">Bearbeiten</button><button class="btn btn-primary" id="trans-speichern">Speichern</button></div>
   </div>
 </div>
@@ -4516,7 +4516,7 @@
     <div class="section-title">Ergebnis (PayOut)</div>
     <div class="card" style="margin-top:var(--space-sm)">`;
     spielTeilnehmer.forEach(t=>{
-      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0.00"><span class="payout-unit">€</span></div>`;
+      html+=`<div class="payout-input-row"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden">${avatarHtml(t.spieler,28)}<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.spieler.name}</span></div><input type="text" inputmode="decimal" class="payout-field" id="payout-${t.id}" value="${t.payout?t.payout.toFixed(2):''}" placeholder="0,00"><span class="payout-unit">€</span></div>`;
     });
     html+=`</div>
     <div class="pot-summary" id="pot-rest-summary" style="flex-direction:column;gap:8px;text-align:center">
