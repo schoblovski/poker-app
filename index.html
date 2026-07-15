@@ -1311,7 +1311,7 @@
       <!-- Abrechnung -->
       <div style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Abrechnung</div>
-        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn du dich an den Tisch setzt, erhältst du automatisch deinen ersten Buy-In (einen vollen Startstack). Ein weiterer Buy-In (Rebuy) ist <b>nur möglich, wenn dein Stack komplett leer ist</b> – und immer nur <b>genau einer auf einmal</b>. Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein.</div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn du dich an den Tisch setzt, erhältst du automatisch deinen ersten Buy-In (einen vollen Startstack). Ein weiterer Buy-In (Rebuy) ist <b>nur möglich, wenn dein Stack komplett leer ist</b> – und immer nur <b>genau einer auf einmal</b>. Wenn der Admin die Session beendet, erscheint automatisch ein Abrechnungsfenster mit Ergebnissen für alle (Name, Buy-Ins, Einsatz, Auszahlung, Gewinn/Verlust). Der Admin kann alles direkt in die normale Statistik übernehmen — so fließen Online-Spiele automatisch in eure Auswertung ein. Wird das Abrechnungsfenster geschlossen, ohne das Ergebnis zu übernehmen, zeigt der beendete Tisch oben ein Banner «Abrechnung ausstehend» mit einem Button, über den die Abrechnung jederzeit wieder geöffnet werden kann.</div>
       </div>
 
       <!-- Statistik & KPIs -->
@@ -1590,6 +1590,23 @@
   // ── SYNC ───────────────────────────────────────────────
   function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');if(el)el.className='sync-badge '+s;if(dot)dot.className='sync-dot'+(s==='pending'?' spin':'');if(lbl)lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
   async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
+
+  // ── ERROR TOAST ────────────────────────────────────────
+  // Unaufdringlicher Fehler-Hinweis unten über der Nav (auto-hide ~4s). Design Tokens, kein Gradient.
+  let _toastTimer=null;
+  function showToast(msg='Daten konnten nicht geladen werden'){
+    let t=document.getElementById('app-toast');
+    if(!t){
+      t=document.createElement('div');
+      t.id='app-toast';
+      t.style.cssText='position:fixed;left:50%;bottom:calc(var(--safe-bottom) + 78px);transform:translateX(-50%) translateY(12px);z-index:9998;max-width:calc(100% - 32px);width:max-content;display:flex;align-items:center;gap:8px;background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);border-radius:var(--radius-md);padding:11px 15px;font-family:var(--font-sans);font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease';
+      document.body.appendChild(t);
+    }
+    t.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px;height:17px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${msg}</span>`;
+    requestAnimationFrame(()=>{t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';});
+    clearTimeout(_toastTimer);
+    _toastTimer=setTimeout(()=>{const el=document.getElementById('app-toast');if(el){el.style.opacity='0';el.style.transform='translateX(-50%) translateY(12px)';}},4000);
+  }
 
   // ── STATISTIK FILTER STATE ─────────────────────────────
   let _statSpielerFilter=new Set(); // empty = all players
@@ -2141,6 +2158,7 @@
       history.pushState({},'',' ');
     }
     if(page!=='verlauf')_verlaufCleanup(); // scroll listener entfernen wenn Seite verlassen
+    if(page!=='transaktionen')_transCleanup(); // dito für Transaktionen-Lazy-Loading
     const isOnlinePage=page==='online-tisch'||page==='online-lobby';
     document.getElementById('app-screen').classList.toggle('pm-wide',isOnlinePage);
     // When leaving the table: show drawer; mark AFK; mark 'back' only when returning
@@ -2531,7 +2549,10 @@
       _t=null;
     }
     let _tapStartX=0,_tapStartY=0,_tapTarget=null;
+    // Physische Tastatur erkannt (body.has-keyboard) → Numpad NICHT abfangen, natives Tippen erlauben.
+    const _hasKb=()=>document.body.classList.contains('has-keyboard');
     function _interceptStart(e){
+      if(_hasKb())return;
       const inp=e.target.closest?.('input.pm-num');
       if(!inp)return;
       _tapStartX=e.touches[0].clientX;
@@ -2539,6 +2560,7 @@
       _tapTarget=inp;
     }
     function _interceptEnd(e){
+      if(_hasKb()){_tapTarget=null;return;}
       if(!_tapTarget)return;
       const dx=Math.abs((e.changedTouches[0]?.clientX||0)-_tapStartX);
       const dy=Math.abs((e.changedTouches[0]?.clientY||0)-_tapStartY);
@@ -2548,6 +2570,7 @@
       _show(inp);
     }
     function _interceptMouse(e){
+      if(_hasKb())return;
       const inp=e.target.closest?.('input.pm-num');
       if(!inp)return;
       e.preventDefault();e.stopPropagation();
@@ -2556,6 +2579,15 @@
     document.addEventListener('touchstart',_interceptStart,{passive:true,capture:true});
     document.addEventListener('touchend',_interceptEnd,{passive:false,capture:true});
     document.addEventListener('mousedown',_interceptMouse,{capture:true});
+    // Bei nativer Eingabe (Desktop/Tastatur) kann in de-Locale ein Komma getippt werden.
+    // Vor den feld-spezifischen change-Handlern (die parseFloat nutzen) Komma → Punkt normalisieren.
+    // Für Numpad-Eingaben ein No-Op (die liefern bereits Punkt-Werte via toFixed).
+    document.addEventListener('change',e=>{
+      const inp=e.target;
+      if(inp?.classList?.contains?.('pm-num')&&typeof inp.value==='string'&&inp.value.includes(',')){
+        inp.value=inp.value.replace(',','.');
+      }
+    },{capture:true});
   })();
 
   // ── BENACHRICHTIGUNGEN ─────────────────────────────────
@@ -2886,12 +2918,14 @@
     const el=document.getElementById('home-content');
     el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
     // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
-    const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=await Promise.all([
+    const _homeRes=await Promise.all([
       db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot'),
       db.from('transaktionen').select('*'),
       db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
     ]);
+    if(_homeRes.some(r=>r?.error))showToast();
+    const[{data:alleSpielerDB},{data:trans},{data:verlauf},{data:spiele}]=_homeRes;
     if(!alleSpielerDB)return;
     // Spieler-Cache populieren (id → {id,name,profilbild,...})
     const cacheMap={};(alleSpielerDB||[]).forEach(s=>{cacheMap[s.id]=s;});
@@ -3887,7 +3921,7 @@
             <div class="setting-label">Zielwert</div>
             <div class="setting-sub">Kontostand auf den alle Spieler gebracht werden</div>
           </div>
-          <input type="number" inputmode="decimal" class="setting-input" id="set-jahresspende-ziel" value="100" min="0" step="1">
+          <input type="number" inputmode="decimal" class="setting-input" id="set-jahresspende-ziel" value="${numVal('jahresspende_ziel',100)}" min="0" step="1">
         </div>
       </div>
       <div style="margin-top:var(--space-sm);background:var(--info-soft);border-radius:var(--radius-md);padding:var(--space-md);font-size:13px;color:var(--info)">
@@ -3973,6 +4007,8 @@
       const zielStr=document.getElementById('set-jahresspende-ziel').value;
       const ziel=parseFloat(zielStr)||100;
       if(!await confirmAction(`Jahres-Spende durchführen?\n\nAlle Spieler mit Kontostand > ${fmt(ziel)} spenden die Differenz zur Pokerkasse.\nSpieler mit Kontostand < ${fmt(ziel)} erhalten eine Einzahlung auf ${fmt(ziel)}.\n\nDieser Vorgang erstellt Transaktionen für alle Spieler.`))return;
+      // Zielwert persistieren (wie buyin_pot/buyin_kassa) – dient beim nächsten Öffnen als Vorbelegung
+      await save(()=>db.from('einstellungen').upsert({key:'jahresspende_ziel',wert:ziel},{onConflict:'key'}),`Jahresspende-Ziel: €${ziel}`);
 
       // Aktuelle Kontostände berechnen
       const[{data:spieler},{data:trans},{data:verlauf},{data:spieleData}]=await Promise.all([
@@ -4267,42 +4303,112 @@
   });
 
   // ── TRANSAKTIONEN ──────────────────────────────────────
-  async function loadTransaktionen(){
-    const el=document.getElementById('transaktionen-content');
-    el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
-    const{data:trans}=await db.from('transaktionen').select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)').order('datum',{ascending:false}).order('created_at',{ascending:false}).limit(100);
-    if(!trans||trans.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
+  // ── TRANSAKTIONEN: Lazy-Loading (nach Vorbild des Verlaufs) ──────────────
+  // Liste nach Datum gruppiert (Tages-Blöcke mit Summen-Header). Batches via .range().
+  // Endet ein Batch mitten in einem Tag, wird die Gruppe im nächsten Batch fortgesetzt
+  // (statt doppelt gerendert) – _transCurGroup hält den offenen Tages-Block über Batch-Grenzen.
+  const _TRANS_PAGE=20;
+  let _transOffset=0,_transLoading=false,_transDone=false,_transScrollFn=null,_transCurGroup=null;
+
+  function _transCleanup(){
+    if(_transScrollFn){
+      window.removeEventListener('scroll',_transScrollFn);
+      _transScrollFn=null;
+    }
+  }
+
+  function _transRenderBatch(el,trans){
     // Anzeige aus Sicht des eingeloggten Spielers: Vorzeichen/Farbe je Zeile relativ zu currentSpieler,
     // Tagessumme = mein Netto des Tages (nur Transaktionen mit meiner Beteiligung).
     const meId=currentSpieler?.id||null;
-    const gruppen={};
+    const dayNet=t=>(t.nach_spieler_id===meId?t.betrag:0)-(t.von_spieler_id===meId?t.betrag:0);
     trans.forEach(t=>{
-      if(!gruppen[t.datum])gruppen[t.datum]={datum:t.datum,items:[],summe:0};
-      gruppen[t.datum].items.push(t);
-      gruppen[t.datum].summe+=(t.nach_spieler_id===meId?t.betrag:0)-(t.von_spieler_id===meId?t.betrag:0);
-    });
-    let html='';
-    Object.values(gruppen).forEach(g=>{
-      const ds=new Date(g.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'long',year:'numeric'});
-      html+=`<div class="section-title">${ds} <span style="font-weight:400;color:var(--text-tertiary)">· ${fmtSigned(g.summe)}</span></div><div class="card">`;
-      g.items.forEach(t=>{
-        const icon=transIcon(t);
-        const von=t.von?.name||'–',nach=t.nach?.name||'–';
-        let amtCls,amtStr;
-        if(t.nach_spieler_id===meId){amtCls='amount-pos';amtStr=fmtSigned(t.betrag);}       // ich erhalte
-        else if(t.von_spieler_id===meId){amtCls='amount-neg';amtStr=fmtSigned(-t.betrag);}  // ich zahle
-        else{amtCls='amount-zero';amtStr=fmt(t.betrag);}                                     // unbeteiligt → neutral
-        html+=`<div class="list-item clickable" data-trans-id="${t.id}"><div class="item-avatar ${icon.cls}" style="width:40px;height:40px">${icon.svg}</div><div class="item-body"><div class="item-title">${von} → ${nach}</div><div class="item-subtitle">${t.kommentar||'–'}</div></div><div class="item-trailing"><span class="item-amount ${amtCls}">${amtStr}</span>${chevron}</div></div>`;
-      });
-      html+=`</div>`;
-    });
-    el.innerHTML=html;
-    el.querySelectorAll('.list-item.clickable[data-trans-id]').forEach(row=>{
+      // Neue Tages-Gruppe beginnen, wenn sich das Datum ändert; sonst offene Gruppe fortsetzen.
+      if(!_transCurGroup||_transCurGroup.datum!==t.datum){
+        const ds=new Date(t.datum).toLocaleDateString(LOCALE,{day:'2-digit',month:'long',year:'numeric'});
+        const title=document.createElement('div');title.className='section-title';
+        const card=document.createElement('div');card.className='card';
+        _transCurGroup={datum:t.datum,ds,summe:0,titleEl:title,cardEl:card};
+        const loader=document.getElementById('trans-loader');
+        if(loader&&loader.parentNode===el){el.insertBefore(title,loader);el.insertBefore(card,loader);}
+        else{el.appendChild(title);el.appendChild(card);}
+      }
+      _transCurGroup.summe+=dayNet(t);
+      _transCurGroup.titleEl.innerHTML=`${_transCurGroup.ds} <span style="font-weight:400;color:var(--text-tertiary)">· ${fmtSigned(_transCurGroup.summe)}</span>`;
+      const icon=transIcon(t);
+      const von=t.von?.name||'–',nach=t.nach?.name||'–';
+      let amtCls,amtStr;
+      if(t.nach_spieler_id===meId){amtCls='amount-pos';amtStr=fmtSigned(t.betrag);}       // ich erhalte
+      else if(t.von_spieler_id===meId){amtCls='amount-neg';amtStr=fmtSigned(-t.betrag);}  // ich zahle
+      else{amtCls='amount-zero';amtStr=fmt(t.betrag);}                                     // unbeteiligt → neutral
+      const row=document.createElement('div');row.className='list-item clickable';row.dataset.transId=t.id;
+      row.innerHTML=`<div class="item-avatar ${icon.cls}" style="width:40px;height:40px">${icon.svg}</div><div class="item-body"><div class="item-title">${von} → ${nach}</div><div class="item-subtitle">${t.kommentar||'–'}</div></div><div class="item-trailing"><span class="item-amount ${amtCls}">${amtStr}</span>${chevron}</div>`;
       row.addEventListener('click',async()=>{
-        const{data:t}=await db.from('transaktionen').select('*').eq('id',row.dataset.transId).single();
-        if(t)openTransaktionModal(t);
+        const{data:full}=await db.from('transaktionen').select('*').eq('id',t.id).single();
+        if(full)openTransaktionModal(full);
       });
+      _transCurGroup.cardEl.appendChild(row);
     });
+  }
+
+  async function _transLoadMore(){
+    if(_transLoading||_transDone)return;
+    _transLoading=true;
+    const loader=document.getElementById('trans-loader');
+    if(loader)loader.style.display='flex';
+    const{data:trans,error}=await db.from('transaktionen')
+      .select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)')
+      .order('datum',{ascending:false}).order('created_at',{ascending:false})
+      .range(_transOffset,_transOffset+_TRANS_PAGE-1);
+    if(loader)loader.style.display='none';
+    _transLoading=false;
+    if(error){showToast();return;}
+    if(!trans||trans.length===0){
+      _transDone=true;
+      document.getElementById('trans-loader')?.remove();
+      _transCleanup();
+      return;
+    }
+    _transOffset+=trans.length;
+    if(trans.length<_TRANS_PAGE)_transDone=true;
+    _transRenderBatch(document.getElementById('transaktionen-content'),trans);
+    if(_transDone){
+      document.getElementById('trans-loader')?.remove();
+      _transCleanup();
+    }
+  }
+
+  async function loadTransaktionen(){
+    _transCleanup();
+    _transOffset=0;_transLoading=false;_transDone=false;_transCurGroup=null;
+    const el=document.getElementById('transaktionen-content');
+    el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
+    const{data:first,error}=await db.from('transaktionen')
+      .select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)')
+      .order('datum',{ascending:false}).order('created_at',{ascending:false})
+      .range(0,_TRANS_PAGE-1);
+    if(error)showToast();
+    if(!first||first.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
+    el.innerHTML='';
+    _transOffset=first.length;
+    if(first.length<_TRANS_PAGE){
+      _transDone=true;
+      _transRenderBatch(el,first);
+      return;
+    }
+    // Loader dauerhaft am Ende
+    const loader=document.createElement('div');
+    loader.id='trans-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
+    loader.innerHTML='<div class="spinner"></div>Lade…';
+    el.appendChild(loader);
+    _transRenderBatch(el,first);
+    // Window-Scroll-Listener (body scrollt, nicht .content – nav ist position:fixed)
+    _transScrollFn=()=>{
+      if(_transLoading||_transDone)return;
+      const remaining=document.documentElement.scrollHeight-window.scrollY-window.innerHeight;
+      if(remaining<400)_transLoadMore();
+    };
+    window.addEventListener('scroll',_transScrollFn,{passive:true});
   }
 
   function openTransaktionModal(t){
@@ -4395,14 +4501,16 @@
   async function loadSpiel(){
     const el=document.getElementById('spiel-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    const{data:spiele}=await db.from('spiele').select('*').eq('abgeschlossen',false).or('modus.is.null,modus.neq.online').order('created_at',{ascending:false}).limit(1);
+    const{data:spiele,error:_spielErr}=await db.from('spiele').select('*').eq('abgeschlossen',false).or('modus.is.null,modus.neq.online').order('created_at',{ascending:false}).limit(1);
+    if(_spielErr)showToast();
     aktuellesSpiel=spiele?.[0]||null;
     if(!aktuellesSpiel){
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div><div class="empty-title">Kein aktives Spiel</div><div class="empty-subtitle">Eröffne eine neue Spielrunde.</div><button class="btn btn-primary" id="btn-neues-spiel">Neues Spiel starten</button></div>`;
       document.getElementById('btn-neues-spiel').addEventListener('click',zeigeSpielAuswahl);return;
     }
     await _ensureSpielerMap();
-    const{data:teilnehmer}=await db.from('spiel_teilnehmer').select('id,spiel_id,spieler_id,buyins,payout,leihgabe,in_statistik').eq('spiel_id',aktuellesSpiel.id);
+    const{data:teilnehmer,error:_tnErr}=await db.from('spiel_teilnehmer').select('id,spiel_id,spieler_id,buyins,payout,leihgabe,in_statistik').eq('spiel_id',aktuellesSpiel.id);
+    if(_tnErr)showToast();
     const _smap=_spielerMap||{};
     spielTeilnehmer=(teilnehmer||[]).map(t=>({...t,spieler:_smap[t.spieler_id]||{name:'?'}}));
     renderSpiel();
@@ -4529,8 +4637,8 @@
         <button id="btn-rest-zuweisen" style="display:none;background:var(--accent-text);color:#fff;border:none;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;font-family:var(--font-sans);cursor:pointer;display:none;align-items:center;gap:5px;transition:opacity .15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg>zuweisen</button>
       </div>
     </div>
-    <button class="btn btn-danger" id="btn-abschliessen" style="margin-top:var(--space-md)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
-    <button class="btn btn-ghost" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
+    <button class="btn btn-primary" id="btn-abschliessen" style="margin-top:var(--space-md)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Spiel abschließen</button>
+    <button class="btn btn-danger" id="btn-spiel-loeschen" style="margin-top:var(--space-sm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Spiel verwerfen</button>`;
 
     el.innerHTML=html;
     updatePotUI();
@@ -4762,11 +4870,12 @@
     const el=document.getElementById('verlauf-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     await _ensureSpielerMap();
-    const{data:first}=await db.from('spiele')
+    const{data:first,error:_verlaufErr}=await db.from('spiele')
       .select('id,datum,buyin_pot,buyin_kassa,modus,spiel_teilnehmer(id,spieler_id,buyins,payout)')
       .eq('abgeschlossen',true)
       .order('datum',{ascending:false})
       .range(0,_VERLAUF_PAGE-1);
+    if(_verlaufErr)showToast();
     if(!first||first.length===0){
       el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`;
       return;
@@ -5138,13 +5247,15 @@
     const el=document.getElementById('statistik-content');
     el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
     await _ensureSpielerMap();
-    const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=await Promise.all([
+    const _statRes=await Promise.all([
       db.from('spieler').select('id,name,profilbild').eq('aktiv',true).eq('ist_bank',false).or('ist_bot.is.null,ist_bot.eq.false').order('name'),
       db.from('spiel_teilnehmer').select('spieler_id,buyins,payout,spiel_id,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus,datum)').eq('spiele.abgeschlossen',true),
       db.from('transaktionen').select('datum,von_spieler_id,nach_spieler_id,betrag'),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,spiel_id'),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus,datum').eq('abgeschlossen',true).order('datum'),
     ]);
+    if(_statRes.some(r=>r?.error))showToast();
+    const[{data:spieler},{data:verlauf},{data:trans},{data:haende},{data:spieleData}]=_statRes;
     if(!spieler||spieler.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="empty-title">Keine Daten</div></div>`;return;}
 
     const allSpieler=spieler;
@@ -7469,11 +7580,13 @@
     // Performance: beweisfoto (Base64) NICHT in Liste laden – nur beim Öffnen des Modals.
     // Gewinner-Daten kommen aus dem Spieler-Cache (spart ~9 MB redundantes Profilbild-Payload).
     // Parallel dazu eine Mini-Query, welche Hände ein Foto haben (für das Kamera-Icon).
-    const[,{data:haende},{data:fotoIds}]=await Promise.all([
+    const _haendeRes=await Promise.all([
       _ensureSpielerMap(),
       db.from('hand_statistik').select('id,datum,hand,gewinner_id,kommentar,spiel_id,spiel:spiel_id(datum)').order('datum',{ascending:false}).limit(500),
       db.from('hand_statistik').select('id').not('beweisfoto','is',null),
     ]);
+    if(_haendeRes.slice(1).some(r=>r?.error))showToast();
+    const[,{data:haende},{data:fotoIds}]=_haendeRes;
     const fotoSet=new Set((fotoIds||[]).map(r=>r.id));
     const smap=_spielerMap||{};
     _haendeData=(haende||[]).map(h=>({...h,gewinner:smap[h.gewinner_id]||null,has_foto:fotoSet.has(h.id)}));
@@ -8847,7 +8960,7 @@
     const reactKey=Object.values(_pm._reactions||{}).map(r=>r.ts).sort().join(',');
     const ccKey=(s.community_cards||[]).map(c=>`${c.rank}${c.suit}`).join('');
     const presenceKey=(_pm._presence||[]).map(p=>p.spieler_id).sort().join(',');
-    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${(_pm.seats||[]).filter(x=>x.status==='sitting_out').length}|${s.blind_level??0}|${s.blind_timer_running?'1':'0'}|${s.small_blind??''}|${s.big_blind??''}`;
+    return`${_pmStructFp()}|${acts.length}|${acts.at(-1)?.id||''}|${reactKey}|${ccKey}|${s.hand_nr||0}|${s.street||''}|${s.current_player_id||''}|${Math.round((s.pot||0)*100)}|${localStorage.getItem('pm_facedown')||'0'}|${presenceKey}|${_pm._runoutRevealedCount??''}|${(_pm.seats||[]).filter(x=>x.status==='sitting_out').length}|${s.blind_level??0}|${s.blind_timer_running?'1':'0'}|${s.small_blind??''}|${s.big_blind??''}|${s.spiel_id||''}`;
   }
 
   function renderOnlineTisch(){
@@ -9047,7 +9160,12 @@
       _pm._clearingAway=true;_pm._isAway=true;
       _pmSendBack().finally(()=>{if(_pm)delete _pm._clearingAway;});
     }
+    // U7: Nicht-Test-Session beendet, aber Ergebnis noch nicht übernommen (Payout-Modal weggeklickt).
+    // Gut sichtbares Banner mit Direktzugriff auf die Abrechnung. Bei Test-Session oder bereits
+    // verknüpfter spiel_id kein Banner.
+    const settleBanner=(isFinished&&!session.spiel_id&&!session.is_test)?`<div style="background:var(--danger-soft);border:1px solid var(--danger);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:var(--space-md);display:flex;align-items:center;gap:10px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--danger)">Abrechnung ausstehend</div><div style="font-size:12px;color:var(--text-secondary);margin-top:1px">Ergebnis wurde noch nicht übernommen</div></div><button class="btn btn-primary" id="btn-pm-payout-banner" style="width:auto;max-width:none;padding:0 16px;height:38px!important;flex-shrink:0;font-size:13px">Jetzt abrechnen</button></div>`:'';
     const _newHtml=`<div style="padding:${isLandscape?'var(--space-md) var(--space-md) 0':'0 0 var(--space-xl)'}">
+      <div id="pm-s-banner"${isLandscape?'':' style="padding:0 var(--space-sm)"'}>${settleBanner}</div>
       <div class="pm-tisch-layout">
         <div class="pm-tisch-left">
           <div id="pm-s-svg" style="position:relative;margin-bottom:var(--space-sm);box-shadow:0 4px 20px rgba(0,0,0,.25);border-radius:var(--radius-lg)">${(()=>{const prev=_pm._renderedBoardCount??0;const potBd=_pmPotBreakdown();const _revMap={};(_pm.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===session.hand_nr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});const _activeSvgSeats=(seats||[]).filter(s=>s.status!=='sitting_out');const prevRR=_pm._renderedRunoutCount??null;const svg=_pmSVG(_activeSvgSeats,session,currentSpieler?.id,usedBoardKeys,prev,potBd,_pm._reactions||{},_revMap,_awaySet,prevRR);_pm._renderedBoardCount=(session.community_cards||[]).length;_pm._renderedRunoutCount=_pm._runoutRevealedCount??0;return svg;})()}<div id="pm-rt-inline" class="pm-rt-badge pm-rt-inline" hidden style="position:absolute;top:8px;left:8px;z-index:2;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div><button id="btn-pm-tisch-expand" title="Tisch vergrössern" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;padding:0;backdrop-filter:blur(4px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>${(()=>{const _bsL=session.blind_struktur;if(!_bsL||!_bsL.length)return'';const _bsIdx=Math.min(session.blind_level??0,_bsL.length-1);const _bsLvl=_bsL[_bsIdx];const _bsSl=_pmBtSecsLeft();const _bsTot=(_bsLvl.min||15)*60;const _bsPct=_bsSl!==null&&_bsTot>0?Math.max(0,Math.min(100,_bsSl/_bsTot*100)):100;const _bsTime=session.blind_timer_running&&_bsSl!==null?_pmBtFmt(_bsSl):'--:--';return`<div id="pm-bt-widget" style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:8px;padding:5px 8px;color:white;cursor:pointer;border:1px solid rgba(255,255,255,.15);min-width:70px;z-index:2" title="Blind-Timer – Einstellungen öffnen"><div style="display:flex;align-items:center;gap:4px;font-size:11px;line-height:1.3"><span id="pm-bt-level" style="font-weight:700;font-family:var(--font-mono)">L${_bsIdx+1}</span><span id="pm-bt-sbbb" style="color:rgba(255,255,255,.75);font-size:10px;flex:1">${_bsLvl.sb}/${_bsLvl.bb}</span><span id="pm-bt-time" style="font-family:var(--font-mono);font-size:11px;color:${session.blind_timer_running?'rgba(255,255,255,.95)':'rgba(255,255,255,.45)'}">${_bsTime}</span></div><div style="height:2px;background:rgba(255,255,255,.15);border-radius:1px;margin-top:3px;overflow:hidden"><div id="pm-bt-progress" style="height:100%;background:var(--accent);border-radius:1px;width:${_bsPct}%;transition:width .5s linear"></div></div></div>`;})()}</div>
@@ -9083,7 +9201,7 @@
     }else{
       // Incremental section update – only changed sections are replaced, no full DOM rebuild
       const _tmp=document.createElement('div');_tmp.innerHTML=_newHtml;
-      for(const _sid of['pm-s-svg','pm-s-runout','pm-s-action','pm-s-result','pm-s-cards','pm-s-info','pm-s-stacks']){
+      for(const _sid of['pm-s-banner','pm-s-svg','pm-s-runout','pm-s-action','pm-s-result','pm-s-cards','pm-s-info','pm-s-stacks']){
         // Don't replace SVG while deal animation is running – flying cards live inside it
         if(_sid==='pm-s-svg'&&_pm?._dealAnimUntil&&Date.now()<_pm._dealAnimUntil)continue;
         const _nEl=_tmp.querySelector('#'+_sid);const _oEl=document.getElementById(_sid);
@@ -9208,6 +9326,8 @@
       document.getElementById('pm-stacks-header')?.addEventListener('click',_pmShowStacksModal);
     }else if(id==='pm-s-info'){
       document.getElementById('btn-pm-buyin')?.addEventListener('click',_pmBuyInSheet);
+    }else if(id==='pm-s-banner'){
+      document.getElementById('btn-pm-payout-banner')?.addEventListener('click',_pmPayoutModal);
     }
   }
 
@@ -10191,6 +10311,7 @@
       }
     });
     document.getElementById('btn-pm-payout')?.addEventListener('click',_pmPayoutModal);
+    document.getElementById('btn-pm-payout-banner')?.addEventListener('click',_pmPayoutModal);
     document.getElementById('btn-pm-zur-uebersicht')?.addEventListener('click',()=>showPage('online-lobby'));
     document.getElementById('btn-pm-call')?.addEventListener('click',async(e)=>{
       e.stopPropagation();_pmFabClose();
