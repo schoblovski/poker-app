@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.14">
+  <meta name="version" content="4.15">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.14';
+  const VERSION='4.15';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -7033,6 +7033,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.15',datum:'Juli 2026',eintraege:[
+      {typ:'verbessert',text:'Konto/Transaktionen: Die Liste lädt jetzt beim Scrollen automatisch immer weiter nach – auch sehr alte Buchungen sind wieder erreichbar (bisher waren nur die letzten 100 sichtbar)'},
+      {typ:'verbessert',text:'Aktives Spiel: „Spiel abschließen" ist jetzt grün hervorgehoben (die eigentliche Erfolgs-Aktion des Abends), „Spiel verwerfen" rot (löscht das Spiel unwiderruflich)'},
+      {typ:'verbessert',text:'Einstellungen: Der Zielwert der Jahresspende wird jetzt gespeichert und beim nächsten Öffnen automatisch vorausgefüllt'},
+      {typ:'verbessert',text:'Am Computer oder Tablet mit Tastatur lassen sich Beträge im Online-Modus (Blinds, Raise, Pause-Limit) jetzt direkt eintippen, statt nur über den Ziffernblock'},
+      {typ:'verbessert',text:'Wenn Daten einmal nicht geladen werden können, erscheint jetzt ein kurzer Hinweis am unteren Bildschirmrand statt einer leeren oder veralteten Seite'},
+      {typ:'verbessert',text:'Online-Modus: Wird eine beendete Session geschlossen, ohne das Ergebnis zu übernehmen, zeigt der Tisch jetzt ein deutliches Banner „Abrechnung ausstehend" mit direktem Zugang zur Abrechnung'},
+    ]},
     {version:'4.14',datum:'Juli 2026',eintraege:[
       {typ:'verbessert',text:'Einheitliches Zahlenformat in der ganzen App: Geldbeträge erscheinen überall gleich (Komma als Dezimaltrennzeichen, Punkt als Tausendertrennung) – auch in den Eingabefeldern für Payout und Transaktionsbetrag (5,00 statt 5.00)'},
       {typ:'verbessert',text:'Konto/Transaktionen: Beträge werden jetzt aus deiner Sicht angezeigt – was du erhältst grün mit +, was du zahlst rot mit −, Transaktionen ohne deine Beteiligung neutral. Die Tagessumme zeigt dein persönliches Netto des Tages'},
