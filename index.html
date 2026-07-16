@@ -1662,13 +1662,28 @@
           <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">Nicht jetzt</button>
         </div>`;
     } else {
+      // Android/Desktop: „Installieren"-Button nur wenn Chrome das beforeinstallprompt-Event
+      // bereitgestellt hat. Ist das (noch) nicht der Fall, zeigen wir eine manuelle Anleitung
+      // übers Chrome-Menü statt eines nackten „Nicht jetzt".
+      const manualSteps=hasPrompt?'':`
+        <ol class="pwa-steps">
+          <li class="pwa-step">
+            <div class="pwa-step-num">1</div>
+            <div class="pwa-step-text">Tippe in Chrome oben rechts auf das <span class="pwa-share-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg> Menü</span></div>
+          </li>
+          <li class="pwa-step">
+            <div class="pwa-step-num">2</div>
+            <div class="pwa-step-text">Wähle <strong>„App installieren"</strong> (bei älteren Versionen <strong>„Zum Startbildschirm hinzufügen"</strong>)</div>
+          </li>
+        </ol>`;
       body.innerHTML=`
         <div class="pwa-icon-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="72" height="72"><rect width="192" height="192" fill="white"/><text x="50%" y="52%" font-size="120" dominant-baseline="central" text-anchor="middle">♠</text></svg></div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Installiere DTKS Poker als App – schneller Zugriff, kein Browser nötig.</p>
+        ${manualSteps}
         <div class="pwa-btn-row">
           ${hasPrompt?`<button class="btn btn-primary" id="pwa-install-now" style="flex:1">Installieren</button>`:''}
-          <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">Nicht jetzt</button>
+          <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">${hasPrompt?'Nicht jetzt':'Verstanden'}</button>
         </div>`;
     }
     overlay.classList.add('open');
