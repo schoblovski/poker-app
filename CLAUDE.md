@@ -484,7 +484,7 @@ Die statische Info-Seite `#pm-info-modal` (in `index.html` direkt vor `<script t
 > Einzig die interne Helper-Funktion heisst noch `_eqEvalTexama` (nur Funktionsname, kein Wert).
 
 ### DB: online_spiele relevante Felder
-`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, call_teilnehmer (jsonb, im-Call-Tracking), hat_bots, bot_auto_rebuy (Session-Toggle: an=nachkaufen, aus=beobachten), blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
+`id, spiel_id (null bis Payout-Bestätigung), status (waiting/running/finished), variante (holdem/omaha/texahma), small_blind, big_blind (NULL = small_blind*2), start_stack, buyin_pot (numeric, Chip-Euro-Kurs-Snapshot beim Session-Start; NULL bei Alt-Sessions → Client-Fallback auf einstellungen.buyin_pot), is_test, dealer_seat, current_player_id, pot, community_cards, hand_nr, street, runout_cards, street_last_actor_id, video_link, call_teilnehmer (jsonb, im-Call-Tracking), hat_bots, bot_auto_rebuy (Session-Toggle: an=nachkaufen, aus=beobachten), blind_struktur (jsonb), blind_level, blind_timer_running, blind_level_started_at, blind_level_secs_left`
 
 > ⚠️ `deck` liegt **nicht** in `online_spiele`, sondern in eigener Tabelle **`online_decks`** (id FK→online_spiele, deck jsonb; kein Client-Zugriff, nur Service Role).
 > ℹ️ `call_aktiv` existiert bewusst **nicht** (kein Code nutzt sie); das Video-Call-Tracking läuft allein über `call_teilnehmer`.
