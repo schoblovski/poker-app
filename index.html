@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.17">
+  <meta name="version" content="4.18">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.17';
+  const VERSION='4.18';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1589,7 +1589,7 @@
 
   // ── SYNC ───────────────────────────────────────────────
   function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');if(el)el.className='sync-badge '+s;if(dot)dot.className='sync-dot'+(s==='pending'?' spin':'');if(lbl)lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
-  async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);}}
+  async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);showToast('Speichern fehlgeschlagen – bitte erneut versuchen');}}
 
   // ── ERROR TOAST ────────────────────────────────────────
   // Unaufdringlicher Fehler-Hinweis unten über der Nav (auto-hide ~4s). Design Tokens, kein Gradient.
@@ -2801,7 +2801,9 @@
   }
 
   // ── UPDATE CHECK ───────────────────────────────────────
+  let _lastUpdateCheck=0; // Timestamp des letzten Update-Checks (Drosselung für visibilitychange)
   async function checkForUpdate(){
+    _lastUpdateCheck=Date.now();
     try{
       const r=await fetch('/index.html?_='+Date.now(),{cache:'no-store'});
       if(!r.ok)return;
@@ -2820,6 +2822,13 @@
   });
   document.getElementById('modal-update-reload').addEventListener('click',()=>{
     window.location.reload();
+  });
+  // Zusätzlich prüfen, wenn der Tab wieder sichtbar wird (tagelang offene PWA erfährt sonst nie
+  // von neuen Versionen). Gedrosselt auf max. 1× pro Stunde.
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)return;
+    if(Date.now()-_lastUpdateCheck<3600000)return;
+    checkForUpdate();
   });
 
   async function showApp(){
@@ -4344,39 +4353,114 @@
     if(editSpielerID)showPage('verwaltung');
   });
 
-  // ── TRANSAKTIONEN ──────────────────────────────────────
-  // ── TRANSAKTIONEN: Lazy-Loading (nach Vorbild des Verlaufs) ──────────────
-  // Liste nach Datum gruppiert (Tages-Blöcke mit Summen-Header). Batches via .range().
-  // Endet ein Batch mitten in einem Tag, wird die Gruppe im nächsten Batch fortgesetzt
-  // (statt doppelt gerendert) – _transCurGroup hält den offenen Tages-Block über Batch-Grenzen.
-  const _TRANS_PAGE=20;
-  let _transOffset=0,_transLoading=false,_transDone=false,_transScrollFn=null,_transCurGroup=null;
-
-  function _transCleanup(){
-    if(_transScrollFn){
-      window.removeEventListener('scroll',_transScrollFn);
-      _transScrollFn=null;
+  // ── LAZY-LIST HELPER ───────────────────────────────────
+  // Gemeinsames Scroll-Paging für Verlauf & Transaktionen: lädt in .range()-Batches, hält einen
+  // Loader am Listenende, hängt einen Window-Scroll-Listener an (body scrollt, die Nav ist
+  // position:fixed) und räumt ihn beim Seitenwechsel/Voll-Load wieder ab.
+  //   fetchPage(offset,limit) → thenable auf { data, error } (eine Supabase-Query genügt)
+  //   renderBatch(containerEl, rows)  rendert einen Batch (darf eigenen State halten, z.B. Tages-Gruppe)
+  //   onReset()      läuft vor jedem Voll-Load (State zurücksetzen)
+  //   beforeFetch()  läuft vor jedem Fetch (z.B. Spieler-Cache sicherstellen)
+  function createLazyList({pageSize,containerId,loaderId,fetchPage,renderBatch,loadingHtml,emptyHtml,beforeFetch,onReset}){
+    let offset=0,loading=false,done=false,scrollFn=null;
+    function cleanup(){
+      if(scrollFn){window.removeEventListener('scroll',scrollFn);scrollFn=null;}
     }
+    async function loadMore(){
+      if(loading||done)return;
+      loading=true;
+      const loader=document.getElementById(loaderId);
+      if(loader)loader.style.display='flex';
+      if(beforeFetch)await beforeFetch();
+      const{data,error}=await fetchPage(offset,pageSize);
+      if(loader)loader.style.display='none';
+      loading=false;
+      if(error){showToast();return;}
+      if(!data||data.length===0){
+        done=true;
+        document.getElementById(loaderId)?.remove();
+        cleanup();
+        return;
+      }
+      offset+=data.length;
+      if(data.length<pageSize)done=true;
+      renderBatch(document.getElementById(containerId),data);
+      if(done){
+        document.getElementById(loaderId)?.remove();
+        cleanup();
+      }
+    }
+    async function load(){
+      cleanup();
+      offset=0;loading=false;done=false;
+      if(onReset)onReset();
+      const el=document.getElementById(containerId);
+      el.innerHTML=loadingHtml;
+      if(beforeFetch)await beforeFetch();
+      const{data:first,error}=await fetchPage(0,pageSize);
+      if(error)showToast();
+      if(!first||first.length===0){el.innerHTML=emptyHtml;return;}
+      el.innerHTML='';
+      offset=first.length;
+      if(first.length<pageSize){
+        done=true;
+        renderBatch(el,first);
+        return;
+      }
+      // Loader dauerhaft am Ende
+      const loader=document.createElement('div');
+      loader.id=loaderId;loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
+      loader.innerHTML='<div class="spinner"></div>Lade…';
+      el.appendChild(loader);
+      renderBatch(el,first);
+      // Window-Scroll-Listener (body scrollt, nicht .content – nav ist position:fixed)
+      scrollFn=()=>{
+        if(loading||done)return;
+        const remaining=document.documentElement.scrollHeight-window.scrollY-window.innerHeight;
+        if(remaining<400)loadMore();
+      };
+      window.addEventListener('scroll',scrollFn,{passive:true});
+    }
+    return{load,loadMore,cleanup};
   }
 
+  // ── TRANSAKTIONEN ──────────────────────────────────────
+  // Lazy-Loading (via createLazyList), nach Datum gruppiert (Tages-Blöcke mit Summen-Header).
+  // Endet ein Batch mitten in einem Tag, wird die Gruppe im nächsten Batch fortgesetzt (statt doppelt
+  // gerendert) – _transCurGroup hält den offenen Tages-Block über Batch-Grenzen.
+  const _TRANS_PAGE=20;
+  let _transCurGroup=null;
+
   function _transRenderBatch(el,trans){
-    // Anzeige aus Sicht des eingeloggten Spielers: Vorzeichen/Farbe je Zeile relativ zu currentSpieler,
-    // Tagessumme = mein Netto des Tages (nur Transaktionen mit meiner Beteiligung).
+    // Anzeige aus Sicht des eingeloggten Spielers: Vorzeichen/Farbe je Zeile relativ zu currentSpieler.
+    // Tages-Header: war ich an ≥1 Transaktion des Tages beteiligt → mein Netto des Tages mit
+    // Vorzeichen+Farbe (grün positiv, rot negativ); war ich an KEINER beteiligt → neutral grau die
+    // Brutto-Tagessumme aller Einträge (statt sinnlos «€ 0,00»). myNet/brutto/involved wachsen über
+    // Batch-Grenzen weiter, da _transCurGroup die offene Gruppe hält.
     const meId=currentSpieler?.id||null;
-    const dayNet=t=>(t.nach_spieler_id===meId?t.betrag:0)-(t.von_spieler_id===meId?t.betrag:0);
+    const myNet=t=>(t.nach_spieler_id===meId?t.betrag:0)-(t.von_spieler_id===meId?t.betrag:0);
+    const involvedIn=t=>t.nach_spieler_id===meId||t.von_spieler_id===meId;
+    const renderDaySum=g=>{
+      const inner=g.involved
+        ?`<span class="${ksClass(g.myNet)}" style="font-weight:400">· ${fmtSigned(g.myNet)}</span>`
+        :`<span style="font-weight:400;color:var(--text-tertiary)">· ${fmt(g.brutto)}</span>`;
+      g.titleEl.innerHTML=`${g.ds} ${inner}`;
+    };
     trans.forEach(t=>{
       // Neue Tages-Gruppe beginnen, wenn sich das Datum ändert; sonst offene Gruppe fortsetzen.
       if(!_transCurGroup||_transCurGroup.datum!==t.datum){
         const ds=fmtDate(t.datum,{day:'2-digit',month:'long',year:'numeric'});
         const title=document.createElement('div');title.className='section-title';
         const card=document.createElement('div');card.className='card';
-        _transCurGroup={datum:t.datum,ds,summe:0,titleEl:title,cardEl:card};
+        _transCurGroup={datum:t.datum,ds,myNet:0,brutto:0,involved:false,titleEl:title,cardEl:card};
         const loader=document.getElementById('trans-loader');
         if(loader&&loader.parentNode===el){el.insertBefore(title,loader);el.insertBefore(card,loader);}
         else{el.appendChild(title);el.appendChild(card);}
       }
-      _transCurGroup.summe+=dayNet(t);
-      _transCurGroup.titleEl.innerHTML=`${_transCurGroup.ds} <span style="font-weight:400;color:var(--text-tertiary)">· ${fmtSigned(_transCurGroup.summe)}</span>`;
+      _transCurGroup.myNet+=myNet(t);
+      _transCurGroup.brutto+=t.betrag||0;
+      if(involvedIn(t))_transCurGroup.involved=true;
+      renderDaySum(_transCurGroup);
       const icon=transIcon(t);
       const von=t.von?.name||'–',nach=t.nach?.name||'–';
       let amtCls,amtStr;
@@ -4393,65 +4477,21 @@
     });
   }
 
-  async function _transLoadMore(){
-    if(_transLoading||_transDone)return;
-    _transLoading=true;
-    const loader=document.getElementById('trans-loader');
-    if(loader)loader.style.display='flex';
-    const{data:trans,error}=await db.from('transaktionen')
+  const _transList=createLazyList({
+    pageSize:_TRANS_PAGE,
+    containerId:'transaktionen-content',
+    loaderId:'trans-loader',
+    fetchPage:(off,lim)=>db.from('transaktionen')
       .select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)')
       .order('datum',{ascending:false}).order('created_at',{ascending:false})
-      .range(_transOffset,_transOffset+_TRANS_PAGE-1);
-    if(loader)loader.style.display='none';
-    _transLoading=false;
-    if(error){showToast();return;}
-    if(!trans||trans.length===0){
-      _transDone=true;
-      document.getElementById('trans-loader')?.remove();
-      _transCleanup();
-      return;
-    }
-    _transOffset+=trans.length;
-    if(trans.length<_TRANS_PAGE)_transDone=true;
-    _transRenderBatch(document.getElementById('transaktionen-content'),trans);
-    if(_transDone){
-      document.getElementById('trans-loader')?.remove();
-      _transCleanup();
-    }
-  }
-
-  async function loadTransaktionen(){
-    _transCleanup();
-    _transOffset=0;_transLoading=false;_transDone=false;_transCurGroup=null;
-    const el=document.getElementById('transaktionen-content');
-    el.innerHTML='<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>';
-    const{data:first,error}=await db.from('transaktionen')
-      .select('*,von:von_spieler_id(id,name,ist_bank),nach:nach_spieler_id(id,name,ist_bank)')
-      .order('datum',{ascending:false}).order('created_at',{ascending:false})
-      .range(0,_TRANS_PAGE-1);
-    if(error)showToast();
-    if(!first||first.length===0){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`;return;}
-    el.innerHTML='';
-    _transOffset=first.length;
-    if(first.length<_TRANS_PAGE){
-      _transDone=true;
-      _transRenderBatch(el,first);
-      return;
-    }
-    // Loader dauerhaft am Ende
-    const loader=document.createElement('div');
-    loader.id='trans-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
-    loader.innerHTML='<div class="spinner"></div>Lade…';
-    el.appendChild(loader);
-    _transRenderBatch(el,first);
-    // Window-Scroll-Listener (body scrollt, nicht .content – nav ist position:fixed)
-    _transScrollFn=()=>{
-      if(_transLoading||_transDone)return;
-      const remaining=document.documentElement.scrollHeight-window.scrollY-window.innerHeight;
-      if(remaining<400)_transLoadMore();
-    };
-    window.addEventListener('scroll',_transScrollFn,{passive:true});
-  }
+      .range(off,off+lim-1),
+    renderBatch:_transRenderBatch,
+    loadingHtml:'<div class="loading"><div class="spinner" style="width:28px;height:28px;border-width:2.5px"></div></div>',
+    emptyHtml:`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="empty-title">Keine Transaktionen</div></div>`,
+    onReset:()=>{_transCurGroup=null;},
+  });
+  function _transCleanup(){_transList.cleanup();}
+  function loadTransaktionen(){return _transList.load();}
 
   function openTransaktionModal(t){
     editTransaktionID=t?.id||null;
@@ -4541,7 +4581,7 @@
         const beschreibung=von&&nach?`${vonName} → ${nachName}`:(nach?`Einzahlung an ${nachName}`:`Auszahlung von ${vonName}`);
         triggerPush({
           spieler_ids:betroffene,
-          title:`Neue Transaktion: €${betrag.toFixed(2)}`,
+          title:`Neue Transaktion: ${fmt(betrag)}`,
           body:`${beschreibung} – ${kommentar}`,
           data:{url:'/#transaktionen',tag:'transaktion'},
           kategorie:'transaktionen',
@@ -4830,17 +4870,8 @@
   });
 
   // ── SPIEL VERLAUF ──────────────────────────────────────
-  // ── VERLAUF STATE ──────────────────────────────────────
+  // Lazy-Loading via createLazyList (siehe Helper oben).
   const _VERLAUF_PAGE=10;
-  let _verlaufOffset=0,_verlaufLoading=false,_verlaufDone=false;
-  let _verlaufSpiele=[],_verlaufScrollEl=null,_verlaufScrollFn=null;
-
-  function _verlaufCleanup(){
-    if(_verlaufScrollFn){
-      window.removeEventListener('scroll',_verlaufScrollFn);
-      _verlaufScrollFn=null;_verlaufScrollEl=null;
-    }
-  }
 
   function _verlaufRenderBatch(el,spiele){
     const smap=_spielerMap||{};
@@ -4889,75 +4920,22 @@
     });
   }
 
-  async function _verlaufLoadMore(){
-    if(_verlaufLoading||_verlaufDone)return;
-    _verlaufLoading=true;
-    const loader=document.getElementById('verlauf-loader');
-    if(loader)loader.style.display='flex';
-    await _ensureSpielerMap();
-    const{data:spiele}=await db.from('spiele')
+  const _verlaufList=createLazyList({
+    pageSize:_VERLAUF_PAGE,
+    containerId:'verlauf-content',
+    loaderId:'verlauf-loader',
+    beforeFetch:_ensureSpielerMap, // Spieler-Cache vor jedem Fetch sicherstellen (renderBatch liest _spielerMap)
+    fetchPage:(off,lim)=>db.from('spiele')
       .select('id,datum,buyin_pot,buyin_kassa,modus,spiel_teilnehmer(id,spieler_id,buyins,payout)')
       .eq('abgeschlossen',true)
       .order('datum',{ascending:false})
-      .range(_verlaufOffset,_verlaufOffset+_VERLAUF_PAGE-1);
-    if(loader)loader.style.display='none';
-    _verlaufLoading=false;
-    if(!spiele||spiele.length===0){
-      _verlaufDone=true;
-      document.getElementById('verlauf-loader')?.remove();
-      _verlaufCleanup();
-      return;
-    }
-    _verlaufSpiele.push(...spiele);
-    _verlaufOffset+=spiele.length;
-    if(spiele.length<_VERLAUF_PAGE)_verlaufDone=true;
-    const el=document.getElementById('verlauf-content');
-    _verlaufRenderBatch(el,spiele);
-    if(_verlaufDone){
-      document.getElementById('verlauf-loader')?.remove();
-      _verlaufCleanup();
-    }
-  }
-
-  async function loadVerlauf(){
-    _verlaufCleanup();
-    _verlaufOffset=0;_verlaufLoading=false;_verlaufDone=false;_verlaufSpiele=[];
-    const el=document.getElementById('verlauf-content');
-    el.innerHTML=`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`;
-    await _ensureSpielerMap();
-    const{data:first,error:_verlaufErr}=await db.from('spiele')
-      .select('id,datum,buyin_pot,buyin_kassa,modus,spiel_teilnehmer(id,spieler_id,buyins,payout)')
-      .eq('abgeschlossen',true)
-      .order('datum',{ascending:false})
-      .range(0,_VERLAUF_PAGE-1);
-    if(_verlaufErr)showToast();
-    if(!first||first.length===0){
-      el.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`;
-      return;
-    }
-    el.innerHTML='';
-    _verlaufSpiele.push(...first);
-    _verlaufOffset=first.length;
-    if(first.length<_VERLAUF_PAGE){
-      _verlaufDone=true;
-      _verlaufRenderBatch(el,first);
-      return;
-    }
-    // Loader dauerhaft am Ende
-    const loader=document.createElement('div');
-    loader.id='verlauf-loader';loader.className='loading';loader.style.cssText='display:none;padding:var(--space-lg)';
-    loader.innerHTML='<div class="spinner"></div>Lade…';
-    el.appendChild(loader);
-    _verlaufRenderBatch(el,first);
-    // Window-Scroll-Listener (body scrollt, nicht .content – nav ist position:fixed)
-    _verlaufScrollEl=window;
-    _verlaufScrollFn=()=>{
-      if(_verlaufLoading||_verlaufDone)return;
-      const remaining=document.documentElement.scrollHeight-window.scrollY-window.innerHeight;
-      if(remaining<400)_verlaufLoadMore();
-    };
-    window.addEventListener('scroll',_verlaufScrollFn,{passive:true});
-  }
+      .range(off,off+lim-1),
+    renderBatch:_verlaufRenderBatch,
+    loadingHtml:`<div class="loading"><div class="spinner"></div>Wird geladen…</div>`,
+    emptyHtml:`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-title">Noch keine Spiele</div><div class="empty-subtitle">Abgeschlossene Spiele erscheinen hier.</div></div>`,
+  });
+  function _verlaufCleanup(){_verlaufList.cleanup();}
+  function loadVerlauf(){return _verlaufList.load();}
 
   // ── SPIEL DETAIL ────────────────────────────────────────
   async function showSpielDetail(spiel){
@@ -7088,6 +7066,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.18',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Online-Modus: Der Buy-In-Wert (Chip-Euro-Kurs) wird jetzt beim Session-Start gespeichert. Ändert der Admin die Einstellung während einer laufenden Session, bleiben angezeigte Kosten und die spätere Abrechnung stabil – so wie es bereits bei den normalen Spielabenden ist'},
+      {typ:'verbessert',text:'Konto/Transaktionen: Die Tagessumme wird jetzt immer angezeigt – an Tagen mit eigener Beteiligung wie bisher farbig mit Vorzeichen (dein Netto), an Tagen ohne eigene Beteiligung neutral grau als Gesamtsumme aller Buchungen des Tages'},
+      {typ:'verbessert',text:'App-Update-Hinweis: Eine lange geöffnete App erfährt jetzt auch beim Zurückkehren zum Tab von einer neuen Version (bisher nur einmal kurz nach dem Start)'},
+      {typ:'verbessert',text:'Wenn das Speichern einer Änderung fehlschlägt, erscheint jetzt zusätzlich ein kurzer Hinweis am unteren Bildschirmrand'},
+      {typ:'fix',text:'Der Betrags-Ziffernblock im Online-Modus erscheint auf dem Handy wieder zuverlässig – ein eingeblendetes Bildschirm-Keyboard wird nicht mehr fälschlich als angeschlossene Tastatur gewertet'},
+    ]},
     {version:'4.17',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Spieler-Statistik: In der Kopfzeile steht wieder „Dabei seit <Monat Jahr>". Bisher fehlte bei allen Spielern das Datum, weil das Eintrittsdatum beim Öffnen der Statistik nicht mitgeladen wurde'},
     ]},
@@ -8209,10 +8194,21 @@
   // Reactive: first real keydown overrides and persists via localStorage
   (function(){
     function _applyKeyboard(){document.body.classList.add('has-keyboard');}
-    if(localStorage.getItem('dtks_has_keyboard')==='true'){_applyKeyboard();return;}
+    // Präziser Zeiger = echte physische Tastatur wahrscheinlich (Desktop/Laptop). Auf Handys
+    // (pointer:coarse) feuert auch das Soft-Keyboard Keydown-Events – darf NICHT als Tastatur zählen.
+    const _finePointer=()=>matchMedia('(pointer:fine)').matches;
+    // Bereits persistierten Wert validieren: fehlt ein präziser Zeiger (z.B. Handy, das früher
+    // fälschlich als Tastatur-Gerät markiert wurde), den Key verwerfen – sonst entfiele das
+    // Betrags-Numpad im Online-Modus dauerhaft.
+    if(localStorage.getItem('dtks_has_keyboard')==='true'){
+      if(_finePointer()){_applyKeyboard();return;}
+      localStorage.removeItem('dtks_has_keyboard');
+    }
     if(matchMedia('(pointer:fine) and (hover:hover)').matches){_applyKeyboard();}
     window.addEventListener('keydown',function _kbDetect(e){
       if(['Meta','Alt','Control','Shift'].includes(e.key))return;
+      // Reaktiver Pfad nur mit präzisem Zeiger greifen lassen (Android Soft-Keyboard-Schutz).
+      if(!_finePointer())return;
       localStorage.setItem('dtks_has_keyboard','true');
       _applyKeyboard();
       window.removeEventListener('keydown',_kbDetect);
@@ -8773,7 +8769,7 @@
       const btn=document.getElementById('pm-new-ok');btn.disabled=true;btn.textContent='Erstelle…';
       const spiel_id=null; // created at payout confirmation, not at session start
       const big_blind=big_blind_v;
-      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting'}).select().single();
+      const{data:sess,error}=await db.from('online_spiele').insert({spiel_id,variante,small_blind,big_blind,start_stack,is_test,status:'waiting',buyin_pot:einstellungen?.buyin_pot??5}).select().single();
       if(error||!sess){btn.disabled=false;btn.textContent='Session erstellen';await showAlert('Fehler: '+(error?.message||'Unbekannt'));return;}
       // Push notification: notify all OTHER players subscribed to session_start
       const _otherPlayers=(alleSpieler||[]).filter(s=>s.aktiv&&!s.ist_bank&&s.id!==currentSpieler?.id).map(s=>s.id);
@@ -9154,8 +9150,8 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
-      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
-      ${(()=>{const _bPot=einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
       ${(()=>{const bb=(session.small_blind||0.05)*2;const bbs=bb>0?Math.round((mySeat.stack||0)/bb*10)/10:0;return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">BBs</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${bbs}×</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Runde #</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${session.hand_nr||0}</div></div>
       ${(()=>{const bet=mySeat.bet_current_round||0;const bc=bet>0?'var(--text-primary)':'var(--text-tertiary)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Einsatz</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${bc}">€${bet.toFixed(2)}</div></div>`;})()}
@@ -9758,7 +9754,7 @@
       );
       const _buyinBtn=_alreadyBoughtInThisHand
         ?`<div style="font-size:13px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Bereit für nächste Spielrunde</div>`
-        :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(einstellungen?.buyin_pot??5).toFixed(2)}</button>`;
+        :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(session.buyin_pot??einstellungen?.buyin_pot??5).toFixed(2)}</button>`;
       return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div>${_buyinBtn}</div>`;
     }
     if(mySeat&&isWaiting){return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div></div>`;}
@@ -10684,7 +10680,7 @@
     // Rebuy nur bei leerem Stack (immer genau 1 Buy-In auf einmal)
     if((_pm.mySeat.stack||0)>0){showAlert('Ein neuer Buy-In ist erst möglich, wenn dein Stack leer ist.');return;}
     const startStack=_pm.session?.start_stack||100;
-    const bPot=einstellungen?.buyin_pot??5;
+    const bPot=_pm.session?.buyin_pot??einstellungen?.buyin_pot??5; // Snapshot der Session, Fallback für Alt-Sessions
     const bKassa=0; // online sessions: no pokerkasse fee
     const chipToEur=bPot/(startStack||bPot);
     const chips=(startStack*chipToEur).toFixed(2);
@@ -10716,7 +10712,7 @@
     if((_pm?.mySeat?.stack??0)>0)return;
     const _myId=currentSpieler?.id;const _curHnr=_pm?.session?.hand_nr;
     if(_myId&&_curHnr!=null&&(_pm?.actions||[]).some(a=>a.hand_nr===_curHnr&&a.spieler_id===_myId&&a.action==='win'))return;
-    const startStack=_pm?.session?.start_stack||100;
+    const bPot=_pm?.session?.buyin_pot??einstellungen?.buyin_pot??5; // Buy-In-Kosten = Snapshot der Session, Fallback für Alt-Sessions
     const overlay=document.createElement('div');
     overlay.id='pm-broke-overlay';
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
@@ -10725,7 +10721,7 @@
       <div style="font-size:20px;font-weight:800;margin-bottom:6px">Stack leer</div>
       <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--danger);margin-bottom:10px">€0.00</div>
       <div style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg)">Du hast keinen Stack mehr. Möchtest du mit einem neuen Buy-In weiterspielen?</div>
-      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${(+startStack).toFixed(2)}</button>
+      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${(+bPot).toFixed(2)}</button>
       <button id="pm-broke-watch" class="btn btn-ghost" style="width:100%;height:42px!important;font-size:14px;margin-bottom:8px">Beobachten</button>
       <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:13px">Tisch verlassen</button>
     </div>`;
@@ -10848,7 +10844,7 @@
 
     // Build per-player summary rows (exclude bots)
     // Normalize chip values to real euros: 1 chip = buyin_pot / start_stack
-    const _bPot=einstellungen?.buyin_pot??5;
+    const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5; // Snapshot der Session, Fallback für Alt-Sessions
     const _bKassa=0; // online sessions: no pokerkasse fee
     const _chipToEur=_bPot/(startStack||_bPot);
     // Aggregation pro Spieler: zählt alle Sitze mit echten Buy-Ins (buyins>0) –
@@ -10948,7 +10944,7 @@
         const today=localDateStr();
         const{data:ns,error:nsErr}=await db.from('spiele').insert({
           datum:today,
-          buyin_pot:einstellungen?.buyin_pot??5,
+          buyin_pot:session.buyin_pot??einstellungen?.buyin_pot??5,
           buyin_kassa:0,
           modus:'online',
           abgeschlossen:true,
