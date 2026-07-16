@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.17">
+  <meta name="version" content="4.18">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.17';
+  const VERSION='4.18';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -7066,6 +7066,13 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.18',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Online-Modus: Der Buy-In-Wert (Chip-Euro-Kurs) wird jetzt beim Session-Start gespeichert. Ändert der Admin die Einstellung während einer laufenden Session, bleiben angezeigte Kosten und die spätere Abrechnung stabil – so wie es bereits bei den normalen Spielabenden ist'},
+      {typ:'verbessert',text:'Konto/Transaktionen: Die Tagessumme wird jetzt immer angezeigt – an Tagen mit eigener Beteiligung wie bisher farbig mit Vorzeichen (dein Netto), an Tagen ohne eigene Beteiligung neutral grau als Gesamtsumme aller Buchungen des Tages'},
+      {typ:'verbessert',text:'App-Update-Hinweis: Eine lange geöffnete App erfährt jetzt auch beim Zurückkehren zum Tab von einer neuen Version (bisher nur einmal kurz nach dem Start)'},
+      {typ:'verbessert',text:'Wenn das Speichern einer Änderung fehlschlägt, erscheint jetzt zusätzlich ein kurzer Hinweis am unteren Bildschirmrand'},
+      {typ:'fix',text:'Der Betrags-Ziffernblock im Online-Modus erscheint auf dem Handy wieder zuverlässig – ein eingeblendetes Bildschirm-Keyboard wird nicht mehr fälschlich als angeschlossene Tastatur gewertet'},
+    ]},
     {version:'4.17',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Spieler-Statistik: In der Kopfzeile steht wieder „Dabei seit <Monat Jahr>". Bisher fehlte bei allen Spielern das Datum, weil das Eintrittsdatum beim Öffnen der Statistik nicht mitgeladen wurde'},
     ]},
