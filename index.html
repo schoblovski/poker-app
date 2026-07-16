@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="version" content="4.18">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,6 +25,11 @@
     /* Farbenblind-Modus: Grün → Blau (Rot-Grün-Schwäche) */
     [data-theme="light"][data-colorblind="true"]{--accent:#2563eb;--accent-soft:#dbeafe;--accent-text:#1d4ed8;}
     [data-theme="dark"][data-colorblind="true"]{--accent:#38bdf8;--accent-soft:#082f49;--accent-text:#7dd3fc;}
+    /* Fallback: Browser ohne backdrop-filter (ältere Android-WebViews) → Header/Nav voll deckend statt durchscheinend */
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      [data-theme="light"]{--header-bg:#f2f2f7;--nav-bg:#f2f2f7;}
+      [data-theme="dark"]{--header-bg:#0d0d0f;--nav-bg:#0d0d0f;}
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
     body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -179,7 +184,7 @@
     .bell-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;}
     .bell-badge[hidden]{display:none!important;}
     .bell-btn[hidden]{display:none!important;}
-    .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
+    .content{flex:1;overflow-y:auto;overscroll-behavior-y:contain;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
     .content::-webkit-scrollbar{width:4px;}
     .content::-webkit-scrollbar-track{background:transparent;}
     .content::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:2px;}
@@ -328,7 +333,7 @@
     @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
     @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
     @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
-    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
+    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92dvh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
     .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
@@ -1146,7 +1151,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Beweisfoto (optional)</label>
-        <input type="file" id="hand-foto-input" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="hand-foto-input" accept="image/*" style="display:none">
         <button type="button" class="hand-foto-upload-btn" id="hand-foto-upload-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Foto hinzufügen
@@ -6961,7 +6966,7 @@
       el.innerHTML=`
         <button class="back-btn" id="eq-back">${backIcon} Zurück</button>
         <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
-        <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
+        <input type="file" accept="image/*" id="eq-photo-input" style="display:none">
         ${_analyzedImageSrc?`<div class="eq-photo-preview">
           <img src="${escHtml(_analyzedImageSrc)}" class="hand-foto-thumb eq-photo-preview-img" alt="Analysiertes Foto">
           <button type="button" class="eq-photo-preview-close" id="eq-photo-preview-close" title="Foto ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
