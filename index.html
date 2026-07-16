@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="version" content="4.18">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="version" content="4.19">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -25,6 +25,11 @@
     /* Farbenblind-Modus: Grün → Blau (Rot-Grün-Schwäche) */
     [data-theme="light"][data-colorblind="true"]{--accent:#2563eb;--accent-soft:#dbeafe;--accent-text:#1d4ed8;}
     [data-theme="dark"][data-colorblind="true"]{--accent:#38bdf8;--accent-soft:#082f49;--accent-text:#7dd3fc;}
+    /* Fallback: Browser ohne backdrop-filter (ältere Android-WebViews) → Header/Nav voll deckend statt durchscheinend */
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      [data-theme="light"]{--header-bg:#f2f2f7;--nav-bg:#f2f2f7;}
+      [data-theme="dark"]{--header-bg:#0d0d0f;--nav-bg:#0d0d0f;}
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html{height:100%;}
     body{font-family:var(--font-sans);background:var(--bg);color:var(--text-primary);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--transition),color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -179,7 +184,7 @@
     .bell-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface);box-sizing:content-box;}
     .bell-badge[hidden]{display:none!important;}
     .bell-btn[hidden]{display:none!important;}
-    .content{flex:1;overflow-y:auto;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
+    .content{flex:1;overflow-y:auto;overscroll-behavior-y:contain;padding:var(--space-lg) var(--space-lg);padding-left:calc(var(--safe-left) + var(--space-lg));padding-right:calc(var(--safe-right) + var(--space-lg));padding-bottom:calc(var(--safe-bottom) + 90px);position:relative;z-index:1;}
     .content::-webkit-scrollbar{width:4px;}
     .content::-webkit-scrollbar-track{background:transparent;}
     .content::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:2px;}
@@ -328,7 +333,7 @@
     @keyframes modal-slide-out{from{transform:none}to{transform:translateY(100%)}}
     @keyframes modal-scale-in{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:none}}
     @keyframes modal-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(0.93)}}
-    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92vh;overflow-y:auto;overflow-x:hidden;}
+    .modal{background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--space-lg) var(--space-xl) calc(var(--safe-bottom) + var(--space-lg));width:100%;max-width:430px;max-height:92dvh;overflow-y:auto;overflow-x:hidden;}
     .modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto var(--space-lg);}
     .modal-title{font-size:18px;font-weight:700;margin-bottom:var(--space-lg);letter-spacing:-.3px;}
     .modal-actions{display:flex;gap:var(--space-sm);margin-top:var(--space-lg);}
@@ -1146,7 +1151,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Beweisfoto (optional)</label>
-        <input type="file" id="hand-foto-input" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="hand-foto-input" accept="image/*" style="display:none">
         <button type="button" class="hand-foto-upload-btn" id="hand-foto-upload-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Foto hinzufügen
@@ -1452,7 +1457,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.18';
+  const VERSION='4.19';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -1657,13 +1662,28 @@
           <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">Nicht jetzt</button>
         </div>`;
     } else {
+      // Android/Desktop: „Installieren"-Button nur wenn Chrome das beforeinstallprompt-Event
+      // bereitgestellt hat. Ist das (noch) nicht der Fall, zeigen wir eine manuelle Anleitung
+      // übers Chrome-Menü statt eines nackten „Nicht jetzt".
+      const manualSteps=hasPrompt?'':`
+        <ol class="pwa-steps">
+          <li class="pwa-step">
+            <div class="pwa-step-num">1</div>
+            <div class="pwa-step-text">Tippe in Chrome oben rechts auf das <span class="pwa-share-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg> Menü</span></div>
+          </li>
+          <li class="pwa-step">
+            <div class="pwa-step-num">2</div>
+            <div class="pwa-step-text">Wähle <strong>„App installieren"</strong> (bei älteren Versionen <strong>„Zum Startbildschirm hinzufügen"</strong>)</div>
+          </li>
+        </ol>`;
       body.innerHTML=`
         <div class="pwa-icon-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="72" height="72"><rect width="192" height="192" fill="white"/><text x="50%" y="52%" font-size="120" dominant-baseline="central" text-anchor="middle">♠</text></svg></div>
         <div class="pwa-title" id="pwa-title">App installieren</div>
         <p class="pwa-sub" id="pwa-desc">Installiere DTKS Poker als App – schneller Zugriff, kein Browser nötig.</p>
+        ${manualSteps}
         <div class="pwa-btn-row">
           ${hasPrompt?`<button class="btn btn-primary" id="pwa-install-now" style="flex:1">Installieren</button>`:''}
-          <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">Nicht jetzt</button>
+          <button class="btn btn-secondary" id="pwa-not-now" style="flex:1">${hasPrompt?'Nicht jetzt':'Verstanden'}</button>
         </div>`;
     }
     overlay.classList.add('open');
@@ -6961,7 +6981,7 @@
       el.innerHTML=`
         <button class="back-btn" id="eq-back">${backIcon} Zurück</button>
         <button class="btn btn-secondary" id="eq-camera" style="width:100%;margin:var(--space-sm) 0 var(--space-md)" ${_analyzing?'disabled':''}>${_analyzing?'<span class="eq-spinner"></span> Bild wird analysiert…':cameraIcon+' Tisch fotografieren & auswerten'}</button>
-        <input type="file" accept="image/*" capture="environment" id="eq-photo-input" style="display:none">
+        <input type="file" accept="image/*" id="eq-photo-input" style="display:none">
         ${_analyzedImageSrc?`<div class="eq-photo-preview">
           <img src="${escHtml(_analyzedImageSrc)}" class="hand-foto-thumb eq-photo-preview-img" alt="Analysiertes Foto">
           <button type="button" class="eq-photo-preview-close" id="eq-photo-preview-close" title="Foto ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
@@ -7066,6 +7086,14 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.19',datum:'Juli 2026',eintraege:[
+      {typ:'verbessert',text:'Android: Der Blind-Timer und der Online-Tisch lassen sich auf installierten Android-Geräten jetzt wieder ins Querformat drehen (die App war dort bisher auf Hochformat festgelegt)'},
+      {typ:'fix',text:'Android: Beim Herunterziehen am oberen Rand aktualisiert nur noch die App selbst – der Browser lädt nicht mehr zusätzlich die ganze Seite neu'},
+      {typ:'verbessert',text:'Android: App-Icon und Benachrichtigungs-Symbol werden als echte Grafiken ausgeliefert (statt eines Emojis, das auf Android oft leer blieb), inklusive passendem Symbol in der Statusleiste bei Push-Nachrichten'},
+      {typ:'verbessert',text:'Android: Beim Erfassen eines Beweisfotos kann wieder zwischen Kamera und Galerie gewählt werden – vorher wurde direkt die Kamera erzwungen'},
+      {typ:'fix',text:'Android: Das eingeblendete Bildschirm-Keyboard verdeckt Eingabefelder in Dialogen nicht mehr'},
+      {typ:'verbessert',text:'Android: Die App lässt sich jetzt korrekt als App installieren (Chrome-Menü → „App installieren"); steht der Dialog noch nicht bereit, zeigt die App eine kurze Anleitung statt nur „Nicht jetzt"'},
+    ]},
     {version:'4.18',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Online-Modus: Der Buy-In-Wert (Chip-Euro-Kurs) wird jetzt beim Session-Start gespeichert. Ändert der Admin die Einstellung während einer laufenden Session, bleiben angezeigte Kosten und die spätere Abrechnung stabil – so wie es bereits bei den normalen Spielabenden ist'},
       {typ:'verbessert',text:'Konto/Transaktionen: Die Tagessumme wird jetzt immer angezeigt – an Tagen mit eigener Beteiligung wie bisher farbig mit Vorzeichen (dein Netto), an Tagen ohne eigene Beteiligung neutral grau als Gesamtsumme aller Buchungen des Tages'},
