@@ -95,3 +95,16 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => {
   event.waitUntil(clients.claim());
 });
+
+// ── FETCH ───────────────────────────────────────────────────────────────────
+// Kein Offline-Cache – die App ist bewusst online-first. Dieser Handler
+// existiert, damit Chrome die PWA als installierbar erkennt: ein registrierter
+// Service Worker MIT fetch-Handler ist Voraussetzung dafür, dass Android das
+// `beforeinstallprompt`-Event feuert (sonst erscheint kein Installations-Dialog).
+// Er reicht Navigations-Requests unverändert ans Netzwerk durch; alle übrigen
+// Requests (Supabase, Fonts, …) bleiben komplett unberührt (kein respondWith).
+self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
+  }
+});

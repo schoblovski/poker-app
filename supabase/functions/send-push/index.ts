@@ -31,6 +31,20 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Push-Kategorien: EINE zentrale Default-Definition (alle 7 Kategorien default AN).
+// Muss mit der Client-Definition (PUSH_CAT_DEFAULTS / pushCatEnabled in index.html)
+// übereinstimmen: fehlender/undefined/null Key → Default AN, explizit false → aus.
+const PUSH_CAT_DEFAULTS: Record<string, boolean> = {
+  spielergebnisse: true, buyins: true, neue_hand: true, transaktionen: true,
+  app_updates: true, online_spiel: true, session_start: true,
+};
+function pushCatEnabled(einstellungen: Record<string, unknown> | null | undefined, kat: string): boolean {
+  const e = einstellungen ?? {};
+  const v = e[kat];
+  if (v === undefined || v === null) return PUSH_CAT_DEFAULTS[kat] !== false;
+  return v !== false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS });
@@ -61,15 +75,18 @@ Deno.serve(async (req) => {
   if (spieler_ids && spieler_ids.length > 0) {
     query = query.in('spieler_id', spieler_ids);
   }
-  if (kategorie) {
-    query = query.eq(`einstellungen->>${kategorie}`, 'true');
-  }
 
-  const { data: subs, error } = await query;
+  const { data: allSubs, error } = await query;
   if (error) {
     console.error('DB Fehler:', error);
     return new Response('DB Error', { status: 500, headers: CORS });
   }
+  // Kategorie-Filter in JS (identische Default-Semantik wie im Client): fehlender
+  // Key → default AN. Ein DB-seitiges eq('...','true') würde alte Subscriptions
+  // ohne den Key fälschlich ausschliessen.
+  const subs = kategorie
+    ? (allSubs ?? []).filter((s) => pushCatEnabled(s.einstellungen, kategorie))
+    : (allSubs ?? []);
   if (!subs || subs.length === 0) {
     console.log('Keine Subscriptions gefunden');
     return new Response(JSON.stringify({ sent: 0, errors: 0 }), {
