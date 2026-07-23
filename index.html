@@ -2980,8 +2980,12 @@
     // Nur EINE spieler-Query: alle laden, aktiv-Filter clientseitig. Befüllt zugleich den Spieler-Cache.
     const _homeRes=await Promise.all([
       db.from('spieler').select('id,name,profilbild,email,aktiv,ist_bank,ist_admin,ist_bot,eintrittsdatum'),
-      db.from('transaktionen').select('*'),
-      db.from('spiel_teilnehmer').select('*,spiele!inner(abgeschlossen,buyin_pot,buyin_kassa,modus)').eq('spiele.abgeschlossen',true),
+      // Nur die für die Saldenberechnung benötigten Spalten laden (Bandbreite): berechneKontostaende
+      // + berechneBankkonto nutzen aus Transaktionen nur von/nach/betrag; aus spiel_teilnehmer nur
+      // spieler_id/spiel_id/payout/buyins. Der spiele-Embed dient allein dem abgeschlossen-Inner-Join-
+      // Filter (die Faktoren kommen aus der separaten spiele-Query unten via spieleMap).
+      db.from('transaktionen').select('von_spieler_id,nach_spieler_id,betrag'),
+      db.from('spiel_teilnehmer').select('spieler_id,spiel_id,payout,buyins,spiele!inner(abgeschlossen)').eq('spiele.abgeschlossen',true),
       db.from('spiele').select('id,buyin_pot,buyin_kassa,modus').eq('abgeschlossen',true)
     ]);
     if(_homeRes.some(r=>r?.error))showToast();
