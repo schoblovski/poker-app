@@ -20,8 +20,8 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
   <style>
     :root{--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--font-sans:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;--transition:180ms ease;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);}
-    [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
-    [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
+    [data-theme="light"]{--bg:#f2f2f7;--bg-elevated:#fff;--bg-secondary:#e8e8ed;--surface:#fff;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text-primary:#1c1c1e;--text-secondary:#6c6c70;--text-tertiary:#aeaeb2;--accent:#16a34a;--accent-soft:#dcfce7;--accent-text:#15803d;--danger:#dc2626;--danger-soft:#fee2e2;--warning:#d97706;--warning-soft:#fef3c7;--info:#2563eb;--info-soft:#dbeafe;--badge-amber-bg:#fef3c7;--badge-amber-text:#92400e;--badge-violet-bg:#ede9fe;--badge-violet-text:#7c3aed;--badge-blue-bg:#eff6ff;--badge-blue-text:#2563eb;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);--shadow-lg:0 8px 30px rgba(0,0,0,.12);--nav-bg:rgba(242,242,247,.88);--header-bg:rgba(242,242,247,.88);--theme-color:#f2f2f7;}
+    [data-theme="dark"]{--bg:#0d0d0f;--bg-elevated:#1c1c1e;--bg-secondary:#2c2c2e;--surface:#1c1c1e;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);--text-primary:#f5f5f7;--text-secondary:#98989f;--text-tertiary:#636366;--accent:#22c55e;--accent-soft:#052e16;--accent-text:#4ade80;--danger:#f87171;--danger-soft:#2d0a0a;--warning:#fbbf24;--warning-soft:#2d1f00;--info:#60a5fa;--info-soft:#1e3a5f;--badge-amber-bg:#3a2c05;--badge-amber-text:#fbbf24;--badge-violet-bg:#2e1065;--badge-violet-text:#c4b5fd;--badge-blue-bg:#172554;--badge-blue-text:#93c5fd;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-lg:0 8px 30px rgba(0,0,0,.5);--nav-bg:rgba(13,13,15,.88);--header-bg:rgba(13,13,15,.88);--theme-color:#0d0d0f;}
     /* Farbenblind-Modus: Grün → Blau (Rot-Grün-Schwäche) */
     [data-theme="light"][data-colorblind="true"]{--accent:#2563eb;--accent-soft:#dbeafe;--accent-text:#1d4ed8;}
     [data-theme="dark"][data-colorblind="true"]{--accent:#38bdf8;--accent-soft:#082f49;--accent-text:#7dd3fc;}
@@ -163,7 +163,7 @@
     .pm-rt-badge[hidden]{display:none;}
     #pm-rt-badge{display:none!important;}
     .pm-rt-badge.rt-live{background:var(--accent-soft);color:var(--accent-text);}
-    .pm-rt-badge.rt-connecting{background:#fef3c7;color:#92400e;}
+    .pm-rt-badge.rt-connecting{background:var(--badge-amber-bg);color:var(--badge-amber-text);}
     .pm-rt-badge.rt-error{background:var(--danger-soft);color:var(--danger);}
     /* Inline badge on the table SVG – same style as the expand button */
     #pm-rt-inline{background:rgba(0,0,0,.45)!important;color:#fff!important;border-radius:6px!important;padding:5px 8px!important;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
@@ -197,16 +197,6 @@
     .nav-btn.active svg{stroke-width:2.2;}
     .nav-label{font-size:10px;font-weight:500;letter-spacing:.2px;}
 
-    /* OPTIMIERUNG: Rahmen entfernen auf Mobilgeräten ODER wenn als Web-App installiert */
-    @media (max-width: 480px), (display-mode: standalone) {
-      .app-container {
-        max-width: 100%;
-        border-left: none;
-        border-right: none;
-        box-shadow: none;
-      }
-    }
-    
     /* COMPONENTS */
     .section-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.7px;margin:var(--space-lg) 0 var(--space-sm);}
     .section-title:first-child{margin-top:0;}
@@ -248,8 +238,8 @@
     .counter-name{font-size:15px;font-weight:500;}
     .counter-sub{font-size:12px;color:var(--text-secondary);margin-top:2px;}
     .counter-controls{display:flex;align-items:center;gap:var(--space-sm);}
-    .counter-btn{width:34px;height:34px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);}
-    .counter-btn svg{width:16px;height:16px;}
+    .counter-btn{width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);}
+    .counter-btn svg{width:18px;height:18px;}
     .counter-btn.minus{background:var(--danger-soft);color:var(--danger);}
     .counter-btn.plus{background:var(--accent-soft);color:var(--accent-text);}
     .counter-btn:active{transform:scale(.88);}
@@ -609,7 +599,7 @@
   .blind-levels-editor table{width:100%;border-collapse:collapse;font-size:13px;}
   .blind-levels-editor th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
   .blind-levels-editor td{padding:4px 4px;}
-  .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:13px;font-family:var(--font-mono);text-align:right;}
+  .blind-levels-editor td input{width:100%;padding:5px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:16px;font-family:var(--font-mono);text-align:right;}
   .blind-level-row.active-level td{background:var(--accent-soft);}
 
   /* Benachrichtigungen */
@@ -669,7 +659,7 @@
   .eq-hand{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-sm);}
   .eq-hand-side{display:flex;flex-direction:column;align-items:flex-start;gap:6px;flex-shrink:0;min-width:52px;}
   .eq-hand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
-  .eq-edit-btn{width:28px;height:28px;border-radius:var(--radius-md);border:none;background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+  .eq-edit-btn{width:36px;height:36px;border-radius:var(--radius-md);border:none;background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
   .eq-edit-btn svg{width:14px;height:14px;}
   .eq-edit-btn:active{transform:scale(.92);}
   .eq-cards{display:flex;gap:6px;cursor:pointer;}
@@ -685,7 +675,7 @@
   .eq-card.filled.s-red{color:#dc2626;}
   .eq-card .eq-card-rank{font-size:20px;line-height:1;letter-spacing:-.5px;font-weight:800;}
   .eq-card .eq-card-suit{font-size:16px;line-height:1;margin-top:2px;}
-  .eq-remove{margin-left:auto;width:36px;height:36px;flex-shrink:0;border-radius:var(--radius-md);border:none;background:var(--danger-soft);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .eq-remove{margin-left:auto;width:44px;height:44px;flex-shrink:0;border-radius:var(--radius-md);border:none;background:var(--danger-soft);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .eq-remove:active{transform:scale(.92);}
   .eq-remove svg{width:14px;height:14px;}
   .eq-result-pct{font-size:22px;font-weight:800;color:var(--accent-text);font-variant-numeric:tabular-nums;min-width:72px;text-align:right;letter-spacing:-.5px;}
@@ -828,9 +818,9 @@
   .pm-feed-item.win .pf-ini{background:rgba(0,0,0,.08)}
   .pm-feed-item.fold-action{background:var(--danger-soft);color:var(--danger)}
   .pm-feed-item.fold-action .pf-ini{background:rgba(0,0,0,.07)}
-  .pm-feed-item.allin-action{background:#fff7ed;color:#c2410c;font-weight:700}
+  .pm-feed-item.allin-action{background:var(--badge-amber-bg);color:var(--badge-amber-text);font-weight:700}
   .pm-feed-item.allin-action .pf-ini{background:rgba(0,0,0,.07)}
-  .pm-feed-item.facedown-action{background:#eff6ff;color:#2563eb}
+  .pm-feed-item.facedown-action{background:var(--badge-blue-bg);color:var(--badge-blue-text)}
   .pm-feed-item.facedown-action .pf-ini{background:rgba(0,0,0,.07)}
   @keyframes pm-react-full{0%{opacity:0;transform:scale(0.05)}12%{opacity:1;transform:scale(1.25)}22%{transform:scale(0.92)}30%{transform:scale(1.06)}38%{transform:scale(1);opacity:1}78%{transform:scale(1);opacity:1}100%{opacity:0;transform:scale(0.85)}}
   /* transform-origin is set inline to exact SVG seat coords – avoids transform-box:fill-box
@@ -850,7 +840,7 @@
   .pm-chat-msg .pm-chat-name{font-weight:700;color:var(--text-primary);margin-right:6px}
   .pm-chat-msg .pm-chat-text{color:var(--text-secondary)}
   .pm-chat-input-row{display:flex;gap:8px;margin-top:var(--space-sm)}
-  .pm-chat-input{flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary)}
+  .pm-chat-input{flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text-primary)}
 
   /* Info-Streifen */
   .pm-street-bar{display:flex;align-items:center;justify-content:space-between;padding:6px var(--space-md);background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;font-weight:600}
@@ -1233,7 +1223,7 @@
           <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:baseline"><span style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:52px;flex-shrink:0">Check</span><span style="font-size:13px;color:var(--text-secondary)">Nichts setzen (nur wenn niemand vor dir gesetzt hat)</span></div>
           <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:baseline"><span style="font-weight:700;font-size:13px;color:var(--text-primary);min-width:52px;flex-shrink:0">Call</span><span style="font-size:13px;color:var(--text-secondary)">Den aktuellen Einsatz mitgehen</span></div>
           <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:baseline"><span style="font-weight:700;font-size:13px;color:var(--accent-text);min-width:52px;flex-shrink:0">Raise</span><span style="font-size:13px;color:var(--text-secondary)">Erhöhen — mindestens das Doppelte des letzten Einsatzes</span></div>
-          <div style="padding:11px 14px;display:flex;gap:12px;align-items:baseline"><span style="font-weight:700;font-size:13px;color:#c2410c;min-width:52px;flex-shrink:0">All-in</span><span style="font-size:13px;color:var(--text-secondary)">Alles setzen was du hast</span></div>
+          <div style="padding:11px 14px;display:flex;gap:12px;align-items:baseline"><span style="font-weight:700;font-size:13px;color:var(--badge-amber-text);min-width:52px;flex-shrink:0">All-in</span><span style="font-size:13px;color:var(--text-secondary)">Alles setzen was du hast</span></div>
         </div>
       </div>
 
@@ -1258,7 +1248,7 @@
       <div style="margin-bottom:24px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Verdeckte Karten</div>
-          <div style="font-size:10px;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 7px;border-radius:20px">Spezial</div>
+          <div style="font-size:10px;font-weight:700;color:var(--badge-blue-text);background:var(--badge-blue-bg);padding:2px 7px;border-radius:20px">Spezial</div>
         </div>
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px">
           <div style="font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button findest du den Schalter <b>„Neue Karten face-down lassen"</b>. Wenn du ihn aktivierst, bekommst du bei der nächsten Runde deine Karten zugeteilt ohne sie sofort zu sehen — du spielst buchstäblich blind!</div>
@@ -1293,7 +1283,7 @@
       <div style="margin-bottom:24px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Was wäre noch gekommen?</div>
-          <div style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:20px">Highlight</div>
+          <div style="font-size:10px;font-weight:700;color:var(--badge-violet-text);background:var(--badge-violet-bg);padding:2px 7px;border-radius:20px">Highlight</div>
         </div>
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55">Wenn eine Hand endet weil alle ausser einem gefoldet haben, erscheint der Button <b>„Was wäre noch gekommen?"</b>. Der Dealer-Button-Spieler kann ihn drücken — dann werden die restlichen Gemeinschaftskarten aufgedeckt. Rein informell, ohne Einfluss auf das Ergebnis. Gut zum Lachen oder Ärgern!</div>
       </div>
@@ -1356,7 +1346,7 @@
       <div style="margin-bottom:24px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="font-size:13px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">Bot-Spieler</div>
-          <div style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 7px;border-radius:20px">Neu</div>
+          <div style="font-size:10px;font-weight:700;color:var(--badge-violet-text);background:var(--badge-violet-bg);padding:2px 7px;border-radius:20px">Neu</div>
         </div>
         <div style="background:var(--surface);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:13px;color:var(--text-secondary);line-height:1.55">Über den runden <b>+</b>-Button → <b>Bot hinzufügen</b> kannst du Computer-Mitspieler an den Tisch setzen. Bots spielen automatisch, wählen ihre Aktionen nach einer kurzen Bedenkzeit (0.5–5 Sekunden) und schreiben gelegentlich einen Kommentar im Chat.</div>
         <div style="background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:8px">
@@ -1594,7 +1584,9 @@
 
   // ── SYNC ───────────────────────────────────────────────
   function setSync(s){const el=document.getElementById('sync-status'),dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');if(el)el.className='sync-badge '+s;if(dot)dot.className='sync-dot'+(s==='pending'?' spin':'');if(lbl)lbl.textContent={synced:'Sync',pending:'…',error:'Fehler'}[s];}
-  async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);}catch(e){setSync('error');console.error(`❌ ${desc}`,e);showToast('Speichern fehlgeschlagen – bitte erneut versuchen');}}
+  // Gibt true bei Erfolg, false bei Fehler zurück – Aufrufer können darauf reagieren
+  // (z.B. Modal offen lassen / optimistische UI zurückrollen). Alt-Aufrufer ignorieren den Wert.
+  async function save(fn,desc){setSync('pending');console.log(`💾 ${desc}`);try{await fn();setSync('synced');console.log(`✅ ${desc}`);return true;}catch(e){setSync('error');console.error(`❌ ${desc}`,e);showToast('Speichern fehlgeschlagen – bitte erneut versuchen');return false;}}
 
   // ── ERROR TOAST ────────────────────────────────────────
   // Unaufdringlicher Fehler-Hinweis unten über der Nav (auto-hide ~4s). Design Tokens, kein Gradient.
@@ -1774,6 +1766,10 @@
   // Eingabe-Format fuer Betragsfelder: Komma-Dezimal OHNE Tausendertrennung,
   // damit der Wert via .replace(',','.') weiterhin parsebar bleibt ("1234,50" -> 1234.5).
   const fmtInput=v=>v.toFixed(2).replace('.',',');
+  // Kompakte deutsche Betragsdarstellung OHNE €-Präfix (Online-Tisch-Templates setzen das € selbst
+  // davor). Vereinheitlicht das Dezimaltrennzeichen im Online-Modus auf Komma (wie im Rest der App),
+  // z.B. 1234.5 → "1.234,50". Bewusst kompakt (kein €/nbsp) wegen enger Tisch-Labels & SVG-Texte.
+  const nEur=v=>Number(v||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
   // Eine Datums-Locale fuer die ganze App (toLocaleDateString-Aufrufe).
   const LOCALE='de-AT';
   // Die App rechnet IMMER in österreichischer Zeitzone – egal wo das Gerät gerade steht.
@@ -2825,8 +2821,11 @@
   async function checkForUpdate(){
     _lastUpdateCheck=Date.now();
     try{
-      const r=await fetch('/index.html?_='+Date.now(),{cache:'no-store'});
-      if(!r.ok)return;
+      // Nur die ersten ~2 KB anfordern (Range) – das Version-Meta steht im <head> (Zeile 6).
+      // Server ohne Range-Support liefern 200 mit vollem Inhalt → funktioniert trotzdem (Fallback).
+      // Spart auf Mobilfunk den ~900-KB-Download der kompletten index.html bei jedem Check.
+      const r=await fetch('/index.html?_='+Date.now(),{cache:'no-store',headers:{'Range':'bytes=0-2047'}});
+      if(!r.ok)return; // r.ok deckt 200 UND 206 (Partial Content) ab
       const html=await r.text();
       const m=html.match(/<meta name="version" content="([^"]+)"/);
       if(!m)return;
@@ -3515,7 +3514,7 @@
     html+=`<div class="section-title" style="margin-top:var(--space-lg)">Spielregeln</div>`;
 
     REGELN.forEach(r=>{
-      const badgeHtml=r.badge?`<span style="font-size:10px;font-weight:600;color:#7c3aed;background:#ede9fe;padding:2px 7px;border-radius:20px;margin-left:6px">${r.badge}</span>`:'';
+      const badgeHtml=r.badge?`<span style="font-size:10px;font-weight:600;color:var(--badge-violet-text);background:var(--badge-violet-bg);padding:2px 7px;border-radius:20px;margin-left:6px">${r.badge}</span>`:'';
       html+=`<div class="rules-block">
         <div class="rules-title">${r.icon}${r.titel}${badgeHtml}</div>
         ${r.punkte.map(p=>`<div class="rules-item">${p}</div>`).join('')}
@@ -4567,7 +4566,8 @@
         btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Transaktion löschen`;
         btn.addEventListener('click',async()=>{
           if(!await confirmDelete(`Transaktion "${t.kommentar}" über ${fmt(t.betrag)} löschen?`))return;
-          await save(()=>db.from('transaktionen').delete().eq('id',t.id),'Transaktion gelöscht');
+          const _delOk=await save(()=>db.from('transaktionen').delete().eq('id',t.id),'Transaktion gelöscht');
+          if(!_delOk)return; // Fehler → Modal offen lassen
           document.getElementById('modal-transaktion').classList.remove('open');
           await loadTransaktionen();await loadHome();
         });
@@ -4589,25 +4589,30 @@
     if(betrag<=0){await showAlert('Bitte einen Betrag eingeben.');return;}
     if(!kommentar){await showAlert('Bitte einen Kommentar wählen oder eingeben.');return;}
     const data={datum,von_spieler_id:von,nach_spieler_id:nach,betrag,kommentar};
-    if(editTransaktionID){await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
+    let _ok;
+    if(editTransaktionID){_ok=await save(()=>db.from('transaktionen').update(data).eq('id',editTransaktionID),'Transaktion aktualisiert');}
     else{
-      await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} €${betrag}`);
-      // Push an betroffene Spieler (von + nach, ohne Bank, ohne null)
-      const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
-      const betroffene=[von,nach].filter(id=>id&&id!==bankId);
-      if(betroffene.length>0){
-        const vonName=alleSpieler.find(s=>s.id===von)?.name||'Jemand';
-        const nachName=alleSpieler.find(s=>s.id===nach)?.name||'Jemand';
-        const beschreibung=von&&nach?`${vonName} → ${nachName}`:(nach?`Einzahlung an ${nachName}`:`Auszahlung von ${vonName}`);
-        triggerPush({
-          spieler_ids:betroffene,
-          title:`Neue Transaktion: ${fmt(betrag)}`,
-          body:`${beschreibung} – ${kommentar}`,
-          data:{url:'/#transaktionen',tag:'transaktion'},
-          kategorie:'transaktionen',
-        });
+      _ok=await save(()=>db.from('transaktionen').insert(data),`Transaktion: ${kommentar} ${fmt(betrag)}`);
+      // Push nur bei erfolgreichem Speichern an betroffene Spieler (von + nach, ohne Bank, ohne null)
+      if(_ok){
+        const bankId=alleSpieler.find(s=>s.ist_bank)?.id;
+        const betroffene=[von,nach].filter(id=>id&&id!==bankId);
+        if(betroffene.length>0){
+          const vonName=alleSpieler.find(s=>s.id===von)?.name||'Jemand';
+          const nachName=alleSpieler.find(s=>s.id===nach)?.name||'Jemand';
+          const beschreibung=von&&nach?`${vonName} → ${nachName}`:(nach?`Einzahlung an ${nachName}`:`Auszahlung von ${vonName}`);
+          triggerPush({
+            spieler_ids:betroffene,
+            title:`Neue Transaktion: ${fmt(betrag)}`,
+            body:`${beschreibung} – ${kommentar}`,
+            data:{url:'/#transaktionen',tag:'transaktion'},
+            kategorie:'transaktionen',
+          });
+        }
       }
     }
+    // Bei Fehler: Modal offen lassen und Eingaben behalten (Toast wurde bereits gezeigt)
+    if(!_ok)return;
     document.getElementById('modal-transaktion').classList.remove('open');
     await loadTransaktionen();await loadHome();
   });
@@ -4794,8 +4799,16 @@
     document.getElementById('count-'+id).textContent=t.buyins;
     document.getElementById('pot-'+id).textContent=`${fmt(t.buyins*bPot)} im Pot`;
     updatePotUI();
-    await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
+    const _ok=await save(()=>db.from('spiel_teilnehmer').update({buyins:t.buyins}).eq('id',id),`BuyIn ${t.spieler.name}: ${t.buyins}×`);
     _buyinLock.delete(id);
+    if(!_ok){
+      // Optimistische Änderung zurückrollen – sonst weicht der lokale Stand dauerhaft von der DB ab
+      t.buyins=(t.buyins||0)-delta;
+      document.getElementById('count-'+id).textContent=t.buyins;
+      document.getElementById('pot-'+id).textContent=`${fmt(t.buyins*bPot)} im Pot`;
+      updatePotUI();
+      return;
+    }
     if(delta>0){
       triggerPush({
         spieler_ids:[t.spieler_id],
@@ -8448,12 +8461,12 @@
     const pot=session?.pot||0;
     let potSvg='';
     if(potBreakdown&&potBreakdown.length>1){
-      const main=`Haupt: €${potBreakdown[0].amount.toFixed(2)}`;
-      const side=potBreakdown.slice(1).map((p,i)=>`SP${potBreakdown.length>2?i+1:''}: €${p.amount.toFixed(2)}`).join(' · ');
+      const main=`Haupt: €${nEur(potBreakdown[0].amount)}`;
+      const side=potBreakdown.slice(1).map((p,i)=>`SP${potBreakdown.length>2?i+1:''}: €${nEur(p.amount)}`).join(' · ');
       potSvg=`<text x="${cx}" y="${by+ch+13}" text-anchor="middle" font-size="9.5" font-weight="700" fill="rgba(255,255,255,.8)">${escHtml(main)}</text>`+
              `<text x="${cx}" y="${by+ch+24}" text-anchor="middle" font-size="9" font-weight="600" fill="#f59e0b">${escHtml(side)}</text>`;
     } else if(pot>0){
-      potSvg=`<text x="${cx}" y="${by+ch+14}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">Pot: €${pot.toFixed(2)}</text>`;
+      potSvg=`<text x="${cx}" y="${by+ch+14}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.65)">Pot: €${nEur(pot)}</text>`;
     }
     return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;border-radius:var(--radius-lg)">
       <rect x="0" y="0" width="${W}" height="${H}" fill="${feltOuter}"/>
@@ -8524,8 +8537,8 @@
         const humanSeats=sessionSeats.filter(x=>!x.spieler?.ist_bot);
         const totalBuyinsActive=sessionSeats.reduce((sum,seat)=>sum+(seat.buyins||1),0);
         const mySessStatus=sessionSeats.find(x=>x.spieler_id===currentSpieler?.id)?.status;
-        const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
-        const botBadge=botCnt>0?`<span style="font-size:10px;background:#ede9fe;color:#7c3aed;border-radius:10px;padding:1px 6px;font-weight:700;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCnt} Bot${botCnt!==1?'s':''}</span>`:'';
+        const testBadge=s.is_test?`<span style="font-size:10px;background:var(--badge-amber-bg);color:var(--badge-amber-text);border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
+        const botBadge=botCnt>0?`<span style="font-size:10px;background:var(--badge-violet-bg);color:var(--badge-violet-text);border-radius:10px;padding:1px 6px;font-weight:700;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCnt} Bot${botCnt!==1?'s':''}</span>`:'';
         const myBadge=mySessStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border)">Beobachter</span>`:mySessStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700">Am Tisch</span>`:'';
         const playerStr=botCnt>0?`${humanCnt} Spieler + ${botCnt} Bot${botCnt!==1?'s':''}`:cnt>0?`${cnt} Spieler`:'Keine Spieler';
         const rowBg=(mySessStatus&&mySessStatus!=='sitting_out')?'background:var(--accent-soft);border-left:3px solid var(--accent);':'';
@@ -8563,7 +8576,7 @@
         const varIcon={holdem:'♠',omaha:'♦',texahma:'✦'}[s.variante]||'';
         const varColor={holdem:'var(--text-secondary)',omaha:'var(--danger)',texahma:'#8b5cf6'}[s.variante]||'var(--text-secondary)';
         const transferBadge=s.spiel_id?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 6px;font-weight:700;flex-shrink:0">Übertragen</span>`:`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);border-radius:10px;padding:1px 6px;font-weight:600;flex-shrink:0">Nicht übertragen</span>`;
-        const botBadgeD=botCntD>0?`<span style="font-size:10px;background:#ede9fe;color:#7c3aed;border-radius:10px;padding:1px 6px;font-weight:700;flex-shrink:0;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCntD} Bot${botCntD!==1?'s':''}</span>`:'';
+        const botBadgeD=botCntD>0?`<span style="font-size:10px;background:var(--badge-violet-bg);color:var(--badge-violet-text);border-radius:10px;padding:1px 6px;font-weight:700;flex-shrink:0;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:9px;height:9px;display:inline-block;vertical-align:middle"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="16" y1="13" x2="16" y2="15"/></svg>${botCntD} Bot${botCntD!==1?'s':''}</span>`:'';
         const playerStrD=botCntD>0?`${humanCntD} Spieler + ${botCntD} Bot${botCntD!==1?'s':''}`:`${cnt} Spieler`;
         const _fpD=`finished|${s.hand_nr||0}|${cnt}|${totalBuyins}|${s.spiel_id||''}`;
         html+=`<div class="card clickable pm-session-row" data-id="${s.id}" data-status="finished" data-fp="${_fpD}" style="margin-bottom:8px;opacity:.75"><div style="padding:14px 16px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span style="font-size:18px;color:${varColor};line-height:1;flex-shrink:0">${varIcon}</span><span style="font-size:15px;font-weight:700;color:var(--text-secondary);flex:1;min-width:0">${varLabel[s.variante]||s.variante}</span>${transferBadge}${botBadgeD}${chevron}</div><div style="font-size:12px;color:var(--text-tertiary)">${playerStrD}${s.hand_nr>0?` · ${s.hand_nr} Runden`:''}${totalBuyins>0?` · ${totalBuyins} Buy-Ins`:''}${datum?` · ${datum}`:''}${zeitStr?` · ${zeitStr}`:''}</div></div></div>`;
@@ -8661,7 +8674,7 @@
   function _pmFormatTickerAction(a,name){
     if(!a)return'';
     const n=name||'';
-    const amt=a.amount!=null?` €${parseFloat(a.amount).toFixed(2)}`:'';
+    const amt=a.amount!=null?` €${nEur(parseFloat(a.amount))}`:'';
     if(a.action==='fold')return`${n} foldet`;
     if(a.action==='call')return`${n} callt${amt}`;
     if(a.action==='raise'||a.action==='bet')return`${n} setzt${amt}`;
@@ -9107,7 +9120,7 @@
     // Show a label strip only once all are revealed
     const _runoutCount=session.runout_cards?.length||0;
     const _runoutRevCount=_pm._runoutRevealedCount??_runoutCount;
-    const runoutDisplay=(_runoutCount>0&&_runoutRevCount>0)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:#fef3c7;border-radius:var(--radius-md);font-size:12px;color:#92400e;display:flex;align-items:center;gap:6px"><span style="font-weight:700">Was wäre gekommen</span><span style="opacity:.7">${_runoutRevCount}/${_runoutCount}</span></div>`:(_runoutCount>0&&!isDealer)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:rgba(245,158,11,.12);border-radius:var(--radius-md);font-size:12px;color:#92400e">Dealer deckt auf…</div>`:'';
+    const runoutDisplay=(_runoutCount>0&&_runoutRevCount>0)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:var(--badge-amber-bg);border-radius:var(--radius-md);font-size:12px;color:var(--badge-amber-text);display:flex;align-items:center;gap:6px"><span style="font-weight:700">Was wäre gekommen</span><span style="opacity:.7">${_runoutRevCount}/${_runoutCount}</span></div>`:(_runoutCount>0&&!isDealer)?`<div style="margin:var(--space-sm) 0;padding:6px 10px;background:rgba(245,158,11,.12);border-radius:var(--radius-md);font-size:12px;color:var(--badge-amber-text)">Dealer deckt auf…</div>`:'';
 
     // Eigene Karten (auch nach Fold sichtbar)
     const myCardsHtml=!!(mySeat&&myHoleCards.length>0);
@@ -9170,9 +9183,9 @@
     const infoBar=(mySeat&&myStatus!=='sitting_out')?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Stack</div>
-        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:${(mySeat.stack||0)>0?'var(--accent)':'var(--text-primary)'}">€${(mySeat.stack||0).toFixed(2)}</div>
+        <div style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:${(mySeat.stack||0)>0?'var(--accent)':'var(--text-primary)'}">€${nEur((mySeat.stack||0))}</div>
       </div>
-      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div style="margin-bottom:2px"><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${p.amount.toFixed(2)}${p.names?.length?`<div style="font-size:8px;font-weight:500;font-family:var(--font-sans);color:var(--text-secondary);margin-top:1px">${p.names.join(' · ')}</div>`:''}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${(session.pot||0).toFixed(2)}</div></div>`;})()}
+      ${(()=>{const bd=_pmPotBreakdown();if(bd){return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pots</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono);line-height:1.4">${bd.map((p,i)=>`<div style="margin-bottom:2px"><span style="font-size:9px;opacity:.7">${i===0?'H':'SP'+(bd.length>2?i:'')}</span> €${nEur(p.amount)}${p.names?.length?`<div style="font-size:8px;font-weight:500;font-family:var(--font-sans);color:var(--text-secondary);margin-top:1px">${p.names.join(' · ')}</div>`:''}</div>`).join('')}</div></div>`;}return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Pot</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">€${nEur((session.pot||0))}</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px">
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Buy-Ins</div>
         <div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${mySeat.buyins||1}×</div>
@@ -9181,12 +9194,12 @@
         <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Street</div>
         <div style="font-size:15px;font-weight:700">${streetLabel[session.street]||session.street}</div>
       </div>`:''}
-      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>0?'+':''}€${net.toFixed(2)}</div></div>`;})()}
-      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>0?'+':''}€${avg.toFixed(2)}</div></div>`;})()}
+      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const nc=net>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Session</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${nc}">${net>0?'+':''}€${nEur(net)}</div></div>`;})()}
+      ${(()=>{const _bPot=session.buyin_pot??einstellungen?.buyin_pot??5;const _bK=0;const _c2e=_bPot/(session.start_stack||_bPot);const inv=(mySeat.buyins||1)*(_bPot+_bK);const net=Math.round(((mySeat.stack||0)*_c2e-inv)*100)/100;const hn=Math.max((session.hand_nr||1),1);const avg=Math.round(net/hn*100)/100;const ac=avg>=0?'var(--accent-text)':'var(--danger)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ø/Runde</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${ac}">${avg>0?'+':''}€${nEur(avg)}</div></div>`;})()}
       ${(()=>{const bb=(session.small_blind||0.05)*2;const bbs=bb>0?Math.round((mySeat.stack||0)/bb*10)/10:0;return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">BBs</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${bbs}×</div></div>`;})()}
       <div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Runde #</div><div style="font-size:16px;font-weight:700;font-family:var(--font-mono)">${session.hand_nr||0}</div></div>
-      ${(()=>{const bet=mySeat.bet_current_round||0;const bc=bet>0?'var(--text-primary)':'var(--text-tertiary)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Einsatz</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${bc}">€${bet.toFixed(2)}</div></div>`;})()}
-      </div>${_canBuyin?`<div style="margin-top:8px;display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;width:auto;padding:0 28px;letter-spacing:-.01em">Buy-In · €${(session.start_stack||100).toFixed(2)}</button></div>`:''}`:'';
+      ${(()=>{const bet=mySeat.bet_current_round||0;const bc=bet>0?'var(--text-primary)':'var(--text-tertiary)';return`<div class="kpi-card" style="padding:10px 12px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Mein Einsatz</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${bc}">€${nEur(bet)}</div></div>`;})()}
+      </div>${_canBuyin?`<div style="margin-top:8px;display:flex;justify-content:center"><button class="btn btn-primary" id="btn-pm-buyin" style="height:42px!important;font-size:14px;font-weight:700;width:auto;padding:0 28px;letter-spacing:-.01em">Buy-In · €${nEur((session.start_stack||100))}</button></div>`:''}`:'';
 
     // useFdLayout / _perCard müssen vor dem Best-Hand-Block stehen (TDZ)
     const useFdLayout=facedown&&myHoleCards.length>0&&myStatus!=='folded';
@@ -9217,11 +9230,11 @@
       const myWin=myHandActs.find(a=>a.action==='win');
       if(myWin){
         const hn=myWin.meta?.hand?`<div style="font-size:12px;font-weight:600;margin-top:2px;opacity:.85">${myWin.meta.hand}</div>`:'';
-        handResultHtml=`<div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px">+€${(+myWin.amount).toFixed(2)}</div>${hn}</div>`;
+        handResultHtml=`<div style="background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px">+€${nEur((+myWin.amount))}</div>${hn}</div>`;
       } else {
         const invested=myHandActs.filter(a=>['call','raise','allin','post_sb','post_bb','blind'].includes(a.action)).reduce((s,a)=>s+(a.amount||0),0);
         if(invested>0){
-          handResultHtml=`<div style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px;color:var(--danger)">-€${invested.toFixed(2)}</div><div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Nächste Runde</div></div>`;
+          handResultHtml=`<div style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:var(--radius-md);padding:14px 16px;text-align:center;margin-bottom:var(--space-md)"><div style="font-size:26px;font-weight:800;font-family:var(--font-mono);letter-spacing:-.5px;color:var(--danger)">-€${nEur(invested)}</div><div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Nächste Runde</div></div>`;
         }
       }
     }
@@ -9341,7 +9354,7 @@
         const _rmr=document.getElementById('pm-stacks-modal-rows');
         if(_rmr)_rmr.innerHTML=_pmStacksModalRows(_pm.seats,_pm.session,currentSpieler?.id);
         const _rms=document.getElementById('pm-stacks-modal-subtitle');
-        if(_rms)_rms.textContent=`Runde #${_pm.session?.hand_nr||0} · Gesamtchips €${_tc2.toFixed(2)}`;
+        if(_rms)_rms.textContent=`Runde #${_pm.session?.hand_nr||0} · Gesamtchips €${nEur(_tc2)}`;
       }
     }
   }
@@ -9454,7 +9467,7 @@
       const av=s.spieler?.profilbild
         ?`<img src="${s.spieler.profilbild}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;flex-shrink:0">`
         :`<div style="width:16px;height:16px;border-radius:50%;background:var(--bg-secondary);font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-secondary)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;
-      const amt=(s.stack||0)>=10?`€${Math.round(s.stack||0)}`:`€${(s.stack||0).toFixed(2)}`;
+      const amt=(s.stack||0)>=10?`€${Math.round(s.stack||0)}`:`€${nEur((s.stack||0))}`;
       return`<div style="display:flex;align-items:center;gap:6px;opacity:${isFolded?'.4':'1'}">
         ${av}
         <span style="font-size:12px;width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe?'var(--text-primary)':'var(--text-secondary)'};font-weight:${isMe?'700':'400'}">${escHtml(name)}</span>
@@ -9489,9 +9502,9 @@
       const av=s.spieler?.profilbild
         ?`<img src="${s.spieler.profilbild}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0">`
         :`<div style="width:28px;height:28px;border-radius:50%;background:var(--bg-secondary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-secondary)">${escHtml(name.slice(0,2).toUpperCase())}</div>`;
-      const statusBadge=isAllin?`<span style="font-size:9px;font-weight:700;color:#c2410c;background:#fff7ed;padding:1px 5px;border-radius:5px;margin-left:4px">ALLIN</span>`:isFolded?`<span style="font-size:9px;color:var(--text-tertiary);margin-left:4px">gefoldet</span>`:'';
+      const statusBadge=isAllin?`<span style="font-size:9px;font-weight:700;color:var(--badge-amber-text);background:var(--badge-amber-bg);padding:1px 5px;border-radius:5px;margin-left:4px">ALLIN</span>`:isFolded?`<span style="font-size:9px;color:var(--text-tertiary);margin-left:4px">gefoldet</span>`:'';
       const youBadge=isMe?`<span style="font-size:9px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:1px 5px;border-radius:5px;margin-left:4px">du</span>`:'';
-      const _bi=s.buyins||1;const buyinBadge=_bi>1?`<span style="font-size:10px;font-weight:700;color:#7c3aed;background:#ede9fe;padding:1px 6px;border-radius:5px;margin-left:4px">${_bi}× Buy-In</span>`:`<span style="font-size:10px;color:var(--text-tertiary);margin-left:4px">1× Buy-In</span>`;
+      const _bi=s.buyins||1;const buyinBadge=_bi>1?`<span style="font-size:10px;font-weight:700;color:var(--badge-violet-text);background:var(--badge-violet-bg);padding:1px 6px;border-radius:5px;margin-left:4px">${_bi}× Buy-In</span>`:`<span style="font-size:10px;color:var(--text-tertiary);margin-left:4px">1× Buy-In</span>`;
       const _styleAbbr={nit:'NIT',tag:'TAG',lag:'LAG',station:'CALL',maniac:'MANI',random:'RAND',custom:'CUST'};
       const _styleClr={nit:'#0284c7',tag:'#16a34a',lag:'#dc2626',station:'#d97706',maniac:'#9333ea',random:'#0891b2',custom:'#6b7280'};
       const _botStyleKey=s.spieler?.ist_bot?s.bot_config?.style||'custom':null;
@@ -9502,7 +9515,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <span style="font-size:13px;font-weight:${isMe?'700':'500'};color:${isMe?'var(--text-primary)':'var(--text-secondary)'}">${escHtml(name)}${youBadge}${botStyleBadge}${statusBadge}${buyinBadge}</span>
             <div style="text-align:right;flex-shrink:0;margin-left:8px">
-              <span style="font-size:13px;font-weight:700;font-family:var(--font-mono)">€${(s.stack||0).toFixed(2)}</span>
+              <span style="font-size:13px;font-weight:700;font-family:var(--font-mono)">€${nEur((s.stack||0))}</span>
               <span style="font-size:11px;color:var(--text-tertiary);margin-left:4px">${chipPct}%</span>
             </div>
           </div>
@@ -9517,7 +9530,7 @@
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
           <span style="font-size:13px;font-weight:600;color:var(--accent-text)">Pot</span>
-          <div style="text-align:right;flex-shrink:0;margin-left:8px"><span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">€${(session?.pot||0).toFixed(2)}</span><span style="font-size:11px;color:var(--text-tertiary);margin-left:4px">${potPct}%</span></div>
+          <div style="text-align:right;flex-shrink:0;margin-left:8px"><span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--accent-text)">€${nEur((session?.pot||0))}</span><span style="font-size:11px;color:var(--text-tertiary);margin-left:4px">${potPct}%</span></div>
         </div>
         <div style="height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden"><div style="height:100%;width:${potPctBar}%;background:var(--accent-soft);border:1.5px solid var(--accent);box-sizing:border-box;border-radius:4px"></div></div>
       </div>
@@ -9537,7 +9550,7 @@
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
         <div>
           <div style="font-size:17px;font-weight:800;line-height:1.2">Stack-Übersicht</div>
-          <div id="pm-stacks-modal-subtitle" style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Runde #${session?.hand_nr||0} · Gesamtchips €${totalChips.toFixed(2)}</div>
+          <div id="pm-stacks-modal-subtitle" style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Runde #${session?.hand_nr||0} · Gesamtchips €${nEur(totalChips)}</div>
         </div>
         <button id="pm-stacks-close" style="flex-shrink:0;background:var(--bg-secondary);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-secondary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
@@ -9664,7 +9677,7 @@
     const _fav=sp=>sp?.profilbild?`<img class="pf-av" src="${sp.profilbild}" alt="">`:`<div class="pf-ini">${escHtml((sp?.name||'?').slice(0,2).toUpperCase())}</div>`;
     return _displayFinal.map(a=>{
       const n=a.spieler?.name||'?';
-      const amt=a.amount>0?` €${(+a.amount).toFixed(2)}`:'';
+      const amt=a.amount>0?` €${nEur((+a.amount))}`:'';
       let text='';let extra='';
       switch(a.action){
         case'fold':text=`<b>${escHtml(n)}</b> foldet`;extra=' fold-action';break;
@@ -9756,7 +9769,7 @@
         case'unspectate':text=`<b>${escHtml(n)}</b> hat den Beobachter-Modus verlassen`;extra=' facedown-action';break;
         case'react':{const _re=a.meta?.emoji;if(!_re)return'';text=`<b>${escHtml(n)}</b> reagiert ${_re}`;break;}
         case'finish':text=`<b>${escHtml(n)}</b> hat die Session beendet`;extra=' pm-feed-win';break;
-        case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:#fef3c7;color:#92400e;font-weight:700;font-size:12px">Split Pot – €${(+a.amount).toFixed(2)} aufgeteilt</div>`;
+        case'split_pot':return`<div class="pm-feed-item" style="justify-content:center;background:var(--badge-amber-bg);color:var(--badge-amber-text);font-weight:700;font-size:12px">Split Pot – €${nEur((+a.amount))} aufgeteilt</div>`;
         case'new_hand':{
           const starter=a.spieler?.name?` · ${a.spieler.name}`:'';
           return`<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;margin:2px 0"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:10px;font-weight:700;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);padding:2px 8px;border-radius:10px">Runde #${a.hand_nr}${starter}</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`;
@@ -9785,10 +9798,10 @@
       );
       const _buyinBtn=_alreadyBoughtInThisHand
         ?`<div style="font-size:13px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Bereit für nächste Spielrunde</div>`
-        :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${(session.buyin_pot??einstellungen?.buyin_pot??5).toFixed(2)}</button>`;
+        :`<button class="btn btn-primary" id="btn-pm-spectate-buyin" style="align-self:center;width:auto;max-width:none;padding:0 28px;height:40px!important">Mitspielen · Buy-In €${nEur((session.buyin_pot??einstellungen?.buyin_pot??5))}</button>`;
       return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:8px"><div style="font-size:13px;color:var(--text-secondary);text-align:center">Du beobachtest.</div>${_buyinBtn}</div>`;
     }
-    if(mySeat&&isWaiting){return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600">Platz ${mySeat.seat} · Stack €${(mySeat.stack||0).toFixed(2)}</div></div>`;}
+    if(mySeat&&isWaiting){return`<div style="padding:var(--space-sm);text-align:center"><div style="font-size:13px;color:var(--accent);font-weight:600">Platz ${mySeat.seat} · Stack €${nEur((mySeat.stack||0))}</div></div>`;}
 
     if(isFinished){const _showPayout=isAdmin&&!session.is_test&&!session.spiel_id;return`<div style="padding:var(--space-md)"><div style="font-size:15px;font-weight:700;margin-bottom:var(--space-md);text-align:center">Session beendet</div>${_showPayout?`<div class="btn-row-2"><button class="btn btn-primary" id="btn-pm-payout">Payout & Abrechnung</button><button class="btn btn-secondary" id="btn-pm-zur-uebersicht">Zur Übersicht</button></div>`:`<div style="display:flex;justify-content:center"><button class="btn btn-secondary" id="btn-pm-zur-uebersicht" style="min-width:160px;max-width:none;padding:14px 28px">Zur Übersicht</button></div>`}${isAdmin&&!session.is_test&&session.spiel_id?`<div style="font-size:12px;color:var(--accent-text);margin-top:8px;text-align:center">Ergebnis bereits übernommen</div>`:''}</div>`;}
     // Hand vorbei → keine Aktions-Buttons anzeigen
@@ -9801,7 +9814,7 @@
     }
     if(myStatus==='folded')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du hast gefoldet. Warte auf die nächste Spielrunde…</div>`;
     if(myStatus==='allin')return`<div style="text-align:center;padding:var(--space-sm);font-size:13px;color:var(--text-secondary)">Du bist All-in. Warte auf das Ergebnis…</div>`;
-    if(myStatus==='paused'){const _paa=mySeat?.pause_auto_action||'fold';const _pcl=mySeat?.pause_call_limit;const _paaLabels={fold:'Sofort folden',check:'Nur checken',call_limit:`Callen bis €${_pcl!=null?parseFloat(_pcl).toFixed(2):'?'}`,call_any:'Alles callen'};return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:6px"><div style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:14px;height:14px"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span style="font-size:13px;color:#f59e0b;font-weight:700">Pausiert</span></div><div style="font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:8px;padding:5px 12px">${_paaLabels[_paa]||_paa}</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important;margin-top:4px">Zurück zum Spiel</button></div>`;}
+    if(myStatus==='paused'){const _paa=mySeat?.pause_auto_action||'fold';const _pcl=mySeat?.pause_call_limit;const _paaLabels={fold:'Sofort folden',check:'Nur checken',call_limit:`Callen bis €${_pcl!=null?parseFloat(_pcl).toFixed(2):'?'}`,call_any:'Alles callen'};return`<div style="display:flex;flex-direction:column;align-items:center;padding:var(--space-sm);gap:6px"><div style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="width:14px;height:14px;stroke:var(--warning)"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span style="font-size:13px;color:var(--warning);font-weight:700">Pausiert</span></div><div style="font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:8px;padding:5px 12px">${_paaLabels[_paa]||_paa}</div><button class="btn btn-primary" id="btn-pm-resume" style="width:auto;max-width:none;padding:0 28px;height:40px!important;margin-top:4px">Zurück zum Spiel</button></div>`;}
     if(isMyTurn){
       const maxBet=Math.max(0,...seats.filter(s=>s.status!=='folded'&&s.status!=='sitting_out').map(s=>s.bet_current_round||0));
       const myBet=mySeat.bet_current_round||0;
@@ -9819,7 +9832,7 @@
         <div style="font-size:12px;color:var(--accent);font-weight:700;text-align:center;margin-bottom:var(--space-sm)">Du bist dran!</div>
         <div class="pm-action-btns">
           <button class="btn btn-danger pm-act-btn" data-action="fold" data-can-check="${canCheck}">Fold<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[F]</span></button>
-          ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${toCall.toFixed(2)}<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`}
+          ${canCheck?`<button class="btn btn-secondary pm-act-btn" data-action="check">Check<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`:`<button class="btn btn-secondary pm-act-btn" data-action="call" data-amount="${toCall}">Call €${nEur(toCall)}<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[C]</span></button>`}
           ${myStack>0&&anyoneCanCall?`<button class="btn btn-primary pm-act-btn" id="pm-raise-toggle">Raise<span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[R]</span></button>`:''}
         </div>
       </div>`;
@@ -9828,7 +9841,7 @@
     const pre=mySeat?.pre_action||'';
     const preLabels={fold:'Fold',check:'Check',call:'Call',call_any:'Call Any'};
     let preLabel=pre?preLabels[pre]||pre:'';
-    if(pre==='call'&&mySeat?.pre_action_limit){preLabel+=` bis €${parseFloat(mySeat.pre_action_limit).toFixed(2)}`;}
+    if(pre==='call'&&mySeat?.pre_action_limit){preLabel+=` bis €${nEur(parseFloat(mySeat.pre_action_limit))}`;}
     const _preIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
     const _pauseIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     const preBtnLabel=pre?`${_preIcon}<span>Vorauswahl: ${preLabel}</span><span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[V]</span>`:`${_preIcon}<span>Vorauswahl</span><span class="pm-key-hint" style="font-size:10px;font-family:var(--font-mono);opacity:.4;margin-left:5px">[V]</span>`;
@@ -10539,9 +10552,9 @@
         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Maximalbetrag (leer = unbegrenzt)</div>
         <input type="text" id="pm-pas-limit" class="form-input pm-num" inputmode="none" value="${mySeat.pre_action_limit||''}" placeholder="∞" data-label="Maximalbetrag" style="width:100%;font-size:18px;text-align:center;margin-bottom:6px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">1BB (€${bb.toFixed(2)})</button>
-          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">3BB (€${(bb*3).toFixed(2)})</button>
-          <button class="btn btn-ghost pm-pas-preset" data-val="${(mySeat.stack||0).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${(mySeat.stack||0).toFixed(2)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${bb.toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">1BB (€${nEur(bb)})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(bb*3).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0">3BB (€${nEur((bb*3))})</button>
+          <button class="btn btn-ghost pm-pas-preset" data-val="${(mySeat.stack||0).toFixed(2)}" style="font-size:13px;height:42px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${nEur((mySeat.stack||0))})</button>
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:2px">
@@ -10556,7 +10569,7 @@
       if(_pm?.mySeat)_pm.mySeat.pre_action=v;
       const labels={fold:'Fold',check:'Check',call:'Call',call_any:'Call Any'};
       let lbl=v?(labels[v]||v):'';
-      if(v==='call'&&lim)lbl+=` bis €${parseFloat(lim).toFixed(2)}`;
+      if(v==='call'&&lim)lbl+=` bis €${nEur(parseFloat(lim))}`;
       if(_pm?.mySeat){_pm.mySeat.pre_action=v;_pm.mySeat.pre_action_limit=lim||null;}
       const vBtn=document.getElementById('btn-pm-preaction');
       if(vBtn){vBtn.textContent=v?'Vorauswahl: '+lbl:'Vorauswahl';vBtn.className='btn '+(v?'btn-primary':'btn-ghost');vBtn.style.cssText='font-size:13px;height:40px!important;padding:0 18px!important;max-width:none;margin:0';}
@@ -10752,7 +10765,7 @@
       <div style="font-size:20px;font-weight:800;margin-bottom:6px">Stack leer</div>
       <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--danger);margin-bottom:10px">€0.00</div>
       <div style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-lg)">Du hast keinen Stack mehr. Möchtest du mit einem neuen Buy-In weiterspielen?</div>
-      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${(+bPot).toFixed(2)}</button>
+      <button id="pm-broke-buyin" class="btn btn-primary" style="width:100%;height:46px!important;font-size:15px;font-weight:700;margin-bottom:10px">Buy-In · €${nEur((+bPot))}</button>
       <button id="pm-broke-watch" class="btn btn-ghost" style="width:100%;height:42px!important;font-size:14px;margin-bottom:8px">Beobachten</button>
       <button id="pm-broke-dismiss" class="btn btn-ghost" style="width:100%;color:var(--text-secondary);font-size:13px">Tisch verlassen</button>
     </div>`;
@@ -10850,7 +10863,7 @@
         ov.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:520px;margin:0 auto">
           <div style="padding:var(--space-md) var(--space-md) 0">
             <div style="font-size:16px;font-weight:700">Offene Spielrunde</div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;line-height:1.5">Es läuft noch eine Spielrunde mit <b>€${_midHandPot.toFixed(2)}</b> im Pot. Wie soll damit verfahren werden?</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;line-height:1.5">Es läuft noch eine Spielrunde mit <b>€${nEur(_midHandPot)}</b> im Pot. Wie soll damit verfahren werden?</div>
           </div>
           <div style="padding:var(--space-md);display:flex;flex-direction:column;gap:var(--space-sm);max-width:320px;margin:0 auto">
             <button class="btn btn-secondary" id="btn-mh-annul" style="text-align:left;padding:12px 16px;height:auto;white-space:normal">
@@ -10859,7 +10872,7 @@
             </button>
             <button class="btn btn-secondary" id="btn-mh-split" style="text-align:left;padding:12px 16px;height:auto;white-space:normal">
               <div style="font-weight:600;font-size:14px">Pot gleichmässig aufteilen</div>
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">€${_midHandPot.toFixed(2)} werden gleichmässig auf die verbleibenden Spieler aufgeteilt.</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">€${nEur(_midHandPot)} werden gleichmässig auf die verbleibenden Spieler aufgeteilt.</div>
             </button>
             <button class="btn btn-ghost" id="btn-mh-back" style="font-size:13px">Abbrechen – zurück zum Spiel</button>
           </div>
@@ -10915,7 +10928,7 @@
         const refund=Math.round((invested[r.seat.spieler_id]||0)*_chipToEur*100)/100;
         if(refund>0){r.payout=Math.round((r.payout+refund)*100)/100;r.net=Math.round((r.net+refund)*100)/100;}
       });
-      _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);font-size:13px"><b>Spielrunde annulliert</b> – €${_midHandPot.toFixed(2)} wurden an die jeweiligen Spieler zurückgegeben.</div>`;
+      _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:var(--accent-soft);color:var(--accent-text);border-radius:var(--radius-md);font-size:13px"><b>Spielrunde annulliert</b> – €${nEur(_midHandPot)} wurden an die jeweiligen Spieler zurückgegeben.</div>`;
     } else if(_potResolution==='split'){
       const _active=rows.filter(r=>r.seat.status!=='folded');
       if(_active.length>0){
@@ -10923,7 +10936,7 @@
         const _share=Math.floor(_cents/_active.length);
         const _rem=_cents-_share*_active.length;
         _active.forEach((r,i)=>{const add=(_share+(i===0?_rem:0))/100;r.payout=Math.round((r.payout+add)*100)/100;r.net=Math.round((r.net+add)*100)/100;});
-        _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:#fef3c7;color:#92400e;border-radius:var(--radius-md);font-size:13px"><b>Pot aufgeteilt</b> – €${_midHandPot.toFixed(2)} wurden gleichmässig auf ${_active.length} Spieler aufgeteilt.</div>`;
+        _potNote=`<div style="margin:0 0 var(--space-md);padding:10px 14px;background:var(--badge-amber-bg);color:var(--badge-amber-text);border-radius:var(--radius-md);font-size:13px"><b>Pot aufgeteilt</b> – €${nEur(_midHandPot)} wurden gleichmässig auf ${_active.length} Spieler aufgeteilt.</div>`;
       }
     }
 
@@ -10934,11 +10947,11 @@
         ${r.img?`<img src="${r.img}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);flex-shrink:0"></div>`}
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:14px">${escHtml(r.name)}</div>
-          <div style="font-size:12px;color:var(--text-secondary)">${r.buyins}× Buy-In · Einsatz €${r.cost.toFixed(2)}</div>
+          <div style="font-size:12px;color:var(--text-secondary)">${r.buyins}× Buy-In · Einsatz €${nEur(r.cost)}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:${netCol}">${netStr}</div>
-          <div style="font-size:11px;color:var(--text-tertiary)">Auszahlung €${r.payout.toFixed(2)}</div>
+          <div style="font-size:11px;color:var(--text-tertiary)">Auszahlung €${nEur(r.payout)}</div>
         </div>
       </div>`;
     }).join('');
@@ -10952,7 +10965,7 @@
       </div>
       <div style="overflow-y:auto;padding:0 var(--space-md);flex:1">${_potNote}${rowsHtml}</div>
       <div style="padding:var(--space-md);border-top:1px solid var(--border)">
-        ${_hasBots?`<div style="margin:0 0 var(--space-sm);padding:10px 14px;background:#fef3c7;color:#92400e;border-radius:var(--radius-md);font-size:13px;text-align:center;max-width:320px;margin:0 auto var(--space-sm)"><b>Bot-Session</b> – Ergebnisse können nicht in die Statistik übernommen werden.</div>`:''}
+        ${_hasBots?`<div style="margin:0 0 var(--space-sm);padding:10px 14px;background:var(--badge-amber-bg);color:var(--badge-amber-text);border-radius:var(--radius-md);font-size:13px;text-align:center;max-width:320px;margin:0 auto var(--space-sm)"><b>Bot-Session</b> – Ergebnisse können nicht in die Statistik übernommen werden.</div>`:''}
         <div style="display:flex;flex-direction:column;gap:var(--space-sm);max-width:320px;margin:0 auto">
           ${rows.length>0&&!_hasBots?'<button class="btn btn-primary" id="btn-payout-confirm">Bestätigen & in Statistik übernehmen</button>':''}
           <button class="btn btn-secondary" id="btn-payout-skip">Ohne Übernahme beenden</button>
@@ -11088,7 +11101,7 @@
     }
     // Pot
     ctx.fillStyle='#d4a843';ctx.font='bold 15px monospace';ctx.textAlign='center';
-    ctx.fillText(`POT €${(session?.pot||0).toFixed(2)}`,CX,cY0-16);
+    ctx.fillText(`POT €${nEur((session?.pot||0))}`,CX,cY0-16);
     // Revealed hole cards map
     const _revMap={};
     (_pm?.actions||[]).filter(a=>a.action==='reveal_cards'&&a.hand_nr===handNr&&a.meta?.hole_cards?.length).forEach(a=>{if(!_revMap[a.spieler_id])_revMap[a.spieler_id]=a.meta.hole_cards;});
@@ -11279,7 +11292,7 @@
         const humanSeats=(pickerSeatsMap[s.id]||[]).filter(x=>!x.spieler?.ist_bot);
         const botCnt=botMap[s.id]||0;const humanCnt=(cntMap[s.id]||0)-botCnt;
         const totalBuyins=buyinMap[s.id]||0;
-        const testBadge=s.is_test?`<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
+        const testBadge=s.is_test?`<span style="font-size:10px;background:var(--badge-amber-bg);color:var(--badge-amber-text);border-radius:10px;padding:1px 6px;font-weight:700">TEST</span>`:'';
         const myBadge=myStatus==='sitting_out'?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);border-radius:10px;padding:1px 7px;font-weight:700;border:1px solid var(--border)">Beobachter</span>`:myStatus?`<span style="font-size:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:700">Am Tisch</span>`:'';
         const rowBg=(myStatus&&myStatus!=='sitting_out')?'background:var(--accent-soft);border-left:3px solid var(--accent);':'';
         const playerStr=botCnt>0?`${humanCnt} Spieler + ${botCnt} Bot${botCnt!==1?'s':''}`:humanCnt>0?`${humanCnt} Spieler`:'Keine Spieler';
@@ -11399,9 +11412,9 @@
         <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Maximalbetrag</div>
         <input type="text" id="pm-pause-limit" class="form-input pm-num" inputmode="none" value="${Math.min(bb*2,myStack).toFixed(2)}" data-label="Maximalbetrag" style="width:100%;font-size:22px;font-weight:700;text-align:center;margin-bottom:8px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">1BB (€${Math.min(bb,myStack).toFixed(2)})</button>
-          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">3BB (€${Math.min(bb*3,myStack).toFixed(2)})</button>
-          <button class="btn btn-ghost" id="pm-pl-max" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${myStack.toFixed(2)})</button>
+          <button class="btn btn-ghost" id="pm-pl-1bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">1BB (€${nEur(Math.min(bb,myStack))})</button>
+          <button class="btn btn-ghost" id="pm-pl-3bb" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0">3BB (€${nEur(Math.min(bb*3,myStack))})</button>
+          <button class="btn btn-ghost" id="pm-pl-max" style="font-size:13px;height:40px!important;padding:0!important;max-width:none;margin:0;font-weight:700;color:var(--accent-text)">MAX (€${nEur(myStack)})</button>
         </div>
       </div>
       <div class="btn-row-2">
@@ -11444,9 +11457,9 @@
       <div class="pm-sheet-handle"></div>
       <div class="pm-sheet-title">Raise / All-in</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
-        <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">½ Pot<span style="font-size:11px;opacity:.7">€${halfPot.toFixed(2)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[1]</span></button>
-        <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">Pot<span style="font-size:11px;opacity:.7">€${fullPot.toFixed(2)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[2]</span></button>
-        <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;position:relative">All-in<span style="font-size:11px;opacity:.7">€${myStack.toFixed(2)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[3]</span></button>
+        <button class="pm-rs-preset" data-amt="${halfPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">½ Pot<span style="font-size:11px;opacity:.7">€${nEur(halfPot)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[1]</span></button>
+        <button class="pm-rs-preset" data-amt="${fullPot}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;position:relative">Pot<span style="font-size:11px;opacity:.7">€${nEur(fullPot)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[2]</span></button>
+        <button class="pm-rs-preset" data-amt="${allInTotal}" data-allin="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;position:relative">All-in<span style="font-size:11px;opacity:.7">€${nEur(myStack)}</span><span class="pm-key-hint" style="position:absolute;top:3px;right:5px;font-size:9px;font-family:var(--font-mono);opacity:.35">[3]</span></button>
       </div>
       <div style="margin-bottom:var(--space-lg)">
         <input type="text" id="pm-rs-input" class="form-input pm-num" inputmode="none" value="${_r05(Math.min(fullPot,myStack)).toFixed(2)}" data-label="Raise-Betrag" style="width:100%;font-size:20px;font-weight:700;text-align:center">
@@ -11613,10 +11626,10 @@
       const callAmt=Math.round((maxBet-(myS.bet_current_round||0))*100)/100;
       const pot=sess.pot||0;
       actEl.innerHTML=`<div style="padding:10px 12px 10px;background:var(--accent-soft);border-bottom:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;color:var(--accent-text);letter-spacing:.04em;margin-bottom:8px">⚡ Du bist dran &nbsp;·&nbsp; Pot €${pot.toFixed(2)}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent-text);letter-spacing:.04em;margin-bottom:8px">⚡ Du bist dran &nbsp;·&nbsp; Pot €${nEur(pot)}</div>
         <div style="display:flex;gap:6px">
           <button id="pm-dqact-fold" style="flex:1;height:34px;font-size:12px;font-weight:700;border-radius:10px;border:1.5px solid var(--border);background:var(--danger-soft);color:var(--danger);cursor:pointer">Fold</button>
-          <button id="pm-dqact-call" style="flex:2;height:34px;font-size:12px;font-weight:700;border-radius:10px;border:none;background:var(--accent);color:white;cursor:pointer">${callAmt<=0?'Check':`Call €${callAmt.toFixed(2)}`}</button>
+          <button id="pm-dqact-call" style="flex:2;height:34px;font-size:12px;font-weight:700;border-radius:10px;border:none;background:var(--accent);color:white;cursor:pointer">${callAmt<=0?'Check':`Call €${nEur(callAmt)}`}</button>
         </div>
       </div>`;
       document.getElementById('pm-dqact-fold')?.addEventListener('click',()=>_pmAct('fold'));
@@ -12102,7 +12115,7 @@
     function _bsRenderEditor(){
       const ed=document.getElementById('pm-sess-bt-editor');if(!ed||!_pm?.session?.blind_struktur)return;
       const lvls=_pm.session.blind_struktur;const curLvl=_pm.session.blind_level??0;
-      ed.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:11px;color:var(--text-tertiary);padding:2px 4px">#</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">SB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">BB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">Min</th><th></th></tr></thead><tbody>${lvls.map((l,i)=>`<tr style="background:${i===curLvl?'var(--accent-soft)':''}"><td style="font-size:11px;color:var(--text-tertiary);padding:2px 4px;font-family:var(--font-mono)">${i+1}</td><td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" style="width:44px;font-size:13px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><button data-action="del" data-idx="${i}" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-tertiary);padding:0 4px">×</button></td></tr>`).join('')}</tbody></table>`;
+      ed.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:11px;color:var(--text-tertiary);padding:2px 4px">#</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">SB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">BB</th><th style="font-size:11px;color:var(--text-tertiary);padding:2px 4px">Min</th><th></th></tr></thead><tbody>${lvls.map((l,i)=>`<tr style="background:${i===curLvl?'var(--accent-soft)':''}"><td style="font-size:11px;color:var(--text-tertiary);padding:2px 4px;font-family:var(--font-mono)">${i+1}</td><td><input type="number" value="${l.sb}" data-field="sb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:16px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.bb}" data-field="bb" data-idx="${i}" inputmode="numeric" style="width:52px;font-size:16px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><input type="number" value="${l.min}" data-field="min" data-idx="${i}" inputmode="numeric" style="width:44px;font-size:16px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--bg-secondary);color:var(--text-primary)"></td><td><button data-action="del" data-idx="${i}" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-tertiary);padding:0 4px">×</button></td></tr>`).join('')}</tbody></table>`;
       ed.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',async e=>{
         const i=parseInt(e.target.dataset.idx),f=e.target.dataset.field;
         _pm.session.blind_struktur[i][f]=parseInt(e.target.value)||0;
@@ -12506,7 +12519,9 @@ const _rSeat=(_pm.seats||[]).find(s=>s.spieler_id===_sid);const _rSp=_rSeat?.spi
 
   // ── INIT ───────────────────────────────────────────────
   const{data:{session}}=await db.auth.getSession();
-  if(session){currentUser=session.user;showApp();}
+  // Guard gegen doppelten Start: onAuthStateChange feuert zusätzlich INITIAL_SESSION.
+  // Ohne _appInitialized-Check liefe showApp() bei aktiver Session zweimal (doppelte Queries).
+  if(session&&!_appInitialized){currentUser=session.user;_appInitialized=true;showApp();}
 </script>
 
 <!-- Was ist neu Modal -->

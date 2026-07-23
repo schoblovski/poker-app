@@ -291,10 +291,12 @@ Pokerkasse = Bankkonto - Summe(alle Spieler-Kontostände ohne Bank) (Status des 
 ## Login-Provider
 
 - ✅ Google (funktioniert)
-- ⏳ Facebook (vorgesehen, noch nicht implementiert)
+- ✅ Facebook (aktiv, seit v3.0)
+- ✅ LinkedIn (aktiv, Provider `linkedin_oidc`, seit v3.0)
 - ~~Apple~~ (entfernt)
 - ~~Microsoft/Azure~~ (entfernt)
 - Callback URL: `https://bcvyhlzjpfezokvcjksn.supabase.co/auth/v1/callback`
+- Login-Buttons in `index.html` (`btn-login-google`, `btn-login-facebook`, `btn-login-linkedin`) → `loginWith('google'|'facebook'|'linkedin_oidc')`
 
 ## Feature-Roadmap / Offene TODOs
 
