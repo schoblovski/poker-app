@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="version" content="4.20">
+  <meta name="version" content="4.21">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1447,7 +1447,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.20';
+  const VERSION='4.21';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -7103,6 +7103,15 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.21',datum:'Juli 2026',eintraege:[
+      {typ:'fix',text:'Schlägt das Speichern einer Transaktion einmal fehl (z.B. bei kurzer Verbindungsstörung), bleibt das Fenster jetzt offen und deine Eingaben erhalten – du musst nichts neu eintippen'},
+      {typ:'fix',text:'Buy-In-Zählen: Lässt sich ein Klick wegen einer Verbindungsstörung nicht speichern, springt die Anzeige jetzt zuverlässig auf den letzten gültigen Stand zurück'},
+      {typ:'verbessert',text:'Die Plus/Minus-Knöpfe beim Buy-In-Zählen (und einige Knöpfe im Equity-Rechner) sind jetzt größer und lassen sich am Handy leichter treffen'},
+      {typ:'fix',text:'iPhone: Beim Antippen der Blind-Eingabefelder (Blind-Timer/Einstellungen) und des Chat-Feldes im Online-Modus zoomt die Ansicht nicht mehr ungewollt hinein'},
+      {typ:'verbessert',text:'Online-Modus: Alle Beträge werden jetzt einheitlich mit Komma dargestellt (z.B. „12,50 €") – passend zum Rest der App'},
+      {typ:'fix',text:'Dunkelmodus: Farbige Hinweis-Kennzeichen (z.B. „All-in", „Split Pot", „Neu") sind jetzt sauber an das dunkle Design angepasst, statt hell aufzuleuchten'},
+      {typ:'verbessert',text:'Kleinere Ladeoptimierungen: kein doppelter Ladevorgang mehr beim App-Start, die Prüfung auf neue Versionen lädt nur noch wenige Kilobyte und die Startseite überträgt weniger Daten – schont mobile Daten'},
+    ]},
     {version:'4.20',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Ein interner Fehler aus dem letzten Update wurde behoben, der das Scrollen blockieren konnte (bemerkbar v.a. in der Handy-Vorschau der Browser-Entwicklertools am PC). Pull-to-Refresh (Herunterziehen zum Aktualisieren) und das Verhalten am iPhone bleiben unverändert'},
     ]},
