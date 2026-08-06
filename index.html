@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="version" content="4.21">
+  <meta name="version" content="4.22">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -454,11 +454,15 @@
   
   /* PULL TO REFRESH */
   .ptr-bar{height:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:0;flex-shrink:0;}
-  .ptr-pill{width:32px;height:32px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;margin-bottom:6px;transition:background 180ms ease;}
-  .ptr-pill svg{width:16px;height:16px;color:var(--text-tertiary);transition:color 180ms ease;transform:scaleX(-1);}
+  .ptr-pill{position:relative;width:32px;height:32px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;margin-bottom:6px;transition:background 180ms ease;}
+  .ptr-pill .ptr-arrow{width:16px;height:16px;color:var(--text-tertiary);transition:color 180ms ease;transform:scaleX(-1);}
+  /* Halte-Fortschrittsring (Android: ~2 s halten bis scharf) – JS setzt stroke-dashoffset */
+  .ptr-ring-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+  #ptr-ring{stroke:var(--accent);opacity:0;transition:opacity 150ms ease;}
+  .ptr-bar.arming #ptr-ring,.ptr-bar.ready #ptr-ring{opacity:1;}
   .ptr-bar.ready .ptr-pill{background:var(--accent-soft);}
-  .ptr-bar.ready .ptr-pill svg{color:var(--accent);}
-  .ptr-pill.spin svg{animation:ptr-spin .7s linear infinite;color:var(--accent);}
+  .ptr-bar.ready .ptr-pill .ptr-arrow{color:var(--accent);}
+  .ptr-pill.spin .ptr-arrow{animation:ptr-spin .7s linear infinite;color:var(--accent);}
 
   /* POKER INFOS */
   .hand-card{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-md);margin-bottom:var(--space-sm);display:flex;align-items:center;gap:var(--space-md);}
@@ -1018,7 +1022,8 @@
 
   <div class="ptr-bar" id="ptr-bar">
     <div class="ptr-pill" id="ptr-pill">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+      <svg class="ptr-ring-svg" viewBox="0 0 32 32" aria-hidden="true"><circle id="ptr-ring" cx="16" cy="16" r="14" fill="none" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90 16 16)"/></svg>
+      <svg class="ptr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
     </div>
   </div>
   <div class="content">
@@ -1447,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.21';
+  const VERSION='4.22';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2313,27 +2318,67 @@
     const content=document.querySelector('.content');
     const bar=document.getElementById('ptr-bar');
     const pill=document.getElementById('ptr-pill');
-    const THRESHOLD=72; // px Zugabstand bis Refresh ausgelöst wird
+    const ring=document.getElementById('ptr-ring');
+    const THRESHOLD=72; // px Zugabstand bis PTR "scharf" werden kann
+    // Android löste PTR bisher extrem leicht aus. Neu: nach dem Überschreiten der
+    // Zug-Schwelle muss der Finger die Zugposition ~2 s halten (Fortschrittsring füllt
+    // sich), erst dann startet der Reload beim Loslassen. iOS war schon gut → dort
+    // bleibt das gewohnte Sofort-Verhalten (HOLD_MS=0, kein Ring).
+    const _iosLike=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    const HOLD_MS=_iosLike?0:2000; // Halte-Dauer über der Schwelle bis "scharf"
     let _startY=0,_deltaY=0,_active=false,_refreshing=false;
+    let _armed=false,_holdStart=0,_holdRaf=null;
+    // Tatsächlicher Scroll-Offset: in dieser App scrollt der body/window, NICHT .content
+    // (content wächst auf volle Höhe, vgl. Window-Scroll-Listener der Lazy-Listen).
+    // content.scrollTop war daher auf Android immer 0 → die PTR-Sperre bei gescrollter
+    // Seite griff nie. Max über alle Kandidaten deckt jeden Scroll-Container ab.
+    const _scrollTop=()=>Math.max(content.scrollTop||0,window.scrollY||0,document.documentElement.scrollTop||0,(document.body&&document.body.scrollTop)||0);
     // PTR darf erst nach kurzer Ruhezeit oben ausgelöst werden –
     // verhindert Fehlauslösung wenn der Nutzer zurück nach oben scrollt und
     // die natürliche Fingerbewegung noch weitergeht.
     let _atTopSettled=true,_settleTimer=null;
 
-    content.addEventListener('scroll',()=>{
-      const st=content.scrollTop;
+    // Halte-Fortschrittsring
+    const _ringCircum=ring?2*Math.PI*(+ring.getAttribute('r')):0;
+    if(ring){ring.style.strokeDasharray=_ringCircum;ring.style.strokeDashoffset=_ringCircum;}
+    const _setRing=p=>{if(ring)ring.style.strokeDashoffset=_ringCircum*(1-Math.max(0,Math.min(1,p)));};
+    const _stopHold=()=>{
+      if(_holdRaf){cancelAnimationFrame(_holdRaf);_holdRaf=null;}
+      _armed=false;_holdStart=0;
+      bar.classList.remove('ready','arming');
+      _setRing(0);
+    };
+    const _tickHold=()=>{
+      if(!_holdStart){_holdRaf=null;return;}
+      const p=(Date.now()-_holdStart)/HOLD_MS;
+      _setRing(p);
+      if(p>=1){_armed=true;bar.classList.remove('arming');bar.classList.add('ready');_holdRaf=null;return;}
+      _holdRaf=requestAnimationFrame(_tickHold);
+    };
+    const _startHold=()=>{
+      if(_holdStart||_armed)return;
+      if(HOLD_MS<=0){_armed=true;bar.classList.add('ready');return;} // iOS: sofort scharf, kein Ring
+      _holdStart=Date.now();
+      bar.classList.add('arming');
+      _tickHold();
+    };
+
+    const _onScroll=()=>{
+      const st=_scrollTop();
       if(st>0){
         // Seite wurde nach unten gescrollt: PTR sperren und laufenden Zug abbrechen
         _atTopSettled=false;
         clearTimeout(_settleTimer);
         _settleTimer=null;
-        if(_active)_active=false;
+        if(_active){_active=false;_stopHold();bar.style.height='0';}
       } else if(!_atTopSettled){
         // Seite ist wieder ganz oben: erst nach 300 ms PTR freigeben
         clearTimeout(_settleTimer);
         _settleTimer=setTimeout(()=>{_atTopSettled=true;},300);
       }
-    },{passive:true});
+    };
+    content.addEventListener('scroll',_onScroll,{passive:true});
+    window.addEventListener('scroll',_onScroll,{passive:true});
 
     const PAGE_LOADERS={
       home:()=>loadHome(),
@@ -2346,47 +2391,60 @@
       'online-tisch':()=>_pmLoad(),
     };
 
+    const _spring=()=>{
+      bar.style.transition='height 320ms cubic-bezier(.32,1.1,.6,1)';
+      bar.style.height='0';
+      bar.classList.remove('ready','arming');
+      setTimeout(()=>{bar.style.transition='';},340);
+      _deltaY=0;
+      _setRing(0);
+    };
+
     content.addEventListener('touchstart',e=>{
       _active=false;
       const _curPage=_pageHistory[_pageHistory.length-1];
-      if(_curPage==='online-tisch'||_refreshing||content.scrollTop>0||!_atTopSettled)return;
+      if(_curPage==='online-tisch'||_refreshing||_scrollTop()>0||!_atTopSettled)return;
       _startY=e.touches[0].clientY;
       _active=true;
       _deltaY=0;
+      _stopHold();
     },{passive:true});
 
     content.addEventListener('touchmove',e=>{
       if(!_active||_refreshing)return;
-      if(content.scrollTop>0||!_atTopSettled){_active=false;return;}
+      if(_scrollTop()>0||!_atTopSettled){_active=false;_stopHold();bar.style.height='0';return;}
       const dy=e.touches[0].clientY-_startY;
-      if(dy<=0){_active=false;return;}
+      if(dy<=0){_active=false;_stopHold();bar.style.height='0';return;}
       _deltaY=dy;
       const pull=Math.min(Math.sqrt(dy*28),52);
       bar.style.height=pull+'px';
-      bar.classList.toggle('ready',dy>=THRESHOLD);
+      if(dy>=THRESHOLD)_startHold(); // Timer/Ring laufen unabhängig vom Finger-Move weiter
+      else _stopHold();              // unter die Schwelle gezogen → Halte-Zähler zurück
     },{passive:true});
 
     content.addEventListener('touchend',async()=>{
       if(!_active||_refreshing)return;
       _active=false;
-      const triggered=_deltaY>=THRESHOLD;
+      const triggered=_armed; // nur nach vollständiger Halte-Dauer über der Schwelle
+      _stopHold();
       if(triggered){
         _refreshing=true;
         bar.style.height='44px';
         bar.style.transition='height 150ms ease';
-        bar.classList.remove('ready');
         pill.classList.add('spin');
         const page=_pageHistory[_pageHistory.length-1];
         if(PAGE_LOADERS[page])await PAGE_LOADERS[page]();
         _refreshing=false;
         pill.classList.remove('spin');
       }
-      // Zurückfedern
-      bar.style.transition='height 320ms cubic-bezier(.32,1.1,.6,1)';
-      bar.style.height='0';
-      bar.classList.remove('ready');
-      setTimeout(()=>{bar.style.transition='';},340);
-      _deltaY=0;
+      _spring(); // Zurückfedern
+    },{passive:true});
+
+    content.addEventListener('touchcancel',()=>{
+      if(_refreshing)return;
+      _active=false;
+      _stopHold();
+      _spring();
     },{passive:true});
   }
 
@@ -7103,6 +7161,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.22',datum:'August 2026',eintraege:[
+      {typ:'fix',text:'Android: Pull-to-Refresh (Herunterziehen zum Aktualisieren) löste bisher viel zu leicht aus. Jetzt muss die Zugposition rund 2 Sekunden gehalten werden – ein kleiner Fortschrittsring um das Symbol füllt sich, erst wenn er voll ist (Symbol wird grün) startet beim Loslassen das Neuladen. Am iPhone bleibt alles wie gewohnt'},
+    ]},
     {version:'4.21',datum:'Juli 2026',eintraege:[
       {typ:'fix',text:'Schlägt das Speichern einer Transaktion einmal fehl (z.B. bei kurzer Verbindungsstörung), bleibt das Fenster jetzt offen und deine Eingaben erhalten – du musst nichts neu eintippen'},
       {typ:'fix',text:'Buy-In-Zählen: Lässt sich ein Klick wegen einer Verbindungsstörung nicht speichern, springt die Anzeige jetzt zuverlässig auf den letzten gültigen Stand zurück'},
