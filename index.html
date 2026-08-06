@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="version" content="4.22">
+  <meta name="version" content="4.23">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DTKS Poker">
@@ -1452,7 +1452,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();}});
   window.addEventListener('focus',()=>{_clearAppBadge();if(typeof refreshBellBadge==='function')refreshBellBadge();if(typeof _pmUpdateLiveIndicator==='function')_pmUpdateLiveIndicator();});
 
-  const VERSION='4.22';
+  const VERSION='4.23';
   const SUPABASE_URL='https://bcvyhlzjpfezokvcjksn.supabase.co';
   const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnlobHpqcGZlem9rdmNqa3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDAzNDksImV4cCI6MjA5MTMxNjM0OX0.DNvFp6N7HYjMwrimiKAd_D3VAQDYDns-2vvHOBdW4Yk';
   const VAPID_PUBLIC_KEY='BGumKAOH09NkYA-3yZFQZu6lzIYXlvhGvxOlyHmFiVSfCgfDmF787TUNKl5lvV5L1efvA5qujAorCxhQcluY2hE';
@@ -2415,12 +2415,20 @@
       if(_scrollTop()>0||!_atTopSettled){_active=false;_stopHold();bar.style.height='0';return;}
       const dy=e.touches[0].clientY-_startY;
       if(dy<=0){_active=false;_stopHold();bar.style.height='0';return;}
+      // Wir ziehen am obersten Seitenrand nach unten → das ist UNSERE PTR-Geste.
+      // Auf Android muss hier das NATIVE Chrome-Pull-to-Refresh unterdrückt werden:
+      // es feuerte bisher zusätzlich zur Custom-PTR, machte einen sofortigen Voll-Reload
+      // und ignorierte die 2s-Halte-Geste komplett (das war die „extreme" Sensibilität).
+      // overscroll-behavior allein griff im body/window-Scroll-Layout nicht zuverlässig
+      // → deshalb der harte preventDefault. Dafür ist der Listener non-passive (nur
+      // Nicht-iOS, s.u.). iOS bleibt passiv & unverändert (kein preventDefault, kein natives PTR).
+      if(!_iosLike&&e.cancelable)e.preventDefault();
       _deltaY=dy;
       const pull=Math.min(Math.sqrt(dy*28),52);
       bar.style.height=pull+'px';
       if(dy>=THRESHOLD)_startHold(); // Timer/Ring laufen unabhängig vom Finger-Move weiter
       else _stopHold();              // unter die Schwelle gezogen → Halte-Zähler zurück
-    },{passive:true});
+    },{passive:_iosLike}); // Android: non-passive → preventDefault möglich; iOS: passiv wie bisher
 
     content.addEventListener('touchend',async()=>{
       if(!_active||_refreshing)return;
@@ -7161,6 +7169,9 @@
 
   // ── INFO & CHANGELOG ───────────────────────────────────
   const CHANGELOG=[
+    {version:'4.23',datum:'August 2026',eintraege:[
+      {typ:'fix',text:'Android: Pull-to-Refresh (Herunterziehen zum Aktualisieren) auf der Startseite löste weiterhin viel zu leicht aus. Grund war das eingebaute Neuladen von Chrome selbst, das die neue 2-Sekunden-Halte-Geste umging und sofort aktualisierte. Dieses native Neuladen ist jetzt unterdrückt – es zählt nur noch das App-eigene Herunterziehen-und-Halten (Fortschrittsring, ~2 s). Am iPhone bleibt alles wie gewohnt'},
+    ]},
     {version:'4.22',datum:'August 2026',eintraege:[
       {typ:'fix',text:'Android: Pull-to-Refresh (Herunterziehen zum Aktualisieren) löste bisher viel zu leicht aus. Jetzt muss die Zugposition rund 2 Sekunden gehalten werden – ein kleiner Fortschrittsring um das Symbol füllt sich, erst wenn er voll ist (Symbol wird grün) startet beim Loslassen das Neuladen. Am iPhone bleibt alles wie gewohnt'},
     ]},
